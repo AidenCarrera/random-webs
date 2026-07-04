@@ -395,6 +395,7 @@ export default function BeatMaker() {
   useEffect(() => {
     return () => {
       Tone.Transport.stop();
+      Tone.Draw.cancel();
     };
   }, []);
 
@@ -417,6 +418,7 @@ export default function BeatMaker() {
     seqRef.current = seq;
     return () => {
       seq.dispose();
+      Tone.Draw.cancel();
     };
   }, []);
 
@@ -432,9 +434,8 @@ export default function BeatMaker() {
     }
     if (Tone.getContext().state !== "running") await Tone.start();
     if (isPlaying) {
-      Tone.Transport.stop();
+      Tone.Transport.pause();
       setIsPlaying(false);
-      setCurrentStep(0);
     } else {
       Tone.Transport.start();
       setIsPlaying(true);
@@ -611,7 +612,7 @@ export default function BeatMaker() {
                 ) : (
                   <Play className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 )}
-                {isPlaying ? "STOP" : "PLAY"}
+                {isPlaying ? "PAUSE" : "PLAY"}
               </button>
               <button
                 onClick={clearGrid}
