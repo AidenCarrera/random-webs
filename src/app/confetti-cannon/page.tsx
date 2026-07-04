@@ -1,18 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import confetti from "canvas-confetti";
 import { Sparkles } from "lucide-react";
 
 export default function ConfettiCannon() {
   const [isPartying, setIsPartying] = useState(false);
-  const [partyKey, setPartyKey] = useState(0);
+  const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fireConfetti = () => {
     setIsPartying(true);
-    setPartyKey((prev) => prev + 1);
-    // Reset party state after confetti ends (5s + buffer)
-    setTimeout(() => setIsPartying(false), 5500);
+
+    // Reset party state after confetti ends, extending if user clicks again
+    if (resetTimeoutRef.current) {
+      clearTimeout(resetTimeoutRef.current);
+    }
+    
+    resetTimeoutRef.current = setTimeout(() => {
+      setIsPartying(false);
+    }, 5500);
 
     const duration = 5 * 1000;
     const animationEnd = Date.now() + duration;
@@ -52,12 +58,41 @@ export default function ConfettiCannon() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-t from-yellow-300 to-orange-400 flex flex-col items-center justify-center overflow-hidden">
+    <div className={`min-h-screen bg-linear-to-t from-yellow-300 to-orange-400 flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ${
+      isPartying ? "animate-party-bg" : ""
+    }`}>
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/confetti.png')] opacity-20 pointer-events-none" />
 
+      {/* Floating Party Emojis */}
+      {isPartying && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
+          {Array.from({ length: 15 }).map((_, i) => {
+            const emojis = ["🎈", "🎉", "🥳", "✨", "🎁", "🍰", "🍾", "🥂"];
+            const left = (i * 7) + 5; // Spaced evenly across screen
+            const delay = (i * 0.45) + "s";
+            const duration = (4.5 + (i % 3) * 1.2) + "s";
+            const emoji = emojis[i % emojis.length];
+            const size = (32 + (i % 4) * 12) + "px";
+            return (
+              <div
+                key={i}
+                className="absolute bottom-0 translate-y-full animate-float-up pointer-events-none"
+                style={{
+                  left: `${left}%`,
+                  animationDelay: delay,
+                  animationDuration: duration,
+                  fontSize: size,
+                }}
+              >
+                {emoji}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <h1
-        key={partyKey}
-        className={`text-4xl md:text-6xl font-black text-center text-white drop-shadow-md mb-12 -rotate-2 origin-center transition-all duration-300 ${
+        className={`text-4xl md:text-6xl font-black text-center text-white drop-shadow-md mb-12 origin-center transition-all duration-300 ${
           isPartying ? "animate-dance scale-110" : ""
         }`}
       >
