@@ -98,7 +98,7 @@ export default function HypnoSpiral() {
     <div className="fixed inset-0">
       <canvas ref={canvasRef} className="block" />
       <div className="absolute bottom-30 left-1/2 -translate-x-1/2 text-white font-mono mix-blend-difference pointer-events-none text-center text-sm md:text-base opacity-80">
-        DRAG TO WARP REALITY (TRY THE CORNERS!)
+        MOVE THE MOUSE TO WARP REALITY (TRY THE CORNERS!)
       </div>
     </div>
   );
