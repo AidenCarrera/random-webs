@@ -9,7 +9,7 @@ const bubbleSort = async (
   update: (arr: number[]) => void,
   checkStop: () => boolean,
   checkPause: () => Promise<void>,
-  delay: number
+  delay: number,
 ) => {
   const a = [...arr];
   for (let i = 0; i < a.length; i++) {
@@ -31,7 +31,7 @@ const selectionSort = async (
   update: (arr: number[]) => void,
   checkStop: () => boolean,
   checkPause: () => Promise<void>,
-  delay: number
+  delay: number,
 ) => {
   const a = [...arr];
   for (let i = 0; i < a.length; i++) {
@@ -57,7 +57,7 @@ const insertionSort = async (
   update: (arr: number[]) => void,
   checkStop: () => boolean,
   checkPause: () => Promise<void>,
-  delay: number
+  delay: number,
 ) => {
   const a = [...arr];
   for (let i = 1; i < a.length; i++) {
@@ -82,7 +82,7 @@ const quickSort = async (
   update: (arr: number[]) => void,
   checkStop: () => boolean,
   checkPause: () => Promise<void>,
-  delay: number
+  delay: number,
 ) => {
   const a = [...arr];
 
@@ -127,7 +127,7 @@ const mergeSort = async (
   update: (arr: number[]) => void,
   checkStop: () => boolean,
   checkPause: () => Promise<void>,
-  delay: number
+  delay: number,
 ) => {
   const a = [...arr];
 
@@ -202,7 +202,7 @@ const heapSort = async (
   update: (arr: number[]) => void,
   checkStop: () => boolean,
   checkPause: () => Promise<void>,
-  delay: number
+  delay: number,
 ) => {
   const a = [...arr];
   const n = a.length;
@@ -265,7 +265,7 @@ export default function SortingRace() {
   const generateRandomData = useCallback((size: number) => {
     return Array.from(
       { length: size },
-      () => Math.floor(Math.random() * 100) + 5
+      () => Math.floor(Math.random() * 100) + 5,
     );
   }, []);
 
@@ -335,17 +335,17 @@ export default function SortingRace() {
     bubbleSort(bubbleArr, setBubbleArr, checkStop, checkPause, delay).then(
       () => {
         if (!stopRef.current) setWinners((prev) => [...prev, "Bubble Sort"]);
-      }
+      },
     );
     selectionSort(selectArr, setSelectArr, checkStop, checkPause, delay).then(
       () => {
         if (!stopRef.current) setWinners((prev) => [...prev, "Selection Sort"]);
-      }
+      },
     );
     insertionSort(insertArr, setInsertArr, checkStop, checkPause, delay).then(
       () => {
         if (!stopRef.current) setWinners((prev) => [...prev, "Insertion Sort"]);
-      }
+      },
     );
 
     quickSort(quickArr, setQuickArr, checkStop, checkPause, delay).then(() => {

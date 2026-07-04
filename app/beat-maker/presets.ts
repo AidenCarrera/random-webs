@@ -1,4 +1,7 @@
-export const PRESETS: Record<string, { name: string; swing: number; tempo: number; grid: number[][] }> = {
+export const PRESETS: Record<
+  string,
+  { name: string; swing: number; tempo: number; grid: number[][] }
+> = {
   default: {
     name: "Default",
     swing: 50,

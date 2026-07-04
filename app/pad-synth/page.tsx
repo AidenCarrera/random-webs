@@ -145,10 +145,10 @@ export default function PadSynth() {
       oscType === "sine"
         ? 3
         : oscType === "triangle"
-        ? 5
-        : oscType === "square"
-        ? -2
-        : 0;
+          ? 5
+          : oscType === "square"
+            ? -2
+            : 0;
     synth.volume.value = volume + volOffset;
     synthRef.current = synth;
     setIsReady(true);
@@ -188,16 +188,16 @@ export default function PadSynth() {
         oscType === "sine"
           ? 3
           : oscType === "triangle"
-          ? 5
-          : oscType === "square"
-          ? -2
-          : 0;
+            ? 5
+            : oscType === "square"
+              ? -2
+              : 0;
       synthRef.current.volume.value = val + offset;
     }
   };
 
   const handleOscChange = (
-    type: "sine" | "triangle" | "square" | "sawtooth"
+    type: "sine" | "triangle" | "square" | "sawtooth",
   ) => {
     setOscType(type);
     if (synthRef.current) {
@@ -206,10 +206,10 @@ export default function PadSynth() {
         type === "sine"
           ? 3
           : type === "triangle"
-          ? 5
-          : type === "square"
-          ? -2
-          : 0;
+            ? 5
+            : type === "square"
+              ? -2
+              : 0;
       synthRef.current.volume.value = volume + offset;
     }
   };
@@ -323,7 +323,7 @@ export default function PadSynth() {
                     key={type}
                     onClick={() =>
                       handleOscChange(
-                        type as "sine" | "triangle" | "square" | "sawtooth"
+                        type as "sine" | "triangle" | "square" | "sawtooth",
                       )
                     }
                     className={`py-2 rounded-xl text-xs font-bold capitalize transition-all duration-200 ${
@@ -383,8 +383,8 @@ export default function PadSynth() {
                     {delayTime === "16n"
                       ? "1/16"
                       : delayTime === "8n"
-                      ? "1/8"
-                      : "1/4"}
+                        ? "1/8"
+                        : "1/4"}
                   </button>
                 </span>
                 <span>{Math.round(delayAmt * 100)}%</span>

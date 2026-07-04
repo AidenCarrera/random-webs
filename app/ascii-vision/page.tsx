@@ -13,7 +13,7 @@ export default function AsciiCamera() {
   const [resolution, setResolution] = useState(120); // Width in chars
   const [contrast, setContrast] = useState(1);
   const [colorMode, setColorMode] = useState<"green" | "amber" | "white">(
-    "green"
+    "green",
   );
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
@@ -236,11 +236,13 @@ export default function AsciiCamera() {
 
       <style jsx>{`
         input[type="range"] {
-          color: ${colorMode === "green"
-            ? "#00ff00"
-            : colorMode === "amber"
-            ? "#ffb000"
-            : "white"};
+          color: ${
+            colorMode === "green"
+              ? "#00ff00"
+              : colorMode === "amber"
+                ? "#ffb000"
+                : "white"
+          };
         }
       `}</style>
     </div>

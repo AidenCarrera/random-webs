@@ -50,7 +50,7 @@ class AudioEngine {
     // Create master chain
     this.limit = new Tone.Limiter(-1).toDestination();
     this.master = new Tone.Volume({ volume: 0, mute: false }).connect(
-      this.limit
+      this.limit,
     );
     this.masterMeter = new Tone.Meter();
     this.master.connect(this.masterMeter);
@@ -224,7 +224,7 @@ class AudioEngine {
   syncState(
     volumes: Record<string, number>,
     mutes: Record<string, boolean>,
-    solos: Record<string, boolean>
+    solos: Record<string, boolean>,
   ) {
     if (!this.master) return;
 
@@ -258,7 +258,7 @@ export default function BeatMaker() {
   const [grid, setGrid] = useState<boolean[][]>(() =>
     Array(INITIAL_TRACKS.length)
       .fill(null)
-      .map(() => Array(STEPS).fill(false))
+      .map(() => Array(STEPS).fill(false)),
   );
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -369,7 +369,7 @@ export default function BeatMaker() {
       setGrid(
         p.grid
           .slice(0, targetTrackCount)
-          .map((row) => row.map((cell) => cell === 1))
+          .map((row) => row.map((cell) => cell === 1)),
       );
       handleSwingChange(p.swing);
       setTempo(p.tempo);
@@ -416,7 +416,7 @@ export default function BeatMaker() {
         });
       },
       Array.from({ length: STEPS }, (_, i) => i),
-      "16n"
+      "16n",
     );
 
     seq.start(0);
@@ -470,7 +470,7 @@ export default function BeatMaker() {
     setGrid(
       Array(tracks.length)
         .fill(null)
-        .map(() => Array(STEPS).fill(false))
+        .map(() => Array(STEPS).fill(false)),
     );
   };
 
@@ -500,7 +500,7 @@ export default function BeatMaker() {
         return newGrid;
       });
     },
-    []
+    [],
   );
 
   const handleMouseDown = useCallback(
@@ -512,7 +512,7 @@ export default function BeatMaker() {
       paintState.current = newState;
       updateStep(trackIdx, stepIdx, newState);
     },
-    [grid, updateStep]
+    [grid, updateStep],
   );
 
   const handleMouseEnter = useCallback(
@@ -521,7 +521,7 @@ export default function BeatMaker() {
         updateStep(trackIdx, stepIdx, paintState.current);
       }
     },
-    [updateStep]
+    [updateStep],
   );
 
   useEffect(() => {
@@ -738,8 +738,8 @@ export default function BeatMaker() {
                         level > -3
                           ? "bg-rose-500"
                           : level > -12
-                          ? "bg-amber-400"
-                          : "bg-emerald-500"
+                            ? "bg-amber-400"
+                            : "bg-emerald-500"
                       }`}
                       style={{
                         height: `${Math.min(100, Math.max(0, height))}%`,
@@ -811,8 +811,8 @@ export default function BeatMaker() {
                       100,
                       Math.max(
                         0,
-                        (((meterValues["master"] || -60) + 60) / 60) * 100
-                      )
+                        (((meterValues["master"] || -60) + 60) / 60) * 100,
+                      ),
                     )}%`,
                   }}
                 />
@@ -951,8 +951,8 @@ const SequencerGrid = memo(function SequencerGrid({
                             isActive
                               ? track.color
                               : isDownbeat
-                              ? "bg-zinc-800"
-                              : "bg-zinc-800/40"
+                                ? "bg-zinc-800"
+                                : "bg-zinc-800/40"
                           }
                           ${
                             currentStep === stepIdx

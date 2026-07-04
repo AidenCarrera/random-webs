@@ -43,7 +43,7 @@ export default function NeonCyber() {
     return str.replace(/[a-zA-Z]/g, (char) => {
       const base = char <= "Z" ? 65 : 97;
       return String.fromCharCode(
-        ((((char.charCodeAt(0) - base + shift) % 26) + 26) % 26) + base
+        ((((char.charCodeAt(0) - base + shift) % 26) + 26) % 26) + base,
       );
     });
   };
@@ -417,20 +417,20 @@ export default function NeonCyber() {
 
         .caesar-slider::-webkit-slider-thumb {
           background-color: #ffff00;
-          box-shadow: 0 0 4px rgba(255,255,0,0.5);
+          box-shadow: 0 0 4px rgba(255, 255, 0, 0.5);
         }
         .caesar-slider::-moz-range-thumb {
           background-color: #ffff00;
-          box-shadow: 0 0 4px rgba(255,255,0,0.5);
+          box-shadow: 0 0 4px rgba(255, 255, 0, 0.5);
         }
 
         .base64-slider::-webkit-slider-thumb {
           background-color: #ff9900;
-          box-shadow: 0 0 4px rgba(255,153,0,0.5);
+          box-shadow: 0 0 4px rgba(255, 153, 0, 0.5);
         }
         .base64-slider::-moz-range-thumb {
           background-color: #ff9900;
-          box-shadow: 0 0 4px rgba(255,153,0,0.5);
+          box-shadow: 0 0 4px rgba(255, 153, 0, 0.5);
         }
       `}</style>
     </div>

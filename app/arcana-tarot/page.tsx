@@ -84,7 +84,7 @@ export default function TarotSpread() {
 
   const revealCard = (index: number) => {
     setSpread((prev) =>
-      prev.map((c, i) => (i === index ? { ...c, revealed: true } : c))
+      prev.map((c, i) => (i === index ? { ...c, revealed: true } : c)),
     );
   };
 

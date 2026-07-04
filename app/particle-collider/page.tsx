@@ -135,7 +135,7 @@ export default function ParticleCollider() {
   const handlePointer = (e: React.PointerEvent) => {
     setMousePos({ x: e.clientX, y: e.clientY });
     setIsMouseDown(
-      e.type === "pointerdown" || (e.type === "pointermove" && e.buttons === 1)
+      e.type === "pointerdown" || (e.type === "pointermove" && e.buttons === 1),
     );
     if (e.type === "pointerup") setIsMouseDown(false);
   };

@@ -1,24 +1,36 @@
-
 export const FILESYSTEM = {
   "~": {
     type: "dir",
     children: {
-      "projects": {
+      projects: {
         type: "dir",
         children: {
-          "secret_project.txt": { type: "file", content: "Project: CHAOS\nStatus: [REDACTED]\nNext Step: Run 'matrix' command." },
-          "notes.txt": { type: "file", content: "To-do:\n1. Become employed\n2. Get a cat\n3. Learn Rust" },
-        }
+          "secret_project.txt": {
+            type: "file",
+            content:
+              "Project: CHAOS\nStatus: [REDACTED]\nNext Step: Run 'matrix' command.",
+          },
+          "notes.txt": {
+            type: "file",
+            content: "To-do:\n1. Become employed\n2. Get a cat\n3. Learn Rust",
+          },
+        },
       },
-      "readme.txt": { type: "file", content: "Welcome to OloOS v1.0\nUse 'help' to see available commands." },
-      "config": {
+      "readme.txt": {
+        type: "file",
+        content: "Welcome to OloOS v1.0\nUse 'help' to see available commands.",
+      },
+      config: {
         type: "dir",
         children: {
-          "settings.json": { type: "file", content: "{ \"theme\": \"olo_green\", \"matrix_mode\": true }" }
-        }
-      }
-    }
-  }
+          "settings.json": {
+            type: "file",
+            content: '{ "theme": "olo_green", "matrix_mode": true }',
+          },
+        },
+      },
+    },
+  },
 };
 
 export const ASCII_ART = {
@@ -58,7 +70,7 @@ export const SYSTEM_INFO = {
   / /      \\ \\
  / /        \\ \\
 /_/          \\_\\
-  `
+  `,
 };
 
 export const JOKES = [
@@ -69,5 +81,5 @@ export const JOKES = [
   "A SQL query walks into a bar, walks up to two tables and asks... 'Can I join you?'",
   "Why do Java programmers wear glasses? Because they don't C#.",
   "In order to understand recursion, you must first understand recursion.",
-  "Why did the developer go broke? Because he used up all his cache."
+  "Why did the developer go broke? Because he used up all his cache.",
 ];

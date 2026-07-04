@@ -66,7 +66,7 @@ export default function MatrixRain() {
       const drops = dropsRef.current;
       for (let i = 0; i < drops.length; i++) {
         const text = characters.charAt(
-          Math.floor(Math.random() * characters.length)
+          Math.floor(Math.random() * characters.length),
         );
         const x = i * fontSize;
         const y = drops[i] * fontSize;

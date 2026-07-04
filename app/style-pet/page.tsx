@@ -156,10 +156,10 @@ export default function DressUpPet() {
                 anim === "JUMP"
                   ? "animate-bounce"
                   : anim === "SPIN"
-                  ? "animate-spin"
-                  : anim === "WIGGLE"
-                  ? "animate-pulse"
-                  : ""
+                    ? "animate-spin"
+                    : anim === "WIGGLE"
+                      ? "animate-pulse"
+                      : ""
               }`}
               onClick={() => triggerAnim("JUMP")}
             >

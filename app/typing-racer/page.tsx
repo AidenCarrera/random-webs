@@ -210,7 +210,7 @@ const DIFFICULTY_SETTINGS = {
 export default function VaporwaveRacer() {
   // Game State
   const [gameState, setGameState] = useState<"menu" | "playing" | "finished">(
-    "menu"
+    "menu",
   );
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
 
@@ -329,7 +329,7 @@ export default function VaporwaveRacer() {
       const finalPoints = Math.round(
         wordPoints *
           comboMultiplier *
-          DIFFICULTY_SETTINGS[difficulty].multiplier
+          DIFFICULTY_SETTINGS[difficulty].multiplier,
       );
 
       setScore((s) => s + finalPoints);
@@ -378,7 +378,7 @@ export default function VaporwaveRacer() {
     totalCharsTyped > 0
       ? Math.max(
           0,
-          Math.round(((totalCharsTyped - errors) / totalCharsTyped) * 100)
+          Math.round(((totalCharsTyped - errors) / totalCharsTyped) * 100),
         )
       : 100;
 
@@ -426,7 +426,8 @@ export default function VaporwaveRacer() {
           }
         }
         .bg-checkerboard {
-          background-image: linear-gradient(45deg, #ff7eb6 25%, transparent 25%),
+          background-image:
+            linear-gradient(45deg, #ff7eb6 25%, transparent 25%),
             linear-gradient(-45deg, #ff7eb6 25%, transparent 25%),
             linear-gradient(45deg, transparent 75%, #ff7eb6 75%),
             linear-gradient(-45deg, transparent 75%, #ff7eb6 75%);
@@ -564,7 +565,7 @@ export default function VaporwaveRacer() {
                             {DIFFICULTY_SETTINGS[level].multiplier}
                           </div>
                         </button>
-                      )
+                      ),
                     )}
                   </div>
                 </div>

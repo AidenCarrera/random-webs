@@ -45,7 +45,7 @@ const MORSE_CODE: Record<string, string> = {
 } as const;
 
 const REVERSE_MORSE_CODE: Record<string, string> = Object.entries(
-  MORSE_CODE
+  MORSE_CODE,
 ).reduce((acc, [char, code]) => ({ ...acc, [code]: char }), {});
 
 export default function MorseTelegraph() {

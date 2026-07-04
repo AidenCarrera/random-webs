@@ -53,7 +53,7 @@ type Tool = "pencil" | "eraser" | "fill" | "picker";
 
 export default function PixelArt() {
   const [grid, setGrid] = useState<string[]>(
-    Array(GRID_SIZE * GRID_SIZE).fill(DEFAULT_COLOR)
+    Array(GRID_SIZE * GRID_SIZE).fill(DEFAULT_COLOR),
   );
 
   const [history, setHistory] = useState<string[][]>([
@@ -113,7 +113,7 @@ export default function PixelArt() {
   const floodFill = (
     index: number,
     targetColor: string,
-    replacementColor: string
+    replacementColor: string,
   ) => {
     if (targetColor === replacementColor) return;
 
@@ -197,7 +197,7 @@ export default function PixelArt() {
 
     const element = document.elementFromPoint(
       touch.clientX,
-      touch.clientY
+      touch.clientY,
     ) as HTMLElement;
     if (element && element.dataset.index) {
       const index = parseInt(element.dataset.index, 10);

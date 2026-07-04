@@ -15,7 +15,7 @@ const ScrambleText = ({
     text
       .split("")
       .map(() => LETTERS[Math.floor(Math.random() * 26)])
-      .join("")
+      .join(""),
   );
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const iterationRef = useRef(0);
@@ -35,7 +35,7 @@ const ScrambleText = ({
             }
             return LETTERS[Math.floor(Math.random() * 26)];
           })
-          .join("")
+          .join(""),
       );
 
       if (iterationRef.current >= text.length) {
