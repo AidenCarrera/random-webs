@@ -14,7 +14,7 @@ const PAGES = [
   "/click-speed-test",
   "/pixel-art",
   "/nature-zen",
-  "/glitch-chaos",
+  "/dont-click-me",
   "/focus-timer",
   // Phase 2
   "/matrix-rain",

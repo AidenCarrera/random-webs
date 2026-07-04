@@ -1,21 +1,21 @@
 "use client";
- 
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
- 
+
 export default function PastelDream() {
   const [speed, setSpeed] = useState(4); // seconds per cycle
   const [isInhale, setIsInhale] = useState(true);
- 
+
   useEffect(() => {
     const interval = setInterval(() => {
       setIsInhale((prev) => !prev);
     }, speed * 1000);
     return () => clearInterval(interval);
   }, [speed]);
- 
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex flex-col items-center justify-center p-8 transition-all duration-1000 relative">
+    <div className="min-h-screen bg-linear-to-br from-indigo-50 via-purple-50 to-pink-50 flex flex-col items-center justify-center p-8 transition-all duration-1000 relative">
       <header className="absolute top-16 md:top-20 text-center select-none">
         <h1 className="text-xl font-light text-slate-600/70 tracking-[0.4em] uppercase">
           Mindful Breathe
@@ -45,7 +45,7 @@ export default function PastelDream() {
           {isInhale ? "Inhale" : "Exhale"}
         </motion.div>
       </div>
- 
+
       <div className="mt-32 md:mt-40 bg-white/25 backdrop-blur-md px-6 py-5 rounded-2xl border border-white/40 shadow-lg flex flex-col items-center gap-4 w-72 md:w-80">
         <div className="relative flex items-center w-full h-5 cursor-pointer group">
           <input
@@ -61,7 +61,7 @@ export default function PastelDream() {
           <div className="absolute inset-x-0 h-1 bg-slate-200/50 rounded-full" />
           {/* Filled portion */}
           <div
-            className="absolute left-0 h-1 bg-gradient-to-r from-blue-300 to-pink-300 rounded-full"
+            className="absolute left-0 h-1 bg-linear-to-r from-blue-300 to-pink-300 rounded-full"
             style={{
               width: `${((speed - 2) / 6) * 100}%`,
             }}
@@ -79,7 +79,8 @@ export default function PastelDream() {
           <span>Slow (8s)</span>
         </div>
         <label className="text-slate-500/90 font-light text-xs tracking-wider uppercase mt-1">
-          Breath Duration: <span className="font-normal text-slate-600">{speed}s</span>
+          Breath Duration:{" "}
+          <span className="font-normal text-slate-600">{speed}s</span>
         </label>
       </div>
     </div>
