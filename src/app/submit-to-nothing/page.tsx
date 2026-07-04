@@ -323,7 +323,7 @@ export default function SubmitToNothing() {
                 <button
                   onClick={handleShred}
                   disabled={!complaint.trim()}
-                  className="w-full py-4 bg-linear-to-r from-purple-950 to-indigo-950 border border-purple-900/60 hover:from-purple-900/40 hover:to-indigo-900/40 text-purple-300 rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-30 disabled:pointer-events-none transition-all active:scale-[0.98] shadow-lg shadow-purple-950/40 flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-linear-to-r from-purple-950 to-indigo-950 border border-transparent hover:border-purple-800/40 hover:from-purple-900 hover:to-indigo-900 text-purple-300 hover:text-white rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-30 disabled:pointer-events-none transition-all duration-300 active:scale-[0.98] shadow-lg shadow-purple-950/40 hover:shadow-[0_0_20px_rgba(168,85,247,0.35)] flex items-center justify-center gap-2"
                 >
                   <Trash2 size={16} />
                   <span>SHRED FOREVER</span>
