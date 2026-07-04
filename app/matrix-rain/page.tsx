@@ -99,18 +99,12 @@ export default function MatrixRain() {
       {/* Overlay UI */}
       <div className="absolute top-8 left-8 z-10 select-none">
         <h1 className="text-4xl font-bold text-[#0F0] tracking-widest drop-shadow-[0_0_10px_#0F0] animate-pulse">
-          MATRIX_SYSTEM
+          matrix_system
         </h1>
         <div className="flex items-center gap-2 text-[#0F0]/70 mt-2 text-xs">
           <Monitor className="w-4 h-4" />
           <span>CONNECTED: 127.0.0.1</span>
         </div>
-      </div>
-
-      <div className="absolute bottom-10 w-full text-center z-10 pointer-events-none">
-        <p className="text-[#0F0]/50 text-sm tracking-[0.5em] animate-pulse">
-          CODE RAIN
-        </p>
       </div>
 
       <button

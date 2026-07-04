@@ -370,7 +370,7 @@ export default function SortingRace() {
       <header className="mb-8 flex flex-col md:flex-row justify-between items-center md:items-end border-b-2 border-slate-300 pb-4 gap-4">
         <div className="text-center md:text-left">
           <h1 className="text-4xl font-black tracking-tight text-slate-800">
-            ALGO_RACE
+            ALGO RACE
           </h1>
           <p className="text-slate-500">Visualizing Efficiency</p>
         </div>

@@ -149,14 +149,14 @@ export default function ParticleCollider() {
           width: 16px;
           border-radius: 50%;
           background: #ffffff;
-          box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+          box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
           cursor: pointer;
           transition: all 0.1s ease;
           margin-top: -6px;
         }
         input[type="range"]::-webkit-slider-thumb:hover {
           transform: scale(1.2);
-          box-shadow: 0 0 15px rgba(255, 255, 255, 1);
+          box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
         }
         input[type="range"]::-webkit-slider-runnable-track {
           width: 100%;
@@ -170,13 +170,13 @@ export default function ParticleCollider() {
           width: 16px;
           border-radius: 50%;
           background: #ffffff;
-          box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+          box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
           cursor: pointer;
           transition: all 0.1s ease;
         }
         input[type="range"]::-moz-range-thumb:hover {
           transform: scale(1.2);
-          box-shadow: 0 0 15px rgba(255, 255, 255, 1);
+          box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
         }
       `}</style>
       <canvas
@@ -202,7 +202,7 @@ export default function ParticleCollider() {
           onClick={() => setMode("attract")}
           className={`flex items-center gap-2 px-6 py-2 rounded-full font-bold transition-all ${
             mode === "attract"
-              ? "bg-white text-black shadow-[0_0_20px_white]"
+              ? "bg-white text-black shadow-[0_0_12px_rgba(255,255,255,0.6)]"
               : "text-white hover:bg-white/10"
           }`}
         >
@@ -213,7 +213,7 @@ export default function ParticleCollider() {
           onClick={() => setMode("repel")}
           className={`flex items-center gap-2 px-6 py-2 rounded-full font-bold transition-all ${
             mode === "repel"
-              ? "bg-[#ff00ff] text-white shadow-[0_0_20px_#ff00ff]"
+              ? "bg-[#ff00ff] text-white shadow-[0_0_12px_rgba(255,0,255,0.6)]"
               : "text-white hover:bg-white/10"
           }`}
         >

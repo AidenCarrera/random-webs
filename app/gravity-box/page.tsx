@@ -170,7 +170,7 @@ export default function GravityBox() {
     <div ref={sceneRef} className="fixed inset-0 overflow-hidden text-white">
       <div className="absolute bottom-6 left-6 pointer-events-none select-none opacity-30 hover:opacity-100 transition-opacity duration-300">
         <h1 className="font-black text-2xl tracking-tighter text-slate-500">
-          GRAVITY_SANDBOX
+          GRAVITY SANDBOX
         </h1>
       </div>
 

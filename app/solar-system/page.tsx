@@ -135,16 +135,8 @@ export default function SolarSystem() {
       {/* UI: Header */}
       <div className="absolute top-8 left-8 z-50 pointer-events-none">
         <h1 className="text-4xl font-light tracking-[0.25em] uppercase text-white/90">
-          Helios_System
+          Helios System
         </h1>
-        <p className="text-xs text-white/40 mt-2 font-mono flex items-center gap-2">
-          STATUS: {paused ? "PAUSED" : "ACTIVE"}
-          <span
-            className={`w-2 h-2 rounded-full ${
-              paused ? "bg-red-500" : "bg-green-500 animate-pulse"
-            }`}
-          />
-        </p>
       </div>
 
       {/* UI: Time Scale Slider */}
