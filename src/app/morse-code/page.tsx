@@ -58,6 +58,7 @@ export default function MorseTelegraph() {
     .join(" ");
   const [isTransmitting, setIsTransmitting] = useState(false);
   const [lightOn, setLightOn] = useState(false);
+  const [showCheatSheet, setShowCheatSheet] = useState(false);
 
   const oscRef = useRef<Tone.Synth | null>(null);
   const stopSignalRef = useRef<(() => void) | null>(null);
@@ -162,6 +163,7 @@ export default function MorseTelegraph() {
   const tapStartTime = useRef<number>(0);
   const currentSignal = useRef<string>("");
   const decodeTimeout = useRef<NodeJS.Timeout | null>(null);
+  const isTappingRef = useRef(false);
 
   const manualTapStart = async () => {
     // Clear any pending decode, we are continuing the sequence
@@ -170,6 +172,7 @@ export default function MorseTelegraph() {
       decodeTimeout.current = null;
     }
 
+    isTappingRef.current = true;
     tapStartTime.current = Date.now();
     await initAudio();
     oscRef.current?.triggerAttack(600);
@@ -177,6 +180,9 @@ export default function MorseTelegraph() {
   };
 
   const manualTapEnd = () => {
+    if (!isTappingRef.current) return;
+    isTappingRef.current = false;
+
     oscRef.current?.triggerRelease();
     setLightOn(false);
 
@@ -232,7 +238,7 @@ export default function MorseTelegraph() {
 
         <div className="text-center border-b-2 border-[#8b5a2b]/30 pb-4">
           <h1 className="text-3xl md:text-5xl font-bold uppercase tracking-widest text-[#c0a080] drop-shadow-[2px_2px_0px_#000]">
-            Telegraph V.1
+            Telegraph
           </h1>
           <p className="text-sm opacity-50 mt-2 italic">
             Morse Transmission Unit
@@ -288,7 +294,7 @@ export default function MorseTelegraph() {
           </div>
 
           {/* Controls */}
-          <div className="flex flex-col gap-4 w-full md:w-auto">
+          <div className="flex flex-col gap-3 w-full md:w-auto">
             {isTransmitting ? (
               <button
                 onClick={stopTransmission}
@@ -305,6 +311,12 @@ export default function MorseTelegraph() {
                 TRANSMIT
               </button>
             )}
+            <button
+              onClick={() => setShowCheatSheet(true)}
+              className="px-6 py-2 bg-[#5c4033] text-[#ffeebb] font-bold text-xs uppercase tracking-widest border-b-4 border-[#3e2b22] active:border-b-0 active:translate-y-1 transition-all shadow-md hover:bg-[#6e4e3f] rounded cursor-pointer text-center"
+            >
+              Morse Sheet
+            </button>
           </div>
 
           {/* Manual Key */}
@@ -313,14 +325,15 @@ export default function MorseTelegraph() {
               onMouseDown={manualTapStart}
               onMouseUp={manualTapEnd}
               onMouseLeave={manualTapEnd}
-              onTouchStart={() => {
+              onTouchStart={(e) => {
+                e.preventDefault();
                 manualTapStart();
               }}
               onTouchEnd={(e) => {
                 e.preventDefault();
                 manualTapEnd();
               }}
-              className="w-32 h-32 rounded-full bg-linear-to-b from-[#d4af37] to-[#8b7500] shadow-[0_10px_0_#5c4d00,0_15px_20px_rgba(0,0,0,0.5)] active:shadow-[0_2px_0_#5c4d00,0_5px_10px_rgba(0,0,0,0.5)] active:translate-y-2 transition-all border-4 border-[#ffdf80] flex items-center justify-center touch-none"
+              className="w-32 h-32 rounded-full bg-linear-to-b from-[#d4af37] to-[#8b7500] shadow-[0_10px_0_#5c4d00,0_15px_20px_rgba(0,0,0,0.5)] active:shadow-[0_2px_0_#5c4d00,0_5px_10px_rgba(0,0,0,0.5)] active:translate-y-2 transition-all border-4 border-[#ffdf80] flex items-center justify-center touch-none select-none"
             >
               <span className="text-[#3e2b22] font-bold text-lg opacity-50">
                 TAP
@@ -329,6 +342,57 @@ export default function MorseTelegraph() {
           </div>
         </div>
       </div>
+
+      {/* Morse Code Reference Sheet Modal */}
+      {showCheatSheet && (
+        <div
+          onClick={() => setShowCheatSheet(false)}
+          className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 animate-fade-in"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#1e1815] border-8 border-[#8b5a2b] p-6 md:p-8 rounded-lg shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto relative text-[#d4b483]"
+            style={{ fontFamily: '"Courier Prime", monospace' }}
+          >
+            {/* Screw Details */}
+            <div className="absolute top-2 left-2 w-4 h-4 rounded-full bg-[#5c4033] shadow-[inset_1px_1px_2px_rgba(0,0,0,0.5)] flex items-center justify-center text-black/50 text-[8px] transform rotate-45">
+              +
+            </div>
+            <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#5c4033] shadow-[inset_1px_1px_2px_rgba(0,0,0,0.5)] flex items-center justify-center text-black/50 text-[8px] transform -rotate-12">
+              +
+            </div>
+
+            <h2 className="text-2xl font-bold uppercase tracking-widest text-[#c0a080] mb-5 text-center border-b border-[#8b5a2b]/30 pb-3">
+              Morse Code Cheat Sheet
+            </h2>
+
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 text-[10px] font-bold text-center">
+              {Object.entries(MORSE_CODE)
+                .filter(([char]) => char !== " ") // Exclude space
+                .map(([char, code]) => (
+                  <div
+                    key={char}
+                    className="flex flex-col items-center bg-[#1a1512]/80 py-2.5 px-1 rounded border border-[#3e3228]/50 shadow-inner"
+                  >
+                    <span className="text-[#ffeebb] text-xs font-bold">
+                      {char}
+                    </span>
+                    <span className="text-[#ff8c00] tracking-widest mt-1 text-sm font-black">
+                      {code}
+                    </span>
+                  </div>
+                ))}
+            </div>
+
+            <button
+              onClick={() => setShowCheatSheet(false)}
+              className="mt-6 px-6 py-2 bg-[#8b5a2b] text-[#ffeebb] hover:bg-[#9c6b3c] font-bold uppercase tracking-widest border-b-4 border-[#5c3a1b] active:border-b-0 active:translate-y-1 transition-all shadow-md rounded mx-auto block cursor-pointer"
+            >
+              Close Sheet
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
