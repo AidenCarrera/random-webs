@@ -7,7 +7,6 @@ import { useState } from "react";
 const PAGES = [
   // Phase 1
   "/olo-terminal",
-  "/shout-box",
   "/neon-cyber",
   "/mindful-breathe",
   "/daily-oracle",
