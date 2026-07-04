@@ -1,12 +1,58 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Matter from "matter-js";
 
 export default function GravityBox() {
   const sceneRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<Matter.Engine | null>(null);
+  const renderRef = useRef<Matter.Render | null>(null);
 
+  const leftWallRef = useRef<Matter.Body | null>(null);
+  const rightWallRef = useRef<Matter.Body | null>(null);
+  const topWallRef = useRef<Matter.Body | null>(null);
+  const bottomWallRef = useRef<Matter.Body | null>(null);
+
+  const [windowSize, setWindowSize] = useState({ width: 1200, height: 800 });
+  const [boxWidth, setBoxWidth] = useState(800);
+  const [boxHeight, setBoxHeight] = useState(600);
+
+  const boxWidthRef = useRef(boxWidth);
+  const boxHeightRef = useRef(boxHeight);
+
+  useEffect(() => {
+    boxWidthRef.current = boxWidth;
+  }, [boxWidth]);
+
+  useEffect(() => {
+    boxHeightRef.current = boxHeight;
+  }, [boxHeight]);
+
+  // Window sizing & resize canvas sync
+  useEffect(() => {
+    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    setBoxWidth(Math.min(800, window.innerWidth - 80));
+    setBoxHeight(Math.min(600, window.innerHeight - 200));
+
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+      if (renderRef.current) {
+        renderRef.current.options.width = window.innerWidth;
+        renderRef.current.options.height = window.innerHeight;
+        if (renderRef.current.canvas) {
+          renderRef.current.canvas.width = window.innerWidth;
+          renderRef.current.canvas.height = window.innerHeight;
+        }
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  // Initialize Matter.js Physics simulation
   useEffect(() => {
     if (!sceneRef.current) return;
 
@@ -20,7 +66,10 @@ export default function GravityBox() {
       Events = Matter.Events,
       Body = Matter.Body;
 
-    const engine = Engine.create();
+    const engine = Engine.create({
+      positionIterations: 12,
+      velocityIterations: 12,
+    });
     engineRef.current = engine;
     const world = engine.world;
 
@@ -34,47 +83,38 @@ export default function GravityBox() {
         background: "#0f172a",
       },
     });
+    renderRef.current = render;
 
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
+    // Reset shapes if they leak outside the containment box
     Events.on(engine, "beforeUpdate", () => {
       const allBodies = Composite.allBodies(engine.world);
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      const w = boxWidthRef.current;
+      const h = boxHeightRef.current;
 
       allBodies.forEach((body) => {
         if (body.isStatic) return;
 
-        // If body is outside the screen bounds, reset it
+        const pad = 30; // reset immediately if they begin to penetrate the walls
         if (
-          body.position.x < -50 ||
-          body.position.x > width + 50 ||
-          body.position.y < -50 ||
-          body.position.y > height + 50
+          body.position.x < cx - w / 2 - pad ||
+          body.position.x > cx + w / 2 + pad ||
+          body.position.y < cy - h / 2 - pad ||
+          body.position.y > cy + h / 2 + pad
         ) {
-          Body.setPosition(body, {
-            x: width / 2,
-            y: height / 2,
-          });
+          Body.setPosition(body, { x: cx, y: cy });
           Body.setVelocity(body, { x: 0, y: 0 });
         }
       });
     });
 
-    const wallOptions = { isStatic: true, render: { fillStyle: "#334155" } };
-
-    Composite.add(world, [
-      Bodies.rectangle(width / 2, -1000, width, 2000, wallOptions),
-
-      Bodies.rectangle(width / 2, height + 1000, width, 2000, wallOptions),
-
-      Bodies.rectangle(-1000, height / 2, 2000, height, wallOptions),
-
-      Bodies.rectangle(width + 1000, height / 2, 2000, height, wallOptions),
-    ]);
-
+    // Populate initial shapes centered inside the default box area
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
     for (let i = 0; i < 40; i++) {
-      const x = Math.random() * (width - 100) + 50;
-      const y = Math.random() * (height - 100) + 50;
+      const x = cx + (Math.random() - 0.5) * (boxWidthRef.current * 0.7);
+      const y = cy + (Math.random() - 0.5) * (boxHeightRef.current * 0.7);
       const size = Math.random() * 40 + 20;
       const color = ["#ff006e", "#8338ec", "#3a86ff", "#fb5607", "#ffbe0b"][
         Math.floor(Math.random() * 5)
@@ -118,11 +158,41 @@ export default function GravityBox() {
     };
   }, []);
 
+  // Dyn walls reconstruction matching sliders
+  useEffect(() => {
+    const engine = engineRef.current;
+    if (!engine) return;
+
+    if (leftWallRef.current) Matter.Composite.remove(engine.world, leftWallRef.current);
+    if (rightWallRef.current) Matter.Composite.remove(engine.world, rightWallRef.current);
+    if (topWallRef.current) Matter.Composite.remove(engine.world, topWallRef.current);
+    if (bottomWallRef.current) Matter.Composite.remove(engine.world, bottomWallRef.current);
+
+    const cx = windowSize.width / 2;
+    const cy = windowSize.height / 2;
+    const thickness = 100; // Deep 100px thickness prevents tunneling completely
+    const wallOptions = { isStatic: true, render: { fillStyle: "#475569" } };
+
+    // Taller left/right walls overlay the corners seamlessly and eliminate any 1px gaps
+    const leftWall = Matter.Bodies.rectangle(cx - boxWidth / 2 - thickness / 2, cy, thickness, boxHeight + 2 * thickness, wallOptions);
+    const rightWall = Matter.Bodies.rectangle(cx + boxWidth / 2 + thickness / 2, cy, thickness, boxHeight + 2 * thickness, wallOptions);
+    const topWall = Matter.Bodies.rectangle(cx, cy - boxHeight / 2 - thickness / 2, boxWidth + 2 * thickness, thickness, wallOptions);
+    const bottomWall = Matter.Bodies.rectangle(cx, cy + boxHeight / 2 + thickness / 2, boxWidth + 2 * thickness, thickness, wallOptions);
+
+    leftWallRef.current = leftWall;
+    rightWallRef.current = rightWall;
+    topWallRef.current = topWall;
+    bottomWallRef.current = bottomWall;
+
+    Matter.Composite.add(engine.world, [leftWall, rightWall, topWall, bottomWall]);
+  }, [boxWidth, boxHeight, windowSize]);
+
   const addShape = () => {
     if (!engineRef.current) return;
-    const width = window.innerWidth;
-    const x = Math.random() * (width - 100) + 50;
-    const y = 50;
+    const cx = windowSize.width / 2;
+    const cy = windowSize.height / 2;
+    const x = cx + (Math.random() - 0.5) * (boxWidth * 0.6);
+    const y = cy - boxHeight / 2 + 30; // Spawn near the top of the box
     const size = Math.random() * 40 + 20;
     const color = ["#ff006e", "#8338ec", "#3a86ff", "#fb5607", "#ffbe0b"][
       Math.floor(Math.random() * 5)
@@ -146,7 +216,6 @@ export default function GravityBox() {
   const removeShape = () => {
     if (!engineRef.current) return;
     const allBodies = Matter.Composite.allBodies(engineRef.current.world);
-    // Filter out static bodies (walls) and constraints
     const dynamicBodies = allBodies.filter((b) => !b.isStatic);
     if (dynamicBodies.length > 0) {
       const lastBody = dynamicBodies[dynamicBodies.length - 1];
@@ -166,20 +235,47 @@ export default function GravityBox() {
     });
   };
 
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startAction = (action: () => void) => {
+    if (intervalRef.current) return;
+    action(); // Run immediately on press
+    intervalRef.current = setInterval(action, 80); // Repeat every 80ms
+  };
+
+  const stopAction = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  // Clean up timers on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
   return (
     <div ref={sceneRef} className="fixed inset-0 overflow-hidden text-white">
-      <div className="absolute bottom-6 left-6 pointer-events-none select-none opacity-30 hover:opacity-100 transition-opacity duration-300">
-        <h1 className="font-black text-2xl tracking-tighter text-slate-500">
-          GRAVITY SANDBOX
+      <div className="absolute bottom-8 left-8 pointer-events-none select-none opacity-20 hover:opacity-90 transition-opacity duration-300">
+        <h1 className="font-black text-4xl md:text-5xl tracking-tighter text-slate-500/80 uppercase">
+          GRAVITY BOX
         </h1>
       </div>
 
       {/* Floating Top Toolbar */}
-      <div className="fixed top-8 left-1/2 -translate-x-1/2 flex items-center gap-4 px-6 py-3 bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl z-50 transition-transform duration-300 hover:scale-105">
+      <div className="fixed top-8 left-1/2 -translate-x-1/2 flex items-center gap-4 px-6 py-3 bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl z-50 transition-transform duration-300 hover:scale-102">
         <button
-          onClick={addShape}
-          className="group flex flex-col items-center justify-center p-3 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-all duration-200 w-12 h-12 md:w-14 md:h-14 md:hover:w-32 md:hover:rounded-2xl overflow-hidden relative"
-          title="Add Shape"
+          onClick={(e) => e.preventDefault()}
+          onMouseDown={() => startAction(addShape)}
+          onMouseUp={stopAction}
+          onMouseLeave={stopAction}
+          onTouchStart={(e) => { e.preventDefault(); startAction(addShape); }}
+          onTouchEnd={stopAction}
+          className="group flex flex-col items-center justify-center p-3 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-all duration-200 w-12 h-12 md:w-14 md:h-14 md:hover:w-36 md:hover:rounded-2xl overflow-hidden relative"
+          title="Add Shape (Hold)"
         >
           <span className="absolute md:group-hover:opacity-0 transition-opacity duration-200">
             <svg
@@ -198,14 +294,19 @@ export default function GravityBox() {
             </svg>
           </span>
           <span className="hidden md:flex opacity-0 group-hover:opacity-100 absolute text-xs font-bold whitespace-nowrap">
-            Add Shape
+            Add (Hold)
           </span>
         </button>
 
         <button
-          onClick={removeShape}
-          className="group flex flex-col items-center justify-center p-3 rounded-full bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 active:scale-90 transition-all duration-200 w-12 h-12 md:w-14 md:h-14 md:hover:w-32 md:hover:rounded-2xl overflow-hidden relative"
-          title="Remove Shape"
+          onClick={(e) => e.preventDefault()}
+          onMouseDown={() => startAction(removeShape)}
+          onMouseUp={stopAction}
+          onMouseLeave={stopAction}
+          onTouchStart={(e) => { e.preventDefault(); startAction(removeShape); }}
+          onTouchEnd={stopAction}
+          className="group flex flex-col items-center justify-center p-3 rounded-full bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 active:scale-90 transition-all duration-200 w-12 h-12 md:w-14 md:h-14 md:hover:w-36 md:hover:rounded-2xl overflow-hidden relative"
+          title="Remove Shape (Hold)"
         >
           <span className="absolute md:group-hover:opacity-0 transition-opacity duration-200">
             <svg
@@ -224,7 +325,7 @@ export default function GravityBox() {
             </svg>
           </span>
           <span className="hidden md:flex opacity-0 group-hover:opacity-100 absolute text-xs font-bold whitespace-nowrap">
-            Remove Shape
+            Remove (Hold)
           </span>
         </button>
 
@@ -254,6 +355,34 @@ export default function GravityBox() {
             CHAOS
           </span>
         </button>
+
+        <div className="w-px h-8 bg-white/10 mx-1"></div>
+
+        {/* Dynamic Box Width Slider */}
+        <div className="flex flex-col gap-1 w-20 sm:w-28 text-left">
+          <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Width</span>
+          <input
+            type="range"
+            min="250"
+            max={Math.max(windowSize.width - 60, 400)}
+            value={boxWidth}
+            onChange={(e) => setBoxWidth(parseInt(e.target.value))}
+            className="sandbox-slider"
+          />
+        </div>
+
+        {/* Dynamic Box Height Slider */}
+        <div className="flex flex-col gap-1 w-20 sm:w-28 text-left">
+          <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Height</span>
+          <input
+            type="range"
+            min="250"
+            max={Math.max(windowSize.height - 180, 400)}
+            value={boxHeight}
+            onChange={(e) => setBoxHeight(parseInt(e.target.value))}
+            className="sandbox-slider"
+          />
+        </div>
       </div>
     </div>
   );
