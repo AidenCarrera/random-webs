@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -11,15 +11,21 @@ const ScrambleText = ({
   text: string;
   className?: string;
 }) => {
-  const [display, setDisplay] = useState(() =>
-    text
-      .split("")
-      .map(() => LETTERS[Math.floor(Math.random() * 26)])
-      .join(""),
-  );
+  const [display, setDisplay] = useState(text);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const iterationRef = useRef(0);
   const [isRevealed, setIsRevealed] = useState(false);
+
+  useEffect(() => {
+    setDisplay(
+      text
+        .split("")
+        .map((char) =>
+          char === " " ? " " : LETTERS[Math.floor(Math.random() * 26)],
+        )
+        .join(""),
+    );
+  }, [text]);
 
   const startScramble = () => {
     if (isRevealed) return;

@@ -75,18 +75,18 @@ export default function AsciiCamera() {
     >
       {/* Main Container TV Frame */}
       <div
-        className="relative w-full max-w-7xl p-6 md:p-8 border-4 rounded-3xl bg-[#111] shadow-2xl transition-all duration-500 shadow-[0_0_30px_rgba(0,0,0,0.8)]"
-        style={{ borderColor: color, boxShadow: `0 0 30px rgba(0,0,0,0.8), 0 0 15px ${color}33` }}
+        className="relative w-full max-w-7xl p-6 md:p-8 border-4 rounded-3xl bg-[#111] transition-all duration-500"
+        style={{
+          borderColor: color,
+          boxShadow: `0 0 30px rgba(0,0,0,0.8), 0 0 15px ${color}33`,
+        }}
       >
         {/* CRT Scanline Overlay */}
         <div className="absolute inset-0 pointer-events-none z-20 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_4px,4px_100%] rounded-2xl" />
 
-
         <div className="relative z-10">
           {/* Header */}
-          <div
-            className="flex justify-between items-center mb-4 pb-2 border-b border-opacity-30 border-[var(--theme-color)] text-[var(--theme-color)]"
-          >
+          <div className="flex justify-between items-center mb-4 pb-2 border-b border-opacity-30 border-(--theme-color) text-(--theme-color)">
             <div className="flex items-center gap-2">
               <ImageIcon className="w-6 h-6 animate-pulse" />
               <h1 className="text-xl font-bold tracking-widest">
@@ -102,9 +102,7 @@ export default function AsciiCamera() {
           <div className="bg-black p-4 rounded-xl border border-white/5 w-full min-h-[70vh] flex items-center justify-center overflow-hidden">
             {!imageSrc ? (
               <div className="text-center space-y-4">
-                <label
-                  className="cursor-pointer px-8 py-3 border-2 font-bold uppercase tracking-widest hover:bg-[var(--theme-color)] hover:text-black transition-all inline-flex items-center gap-2 border-[var(--theme-color)] text-[var(--theme-color)]"
-                >
+                <label className="cursor-pointer px-8 py-3 border-2 font-bold uppercase tracking-widest hover:bg-(--theme-color) hover:text-black transition-all inline-flex items-center gap-2 border-(--theme-color) text-(--theme-color)">
                   <Upload className="w-5 h-5" />
                   Upload Image
                   <input
@@ -120,7 +118,7 @@ export default function AsciiCamera() {
               </div>
             ) : (
               <pre
-                className="leading-none font-bold text-center whitespace-pre text-[var(--theme-color)]"
+                className="leading-none font-bold text-center whitespace-pre text-(--theme-color)"
                 style={{
                   fontFamily: "'Courier New', Courier, monospace",
                   fontSize: `calc(min(100vw - 80px, 1180px, (75vh - 100px) * ${aspectRatio}) * 1.6 / ${resolution})`,
@@ -136,7 +134,7 @@ export default function AsciiCamera() {
           {imageSrc && (
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-[var(--theme-color)]">
+                <label className="text-xs font-bold uppercase text-(--theme-color)">
                   Density (Res)
                 </label>
                 <input
@@ -149,7 +147,7 @@ export default function AsciiCamera() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-[var(--theme-color)]">
+                <label className="text-xs font-bold uppercase text-(--theme-color)">
                   Contrast
                 </label>
                 <input
@@ -162,12 +160,14 @@ export default function AsciiCamera() {
                   className="w-full accent-current h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer"
                 />
               </div>
-              <div className="flex justify-between items-end gap-3 text-[var(--theme-color)]">
+              <div className="flex justify-between items-end gap-3 text-(--theme-color)">
                 {/* Green Preset */}
                 <button
                   onClick={() => setColor("#00ff00")}
                   className={`h-8 w-8 rounded-full bg-[#00ff00] cursor-pointer transition-all ${
-                    color === "#00ff00" ? "ring-2 ring-offset-2 ring-offset-[#111] ring-white scale-110" : "opacity-60 hover:opacity-100"
+                    color === "#00ff00"
+                      ? "ring-2 ring-offset-2 ring-offset-[#111] ring-white scale-110"
+                      : "opacity-60 hover:opacity-100"
                   }`}
                   title="Green"
                 />
@@ -175,7 +175,9 @@ export default function AsciiCamera() {
                 <button
                   onClick={() => setColor("#0088ff")}
                   className={`h-8 w-8 rounded-full bg-[#0088ff] cursor-pointer transition-all ${
-                    color === "#0088ff" ? "ring-2 ring-offset-2 ring-offset-[#111] ring-white scale-110" : "opacity-60 hover:opacity-100"
+                    color === "#0088ff"
+                      ? "ring-2 ring-offset-2 ring-offset-[#111] ring-white scale-110"
+                      : "opacity-60 hover:opacity-100"
                   }`}
                   title="Blue"
                 />
@@ -183,14 +185,18 @@ export default function AsciiCamera() {
                 <button
                   onClick={() => setColor("#ff3333")}
                   className={`h-8 w-8 rounded-full bg-[#ff3333] cursor-pointer transition-all ${
-                    color === "#ff3333" ? "ring-2 ring-offset-2 ring-offset-[#111] ring-white scale-110" : "opacity-60 hover:opacity-100"
+                    color === "#ff3333"
+                      ? "ring-2 ring-offset-2 ring-offset-[#111] ring-white scale-110"
+                      : "opacity-60 hover:opacity-100"
                   }`}
                   title="Red"
                 />
                 {/* Custom Color Picker */}
                 <div
                   className={`relative h-8 w-8 rounded-full overflow-hidden border border-white/20 cursor-pointer transition-all ${
-                    color !== "#00ff00" && color !== "#0088ff" && color !== "#ff3333"
+                    color !== "#00ff00" &&
+                    color !== "#0088ff" &&
+                    color !== "#ff3333"
                       ? "ring-2 ring-offset-2 ring-offset-[#111] ring-white scale-110"
                       : "opacity-60 hover:opacity-100"
                   }`}
@@ -205,13 +211,14 @@ export default function AsciiCamera() {
                   <div
                     className="h-full w-full"
                     style={{
-                      background: "conic-gradient(from 0deg, red, yellow, green, cyan, blue, magenta, red)",
+                      background:
+                        "conic-gradient(from 0deg, red, yellow, green, cyan, blue, magenta, red)",
                     }}
                   />
                 </div>
 
                 <label
-                  className="ml-auto p-2 border border-current hover:bg-[var(--theme-color)]/10 rounded transition-colors cursor-pointer"
+                  className="ml-auto p-2 border border-current hover:bg-(--theme-color)/10 rounded transition-colors cursor-pointer"
                   title="Upload New Image"
                 >
                   <Upload className="w-5 h-5 text-current" />

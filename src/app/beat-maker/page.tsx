@@ -2,36 +2,98 @@
 
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import * as Tone from "tone";
-import { Play, Pause, Trash2, Music, Plus, Smartphone } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Trash2,
+  Music,
+  Plus,
+  Smartphone,
+  Volume2,
+} from "lucide-react";
 import { PRESETS } from "./presets";
 
-// --- Configuration ---
 const STEPS = 16;
-const INITIAL_TRACKS = [
-  { id: "kick", name: "KICK", color: "bg-rose-500", text: "text-rose-500" },
-  { id: "snare", name: "SNARE", color: "bg-sky-500", text: "text-sky-500" },
-  { id: "hihat", name: "HIHAT", color: "bg-amber-400", text: "text-amber-400" },
-  { id: "clap", name: "CLAP", color: "bg-violet-500", text: "text-violet-500" },
+
+type TrackConfig = {
+  id: string;
+  name: string;
+  color: string;
+  text: string;
+  accent: string;
+  glow: string;
+};
+
+const INITIAL_TRACKS: TrackConfig[] = [
+  {
+    id: "kick",
+    name: "KICK",
+    color: "bg-rose-500",
+    text: "text-rose-400",
+    accent: "#f43f5e",
+    glow: "rgba(244,63,94,0.4)",
+  },
+  {
+    id: "snare",
+    name: "SNARE",
+    color: "bg-sky-500",
+    text: "text-sky-400",
+    accent: "#38bdf8",
+    glow: "rgba(56,189,248,0.4)",
+  },
+  {
+    id: "hihat",
+    name: "HIHAT",
+    color: "bg-amber-400",
+    text: "text-amber-400",
+    accent: "#fbbf24",
+    glow: "rgba(251,191,36,0.4)",
+  },
+  {
+    id: "clap",
+    name: "CLAP",
+    color: "bg-violet-500",
+    text: "text-violet-400",
+    accent: "#a78bfa",
+    glow: "rgba(167,139,250,0.4)",
+  },
 ];
 
-const EXTRA_TRACKS = [
+const EXTRA_TRACKS: TrackConfig[] = [
   {
     id: "openhat",
     name: "OPEN HAT",
     color: "bg-yellow-400",
     text: "text-yellow-400",
+    accent: "#facc15",
+    glow: "rgba(250,204,21,0.4)",
   },
-  { id: "ride", name: "RIDE", color: "bg-orange-500", text: "text-orange-500" },
+  {
+    id: "ride",
+    name: "RIDE",
+    color: "bg-orange-500",
+    text: "text-orange-400",
+    accent: "#fb923c",
+    glow: "rgba(251,146,60,0.4)",
+  },
   {
     id: "cowbell",
     name: "COWBELL",
     color: "bg-pink-500",
-    text: "text-pink-500",
+    text: "text-pink-400",
+    accent: "#f472b6",
+    glow: "rgba(244,114,182,0.4)",
   },
-  { id: "rim", name: "RIM", color: "bg-teal-400", text: "text-teal-400" },
+  {
+    id: "rim",
+    name: "RIM",
+    color: "bg-teal-400",
+    text: "text-teal-400",
+    accent: "#2dd4bf",
+    glow: "rgba(45,212,191,0.4)",
+  },
 ];
 
-// --- Audio Engine Class (Lazy Init) ---
 class AudioEngine {
   instruments: Record<
     string,
@@ -39,50 +101,33 @@ class AudioEngine {
   > = {};
   channels: Record<string, Tone.Channel> = {};
   meters: Record<string, Tone.Meter> = {};
-
   master: Tone.Volume | null = null;
   masterMeter: Tone.Meter | null = null;
   limit: Tone.Limiter | null = null;
 
   async init() {
     await Tone.start();
-
-    // Create master chain
     this.limit = new Tone.Limiter(-1).toDestination();
     this.master = new Tone.Volume({ volume: 0, mute: false }).connect(
       this.limit,
     );
     this.masterMeter = new Tone.Meter();
     this.master.connect(this.masterMeter);
-
     INITIAL_TRACKS.forEach((t) => this.initTrack(t.id));
   }
 
   addTrack(id: string) {
-    if (!this.instruments[id]) {
-      this.initTrack(id);
-    }
+    if (!this.instruments[id]) this.initTrack(id);
   }
 
-  private initTrack(id: string) {
+  initTrack(id: string) {
     if (!this.master) return;
-
-    // Create Channel and Meter for the track
     const channel = new Tone.Channel({ volume: -6 }).connect(this.master);
     const meter = new Tone.Meter();
     channel.connect(meter);
-
     this.channels[id] = channel;
     this.meters[id] = meter;
-
-    // Create Instrument
-    let inst:
-      | Tone.MembraneSynth
-      | Tone.NoiseSynth
-      | Tone.MetalSynth
-      | Tone.Sampler
-      | undefined;
-
+    let inst;
     switch (id) {
       case "kick":
         inst = new Tone.MembraneSynth({
@@ -111,7 +156,7 @@ class AudioEngine {
         inst.frequency.value = 250;
         inst.volume.value = -10;
         break;
-      case "clap":
+      case "clap": {
         const filter = new Tone.Filter(1500, "bandpass");
         inst = new Tone.NoiseSynth({
           noise: { type: "white" },
@@ -119,10 +164,10 @@ class AudioEngine {
         });
         inst.volume.value = 2;
         inst.connect(filter);
-
         filter.connect(channel);
         this.instruments[id] = inst;
         return;
+      }
       case "openhat":
         inst = new Tone.MetalSynth({
           envelope: { attack: 0.001, decay: 0.2, release: 1.0 },
@@ -165,7 +210,6 @@ class AudioEngine {
         inst.volume.value = -4;
         break;
     }
-
     if (inst) {
       inst.connect(channel);
       this.instruments[id] = inst;
@@ -175,7 +219,6 @@ class AudioEngine {
   trigger(id: string, time: number) {
     const inst = this.instruments[id];
     if (!inst) return;
-
     if (inst instanceof Tone.MembraneSynth) {
       inst.triggerAttackRelease("C1", "8n", time);
     } else if (inst instanceof Tone.MetalSynth) {
@@ -185,11 +228,8 @@ class AudioEngine {
         inst.triggerAttackRelease("32n", time, 1);
         inst.triggerAttackRelease("32n", time + 0.01, 0.7);
         inst.triggerAttackRelease("32n", time + 0.02, 0.5);
-      } else if (id === "openhat" || id === "ride" || id === "cowbell") {
-        if (id === "cowbell") inst.triggerAttackRelease("8n", time);
-        else inst.triggerAttackRelease("32n", time, 0.8);
       } else {
-        inst.triggerAttackRelease("8n", time);
+        inst.triggerAttackRelease("32n", time, 0.8);
       }
     }
   }
@@ -198,8 +238,8 @@ class AudioEngine {
     if (id === "master") {
       if (this.master) this.master.volume.rampTo(dB, 0.1);
     } else {
-      const channel = this.channels[id];
-      if (channel) channel.volume.rampTo(dB, 0.1);
+      const ch = this.channels[id];
+      if (ch) ch.volume.rampTo(dB, 0.1);
     }
   }
 
@@ -208,13 +248,11 @@ class AudioEngine {
     Tone.Transport.swingSubdivision = "16n";
   }
 
-  getMeterValues() {
+  getMeterValues(): Record<string, number> {
     const values: Record<string, number> = {};
-    // Tracks
     for (const [id, meter] of Object.entries(this.meters)) {
       values[id] = meter.getValue() as number;
     }
-    // Master
     if (this.masterMeter) {
       values["master"] = this.masterMeter.getValue() as number;
     }
@@ -227,24 +265,15 @@ class AudioEngine {
     solos: Record<string, boolean>,
   ) {
     if (!this.master) return;
-
     this.setVolume("master", volumes["master"] ?? 0);
-    if (this.master) this.master.mute = mutes["master"] || false;
-
+    this.master.mute = mutes["master"] || false;
     const activeSolos = Object.values(solos).some((s) => s);
-
     Object.keys(this.channels).forEach((id) => {
       this.setVolume(id, volumes[id] ?? -6);
-
-      const channel = this.channels[id];
-      if (channel) {
-        const isMuted = mutes[id] || false;
-        const isSoloed = solos[id] || false;
-
-        const shouldMute = isMuted || (activeSolos && !isSoloed);
-
-        channel.mute = shouldMute;
-        channel.solo = false;
+      const ch = this.channels[id];
+      if (ch) {
+        ch.mute = mutes[id] || false || (activeSolos && !(solos[id] || false));
+        ch.solo = false;
       }
     });
   }
@@ -254,37 +283,27 @@ const engine = new AudioEngine();
 
 export default function BeatMaker() {
   const [tracks, setTracks] = useState(INITIAL_TRACKS);
-
-  const [grid, setGrid] = useState<boolean[][]>(() =>
+  const [grid, setGrid] = useState(() =>
     Array(INITIAL_TRACKS.length)
       .fill(null)
       .map(() => Array(STEPS).fill(false)),
   );
-
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [tempo, setTempo] = useState(120);
-  const [tempoInput, setTempoInput] = useState("120"); // Buffer for typing
-
+  const [tempoInput, setTempoInput] = useState("120");
   useEffect(() => {
     setTempoInput(tempo.toString());
   }, [tempo]);
-
-  const handleTempoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTempoChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setTempoInput(e.target.value);
-  };
-
   const commitTempo = () => {
     let val = parseInt(tempoInput);
     if (isNaN(val)) val = 120;
-
-    // Clamp
     val = Math.min(300, Math.max(40, val));
-
     setTempo(val);
     setTempoInput(val.toString());
   };
-
   const [volumes, setVolumes] = useState<Record<string, number>>({
     kick: -6,
     snare: -6,
@@ -297,120 +316,96 @@ export default function BeatMaker() {
     master: 0,
   });
   const [meterValues, setMeterValues] = useState<Record<string, number>>({});
-
   const [mutes, setMutes] = useState<Record<string, boolean>>({});
   const [solos, setSolos] = useState<Record<string, boolean>>({});
   const [swing, setSwing] = useState(50);
-
   const isPainting = useRef(false);
-  const paintState = useRef(false); // true = add, false = remove
-
+  const paintState = useRef(false);
   const seqRef = useRef<Tone.Sequence | null>(null);
   const meterRaf = useRef<number | null>(null);
 
+  const gridRef = useRef(grid);
+  const tracksRef = useRef(tracks);
   useEffect(() => {
-    const updateMeters = () => {
-      setMeterValues(engine.getMeterValues());
-      meterRaf.current = requestAnimationFrame(updateMeters);
-    };
-    meterRaf.current = requestAnimationFrame(updateMeters);
+    gridRef.current = grid;
+    tracksRef.current = tracks;
+  }, [grid, tracks]);
 
+  useEffect(() => {
+    const update = () => {
+      setMeterValues(engine.getMeterValues());
+      meterRaf.current = requestAnimationFrame(update);
+    };
+    meterRaf.current = requestAnimationFrame(update);
     return () => {
       if (meterRaf.current) cancelAnimationFrame(meterRaf.current);
     };
   }, []);
 
   const handleVolumeChange = (id: string, val: number) => {
-    setVolumes((prev) => ({ ...prev, [id]: val }));
+    setVolumes((p) => ({ ...p, [id]: val }));
     engine.setVolume(id, val);
   };
-
   const toggleMute = (id: string) => {
-    setMutes((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
-      // Sync full state
-      engine.syncState(volumes, next, solos);
-      return next;
+    setMutes((p) => {
+      const n = { ...p, [id]: !p[id] };
+      engine.syncState(volumes, n, solos);
+      return n;
     });
   };
-
   const toggleSolo = (id: string) => {
     if (id === "master") return;
-    setSolos((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
-      engine.syncState(volumes, mutes, next);
-      return next;
+    setSolos((p) => {
+      const n = { ...p, [id]: !p[id] };
+      engine.syncState(volumes, mutes, n);
+      return n;
     });
   };
-
   const handleSwingChange = (val: number) => {
     setSwing(val);
-
-    const toneSwing = Math.max(0, (val - 50) / 25);
-    engine.setSwing(toneSwing);
+    engine.setSwing(Math.max(0, (val - 50) / 25));
   };
 
   const loadPreset = (key: string) => {
-    if (PRESETS[key]) {
-      const p = PRESETS[key];
-      const presetRows = p.grid.length;
-
-      const allPossibleTracks = [...INITIAL_TRACKS, ...EXTRA_TRACKS];
-      const targetTrackCount = Math.min(presetRows, allPossibleTracks.length);
-      const newTracks = allPossibleTracks.slice(0, targetTrackCount);
-
-      if (engine.master) {
-        newTracks.forEach((t) => {
-          engine.addTrack(t.id);
-        });
-      }
-
-      setTracks(newTracks);
-      setGrid(
-        p.grid
-          .slice(0, targetTrackCount)
-          .map((row) => row.map((cell) => cell === 1)),
-      );
-      handleSwingChange(p.swing);
-      setTempo(p.tempo);
-
-      setVolumes((prev) => {
-        const next = { ...prev };
-        newTracks.forEach((t) => {
-          if (next[t.id] === undefined) next[t.id] = -6;
-        });
-        return next;
+    if (!PRESETS[key]) return;
+    const p = PRESETS[key];
+    const all = [...INITIAL_TRACKS, ...EXTRA_TRACKS];
+    const cnt = Math.min(p.grid.length, all.length);
+    const newTracks = all.slice(0, cnt);
+    if (engine.master) newTracks.forEach((t) => engine.addTrack(t.id));
+    setTracks(newTracks);
+    setGrid(p.grid.slice(0, cnt).map((row) => row.map((c) => c === 1)));
+    handleSwingChange(p.swing);
+    setTempo(p.tempo);
+    setVolumes((prev) => {
+      const n: Record<string, number> = { ...prev };
+      newTracks.forEach((t) => {
+        if (n[t.id] === undefined) n[t.id] = -6;
       });
-
-      const newMutes = {};
-      const newSolos = {};
-      setMutes(newMutes);
-      setSolos(newSolos);
-
-      if (engine.master) {
-        engine.syncState(volumes, newMutes, newSolos);
-      }
-    }
+      // Sync audio engine with the freshly computed volumes
+      const nm: Record<string, boolean> = {};
+      const ns: Record<string, boolean> = {};
+      if (engine.master) engine.syncState(n, nm, ns);
+      return n;
+    });
+    setMutes({});
+    setSolos({});
   };
 
   useEffect(() => {
     return () => {
-      if (seqRef.current) seqRef.current.dispose();
       Tone.Transport.stop();
     };
   }, []);
 
   useEffect(() => {
-    if (seqRef.current) seqRef.current.dispose();
-
     const seq = new Tone.Sequence(
       (time, step) => {
         Tone.Draw.schedule(() => {
           setCurrentStep(step);
         }, time);
-
-        tracks.forEach((track, trackIdx) => {
-          if (grid[trackIdx] && grid[trackIdx][step]) {
+        tracksRef.current.forEach((track, ti) => {
+          if (gridRef.current[ti] && gridRef.current[ti][step]) {
             engine.trigger(track.id, time);
           }
         });
@@ -418,33 +413,24 @@ export default function BeatMaker() {
       Array.from({ length: STEPS }, (_, i) => i),
       "16n",
     );
-
     seq.start(0);
     seqRef.current = seq;
-  }, [grid, tracks]);
+    return () => {
+      seq.dispose();
+    };
+  }, []);
 
   useEffect(() => {
     Tone.Transport.bpm.value = tempo;
   }, [tempo]);
 
-  useEffect(() => {
-    Tone.Transport.bpm.value = tempo;
-  }, [tempo]);
-
-  // Initial Volume Setup
-
-  // --- Controls ---
   const togglePlay = useCallback(async () => {
     if (!engine.master) {
       await engine.init();
       tracks.forEach((t) => engine.addTrack(t.id));
       engine.syncState(volumes, mutes, solos);
     }
-
-    if (Tone.getContext().state !== "running") {
-      await Tone.start();
-    }
-
+    if (Tone.getContext().state !== "running") await Tone.start();
     if (isPlaying) {
       Tone.Transport.stop();
       setIsPlaying(false);
@@ -456,371 +442,478 @@ export default function BeatMaker() {
   }, [isPlaying, volumes, mutes, solos, tracks]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const h = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         e.preventDefault();
         togglePlay();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
   }, [togglePlay]);
 
-  const clearGrid = () => {
+  const clearGrid = () =>
     setGrid(
       Array(tracks.length)
         .fill(null)
         .map(() => Array(STEPS).fill(false)),
     );
-  };
 
-  const handleAddTrack = () => {
-    const currentCount = tracks.length;
-    const initialCount = INITIAL_TRACKS.length;
-    const nextIndex = currentCount - initialCount;
-
-    if (nextIndex < EXTRA_TRACKS.length) {
-      const newTrack = EXTRA_TRACKS[nextIndex];
-
-      engine.addTrack(newTrack.id);
-
-      setTracks((prev) => [...prev, newTrack]);
-      setGrid((prev) => [...prev, Array(STEPS).fill(false)]);
-
-      setVolumes((prev) => ({ ...prev, [newTrack.id]: -6 }));
+  const handleAddTrack = useCallback(() => {
+    const idx = tracks.length - INITIAL_TRACKS.length;
+    if (idx < EXTRA_TRACKS.length) {
+      const t = EXTRA_TRACKS[idx];
+      engine.addTrack(t.id);
+      setTracks((p) => [...p, t]);
+      setGrid((p) => [...p, Array(STEPS).fill(false)]);
+      setVolumes((p) => ({ ...p, [t.id]: -6 }));
     }
-  };
+  }, [tracks.length]);
 
-  // Memoized to prevent SequencerGrid re-renders on volume change
-  const updateStep = useCallback(
-    (trackIdx: number, stepIdx: number, val: boolean) => {
-      setGrid((prev) => {
-        const newGrid = prev.map((row) => [...row]);
-        newGrid[trackIdx][stepIdx] = val;
-        return newGrid;
-      });
-    },
-    [],
-  );
+  const updateStep = useCallback((ti: number, si: number, val: boolean) => {
+    setGrid((p) => {
+      const g = p.map((r) => [...r]);
+      g[ti][si] = val;
+      return g;
+    });
+  }, []);
 
   const handleMouseDown = useCallback(
-    (trackIdx: number, stepIdx: number) => {
+    (ti: number, si: number) => {
       isPainting.current = true;
-      // Derive paint state from current grid value.
-      // Callback depends on `grid`, not `volumes`.
-      const newState = !grid[trackIdx][stepIdx];
-      paintState.current = newState;
-      updateStep(trackIdx, stepIdx, newState);
+      // Read from ref so this callback never needs to depend on grid state
+      const ns = !gridRef.current[ti]?.[si];
+      paintState.current = ns;
+      updateStep(ti, si, ns);
     },
-    [grid, updateStep],
+    [updateStep],
   );
 
   const handleMouseEnter = useCallback(
-    (trackIdx: number, stepIdx: number) => {
-      if (isPainting.current) {
-        updateStep(trackIdx, stepIdx, paintState.current);
-      }
+    (ti: number, si: number) => {
+      if (isPainting.current) updateStep(ti, si, paintState.current);
     },
     [updateStep],
   );
 
   useEffect(() => {
-    const handleUp = () => (isPainting.current = false);
-    window.addEventListener("mouseup", handleUp);
-    return () => window.removeEventListener("mouseup", handleUp);
+    const up = () => (isPainting.current = false);
+    window.addEventListener("mouseup", up);
+    return () => window.removeEventListener("mouseup", up);
   }, []);
 
+  const masterLevel = Math.max(-60, meterValues["master"] || -60);
+  const masterHeight = ((masterLevel + 60) / 60) * 100;
+
+  const renderFader = (id: string, vol: number) => {
+    const thumbPct = ((vol + 60) / 66) * 100;
+    const ismaster = id === "master";
+    return (
+      <div className="relative h-full w-5 md:w-6">
+        <input
+          type="range"
+          min="-60"
+          max="6"
+          step="1"
+          value={vol}
+          onChange={(e) => handleVolumeChange(id, parseInt(e.target.value))}
+          className="absolute inset-0 w-36 md:w-44 h-6 origin-top-left -rotate-90 translate-y-36 md:translate-y-44 opacity-0 cursor-pointer z-20 touch-none"
+        />
+        <div
+          className="absolute left-1/2 -translate-x-1/2 top-2 bottom-2 w-px rounded-full"
+          style={{ background: "rgba(255,255,255,0.08)" }}
+        />
+        <div
+          className="absolute left-0 right-0 h-6 rounded-lg pointer-events-none z-10"
+          style={{
+            bottom: `${thumbPct}%`,
+            transform: "translateY(50%)",
+            background: ismaster
+              ? "linear-gradient(180deg,rgba(255,255,255,0.18) 0%,rgba(255,255,255,0.08) 100%)"
+              : "linear-gradient(180deg,rgba(255,255,255,0.12) 0%,rgba(255,255,255,0.05) 100%)",
+            boxShadow:
+              "0 2px 8px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.15)",
+            border: "1px solid rgba(255,255,255,0.1)",
+          }}
+        >
+          <div
+            className="absolute inset-x-2 top-1/2 -translate-y-1/2 h-px rounded-full"
+            style={{
+              background: ismaster
+                ? "rgba(255,255,255,0.3)"
+                : "rgba(255,255,255,0.2)",
+            }}
+          />
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-4 flex flex-col items-center justify-center font-sans select-none relative">
-      {/* Rotate Device Overlay */}
-      <div className="fixed inset-0 z-50 bg-zinc-950 flex-col items-center justify-center p-8 text-center hidden portrait:flex md:hidden">
-        <Smartphone className="w-16 h-16 text-emerald-500 mb-6 animate-pulse" />
-        <h2 className="text-2xl font-bold text-white mb-4">
-          PLEASE ROTATE DEVICE
+    <div
+      className="min-h-screen select-none relative overflow-hidden"
+      style={{
+        background: "#09090b",
+      }}
+    >
+      <div
+        className="fixed inset-0 z-50 flex-col items-center justify-center p-8 text-center hidden portrait:flex md:hidden"
+        style={{ background: "#0a0a0f" }}
+      >
+        <Smartphone
+          className="w-16 h-16 mb-6 animate-pulse"
+          style={{ color: "#6366f1" }}
+        />
+        <h2 className="text-2xl font-bold text-white mb-4 tracking-widest">
+          ROTATE DEVICE
         </h2>
-        <p className="text-zinc-400 max-w-xs">
+        <p className="text-zinc-500 max-w-xs text-sm">
           Studio 808 requires a landscape view.
         </p>
       </div>
-
-      {/* Header */}
-      <div className="mb-2 md:mb-8 text-center w-full max-w-4xl">
-        <h1 className="text-xl md:text-4xl font-bold tracking-tight text-white mb-2 md:mb-6">
-          STUDIO 808
-        </h1>
-
-        {/* Controls Bar */}
-        <div className="flex flex-wrap gap-2 md:gap-4 justify-between items-center bg-zinc-900 border border-zinc-800 p-2 md:p-4 rounded-xl shadow-sm">
-          <div className="flex items-center gap-2 md:gap-4">
-            <button
-              onClick={togglePlay}
-              className={`flex items-center gap-2 px-3 py-1 md:px-6 md:py-2 rounded-md font-semibold text-xs md:text-base transition-all ${
-                isPlaying
-                  ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-md"
-                  : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
-              }`}
-            >
-              {isPlaying ? (
-                <Pause className="w-3 h-3 md:w-5 md:h-5" />
-              ) : (
-                <Play className="w-3 h-3 md:w-5 md:h-5" />
-              )}
-              {isPlaying ? "STOP" : "PLAY"}
-            </button>
-
-            <button
-              onClick={clearGrid}
-              className="p-1 md:p-2 hover:text-rose-500 transition-colors text-zinc-500"
-              title="Clear Pattern"
-            >
-              <Trash2 className="w-3 h-3 md:w-5 md:h-5" />
-            </button>
+      <div className="relative z-10 p-4 md:p-6 flex flex-col items-center min-h-screen font-sans">
+        <div className="w-full max-w-6xl mb-4 md:mb-6">
+          <div className="flex items-center justify-between mb-4 md:mb-5">
+            <div>
+              <h1
+                className="text-2xl md:text-4xl font-black tracking-[0.2em] text-white"
+                style={{ textShadow: "0 0 40px rgba(99,102,241,0.3)" }}
+              >
+                STUDIO <span style={{ color: "#6366f1" }}>808</span>
+              </h1>
+              <p className="text-[10px] md:text-xs tracking-[0.3em] text-zinc-600 uppercase mt-0.5">
+                Drum Machine &amp; Sequencer
+              </p>
+            </div>
           </div>
-
-          <div className="flex items-center gap-2 md:gap-6">
-            <div className="flex flex-col gap-0.5 md:gap-1">
-              <label className="text-[8px] md:text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                Tempo
-              </label>
-              <div className="flex items-center gap-1 md:gap-2 bg-zinc-950 px-2 py-0.5 md:px-3 md:py-1 rounded-md border border-zinc-800">
-                <Music className="w-2 h-2 md:w-3 md:h-3 text-zinc-400" />
-                <input
-                  type="number"
-                  value={tempoInput}
-                  onChange={handleTempoChange}
-                  onBlur={commitTempo}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      commitTempo();
-                      (e.target as HTMLInputElement).blur();
-                    }
-                  }}
-                  className="w-8 md:w-12 bg-transparent text-center focus:outline-none font-bold text-zinc-200 text-xs md:text-base"
-                />
-                <span className="text-[8px] md:text-xs text-zinc-500">BPM</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-0.5 md:gap-1">
-              <label className="text-[8px] md:text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                Swing
-              </label>
-              <div className="flex items-center gap-1 md:gap-2 bg-zinc-950 px-2 py-0.5 md:px-3 md:py-1 rounded-md border border-zinc-800">
-                <input
-                  type="range"
-                  min="50"
-                  max="75"
-                  value={swing}
-                  onChange={(e) => handleSwingChange(parseInt(e.target.value))}
-                  className="w-12 md:w-20 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-zinc-400"
-                />
-                <span className="text-[8px] md:text-xs text-zinc-500 w-6 md:w-8 text-right">
-                  {swing}%
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-0.5 md:gap-1">
-              <label className="text-[8px] md:text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                Preset
-              </label>
-              <select
-                title="Select Pattern"
-                className="bg-zinc-950 text-zinc-300 text-[10px] md:text-xs font-bold px-2 py-1 md:px-3 md:py-1.5 rounded-md border border-zinc-800 focus:outline-none focus:border-zinc-600"
-                onChange={(e) => {
-                  if (e.target.value) loadPreset(e.target.value);
+          <div
+            className="rounded-2xl border border-white/6 p-3 md:p-4 flex flex-wrap gap-3 md:gap-4 justify-between items-center"
+            style={{
+              background: "#121218",
+            }}
+          >
+            <div className="flex items-center gap-2 md:gap-3">
+              <button
+                onClick={togglePlay}
+                className="flex items-center gap-2 md:gap-2.5 px-4 py-2 md:px-6 md:py-2.5 rounded-xl font-bold text-xs md:text-sm tracking-wider transition-all duration-200"
+                style={{
+                  background: isPlaying
+                    ? "linear-gradient(135deg,#10b981,#059669)"
+                    : "linear-gradient(135deg,#6366f1,#4f46e5)",
+                  boxShadow: isPlaying
+                    ? "0 0 12px rgba(16,185,129,0.2),inset 0 1px 0 rgba(255,255,255,0.15)"
+                    : "0 0 12px rgba(99,102,241,0.2),inset 0 1px 0 rgba(255,255,255,0.15)",
+                  color: "#fff",
                 }}
-                defaultValue=""
               >
-                <option value="" disabled>
-                  LOAD...
-                </option>
-                {Object.entries(PRESETS).map(([key, p]) => (
-                  <option key={key} value={key}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                {isPlaying ? (
+                  <Pause className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                ) : (
+                  <Play className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                )}
+                {isPlaying ? "STOP" : "PLAY"}
+              </button>
+              <button
+                onClick={clearGrid}
+                className="p-2 md:p-2.5 rounded-xl border border-white/6 hover:border-rose-500/40 hover:bg-rose-500/10 transition-all text-zinc-500 hover:text-rose-400"
+                title="Clear"
+              >
+                <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              </button>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sequencer Grid via Memoized Component */}
-      <SequencerGrid
-        tracks={tracks}
-        grid={grid}
-        currentStep={currentStep}
-        onMouseDown={handleMouseDown}
-        onMouseEnter={handleMouseEnter}
-        onAddTrack={handleAddTrack}
-        showAddButton={
-          tracks.length < INITIAL_TRACKS.length + EXTRA_TRACKS.length
-        }
-      />
-
-      {/* Mixer Section */}
-      <div className="w-full max-w-5xl bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl">
-        <h2 className="text-zinc-500 font-bold text-xs uppercase tracking-widest mb-3 md:mb-6 border-b border-zinc-800 pb-2">
-          Mixer
-        </h2>
-        <div className="flex justify-start lg:justify-center gap-2 md:gap-8 px-4 overflow-x-auto pb-4 w-full">
-          {tracks.map((track) => {
-            const level = Math.max(-60, meterValues[track.id] || -60);
-            const height = ((level + 60) / 60) * 100; // Map -60..0 to 0..100%
-
-            return (
-              <div
-                key={track.id}
-                className="flex flex-col items-center gap-2 md:gap-3 w-12 md:w-16 shrink-0"
-              >
-                <span className="text-[10px] font-mono text-zinc-500 tabular-nums">
-                  {volumes[track.id]?.toFixed(0)} dB
-                </span>
-
-                <div className="flex gap-1 mb-1">
-                  <button
-                    onClick={() => toggleMute(track.id)}
-                    className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold transition-colors ${
-                      mutes[track.id]
-                        ? "bg-amber-500 text-black shadow-[0_0_10px_rgba(245,158,11,0.5)]"
-                        : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-                    }`}
-                  >
-                    M
-                  </button>
-                  <button
-                    onClick={() => toggleSolo(track.id)}
-                    className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold transition-colors ${
-                      solos[track.id]
-                        ? "bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-                        : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-                    }`}
-                  >
-                    S
-                  </button>
-                </div>
-
-                <div className="flex gap-1 md:gap-2 h-40 md:h-48 bg-zinc-950/50 p-1 md:p-2 rounded-lg border border-zinc-800/50">
-                  {/* Fader */}
-                  <div className="relative h-full w-6 md:w-8">
-                    <input
-                      type="range"
-                      min="-60"
-                      max="6"
-                      step="1"
-                      value={volumes[track.id] ?? -6}
-                      onChange={(e) =>
-                        handleVolumeChange(track.id, parseInt(e.target.value))
+            <div className="flex flex-wrap items-center gap-2 md:gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] md:text-[10px] text-zinc-400 font-bold uppercase tracking-widest px-1">
+                  Tempo
+                </label>
+                <div
+                  className="flex items-center gap-1.5 px-3 py-1.5 md:py-2 rounded-xl border border-white/6"
+                  style={{ background: "#0d0d14" }}
+                >
+                  <Music className="w-3 h-3 text-zinc-600" />
+                  <input
+                    type="number"
+                    value={tempoInput}
+                    onChange={handleTempoChange}
+                    onBlur={commitTempo}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        commitTempo();
+                        (e.target as HTMLInputElement).blur();
                       }
-                      className="absolute inset-0 w-40 md:w-48 h-8 origin-top-left -rotate-90 translate-y-40 md:translate-y-48 opacity-0 cursor-pointer z-20 touch-none"
-                    />
-                    {/* Visual Thumb */}
-                    <div
-                      className="absolute left-0 w-full h-8 bg-zinc-700 rounded-sm border-t border-zinc-600 shadow-lg pointer-events-none z-10"
-                      style={{
-                        bottom: `${
-                          (((volumes[track.id] ?? -6) + 60) / 66) * 100
-                        }%`,
-                        transform: "translateY(50%)",
-                      }}
-                    >
-                      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-zinc-900" />
-                    </div>
-
-                    <div className="absolute inset-x-[14px] top-0 bottom-0 bg-zinc-800 rounded-full w-1" />
-                  </div>
-
-                  {/* Meter Bar */}
-                  <div className="w-2 h-full bg-zinc-800 rounded-full relative overflow-hidden">
-                    <div
-                      className={`absolute bottom-0 w-full transition-all duration-75 ease-out ${
-                        level > -3
-                          ? "bg-rose-500"
-                          : level > -12
-                            ? "bg-amber-400"
-                            : "bg-emerald-500"
-                      }`}
-                      style={{
-                        height: `${Math.min(100, Math.max(0, height))}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full ${track.color}`} />
-                  <span className="text-xs font-bold text-zinc-400">
-                    {track.name}
+                    }}
+                    className="w-8 md:w-12 bg-transparent text-center focus:outline-none font-bold text-zinc-200 text-xs md:text-sm"
+                  />
+                  <span className="text-[9px] md:text-xs text-zinc-600">
+                    BPM
                   </span>
                 </div>
               </div>
-            );
-          })}
-
-          {/* Master Channel */}
-          <div className="w-px bg-zinc-800 mx-4" />
-
-          <div className="flex flex-col items-center gap-2 md:gap-3 w-12 md:w-16 shrink-0">
-            <span className="text-[10px] font-mono text-zinc-500 tabular-nums">
-              {volumes["master"]?.toFixed(0)} dB
-            </span>
-            <div className="flex gap-1 mb-1 opacity-0 pointer-events-none">
-              {/* Spacer to align Master fader with tracks due to M/S buttons */}
-              <div className="w-6 h-6" />
-              <div className="w-6 h-6" />
-            </div>
-            <div className="flex gap-1 md:gap-2 h-40 md:h-48 bg-zinc-950/50 p-1 md:p-2 rounded-lg border border-zinc-800/50">
-              {/* Fader */}
-              <div className="relative h-full w-6 md:w-8">
-                <input
-                  type="range"
-                  min="-60"
-                  max="6"
-                  step="1"
-                  value={volumes["master"] ?? 0}
-                  onChange={(e) =>
-                    handleVolumeChange("master", parseInt(e.target.value))
-                  }
-                  className="absolute inset-0 w-40 md:w-48 h-8 origin-top-left -rotate-90 translate-y-40 md:translate-y-48 opacity-0 cursor-pointer z-20 touch-none"
-                />
-                {/* Visual Thumb */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] md:text-[10px] text-zinc-400 font-bold uppercase tracking-widest px-1">
+                  Swing
+                </label>
                 <div
-                  className="absolute left-0 w-full h-8 bg-zinc-600 rounded-sm border-t border-zinc-500 shadow-lg pointer-events-none z-10"
-                  style={{
-                    bottom: `${(((volumes["master"] ?? 0) + 60) / 66) * 100}%`,
-                    transform: "translateY(50%)",
-                  }}
+                  className="flex items-center gap-3 px-3 py-1.5 md:py-2 rounded-xl border border-white/6"
+                  style={{ background: "#0d0d14" }}
                 >
-                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-zinc-900" />
+                  {/* Custom slider */}
+                  <div className="relative flex items-center w-20 md:w-28 h-5 cursor-pointer group">
+                    <input
+                      type="range"
+                      min="50"
+                      max="75"
+                      value={swing}
+                      onChange={(e) =>
+                        handleSwingChange(parseInt(e.target.value))
+                      }
+                      className="absolute inset-0 w-full opacity-0 cursor-pointer z-10 h-full"
+                    />
+                    {/* Track background */}
+                    <div
+                      className="absolute inset-x-0 h-1 rounded-full"
+                      style={{ background: "rgba(255,255,255,0.08)" }}
+                    />
+                    {/* Filled portion */}
+                    <div
+                      className="absolute left-0 h-1 rounded-full"
+                      style={{
+                        width: `${((swing - 50) / 25) * 100}%`,
+                        background: "linear-gradient(90deg,#6366f1,#818cf8)",
+                        boxShadow: "0 0 6px rgba(99,102,241,0.5)",
+                      }}
+                    />
+                    {/* Thumb */}
+                    <div
+                      className="absolute w-3 h-3 rounded-full pointer-events-none transition-transform duration-75 group-hover:scale-110"
+                      style={{
+                        left: `calc(${((swing - 50) / 25) * 100}% - 6px)`,
+                        background: "#fff",
+                        boxShadow:
+                          "0 0 6px rgba(99,102,241,0.7), 0 1px 3px rgba(0,0,0,0.5)",
+                      }}
+                    />
+                  </div>
+                  <span className="text-[9px] md:text-xs text-zinc-200 w-7 tabular-nums text-right shrink-0">
+                    {swing}%
+                  </span>
                 </div>
-                {/* Track Line */}
-                <div className="absolute inset-x-[14px] top-0 bottom-0 bg-zinc-800 rounded-full w-1" />
               </div>
-
-              {/* Meter */}
-              <div className="w-2 h-full bg-zinc-800 rounded-full relative overflow-hidden">
-                <div
-                  className={`absolute bottom-0 w-full transition-all duration-75 ease-out ${
-                    (meterValues["master"] || -60) > -3
-                      ? "bg-rose-500"
-                      : "bg-emerald-500"
-                  }`}
-                  style={{
-                    height: `${Math.min(
-                      100,
-                      Math.max(
-                        0,
-                        (((meterValues["master"] || -60) + 60) / 60) * 100,
-                      ),
-                    )}%`,
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] md:text-[10px] text-zinc-400 font-bold uppercase tracking-widest px-1">
+                  Preset
+                </label>
+                <select
+                  title="Preset"
+                  className="text-[10px] md:text-xs font-bold px-3 py-1.5 md:py-2 rounded-xl border border-white/6 focus:outline-none cursor-pointer"
+                  style={{ background: "#0d0d14", color: "#e4e4e7" }}
+                  onChange={(e) => {
+                    if (e.target.value) loadPreset(e.target.value);
                   }}
-                />
+                  defaultValue=""
+                >
+                  <option
+                    value=""
+                    disabled
+                    style={{ background: "#0d0d14", color: "#52525b" }}
+                  >
+                    LOAD...
+                  </option>
+                  {Object.entries(PRESETS).map(([k, p]) => (
+                    <option
+                      key={k}
+                      value={k}
+                      style={{ background: "#0d0d14", color: "#e4e4e7" }}
+                    >
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
-            <div className="flex flex-col items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-white" />
-              <span className="text-xs font-bold text-zinc-200">MASTER</span>
+          </div>
+        </div>
+
+        <SequencerGrid
+          tracks={tracks}
+          grid={grid}
+          currentStep={currentStep}
+          onMouseDown={handleMouseDown}
+          onMouseEnter={handleMouseEnter}
+          onAddTrack={handleAddTrack}
+          showAddButton={
+            tracks.length < INITIAL_TRACKS.length + EXTRA_TRACKS.length
+          }
+        />
+
+        <div
+          className="w-full max-w-6xl rounded-2xl border border-white/6 p-4 md:p-6"
+          style={{
+            background: "#121218",
+          }}
+        >
+          <div className="flex items-center gap-3 mb-4 md:mb-6">
+            <Volume2 className="w-3.5 h-3.5 text-zinc-400" />
+            <h2 className="text-zinc-400 font-bold text-[10px] uppercase tracking-[0.3em]">
+              Mixer
+            </h2>
+            <div
+              className="flex-1 h-px"
+              style={{
+                background:
+                  "linear-gradient(to right,rgba(255,255,255,0.05),transparent)",
+              }}
+            />
+          </div>
+          <div className="flex justify-start lg:justify-center gap-3 md:gap-6 px-2 overflow-x-auto pb-2 w-full">
+            {tracks.map((track) => {
+              const lvl = Math.max(-60, meterValues[track.id] || -60);
+              const ht = ((lvl + 60) / 60) * 100;
+              const meterBg =
+                lvl > -3
+                  ? "linear-gradient(to top,#f43f5e,#fb923c)"
+                  : lvl > -12
+                    ? "linear-gradient(to top,#fbbf24,#84cc16)"
+                    : `linear-gradient(to top,${track.accent},${track.accent}88)`;
+              return (
+                <div
+                  key={track.id}
+                  className="flex flex-col items-center gap-2 w-12 md:w-14 shrink-0"
+                >
+                  <span
+                    className="text-[9px] font-mono tabular-nums"
+                    style={{ color: "rgba(161,161,170,0.5)" }}
+                  >
+                    {(volumes[track.id] ?? -6).toFixed(0)}
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => toggleMute(track.id)}
+                      className="w-5 h-5 md:w-6 md:h-6 rounded-md flex items-center justify-center text-[9px] font-black transition-all"
+                      style={{
+                        background: mutes[track.id]
+                          ? "rgba(245,158,11,0.2)"
+                          : "rgba(255,255,255,0.04)",
+                        border: mutes[track.id]
+                          ? "1px solid rgba(245,158,11,0.5)"
+                          : "1px solid rgba(255,255,255,0.06)",
+                        color: mutes[track.id] ? "#fbbf24" : "#52525b",
+                        boxShadow: mutes[track.id]
+                          ? "0 0 10px rgba(245,158,11,0.3)"
+                          : "none",
+                      }}
+                    >
+                      M
+                    </button>
+                    <button
+                      onClick={() => toggleSolo(track.id)}
+                      className="w-5 h-5 md:w-6 md:h-6 rounded-md flex items-center justify-center text-[9px] font-black transition-all"
+                      style={{
+                        background: solos[track.id]
+                          ? "rgba(99,102,241,0.2)"
+                          : "rgba(255,255,255,0.04)",
+                        border: solos[track.id]
+                          ? "1px solid rgba(99,102,241,0.5)"
+                          : "1px solid rgba(255,255,255,0.06)",
+                        color: solos[track.id] ? "#818cf8" : "#52525b",
+                        boxShadow: solos[track.id]
+                          ? "0 0 10px rgba(99,102,241,0.3)"
+                          : "none",
+                      }}
+                    >
+                      S
+                    </button>
+                  </div>
+                  <div
+                    className="flex gap-1.5 md:gap-2 h-36 md:h-44 p-1.5 rounded-xl border border-white/4"
+                    style={{ background: "rgba(0,0,0,0.3)" }}
+                  >
+                    {renderFader(track.id, volumes[track.id] ?? -6)}
+                    <div
+                      className="w-1.5 h-full rounded-full relative overflow-hidden"
+                      style={{ background: "rgba(255,255,255,0.04)" }}
+                    >
+                      <div
+                        className="absolute bottom-0 w-full rounded-full transition-all duration-75 ease-out"
+                        style={{
+                          height: `${Math.min(100, Math.max(0, ht))}%`,
+                          background: meterBg,
+                          boxShadow:
+                            lvl > -12 ? `0 0 6px ${track.glow}` : "none",
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{
+                        background: track.accent,
+                        boxShadow: `0 0 6px ${track.glow}`,
+                      }}
+                    />
+                    <span
+                      className="text-[8px] md:text-[9px] font-bold tracking-wider text-center leading-tight"
+                      style={{ color: "rgba(161,161,170,0.7)" }}
+                    >
+                      {track.name}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+            <div
+              className="w-px mx-2 rounded-full self-stretch"
+              style={{ background: "rgba(255,255,255,0.05)" }}
+            />
+            <div className="flex flex-col items-center gap-2 w-12 md:w-14 shrink-0">
+              <span
+                className="text-[9px] font-mono tabular-nums"
+                style={{ color: "rgba(161,161,170,0.5)" }}
+              >
+                {(volumes["master"] ?? 0).toFixed(0)}
+              </span>
+              <div className="flex gap-1 opacity-0 pointer-events-none">
+                <div className="w-5 h-5 md:w-6 md:h-6" />
+                <div className="w-5 h-5 md:w-6 md:h-6" />
+              </div>
+              <div
+                className="flex gap-1.5 md:gap-2 h-36 md:h-44 p-1.5 rounded-xl border border-white/6"
+                style={{ background: "rgba(0,0,0,0.3)" }}
+              >
+                {renderFader("master", volumes["master"] ?? 0)}
+                <div
+                  className="w-1.5 h-full rounded-full relative overflow-hidden"
+                  style={{ background: "rgba(255,255,255,0.04)" }}
+                >
+                  <div
+                    className="absolute bottom-0 w-full rounded-full transition-all duration-75 ease-out"
+                    style={{
+                      height: `${Math.min(100, Math.max(0, masterHeight))}%`,
+                      background:
+                        masterLevel > -3
+                          ? "linear-gradient(to top,#f43f5e,#fb923c)"
+                          : "linear-gradient(to top,#6366f1,#8b5cf6)",
+                      boxShadow:
+                        masterLevel > -3
+                          ? "0 0 8px rgba(244,63,94,0.5)"
+                          : "0 0 8px rgba(99,102,241,0.4)",
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <div
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{
+                    background: "#6366f1",
+                    boxShadow: "0 0 6px rgba(99,102,241,0.6)",
+                  }}
+                />
+                <span className="text-[8px] md:text-[9px] font-bold tracking-wider text-white/60">
+                  MASTER
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -829,14 +922,12 @@ export default function BeatMaker() {
   );
 }
 
-// --- Memoized Components ---
-
 interface SequencerGridProps {
-  tracks: typeof INITIAL_TRACKS;
+  tracks: TrackConfig[];
   grid: boolean[][];
   currentStep: number;
-  onMouseDown: (trackIdx: number, stepIdx: number) => void;
-  onMouseEnter: (trackIdx: number, stepIdx: number) => void;
+  onMouseDown: (ti: number, si: number) => void;
+  onMouseEnter: (ti: number, si: number) => void;
   onAddTrack: () => void;
   showAddButton: boolean;
 }
@@ -854,113 +945,110 @@ const SequencerGrid = memo(function SequencerGrid({
   const lastTouchRef = useRef<{ track: number; step: number } | null>(null);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      // Prevent default to stop scrolling/zooming immediately
+    const el = containerRef.current;
+    if (!el) return;
+    const ts = (e: TouchEvent) => {
       if (e.cancelable) e.preventDefault();
-
-      const touch = e.touches[0];
-      const element = document.elementFromPoint(touch.clientX, touch.clientY);
-      const cell = element?.closest("[data-track][data-step]") as HTMLElement;
-
+      const t = e.touches[0];
+      const cell = document
+        .elementFromPoint(t.clientX, t.clientY)
+        ?.closest("[data-track][data-step]") as HTMLElement | null;
       if (cell) {
-        const trackIdx = parseInt(cell.dataset.track!);
-        const stepIdx = parseInt(cell.dataset.step!);
-
-        lastTouchRef.current = { track: trackIdx, step: stepIdx };
-        onMouseDown(trackIdx, stepIdx);
+        const ti = parseInt(cell.dataset.track!),
+          si = parseInt(cell.dataset.step!);
+        lastTouchRef.current = { track: ti, step: si };
+        onMouseDown(ti, si);
       }
     };
-
-    const handleTouchMove = (e: TouchEvent) => {
+    const tm = (e: TouchEvent) => {
       if (e.cancelable) e.preventDefault();
-
-      const touch = e.touches[0];
-      const element = document.elementFromPoint(touch.clientX, touch.clientY);
-      const cell = element?.closest("[data-track][data-step]") as HTMLElement;
-
+      const t = e.touches[0];
+      const cell = document
+        .elementFromPoint(t.clientX, t.clientY)
+        ?.closest("[data-track][data-step]") as HTMLElement | null;
       if (cell) {
-        const trackIdx = parseInt(cell.dataset.track!);
-        const stepIdx = parseInt(cell.dataset.step!);
-
+        const ti = parseInt(cell.dataset.track!),
+          si = parseInt(cell.dataset.step!);
         if (
           !lastTouchRef.current ||
-          lastTouchRef.current.track !== trackIdx ||
-          lastTouchRef.current.step !== stepIdx
+          lastTouchRef.current.track !== ti ||
+          lastTouchRef.current.step !== si
         ) {
-          lastTouchRef.current = { track: trackIdx, step: stepIdx };
-          onMouseEnter(trackIdx, stepIdx);
+          lastTouchRef.current = { track: ti, step: si };
+          onMouseEnter(ti, si);
         }
       }
     };
-
-    // Passive: false is required to allow preventDefault
-    container.addEventListener("touchstart", handleTouchStart, {
-      passive: false,
-    });
-    container.addEventListener("touchmove", handleTouchMove, {
-      passive: false,
-    });
-
+    el.addEventListener("touchstart", ts, { passive: false });
+    el.addEventListener("touchmove", tm, { passive: false });
     return () => {
-      container.removeEventListener("touchstart", handleTouchStart);
-      container.removeEventListener("touchmove", handleTouchMove);
+      el.removeEventListener("touchstart", ts);
+      el.removeEventListener("touchmove", tm);
     };
-  }, [onMouseDown, onMouseEnter]); // Dependencies must be stable (they are, via useCallback in parent)
+  }, [onMouseDown, onMouseEnter]);
 
   return (
     <div
       ref={containerRef}
-      className="w-full max-w-5xl bg-zinc-900/50 p-8 rounded-xl border border-zinc-800 shadow-xl mb-8"
+      className="w-full max-w-6xl rounded-2xl border border-white/6 p-4 md:p-6 mb-4 md:mb-5"
+      style={{
+        background: "#121218",
+      }}
     >
-      {tracks.map((track, trackIdx) => (
-        <div key={track.id} className="flex items-center gap-4 mb-4">
-          {/* Track Info */}
-          <div className="w-20 shrink-0">
-            <div
-              className={`text-xs font-bold ${track.text} tracking-widest mb-1`}
+      {tracks.map((track, ti) => (
+        <div
+          key={track.id}
+          className="flex items-center gap-3 md:gap-4 mb-2.5 md:mb-3 last:mb-0"
+        >
+          <div className="w-16 md:w-20 shrink-0 flex flex-col gap-1">
+            <span
+              className={`text-[9px] md:text-[10px] font-black tracking-[0.15em] uppercase ${track.text}`}
             >
               {track.name}
-            </div>
+            </span>
             <div
-              className={`h-1 w-full bg-zinc-800 rounded-full overflow-hidden`}
-            >
-              <div className={`h-full w-full ${track.color} opacity-70`} />
-            </div>
+              className="h-px w-full rounded-full opacity-30"
+              style={{ background: track.accent }}
+            />
           </div>
-
-          {/* Steps */}
-          <div className="flex-1 grid grid-cols-16 gap-1 relative">
-            {grid[trackIdx].map((isActive, stepIdx) => {
-              const isDownbeat = stepIdx % 4 === 0;
+          <div className="flex-1 grid grid-cols-16 gap-1">
+            {grid[ti].map((isActive, si) => {
+              const isDown = si % 4 === 0;
+              const isCur = currentStep === si;
               return (
                 <div
-                  key={stepIdx}
-                  className="aspect-square relative touch-none"
-                  data-track={trackIdx}
-                  data-step={stepIdx}
-                  onMouseDown={() => onMouseDown(trackIdx, stepIdx)}
-                  onMouseEnter={() => onMouseEnter(trackIdx, stepIdx)}
+                  key={si}
+                  className="aspect-square relative touch-none cursor-pointer"
+                  data-track={ti}
+                  data-step={si}
+                  onMouseDown={() => onMouseDown(ti, si)}
+                  onMouseEnter={() => onMouseEnter(ti, si)}
                 >
                   <div
-                    className={`
-                          absolute inset-0 rounded-sm transition-all duration-75 cursor-pointer
-                          ${
-                            isActive
-                              ? track.color
-                              : isDownbeat
-                                ? "bg-zinc-800"
-                                : "bg-zinc-800/40"
-                          }
-                          ${
-                            currentStep === stepIdx
-                              ? "brightness-125 scale-105 ring-1 ring-zinc-400 z-10"
-                              : ""
-                          }
-                          hover:brightness-110
-                      `}
+                    className="absolute inset-0 rounded-md"
+                    style={{
+                      transition:
+                        "background 75ms ease, border-color 75ms ease, box-shadow 75ms ease",
+                      background: isActive
+                        ? track.accent
+                        : isDown
+                          ? "rgba(255,255,255,0.06)"
+                          : "rgba(255,255,255,0.025)",
+                      border: isActive
+                        ? `1px solid ${track.accent}`
+                        : "1px solid rgba(255,255,255,0.04)",
+                      boxShadow: isActive
+                        ? `0 0 10px ${track.glow},inset 0 1px 0 rgba(255,255,255,0.25)`
+                        : isCur
+                          ? "0 0 10px rgba(255,255,255,0.2)"
+                          : "none",
+                      transform: isCur ? "scale(1.08)" : "scale(1)",
+                      opacity: isCur && !isActive ? 0.95 : 1,
+                      outline: isCur
+                        ? "1.5px solid rgba(255,255,255,0.65)"
+                        : "none",
+                      outlineOffset: "1px",
+                    }}
                   />
                 </div>
               );
@@ -968,16 +1056,29 @@ const SequencerGrid = memo(function SequencerGrid({
           </div>
         </div>
       ))}
-
-      {/* Add Track Button */}
       {showAddButton && (
         <div className="flex justify-center mt-4">
           <button
             onClick={onAddTrack}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-full text-xs font-bold text-zinc-400 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all"
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              color: "rgba(161,161,170,0.6)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)";
+              e.currentTarget.style.color = "#818cf8";
+              e.currentTarget.style.background = "rgba(99,102,241,0.08)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)";
+              e.currentTarget.style.color = "rgba(161,161,170,0.6)";
+              e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+            }}
           >
-            <Plus className="w-4 h-4" />
-            ADD TRACK
+            <Plus className="w-3.5 h-3.5" />
+            Add Track
           </button>
         </div>
       )}
