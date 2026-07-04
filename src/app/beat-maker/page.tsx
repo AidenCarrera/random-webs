@@ -63,10 +63,10 @@ const EXTRA_TRACKS: TrackConfig[] = [
   {
     id: "openhat",
     name: "OPEN HAT",
-    color: "bg-yellow-400",
-    text: "text-yellow-400",
-    accent: "#facc15",
-    glow: "rgba(250,204,21,0.4)",
+    color: "bg-yellow-300",
+    text: "text-yellow-300",
+    accent: "#fde047",
+    glow: "rgba(253,224,71,0.4)",
   },
   {
     id: "ride",
@@ -571,9 +571,9 @@ export default function BeatMaker() {
           Studio 808 requires a landscape view.
         </p>
       </div>
-      <div className="relative z-10 p-4 md:p-6 flex flex-col items-center min-h-screen font-sans">
-        <div className="w-full max-w-6xl mb-4 md:mb-6">
-          <div className="flex items-center justify-between mb-4 md:mb-5">
+      <div className="relative z-10 py-3 px-4 md:py-4 md:px-6 flex flex-col items-center min-h-screen font-sans">
+        <div className="w-full max-w-6xl mb-3 md:mb-4">
+          <div className="flex items-center justify-between mb-2.5 md:mb-3">
             <div>
               <h1
                 className="text-2xl md:text-4xl font-black tracking-[0.2em] text-white"
@@ -587,7 +587,7 @@ export default function BeatMaker() {
             </div>
           </div>
           <div
-            className="rounded-2xl border border-white/6 p-3 md:p-4 flex flex-wrap gap-3 md:gap-4 justify-between items-center"
+            className="rounded-2xl border border-white/6 py-2.5 px-3 md:py-3 md:px-4 flex flex-wrap gap-2.5 md:gap-3.5 justify-between items-center"
             style={{
               background: "#121218",
             }}
@@ -747,12 +747,12 @@ export default function BeatMaker() {
         />
 
         <div
-          className="w-full max-w-6xl rounded-2xl border border-white/6 p-4 md:p-6"
+          className="w-full max-w-6xl rounded-2xl border border-white/6 p-3.5 md:p-4.5"
           style={{
             background: "#121218",
           }}
         >
-          <div className="flex items-center gap-3 mb-4 md:mb-6">
+          <div className="flex items-center gap-3 mb-3 md:mb-4">
             <Volume2 className="w-3.5 h-3.5 text-zinc-400" />
             <h2 className="text-zinc-400 font-bold text-[10px] uppercase tracking-[0.3em]">
               Mixer
@@ -990,7 +990,7 @@ const SequencerGrid = memo(function SequencerGrid({
   return (
     <div
       ref={containerRef}
-      className="w-full max-w-6xl rounded-2xl border border-white/6 p-4 md:p-6 mb-4 md:mb-5"
+      className="w-full max-w-6xl rounded-2xl border border-white/6 p-3 md:p-4 mb-3 md:mb-4"
       style={{
         background: "#121218",
       }}
@@ -998,7 +998,7 @@ const SequencerGrid = memo(function SequencerGrid({
       {tracks.map((track, ti) => (
         <div
           key={track.id}
-          className="flex items-center gap-3 md:gap-4 mb-2.5 md:mb-3 last:mb-0"
+          className="flex items-center gap-3 md:gap-4 mb-1.5 md:mb-2 last:mb-0"
         >
           <div className="w-16 md:w-20 shrink-0 flex flex-col gap-1">
             <span
