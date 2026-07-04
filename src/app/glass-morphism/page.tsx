@@ -56,9 +56,9 @@ border: 1px solid rgba(255, 255, 255, ${border});`;
       <div className="relative z-10 w-full max-w-7xl p-6 grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
         <div className="bg-gray/10 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl text-white space-y-8">
           <div className="flex items-center gap-3 mb-4">
-            <Sliders className="w-6 h-6 text-pink-500" />
-            <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-pink-500 to-violet-400">
-              Glass Synthsizer
+            <Sliders className="w-6 h-6 text-white" />
+            <h2 className="text-2xl font-bold text-white">
+              Glass Synthesizer
             </h2>
           </div>
 
