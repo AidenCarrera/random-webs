@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s | Random Web",
   },
   description:
-    "A sandbox for coding and UI experiments. Interfaces, rainbow circles, glass morphism, and other visual experiments.",
+    "A creative sandbox of interactive, unique mini web applications. Features physics engines, sound generators, digital art tools, coding mini-games, and other creative frontend experiments.",
   keywords: [
     "creative coding",
     "web design",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://random-webs.vercel.app",
     title: "Random Web",
-    description: "A bunch of random websites and visual experiments.",
+    description: "A creative sandbox of interactive, unique mini web applications and frontend experiments.",
     siteName: "Random Web",
     images: [
       {
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Random Web | Creative Coding",
-    description: "A bunch of weird websites and code experiments.",
+    description: "A creative sandbox of interactive, unique mini web applications and frontend experiments.",
     images: ["/thumbnail.jpg"],
     creator: "@randomweb",
   },

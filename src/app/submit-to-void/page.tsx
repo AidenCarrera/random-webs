@@ -21,7 +21,7 @@ interface Particle {
   delay: number;
 }
 
-export default function SubmitToNothing() {
+export default function SubmitToVoid() {
   const [complaint, setComplaint] = useState("");
   const [phase, setPhase] = useState<Phase>("TYPING");
   const [voidMass, setVoidMass] = useState(1);

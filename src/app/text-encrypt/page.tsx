@@ -24,7 +24,7 @@ const CopyButton = ({ text }: { text: string }) => {
   );
 };
 
-export default function NeonCyber() {
+export default function TextEncrypt() {
   const [text, setText] = useState("CYBERPUNK");
 
   const [caesarShift, setCaesarShift] = useState(3);

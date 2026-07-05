@@ -440,7 +440,7 @@ class ZenAudio {
 // -------------------------------------------------------------
 // MAIN COMPONENTS
 // -------------------------------------------------------------
-export default function NatureZen() {
+export default function ZenGarden() {
   const [plants, setPlants] = useState<Plant[]>([]);
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [ripples, setRipples] = useState<Ripple[]>([]);

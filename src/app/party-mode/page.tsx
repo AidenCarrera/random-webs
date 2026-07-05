@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import confetti from "canvas-confetti";
 import { Sparkles } from "lucide-react";
 
-export default function ConfettiCannon() {
+export default function PartyMode() {
   const [isPartying, setIsPartying] = useState(false);
   const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
