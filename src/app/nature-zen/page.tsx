@@ -42,7 +42,7 @@ interface Point {
 interface Stroke {
   points: Point[];
   brushSize: number;
-  brushType: "standard" | "wave";
+  brushType: "standard" | "wave" | "water";
 }
 
 interface Ripple {
@@ -155,10 +155,10 @@ const THEMES: Theme[] = [
   {
     id: "dune",
     name: "Golden Sand",
-    bg: "#e4bb7b",
-    grooveColor: "rgba(150, 115, 60, 0.5)",
-    shadowColor: "rgba(90, 60, 20, 0.15)",
-    highlightColor: "rgba(255, 245, 220, 0.8)",
+    bg: "#f3d298",
+    grooveColor: "rgba(145, 105, 55, 0.45)",
+    shadowColor: "rgba(80, 50, 20, 0.12)",
+    highlightColor: "rgba(255, 253, 240, 0.85)",
     grainOpacity: 0.09,
     textColor: "text-amber-950",
     accentClass: "bg-amber-950/10 text-amber-950 border-amber-950/30",
@@ -399,6 +399,27 @@ class ZenAudio {
     osc.stop(now + 0.1);
   }
 
+  playWaterSound() {
+    if (!this.ctx || this.ctx.state === "suspended") return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = "sine";
+    // Soft "bloop" water bubble sound
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(1000, now + 0.12);
+
+    gain.gain.setValueAtTime(0.045, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+
+    osc.connect(gain);
+    gain.connect(this.masterGain!);
+
+    osc.start(now);
+    osc.stop(now + 0.14);
+  }
+
   resume() {
     if (this.ctx) this.ctx.resume();
   }
@@ -434,11 +455,12 @@ export default function NatureZen() {
   const [selectedEmoji, setSelectedEmoji] = useState<string>("🌱");
   const [randomMode, setRandomMode] = useState<boolean>(false);
   const [activeTool, setActiveTool] = useState<
-    "plant" | "rake" | "rake-wave" | "rake-ripple" | "prune"
+    "plant" | "rake" | "rake-wave" | "rake-ripple" | "prune" | "water"
   >("plant");
   const [selectedTheme, setSelectedTheme] = useState<string>("shirakawa");
   const [emojiSize, setEmojiSize] = useState<number>(1.2);
   const [rakeSize, setRakeSize] = useState<number>(6);
+  const [waterBrushSize, setWaterBrushSize] = useState<number>(16);
   const atmosphere: any = "day";
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
 
@@ -584,20 +606,28 @@ export default function NatureZen() {
 
     // Redraw strokes
     strokes.forEach((stroke) => {
-      drawRakeStroke(ctx, stroke, width, height, shadow, highlight, groove);
+      if (stroke.brushType === "water") {
+        drawWaterStroke(ctx, stroke, width, height);
+      } else {
+        drawRakeStroke(ctx, stroke, width, height, shadow, highlight, groove);
+      }
     });
 
     // If drag stroke is active, draw it
     if (currentStroke) {
-      drawRakeStroke(
-        ctx,
-        currentStroke,
-        width,
-        height,
-        shadow,
-        highlight,
-        groove,
-      );
+      if (currentStroke.brushType === "water") {
+        drawWaterStroke(ctx, currentStroke, width, height);
+      } else {
+        drawRakeStroke(
+          ctx,
+          currentStroke,
+          width,
+          height,
+          shadow,
+          highlight,
+          groove,
+        );
+      }
     }
 
     // Redraw ripples
@@ -757,6 +787,74 @@ export default function NatureZen() {
     drawPath(0, 0, grooveColor, 1.4);
   };
 
+  const drawWaterStroke = (
+    ctx: CanvasRenderingContext2D,
+    stroke: Stroke,
+    width: number,
+    height: number,
+  ) => {
+    const points = stroke.points;
+    if (points.length === 0) return;
+
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (points.length === 1) {
+      const px = points[0].x * width;
+      const py = points[0].y * height;
+      const size = stroke.brushSize * 2.2;
+      
+      // Draw outer pool glow
+      ctx.fillStyle = "rgba(56, 189, 248, 0.25)";
+      ctx.beginPath();
+      ctx.arc(px, py, size * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Main water pool
+      ctx.fillStyle = "rgba(14, 165, 233, 0.75)";
+      ctx.beginPath();
+      ctx.arc(px, py, size, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Glistening highlight
+      ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+      ctx.beginPath();
+      ctx.arc(px - size * 0.3, py - size * 0.3, size * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
+
+    // Draw outer glowing water border
+    ctx.strokeStyle = "rgba(56, 189, 248, 0.22)"; // light blue sky-400
+    ctx.lineWidth = stroke.brushSize * 4.5;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x * width, points[0].y * height);
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i].x * width, points[i].y * height);
+    }
+    ctx.stroke();
+
+    // Draw main water body
+    ctx.strokeStyle = "rgba(14, 165, 233, 0.7)"; // blue sky-500
+    ctx.lineWidth = stroke.brushSize * 2.8;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x * width, points[0].y * height);
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i].x * width, points[i].y * height);
+    }
+    ctx.stroke();
+
+    // Draw inner glistening stream
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.55)"; // white highlight
+    ctx.lineWidth = stroke.brushSize * 0.8;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x * width, points[0].y * height);
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i].x * width, points[i].y * height);
+    }
+    ctx.stroke();
+  };
+
   const drawRipple = (
     ctx: CanvasRenderingContext2D,
     ripple: Ripple,
@@ -857,9 +955,6 @@ export default function NatureZen() {
     });
   };
 
-  // -------------------------------------------------------------
-  // INTERACTION HANDLERS
-  // -------------------------------------------------------------
   const handleContainerMouseDown = (e: React.MouseEvent) => {
     if (draggingPlantId) return;
 
@@ -880,6 +975,14 @@ export default function NatureZen() {
     } else if (activeTool === "prune") {
       setIsShoveling(true);
       shovelEmojiAt(x, y);
+    } else if (activeTool === "water") {
+      setCurrentStroke({
+        points: [{ x, y }],
+        brushSize: waterBrushSize,
+        brushType: "water",
+      });
+      audioRef.current?.playWaterSound();
+      triggerVisualRipple(x, y);
     }
   };
 
@@ -914,7 +1017,12 @@ export default function NatureZen() {
           points: [...currentStroke.points, { x, y }],
         });
         if (Math.random() < 0.22) {
-          audioRef.current?.playRakeSound();
+          if (currentStroke.brushType === "water") {
+            audioRef.current?.playWaterSound();
+            triggerVisualRipple(x, y);
+          } else {
+            audioRef.current?.playRakeSound();
+          }
         }
       }
     }
@@ -996,6 +1104,14 @@ export default function NatureZen() {
     } else if (activeTool === "prune") {
       setIsShoveling(true);
       shovelEmojiAt(x, y);
+    } else if (activeTool === "water") {
+      setCurrentStroke({
+        points: [{ x, y }],
+        brushSize: waterBrushSize,
+        brushType: "water",
+      });
+      audioRef.current?.playWaterSound();
+      triggerVisualRipple(x, y);
     }
   };
 
@@ -1030,6 +1146,29 @@ export default function NatureZen() {
       const dy = y - lastPoint.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
+      // Add points if drag is sufficiently long to avoid jitter and save memory
+      if (dist > 0.006) {
+        setCurrentStroke({
+          ...currentStroke,
+          points: [...currentStroke.points, { x, y }],
+        });
+        if (Math.random() < 0.22) {
+          if (currentStroke.brushType === "water") {
+            audioRef.current?.playWaterSound();
+            triggerVisualRipple(x, y);
+          } else {
+            audioRef.current?.playRakeSound();
+          }
+        }
+      }
+    }
+
+    if (currentStroke) {
+      const lastPoint = currentStroke.points[currentStroke.points.length - 1];
+      const dx = x - lastPoint.x;
+      const dy = y - lastPoint.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
       if (dist > 0.006) {
         setCurrentStroke({
           ...currentStroke,
@@ -1044,19 +1183,36 @@ export default function NatureZen() {
 
   // Helper to determine relative scale factors for different emojis
   const getEmojiScaleFactor = (emojiStr: string): number => {
-    // Trees, large rocks, statues, gates, fountains, and dragons
+    // Huge / Background / Special structures
+    if (["🐉", "⛩️"].includes(emojiStr)) return 2.4;
+    // Very Large / Trees / Main structures
+    if (["🌳", "🌲", "⛲"].includes(emojiStr)) return 2.2;
+    if (["🌴", "🗿", "🌈"].includes(emojiStr)) return 2.0;
+    if (["🪨"].includes(emojiStr)) return 1.8;
+    // Large elements
+    if (["🦚"].includes(emojiStr)) return 1.75; // Peacock is now larger
+    if (["🎋"].includes(emojiStr)) return 1.6;
+    if (["🌵", "⛅", "🌙"].includes(emojiStr)) return 1.5;
+    // Medium elements
+    if (["🪵", "🧱", "🏮", "🧘"].includes(emojiStr)) return 1.35;
+    if (["🌻"].includes(emojiStr)) return 1.25;
+    if (["🏺"].includes(emojiStr)) return 1.2;
+    if (["🦆"].includes(emojiStr)) return 1.15;
+    if (["🔔"].includes(emojiStr)) return 1.1;
+    // Under-standard / Small (0.7 - 0.9)
+    if (["🌿", "🐸"].includes(emojiStr)) return 0.85;
     if (
-      ["🌳", "🌲", "🌴", "🎋", "🌵", "⛩️", "⛲", "🗿", "🐉", "🪨"].includes(
-        emojiStr,
-      )
-    ) {
-      return 2.0;
-    }
-    // Medium structures (logs, bricks, lanterns, meditating person, large birds, urns)
-    if (["🪵", "🏮", "🧱", "🧘", "🦚", "🏺"].includes(emojiStr)) {
-      return 1.35;
-    }
-    // Flowers, bugs, small birds and other details
+      ["🍁", "🍂", "🍃", "🐦", "🕯️", "🍵", "⭐", "💎", "🌾"].includes(emojiStr)
+    )
+      return 0.8;
+    if (["🍄"].includes(emojiStr)) return 0.75;
+    if (["🌱", "🍀"].includes(emojiStr)) return 0.7;
+    // Tiny creatures
+    if (["🦋", "🐟", "🐠"].includes(emojiStr)) return 0.65;
+    if (["🐌"].includes(emojiStr)) return 0.55;
+    if (["🐞", "🐝"].includes(emojiStr)) return 0.4;
+
+    // Standard items (flowers, crystal balls, chimes, turtles, etc.)
     return 1.0;
   };
 
@@ -1080,13 +1236,16 @@ export default function NatureZen() {
       if (matchedCat) catId = matchedCat.id;
     }
 
+    // Add natural scale variation (+/- 15%) for more variety
+    const scaleVariation = 0.85 + Math.random() * 0.3;
+
     const newPlant: Plant = {
       id: Math.random().toString(),
       x,
       y,
       type: emoji,
       rotation: Math.floor(Math.random() * 32) - 16, // -16 to +16 deg
-      scale: emojiSize * getEmojiScaleFactor(emoji),
+      scale: emojiSize * getEmojiScaleFactor(emoji) * scaleVariation,
     };
 
     const updatedPlants = [...plants, newPlant];
@@ -1293,52 +1452,61 @@ export default function NatureZen() {
             ------------------------------------------------------------- */}
         <div className="absolute inset-0 pointer-events-none z-10">
           <AnimatePresence>
-            {plants.map((plant) => (
-              <motion.div
-                key={plant.id}
-                initial={{ scale: 0, opacity: 0, rotate: plant.rotation }}
-                animate={{
-                  scale: plant.scale,
-                  opacity: 1,
-                  rotate: plant.rotation,
-                }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 220, damping: 15 }}
-                onMouseDown={(e) => {
-                  if (typeof window !== "undefined") {
-                    if (
-                      activeTool !== "rake" &&
-                      activeTool !== "rake-wave" &&
-                      activeTool !== "rake-ripple"
-                    ) {
-                      handleTouchStart(e as any, plant.id);
+            {plants.map((plant) => {
+              const isRakeOrWater = [
+                "rake",
+                "rake-wave",
+                "rake-ripple",
+                "water",
+              ].includes(activeTool);
+
+              return (
+                <motion.div
+                  key={plant.id}
+                  initial={{ scale: 0, opacity: 0, rotate: plant.rotation }}
+                  animate={{
+                    scale: plant.scale,
+                    opacity: 1,
+                    rotate: plant.rotation,
+                  }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 220, damping: 15 }}
+                  onMouseDown={(e) => {
+                    if (typeof window !== "undefined") {
+                      if (!isRakeOrWater) {
+                        handleTouchStart(e as any, plant.id);
+                      }
                     }
-                  }
-                }}
-                onTouchStart={(e) => {
-                  if (
-                    activeTool !== "rake" &&
-                    activeTool !== "rake-wave" &&
-                    activeTool !== "rake-ripple"
-                  ) {
-                    handleTouchStart(e, plant.id);
-                  }
-                }}
-                onClick={(e) => handlePlantClick(e, plant.id)}
-                className={`absolute select-none pointer-events-auto origin-center flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-110 active:scale-95 transition-transform duration-100`}
-                style={{
-                  left: `${plant.x * 100}%`,
-                  top: `${plant.y * 100}%`,
-                  marginLeft: "-40px",
-                  marginTop: "-40px",
-                  fontSize: "3.5rem",
-                  width: "80px",
-                  height: "80px",
-                }}
-              >
-                {plant.type}
-              </motion.div>
-            ))}
+                  }}
+                  onTouchStart={(e) => {
+                    if (!isRakeOrWater) {
+                      handleTouchStart(e, plant.id);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (!isRakeOrWater) {
+                      handlePlantClick(e, plant.id);
+                    }
+                  }}
+                  className={`absolute select-none origin-center flex items-center justify-center transition-transform duration-100 ${
+                    isRakeOrWater
+                      ? "pointer-events-none"
+                      : "pointer-events-auto cursor-grab active:cursor-grabbing hover:scale-110 active:scale-95"
+                  }`}
+                  style={{
+                    left: `${plant.x * 100}%`,
+                    top: `${plant.y * 100}%`,
+                    marginLeft: "-40px",
+                    marginTop: "-40px",
+                    fontSize: "3.5rem",
+                    width: "80px",
+                    height: "80px",
+                  }}
+                >
+                  {plant.type}
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </div>
 
@@ -1539,7 +1707,16 @@ export default function NatureZen() {
           >
             Rake ☰
           </button>
-
+          <button
+            onClick={() => setActiveTool("water")}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+              activeTool === "water"
+                ? "bg-sky-500 text-white shadow-md shadow-sky-500/25"
+                : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
+            }`}
+          >
+            Water 💧
+          </button>
           <button
             onClick={() => setActiveTool("prune")}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
@@ -1548,7 +1725,7 @@ export default function NatureZen() {
                 : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
             }`}
           >
-            Shovel 🥄
+            Shovel 🪏
           </button>
         </div>
       </footer>
@@ -1659,6 +1836,24 @@ export default function NatureZen() {
                       step="1"
                       value={rakeSize}
                       onChange={(e) => setRakeSize(parseInt(e.target.value))}
+                      className="w-full zen-slider"
+                    />
+                  </div>
+
+                  <hr className="border-emerald-200/60 dark:border-emerald-700/60 my-1" />
+
+                  <div>
+                    <div className="flex justify-between text-xs text-emerald-850 dark:text-emerald-300 mb-1">
+                      <span>Water Brush Width</span>
+                      <span className="font-mono font-bold">{waterBrushSize}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="8"
+                      max="32"
+                      step="2"
+                      value={waterBrushSize}
+                      onChange={(e) => setWaterBrushSize(parseInt(e.target.value))}
                       className="w-full zen-slider"
                     />
                   </div>

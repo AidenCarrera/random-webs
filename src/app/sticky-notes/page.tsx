@@ -41,21 +41,35 @@ export default function StickyNotes() {
       color: "bg-pink-200",
       rotation: 3,
     },
+    {
+      id: 3,
+      text: "Double-click the background to create a new note.",
+      x: 400,
+      y: 250,
+      color: "bg-green-200",
+      rotation: 1.5,
+    },
   ]);
 
-  const addNote = () => {
+  const addNote = (x?: number, y?: number) => {
     const isMobile = window.innerWidth < 768;
+    const defaultX = isMobile
+      ? window.innerWidth / 2 - 128 + (Math.random() * 50 - 25) // Centered on mobile
+      : Math.random() * (window.innerWidth - 300); // Random on desktop
+    const defaultY = isMobile
+      ? window.innerHeight / 2 - 128 + (Math.random() * 50 - 25) // Centered on mobile
+      : Math.random() * (window.innerHeight - 300); // Random on desktop
+
+    const targetX = typeof x === "number" ? x : defaultX;
+    const targetY = typeof y === "number" ? y : defaultY;
+
     setNotes((prev) => [
       ...prev,
       {
         id: Date.now(),
         text: "",
-        x: isMobile
-          ? window.innerWidth / 2 - 128 + (Math.random() * 50 - 25) // Centered on mobile
-          : Math.random() * (window.innerWidth - 300), // Random on desktop
-        y: isMobile
-          ? window.innerHeight / 2 - 128 + (Math.random() * 50 - 25) // Centered on mobile
-          : Math.random() * (window.innerHeight - 300), // Random on desktop
+        x: targetX,
+        y: targetY,
         color: COLORS[Math.floor(Math.random() * COLORS.length)],
         rotation: Math.random() * 10 - 5,
       },
@@ -73,8 +87,22 @@ export default function StickyNotes() {
 
   return (
     <div
-      className="min-h-screen bg-[#dccbb4] relative overflow-hidden"
+      className="min-h-screen bg-[#dccbb4] relative overflow-hidden select-none"
       ref={constraintsRef}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget && e.detail > 1) {
+          e.preventDefault();
+        }
+      }}
+      onDoubleClick={(e) => {
+        if (e.target === e.currentTarget) {
+          e.preventDefault();
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = Math.max(16, Math.min(e.clientX - rect.left - 128, rect.width - 256 - 16));
+          const y = Math.max(16, Math.min(e.clientY - rect.top - 128, rect.height - 256 - 16));
+          addNote(x, y);
+        }
+      }}
     >
       {/* Background Texture */}
       <div
@@ -85,7 +113,7 @@ export default function StickyNotes() {
       />
 
       <button
-        onClick={addNote}
+        onClick={() => addNote()}
         className="fixed bottom-8 right-8 bg-slate-800 text-white rounded-full p-4 shadow-xl z-50 hover:bg-slate-700 transition-colors"
       >
         <Plus className="w-8 h-8" />
@@ -144,7 +172,7 @@ function NoteItem({
         boxShadow: "10px 10px 20px rgba(0,0,0,0.2)",
         zIndex: 100,
       }}
-      className={`absolute w-64 h-64 p-6 ${note.color} shadow-lg flex flex-col group touch-none`}
+      className={`absolute w-64 h-64 p-6 ${note.color} shadow-lg flex flex-col group touch-none select-text`}
     >
       {/* Delete Button - Always visible on mobile, subtle hover on desktop */}
       <button

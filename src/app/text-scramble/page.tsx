@@ -7,9 +7,13 @@ const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const ScrambleText = ({
   text,
   className,
+  speed,
+  preserveSpacesInitially = true,
 }: {
   text: string;
   className?: string;
+  speed?: number;
+  preserveSpacesInitially?: boolean;
 }) => {
   const [display, setDisplay] = useState(text);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -20,12 +24,15 @@ const ScrambleText = ({
     setDisplay(
       text
         .split("")
-        .map((char) =>
-          char === " " ? " " : LETTERS[Math.floor(Math.random() * 26)],
-        )
+        .map((char) => {
+          if (char === " ") {
+            return preserveSpacesInitially ? " " : LETTERS[Math.floor(Math.random() * 26)];
+          }
+          return LETTERS[Math.floor(Math.random() * 26)];
+        })
         .join(""),
     );
-  }, [text]);
+  }, [text, preserveSpacesInitially]);
 
   const startScramble = () => {
     if (isRevealed) return;
@@ -49,7 +56,10 @@ const ScrambleText = ({
         setIsRevealed(true);
       }
 
-      iterationRef.current += 0.45;
+      // Automatically scale decryption speed based on text length if no speed is explicitly provided
+      const increment =
+        speed !== undefined ? speed : Math.max(0.45, text.length / 2000);
+      iterationRef.current += increment;
     }, 30);
   };
 
@@ -72,8 +82,8 @@ const LITERATURE_TEXT = `No one would have believed in the last years of the nin
 
 export default function TextScramble() {
   return (
-    <div className="min-h-screen bg-[#111] text-white flex flex-col items-center justify-center gap-12 p-8 overflow-y-auto">
-      <div className="flex flex-col gap-0 text-center shrink-0 mt-20">
+    <div className="min-h-screen bg-[#111] text-white flex flex-col items-center justify-start gap-8 p-8 overflow-y-auto pt-16">
+      <div className="flex flex-col gap-0 text-center shrink-0">
         <p className="text-gray-500 font-mono text-sm mb-8">HOVER TO DECRYPT</p>
         <ScrambleText
           text="ACCESS_GRANTED"
@@ -96,6 +106,7 @@ export default function TextScramble() {
           </h3>
           <ScrambleText
             text={LITERATURE_TEXT}
+            preserveSpacesInitially={false}
             className="text-lg md:text-xl text-gray-300 leading-relaxed text-justify"
           />
         </div>

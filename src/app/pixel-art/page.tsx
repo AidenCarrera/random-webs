@@ -109,6 +109,16 @@ export default function PixelArt() {
   };
 
   const handleGridSizeChange = (newSize: number) => {
+    if (newSize === gridSize) return;
+
+    const isDirty = grid.some((color) => color.toLowerCase() !== DEFAULT_COLOR.toLowerCase());
+    if (isDirty) {
+      const confirmChange = window.confirm(
+        "Changing grid size will wipe your current drawing. Are you sure you want to proceed?"
+      );
+      if (!confirmChange) return;
+    }
+
     setGridSize(newSize);
     setGrid(Array(newSize * newSize).fill(DEFAULT_COLOR));
     setHistory([Array(newSize * newSize).fill(DEFAULT_COLOR)]);

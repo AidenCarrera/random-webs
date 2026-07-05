@@ -3,6 +3,27 @@
 import { useState } from "react";
 import { Cpu, Wifi, Settings2 } from "lucide-react";
 
+const CopyButton = ({ text }: { text: string }) => {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      onClick={handleCopy}
+      className={`px-2.5 py-0.5 text-[10px] font-bold border rounded-none transition-all cursor-pointer ${
+        copied
+          ? "bg-[#00ff9d] text-black border-[#00ff9d]"
+          : "text-gray-500 border-gray-800 hover:text-[#00ff9d] hover:border-[#00ff9d]/50"
+      }`}
+    >
+      {copied ? "COPIED" : "COPY"}
+    </button>
+  );
+};
+
 export default function NeonCyber() {
   const [text, setText] = useState("CYBERPUNK");
 
@@ -82,20 +103,42 @@ export default function NeonCyber() {
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#ff00ff]/04 blur-[120px] pointer-events-none" />
 
       <div className="relative z-10 max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 pt-10">
-        <div className="space-y-8 border border-[#00ff9d]/20 bg-[#0a0a1f]/50 p-6 rounded-xl backdrop-blur-sm shadow-[0_0_10px_rgba(0,255,157,0.02)]">
-          <div className="flex items-center gap-4 text-[#ff00ff]">
-            <Cpu className="w-10 h-10 drop-shadow-[0_0_3px_rgba(255,0,255,0.5)]" />
-            <h1 className="text-4xl font-bold tracking-tighter drop-shadow-[0_0_6px_rgba(255,0,255,0.4)]">
-              DATA_ENTRY
-            </h1>
+        <div className="space-y-8 border border-[#00ff9d]/20 bg-[#0a0a1f]/50 p-6 rounded-none backdrop-blur-none shadow-none">
+          <div className="flex items-center justify-between text-[#ff00ff]">
+            <div className="flex items-center gap-4">
+              <Cpu className="w-10 h-10 drop-shadow-[0_0_3px_rgba(255,0,255,0.5)]" />
+              <h1 className="text-4xl font-bold tracking-tighter drop-shadow-[0_0_6px_rgba(255,0,255,0.4)]">
+                DATA_ENTRY
+              </h1>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    const clipboardText = await navigator.clipboard.readText();
+                    setText(clipboardText);
+                  } catch (err) {
+                    // Fallback alert if clipboard read is blocked
+                  }
+                }}
+                className="px-3 py-1 text-xs font-bold border border-[#ff00ff]/40 text-[#ff00ff] hover:bg-[#ff00ff] hover:text-black transition-all rounded-none cursor-pointer"
+              >
+                PASTE
+              </button>
+              <button
+                onClick={() => setText("")}
+                className="px-3 py-1 text-xs font-bold border border-gray-800 text-gray-500 hover:text-[#ff00ff] hover:border-[#ff00ff]/50 transition-all rounded-none cursor-pointer"
+              >
+                CLEAR
+              </button>
+            </div>
           </div>
 
           <div className="relative group">
-            <div className="absolute -inset-1 bg-linear-to-r from-[#00ff9d] to-[#ff00ff] opacity-15 blur-lg group-hover:opacity-25 transition duration-500"></div>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
-              className="relative w-full bg-[#0a0a1f] p-6 text-xl border border-[#00ff9d]/30 focus:border-[#00ff9d] outline-none h-48 font-mono shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] resize-none tracking-wide text-white/90 focus:shadow-[0_0_10px_rgba(0,255,157,0.15)]"
+              className="relative w-full bg-[#0a0a1f] p-6 text-xl border border-[#00ff9d]/30 focus:border-[#00ff9d] outline-none h-48 font-mono shadow-none resize-none tracking-wide text-white/90 focus:bg-[#0a0a24]/80 transition-all rounded-none"
               placeholder="INITIATE TEXT STREAM..."
               spellCheck={false}
             />
@@ -110,7 +153,7 @@ export default function NeonCyber() {
             </div>
 
             {/* Binary Config Module (Magenta) */}
-            <div className="bg-[#0a0a1f] border-l-4 border-[#ff00ff] p-4 flex items-center justify-between shadow-[0_0_8px_rgba(255,0,255,0.05)] hover:bg-[#11112b] transition-colors relative overflow-hidden group">
+            <div className="bg-[#0a0a1f] border-l-4 border-l-[#ff00ff] p-4 flex items-center justify-between border-y border-r border-y-[#ff00ff]/15 border-r-[#ff00ff]/15 hover:bg-[#11112b] transition-colors relative overflow-hidden group rounded-none">
               <div className="absolute inset-0 bg-[#ff00ff]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               <div>
                 <h3 className="text-[#ff00ff] font-bold text-sm tracking-wider drop-shadow-[0_0_2px_rgba(255,0,255,0.4)]">
@@ -121,19 +164,19 @@ export default function NeonCyber() {
                 </p>
               </div>
               <div className="z-10 flex items-center gap-3">
-                <span className="text-[10px] uppercase text-[#ff00ff]/80">
+                <span className="text-[10px] uppercase text-[#ff00ff]/80 font-bold">
                   Separator
                 </span>
                 <button
                   onClick={() => setBinarySep(!binarySep)}
-                  className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ${
+                  className={`w-12 h-6 p-1 transition-colors duration-300 rounded-none ${
                     binarySep
                       ? "bg-[#ff00ff]/20 border border-[#ff00ff]"
                       : "bg-gray-800 border border-gray-600"
                   }`}
                 >
                   <div
-                    className={`w-4 h-4 rounded-full bg-[#ff00ff] shadow-[0_0_4px_rgba(255,0,255,0.5)] transition-transform duration-300 ${
+                    className={`w-4 h-4 bg-[#ff00ff] transition-transform duration-300 rounded-none ${
                       binarySep ? "translate-x-6" : "translate-x-0"
                     }`}
                   />
@@ -142,7 +185,7 @@ export default function NeonCyber() {
             </div>
 
             {/* Hex Config Module (Cyan) */}
-            <div className="bg-[#0a0a1f] border-l-4 border-[#00ffff] p-4 flex items-center justify-between shadow-[0_0_8px_rgba(0,255,255,0.05)] hover:bg-[#11112b] transition-colors relative overflow-hidden group">
+            <div className="bg-[#0a0a1f] border-l-4 border-l-[#00ffff] p-4 flex items-center justify-between border-y border-r border-y-[#00ffff]/15 border-r-[#00ffff]/15 hover:bg-[#11112b] transition-colors relative overflow-hidden group rounded-none">
               <div className="absolute inset-0 bg-[#00ffff]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               <div>
                 <h3 className="text-[#00ffff] font-bold text-sm tracking-wider drop-shadow-[0_0_2px_rgba(0,255,255,0.4)]">
@@ -152,12 +195,12 @@ export default function NeonCyber() {
                   CASING_PROTOCOL
                 </p>
               </div>
-              <div className="z-10 flex bg-black/40 rounded p-1 border border-[#00ffff]/30">
+              <div className="z-10 flex bg-black/40 rounded-none p-1 border border-[#00ffff]/30">
                 <button
                   onClick={() => setHexCase("upper")}
-                  className={`px-3 py-1 text-xs font-bold rounded transition-all ${
+                  className={`px-3 py-1 text-xs font-bold rounded-none transition-all ${
                     hexCase === "upper"
-                      ? "bg-[#00ffff]/20 text-[#00ffff] shadow-[0_0_4px_rgba(0,255,255,0.25)]"
+                      ? "bg-[#00ffff] text-black border border-[#00ffff]"
                       : "text-gray-500 hover:text-[#00ffff]/60"
                   }`}
                 >
@@ -165,9 +208,9 @@ export default function NeonCyber() {
                 </button>
                 <button
                   onClick={() => setHexCase("lower")}
-                  className={`px-3 py-1 text-xs font-bold rounded transition-all ${
+                  className={`px-3 py-1 text-xs font-bold rounded-none transition-all ${
                     hexCase === "lower"
-                      ? "bg-[#00ffff]/20 text-[#00ffff] shadow-[0_0_4px_rgba(0,255,255,0.25)]"
+                      ? "bg-[#00ffff] text-black border border-[#00ffff]"
                       : "text-gray-500 hover:text-[#00ffff]/60"
                   }`}
                 >
@@ -177,7 +220,7 @@ export default function NeonCyber() {
             </div>
 
             {/* Caesar Config Module (Yellow) */}
-            <div className="bg-[#0a0a1f] border-l-4 border-[#ffff00] p-4 shadow-[0_0_8px_rgba(255,255,0,0.05)] hover:bg-[#11112b] transition-colors relative overflow-hidden group">
+            <div className="bg-[#0a0a1f] border-l-4 border-l-[#ffff00] p-4 border-y border-r border-y-[#ffff00]/15 border-r-[#ffff00]/15 hover:bg-[#11112b] transition-colors relative overflow-hidden group rounded-none">
               <div className="absolute inset-0 bg-[#ffff00]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               <div className="flex justify-between items-center mb-2">
                 <div>
@@ -188,7 +231,7 @@ export default function NeonCyber() {
                     OFFSET_CALIBRATION
                   </p>
                 </div>
-                <span className="font-mono text-xl text-[#ffff00] font-bold bg-black/40 px-3 py-1 rounded border border-[#ffff00]/30 shadow-[0_0_4px_rgba(255,255,0,0.3)]">
+                <span className="font-mono text-xl text-[#ffff00] font-bold bg-black/40 px-3 py-1 rounded-none border border-[#ffff00]/30">
                   {caesarShift > 0 ? "+" : ""}
                   {caesarShift}
                 </span>
@@ -199,12 +242,12 @@ export default function NeonCyber() {
                 max="26"
                 value={caesarShift}
                 onChange={(e) => setCaesarShift(parseInt(e.target.value))}
-                className="caesar-slider w-full h-2 bg-[#ffff00]/20 rounded-lg appearance-none cursor-pointer z-10 relative"
+                className="caesar-slider w-full h-2 bg-[#ffff00]/20 rounded-none appearance-none cursor-pointer z-10 relative"
               />
             </div>
 
             {/* Base64 Config Module (Orange) */}
-            <div className="bg-[#0a0a1f] border-l-4 border-[#ff9900] p-4 shadow-[0_0_8px_rgba(255,153,0,0.05)] hover:bg-[#11112b] transition-colors relative overflow-hidden group">
+            <div className="bg-[#0a0a1f] border-l-4 border-l-[#ff9900] p-4 border-y border-r border-y-[#ff9900]/15 border-r-[#ff9900]/15 hover:bg-[#11112b] transition-colors relative overflow-hidden group rounded-none">
               <div className="absolute inset-0 bg-[#ff9900]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               <div className="flex justify-between items-center mb-2">
                 <div>
@@ -219,10 +262,8 @@ export default function NeonCyber() {
                   {[1, 2, 3, 4, 5].map((i) => (
                     <div
                       key={i}
-                      className={`w-2 h-4 rounded-sm transition-all ${
-                        base64Iter >= i
-                          ? "bg-[#ff9900] shadow-[0_0_4px_rgba(255,153,0,0.3)]"
-                          : "bg-[#ff9900]/20"
+                      className={`w-2 h-4 rounded-none transition-all ${
+                        base64Iter >= i ? "bg-[#ff9900]" : "bg-[#ff9900]/20"
                       }`}
                     />
                   ))}
@@ -234,7 +275,7 @@ export default function NeonCyber() {
                 max="5"
                 value={base64Iter}
                 onChange={(e) => setBase64Iter(parseInt(e.target.value))}
-                className="base64-slider w-full h-2 bg-[#ff9900]/20 rounded-lg appearance-none cursor-pointer z-10 relative"
+                className="base64-slider w-full h-2 bg-[#ff9900]/20 rounded-none appearance-none cursor-pointer z-10 relative"
               />
               <div className="flex justify-between text-[10px] text-[#ff9900]/50 font-mono mt-1 px-1">
                 <span>1x</span>
@@ -243,7 +284,7 @@ export default function NeonCyber() {
             </div>
 
             {/* Atbash Config Module (Red) */}
-            <div className="bg-[#0a0a1f] border-l-4 border-[#ff0000] p-4 flex items-center justify-between shadow-[0_0_8px_rgba(255,0,0,0.05)] hover:bg-[#11112b] transition-colors relative overflow-hidden group">
+            <div className="bg-[#0a0a1f] border-l-4 border-l-[#ff0000] p-4 flex items-center justify-between border-y border-r border-y-[#ff0000]/15 border-r-[#ff0000]/15 hover:bg-[#11112b] transition-colors relative overflow-hidden group rounded-none">
               <div className="absolute inset-0 bg-[#ff0000]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               <div>
                 <h3 className="text-[#ff0000] font-bold text-sm tracking-wider drop-shadow-[0_0_2px_rgba(255,0,0,0.4)]">
@@ -256,10 +297,10 @@ export default function NeonCyber() {
               <div className="z-10 flex items-center gap-3">
                 <button
                   onClick={() => setAtbashMirror(!atbashMirror)}
-                  className={`px-3 py-1 text-xs font-bold rounded transition-all border ${
+                  className={`px-3 py-1 text-xs font-bold rounded-none transition-all border ${
                     atbashMirror
-                      ? "bg-[#ff0000]/20 text-[#ff0000] border-[#ff0000] shadow-[0_0_4px_rgba(255,0,0,0.25)]"
-                      : "text-gray-500 border-gray-700 hover:text-[#ff0000]/60"
+                      ? "bg-[#ff0000] text-black border-[#ff0000]"
+                      : "text-gray-500 border-gray-700 hover:text-[#ff0000]/60 hover:border-[#ff0000]/30"
                   }`}
                 >
                   {atbashMirror ? "MIRRORED" : "STANDARD"}
@@ -268,7 +309,7 @@ export default function NeonCyber() {
             </div>
 
             {/* ROT13 Config Module (Blue) */}
-            <div className="bg-[#0a0a1f] border-l-4 border-[#0099ff] p-4 flex items-center justify-between shadow-[0_0_8px_rgba(0,153,255,0.05)] hover:bg-[#11112b] transition-colors relative overflow-hidden group">
+            <div className="bg-[#0a0a1f] border-l-4 border-l-[#0099ff] p-4 flex items-center justify-between border-y border-r border-y-[#0099ff]/15 border-r-[#0099ff]/15 hover:bg-[#11112b] transition-colors relative overflow-hidden group rounded-none">
               <div className="absolute inset-0 bg-[#0099ff]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
               <div>
                 <h3 className="text-[#0099ff] font-bold text-sm tracking-wider drop-shadow-[0_0_2px_rgba(0,153,255,0.4)]">
@@ -278,12 +319,12 @@ export default function NeonCyber() {
                   ALGORITHM_SELECT
                 </p>
               </div>
-              <div className="z-10 flex bg-black/40 rounded p-1 border border-[#0099ff]/30">
+              <div className="z-10 flex bg-black/40 rounded-none p-1 border border-[#0099ff]/30">
                 <button
                   onClick={() => setRotVariant("rot13")}
-                  className={`px-3 py-1 text-xs font-bold rounded transition-all ${
+                  className={`px-3 py-1 text-xs font-bold rounded-none transition-all ${
                     rotVariant === "rot13"
-                      ? "bg-[#0099ff]/20 text-[#0099ff] shadow-[0_0_4px_rgba(0,153,255,0.25)]"
+                      ? "bg-[#0099ff] text-black border border-[#0099ff]"
                       : "text-gray-500 hover:text-[#0099ff]/60"
                   }`}
                 >
@@ -291,9 +332,9 @@ export default function NeonCyber() {
                 </button>
                 <button
                   onClick={() => setRotVariant("rot47")}
-                  className={`px-3 py-1 text-xs font-bold rounded transition-all ${
+                  className={`px-3 py-1 text-xs font-bold rounded-none transition-all ${
                     rotVariant === "rot47"
-                      ? "bg-[#0099ff]/20 text-[#0099ff] shadow-[0_0_4px_rgba(0,153,255,0.25)]"
+                      ? "bg-[#0099ff] text-black border border-[#0099ff]"
                       : "text-gray-500 hover:text-[#0099ff]/60"
                   }`}
                 >
@@ -305,8 +346,8 @@ export default function NeonCyber() {
         </div>
 
         {/* RIGHT COLUMN: Output Streams */}
-        <div className="space-y-6 overflow-y-auto max-h-[85vh] pr-2 scrollbar-thin scrollbar-thumb-[#00ff9d]/30 scrollbar-track-transparent">
-          <div className="flex items-center gap-4 text-[#00ff9d] sticky top-0 bg-[#050510]/95 backdrop-blur z-20 py-2 border-b border-[#00ff9d]/20 mb-4">
+        <div className="space-y-6 overflow-y-auto max-h-[85vh] pr-2 scrollbar-thin scrollbar-thumb-[#00ff9d]/30 scrollbar-track-transparent animate-none">
+          <div className="flex items-center gap-4 text-[#00ff9d] sticky top-0 bg-[#050510]/95 backdrop-blur-none z-20 py-2 border-b border-[#00ff9d]/20 mb-4 shadow-none">
             <Wifi className="w-6 h-6 animate-pulse drop-shadow-[0_0_3px_rgba(0,255,157,0.5)]" />
             <h2 className="text-2xl font-bold tracking-widest w-full flex justify-between items-center drop-shadow-[0_0_4px_rgba(0,255,157,0.4)]">
               <span>ENCRYPTED_STREAMS</span>
@@ -315,10 +356,15 @@ export default function NeonCyber() {
 
           <div className="grid gap-6">
             {/* Binary Stream */}
-            <div className="bg-[#0a0a1f]/80 p-4 border-l-4 border-[#ff00ff] hover:bg-[#151530] transition-all group shadow-[0_0_10px_rgba(255,0,255,0.05)] hover:shadow-[0_0_15px_rgba(255,0,255,0.1)]">
-              <h3 className="text-[#ff00ff] text-xs mb-3 font-bold flex justify-between tracking-widest border-b border-[#ff00ff]/20 pb-1 drop-shadow-[0_0_2px_rgba(255,0,255,0.4)]">
-                <span>BINARY_STREAM</span>
-                <span className="font-mono opacity-50">UTF-8</span>
+            <div className="bg-[#0a0a1f]/80 p-4 border-l-4 border-l-[#ff00ff] border-y border-r border-y-[#ff00ff]/15 border-r-[#ff00ff]/15 hover:bg-[#151530] transition-all group rounded-none shadow-none">
+              <h3 className="text-[#ff00ff] text-xs mb-3 font-bold flex justify-between items-center tracking-widest border-b border-[#ff00ff]/20 pb-1 drop-shadow-[0_0_2px_rgba(255,0,255,0.4)]">
+                <span className="flex items-center gap-2">
+                  <span>BINARY_STREAM</span>
+                  <span className="font-mono opacity-50 text-[10px]">
+                    UTF-8
+                  </span>
+                </span>
+                <CopyButton text={toBinary(text, binarySep)} />
               </h3>
               <p className="break-all font-mono text-xs text-[#ff00ff] leading-relaxed font-light tracking-wide shadow-none drop-shadow-[0_0_1px_rgba(255,0,255,0.3)]">
                 {toBinary(text, binarySep)}
@@ -326,10 +372,15 @@ export default function NeonCyber() {
             </div>
 
             {/* Hex Stream */}
-            <div className="bg-[#0a0a1f]/80 p-4 border-l-4 border-[#00ffff] hover:bg-[#151530] transition-all group shadow-[0_0_10px_rgba(0,255,255,0.05)] hover:shadow-[0_0_15px_rgba(0,255,255,0.1)]">
-              <h3 className="text-[#00ffff] text-xs mb-3 font-bold flex justify-between tracking-widest border-b border-[#00ffff]/20 pb-1 drop-shadow-[0_0_2px_rgba(0,255,255,0.4)]">
-                <span>HEX_STREAM</span>
-                <span className="font-mono opacity-50">BASE16</span>
+            <div className="bg-[#0a0a1f]/80 p-4 border-l-4 border-l-[#00ffff] border-y border-r border-y-[#00ffff]/15 border-r-[#00ffff]/15 hover:bg-[#151530] transition-all group rounded-none shadow-none">
+              <h3 className="text-[#00ffff] text-xs mb-3 font-bold flex justify-between items-center tracking-widest border-b border-[#00ffff]/20 pb-1 drop-shadow-[0_0_2px_rgba(0,255,255,0.4)]">
+                <span className="flex items-center gap-2">
+                  <span>HEX_STREAM</span>
+                  <span className="font-mono opacity-50 text-[10px]">
+                    BASE16
+                  </span>
+                </span>
+                <CopyButton text={toHex(text, hexCase)} />
               </h3>
               <p className="break-all font-mono text-xs text-[#00ffff] leading-relaxed tracking-wider drop-shadow-[0_0_1px_rgba(0,255,255,0.3)]">
                 {toHex(text, hexCase)}
@@ -337,12 +388,15 @@ export default function NeonCyber() {
             </div>
 
             {/* Caesar Stream */}
-            <div className="bg-[#0a0a1f]/80 p-4 border-l-4 border-[#ffff00] hover:bg-[#151530] transition-all group shadow-[0_0_10px_rgba(255,255,0,0.05)] hover:shadow-[0_0_15px_rgba(255,255,0,0.1)]">
-              <h3 className="text-[#ffff00] text-xs mb-3 font-bold flex justify-between tracking-widest border-b border-[#ffff00]/20 pb-1 drop-shadow-[0_0_2px_rgba(255,255,0,0.4)]">
-                <span>CAESAR_CIPHER</span>
-                <span className="bg-[#ffff00]/10 px-2 rounded text-[10px]">
-                  ROT{Math.abs(caesarShift)}
+            <div className="bg-[#0a0a1f]/80 p-4 border-l-4 border-l-[#ffff00] border-y border-r border-y-[#ffff00]/15 border-r-[#ffff00]/15 hover:bg-[#151530] transition-all group rounded-none shadow-none">
+              <h3 className="text-[#ffff00] text-xs mb-3 font-bold flex justify-between items-center tracking-widest border-b border-[#ffff00]/20 pb-1 drop-shadow-[0_0_2px_rgba(255,255,0,0.4)]">
+                <span className="flex items-center gap-2">
+                  <span>CAESAR_CIPHER</span>
+                  <span className="bg-[#ffff00]/10 px-2 border border-[#ffff00]/30 rounded-none text-[10px] font-mono">
+                    ROT{Math.abs(caesarShift)}
+                  </span>
                 </span>
+                <CopyButton text={toCaesar(text, caesarShift)} />
               </h3>
               <p className="break-all font-mono text-sm text-[#ffff00] leading-relaxed drop-shadow-[0_0_1px_rgba(255,255,0,0.3)]">
                 {toCaesar(text, caesarShift)}
@@ -350,12 +404,15 @@ export default function NeonCyber() {
             </div>
 
             {/* Base64 Stream */}
-            <div className="bg-[#0a0a1f]/80 p-4 border-l-4 border-[#ff9900] hover:bg-[#151530] transition-all group shadow-[0_0_10px_rgba(255,153,0,0.05)] hover:shadow-[0_0_15px_rgba(255,153,0,0.1)]">
-              <h3 className="text-[#ff9900] text-xs mb-3 font-bold flex justify-between tracking-widest border-b border-[#ff9900]/20 pb-1 drop-shadow-[0_0_2px_rgba(255,153,0,0.4)]">
-                <span>BASE64_ENCODING</span>
-                <span className="font-mono opacity-50">
-                  {base64Iter}X ITERATION
+            <div className="bg-[#0a0a1f]/80 p-4 border-l-4 border-l-[#ff9900] border-y border-r border-y-[#ff9900]/15 border-r-[#ff9900]/15 hover:bg-[#151530] transition-all group rounded-none shadow-none">
+              <h3 className="text-[#ff9900] text-xs mb-3 font-bold flex justify-between items-center tracking-widest border-b border-[#ff9900]/20 pb-1 drop-shadow-[0_0_2px_rgba(255,153,0,0.4)]">
+                <span className="flex items-center gap-2">
+                  <span>BASE64_ENCODING</span>
+                  <span className="font-mono opacity-50 text-[10px]">
+                    {base64Iter}X ITERATION
+                  </span>
                 </span>
+                <CopyButton text={toBase64(text, base64Iter)} />
               </h3>
               <p className="break-all font-mono text-sm text-[#ff9900] leading-relaxed drop-shadow-[0_0_1px_rgba(255,153,0,0.3)]">
                 {toBase64(text, base64Iter)}
@@ -363,12 +420,15 @@ export default function NeonCyber() {
             </div>
 
             {/* Atbash Stream */}
-            <div className="bg-[#0a0a1f]/80 p-4 border-l-4 border-[#ff0000] hover:bg-[#151530] transition-all group shadow-[0_0_10px_rgba(255,0,0,0.05)] hover:shadow-[0_0_15px_rgba(255,0,0,0.1)]">
-              <h3 className="text-[#ff0000] text-xs mb-3 font-bold flex justify-between tracking-widest border-b border-[#ff0000]/20 pb-1 drop-shadow-[0_0_2px_rgba(255,0,0,0.4)]">
-                <span>ATBASH_SUBSTITUTION</span>
-                <span className="font-mono opacity-50">
-                  {atbashMirror ? "MIRRORED" : "STANDARD"}
+            <div className="bg-[#0a0a1f]/80 p-4 border-l-4 border-l-[#ff0000] border-y border-r border-y-[#ff0000]/15 border-r-[#ff0000]/15 hover:bg-[#151530] transition-all group rounded-none shadow-none">
+              <h3 className="text-[#ff0000] text-xs mb-3 font-bold flex justify-between items-center tracking-widest border-b border-[#ff0000]/20 pb-1 drop-shadow-[0_0_2px_rgba(255,0,0,0.4)]">
+                <span className="flex items-center gap-2">
+                  <span>ATBASH_SUBSTITUTION</span>
+                  <span className="font-mono opacity-50 text-[10px]">
+                    {atbashMirror ? "MIRRORED" : "STANDARD"}
+                  </span>
                 </span>
+                <CopyButton text={toAtbash(text, atbashMirror)} />
               </h3>
               <p className="break-all font-mono text-sm text-[#ff0000] leading-relaxed drop-shadow-[0_0_1px_rgba(255,0,0,0.3)]">
                 {toAtbash(text, atbashMirror)}
@@ -376,12 +436,15 @@ export default function NeonCyber() {
             </div>
 
             {/* ROT13 Stream */}
-            <div className="bg-[#0a0a1f]/80 p-4 border-l-4 border-[#0099ff] hover:bg-[#151530] transition-all group shadow-[0_0_10px_rgba(0,153,255,0.05)] hover:shadow-[0_0_15px_rgba(0,153,255,0.1)]">
-              <h3 className="text-[#0099ff] text-xs mb-3 font-bold flex justify-between tracking-widest border-b border-[#0099ff]/20 pb-1 drop-shadow-[0_0_2px_rgba(0,153,255,0.4)]">
-                <span>ROT_ALGORITHM</span>
-                <span className="font-mono opacity-50 uppercase">
-                  {rotVariant}
+            <div className="bg-[#0a0a1f]/80 p-4 border-l-4 border-l-[#0099ff] border-y border-r border-y-[#0099ff]/15 border-r-[#0099ff]/15 hover:bg-[#151530] transition-all group rounded-none shadow-none">
+              <h3 className="text-[#0099ff] text-xs mb-3 font-bold flex justify-between items-center tracking-widest border-b border-[#0099ff]/20 pb-1 drop-shadow-[0_0_2px_rgba(0,153,255,0.4)]">
+                <span className="flex items-center gap-2">
+                  <span>ROT_ALGORITHM</span>
+                  <span className="font-mono opacity-50 uppercase text-[10px]">
+                    {rotVariant}
+                  </span>
                 </span>
+                <CopyButton text={toRot13(text, rotVariant)} />
               </h3>
               <p className="break-all font-mono text-sm text-[#0099ff] leading-relaxed drop-shadow-[0_0_1px_rgba(0,153,255,0.3)]">
                 {toRot13(text, rotVariant)}
@@ -397,7 +460,7 @@ export default function NeonCyber() {
           appearance: none;
           width: 16px;
           height: 16px;
-          border-radius: 50%;
+          border-radius: 0;
           cursor: pointer;
           transition: transform 0.1s ease;
         }
@@ -405,7 +468,7 @@ export default function NeonCyber() {
         input[type="range"]::-moz-range-thumb {
           width: 16px;
           height: 16px;
-          border-radius: 50%;
+          border-radius: 0;
           border: none;
           cursor: pointer;
           transition: transform 0.1s ease;
@@ -417,20 +480,20 @@ export default function NeonCyber() {
 
         .caesar-slider::-webkit-slider-thumb {
           background-color: #ffff00;
-          box-shadow: 0 0 4px rgba(255, 255, 0, 0.5);
+          border: 1px solid #ffff00;
         }
         .caesar-slider::-moz-range-thumb {
           background-color: #ffff00;
-          box-shadow: 0 0 4px rgba(255, 255, 0, 0.5);
+          border: 1px solid #ffff00;
         }
 
         .base64-slider::-webkit-slider-thumb {
           background-color: #ff9900;
-          box-shadow: 0 0 4px rgba(255, 153, 0, 0.5);
+          border: 1px solid #ff9900;
         }
         .base64-slider::-moz-range-thumb {
           background-color: #ff9900;
-          box-shadow: 0 0 4px rgba(255, 153, 0, 0.5);
+          border: 1px solid #ff9900;
         }
       `}</style>
     </div>
