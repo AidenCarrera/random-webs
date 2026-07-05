@@ -366,24 +366,24 @@ export default function SortingRace() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f0f2f5] text-[#333] font-mono p-4 md:px-32 xl:px-48 py-8 flex flex-col">
-      <header className="mb-8 flex flex-col md:flex-row justify-between items-center md:items-end border-b-2 border-slate-300 pb-4 gap-4">
-        <div className="text-center md:text-left">
-          <h1 className="text-4xl font-black tracking-tight text-slate-800">
+    <div className="h-auto md:h-screen md:overflow-hidden bg-[#f0f2f5] text-[#333] font-mono p-4 md:px-8 xl:px-16 py-4 flex flex-col justify-between">
+      <header className="mb-4 flex flex-col sm:flex-row justify-between items-center sm:items-end border-b-2 border-slate-300 pb-3 gap-2">
+        <div className="text-center sm:text-left">
+          <h1 className="text-3xl font-black tracking-tight text-slate-800">
             ALGO RACE
           </h1>
-          <p className="text-slate-500">Visualizing Efficiency</p>
+          <p className="text-slate-500 text-xs">Visualizing Efficiency &bull; N={arraySize} &bull; Delay={delay}ms</p>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 items-center">
-          <div className="flex items-center gap-2 bg-white px-4 py-2 rounded shadow-sm border border-slate-200">
-            <span className="text-xs font-bold text-slate-400">SIZE:</span>
+        <div className="flex flex-col sm:flex-row gap-3 items-center">
+          <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded shadow-sm border border-slate-200">
+            <span className="text-[10px] font-bold text-slate-400">SIZE:</span>
             {[10, 60, 120].map((size) => (
               <button
                 key={size}
                 onClick={() => setArraySize(size)}
                 disabled={isRunning}
-                className={`text-sm font-bold px-2 py-1 rounded ${
+                className={`text-xs font-bold px-1.5 py-0.5 rounded ${
                   arraySize === size
                     ? "bg-slate-800 text-white"
                     : "text-slate-500 hover:bg-slate-100"
@@ -394,36 +394,36 @@ export default function SortingRace() {
             ))}
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <button
               onClick={toggleRace}
-              className="flex items-center gap-2 px-6 py-2 bg-slate-800 text-white font-bold hover:bg-slate-700 disabled:opacity-50 transition-all shadow-lg min-w-[130px] justify-center"
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 disabled:opacity-50 transition-all shadow-md min-w-[100px] justify-center"
             >
               {isRunning && !isPaused ? (
                 <>
-                  <Pause className="w-4 h-4" /> PAUSE
+                  <Pause className="w-3.5 h-3.5" /> PAUSE
                 </>
               ) : isRunning && isPaused ? (
                 <>
-                  <Play className="w-4 h-4" /> RESUME
+                  <Play className="w-3.5 h-3.5" /> RESUME
                 </>
               ) : (
                 <>
-                  <Play className="w-4 h-4" /> START
+                  <Play className="w-3.5 h-3.5" /> START
                 </>
               )}
             </button>
             <button
               onClick={reset}
-              className="flex items-center gap-2 px-6 py-2 bg-white border-2 border-slate-300 text-slate-800 font-bold hover:bg-slate-100 transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-white border-2 border-slate-300 text-slate-800 text-xs font-bold hover:bg-slate-100 transition-all shadow-sm"
             >
-              <RotateCcw className="w-4 h-4" /> RESET
+              <RotateCcw className="w-3.5 h-3.5" /> RESET
             </button>
           </div>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 flex-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 flex-1 justify-center items-center min-h-0">
         <SortVisualizer
           name="Bubble Sort"
           data={bubbleArr}
@@ -467,10 +467,6 @@ export default function SortingRace() {
           complexity="O(n log n)"
         />
       </div>
-
-      <div className="mt-8 text-xs text-center text-slate-400">
-        N={arraySize} • Delay={delay}ms
-      </div>
     </div>
   );
 }
@@ -489,17 +485,17 @@ function SortVisualizer({
   complexity: string;
 }) {
   return (
-    <div className="bg-white p-4 rounded-xl shadow-xl flex flex-col aspect-square w-full max-w-160 mx-auto relative border border-slate-100">
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-lg font-bold">{name}</h2>
+    <div className="bg-white p-3 rounded-xl shadow-lg flex flex-col aspect-square w-full max-w-[280px] md:max-w-[calc((100vh-190px)/3)] md:max-h-[calc((100vh-190px)/3)] xl:max-w-[calc((100vh-170px)/2)] xl:max-h-[calc((100vh-170px)/2)] mx-auto relative border border-slate-100 min-h-0 min-w-0">
+      <div className="flex justify-between items-center mb-1.5">
+        <h2 className="text-sm sm:text-base font-bold">{name}</h2>
         {rank && (
-          <div className="bg-yellow-400 text-black font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in text-xs">
+          <div className="bg-yellow-400 text-black font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-in zoom-in text-[10px]">
             #{rank}
           </div>
         )}
       </div>
 
-      <div className="flex-1 flex items-end gap-px w-full border-b border-l border-slate-200 p-1 relative">
+      <div className="flex-1 flex items-end gap-px w-full border-b border-l border-slate-200 p-0.5 relative min-h-0">
         {data.map((val, i) => (
           <div
             key={i}
@@ -510,7 +506,7 @@ function SortVisualizer({
       </div>
 
       {/* Complexity Tag */}
-      <div className="absolute top-4 right-4 text-[10px] font-bold text-slate-300 opacity-50 group-hover:opacity-100">
+      <div className="absolute top-3 right-3 text-[9px] font-bold text-slate-300 opacity-50">
         {complexity}
       </div>
     </div>
