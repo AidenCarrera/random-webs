@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Eraser,
   PaintBucket,
@@ -10,9 +10,10 @@ import {
   Undo,
   Redo,
   Grid3X3,
+  Download,
 } from "lucide-react";
 
-const GRID_SIZE = 32;
+const DEFAULT_SIZE = 32;
 const DEFAULT_COLOR = "#fff1e8";
 const COLORS = [
   "#000000",
@@ -52,12 +53,13 @@ const COLORS = [
 type Tool = "pencil" | "eraser" | "fill" | "picker";
 
 export default function PixelArt() {
+  const [gridSize, setGridSize] = useState(DEFAULT_SIZE);
   const [grid, setGrid] = useState<string[]>(
-    Array(GRID_SIZE * GRID_SIZE).fill(DEFAULT_COLOR),
+    Array(DEFAULT_SIZE * DEFAULT_SIZE).fill(DEFAULT_COLOR),
   );
 
   const [history, setHistory] = useState<string[][]>([
-    Array(GRID_SIZE * GRID_SIZE).fill(DEFAULT_COLOR),
+    Array(DEFAULT_SIZE * DEFAULT_SIZE).fill(DEFAULT_COLOR),
   ]);
   const [historyIndex, setHistoryIndex] = useState(0);
 
@@ -69,12 +71,48 @@ export default function PixelArt() {
   const updateGrid = (newGrid: string[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(newGrid);
-    // Limit history stack
     if (newHistory.length > 50) newHistory.shift();
 
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
     setGrid(newGrid);
+  };
+
+  const exportToPNG = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = gridSize;
+    canvas.height = gridSize;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    for (let i = 0; i < grid.length; i++) {
+      const color = grid[i];
+      const x = i % gridSize;
+      const y = Math.floor(i / gridSize);
+
+      if (
+        color.toLowerCase() === "#ffffff" ||
+        color.toLowerCase() === DEFAULT_COLOR.toLowerCase()
+      ) {
+        continue;
+      } else {
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+
+    const url = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.download = `pixel-art-${gridSize}x${gridSize}.png`;
+    link.href = url;
+    link.click();
+  };
+
+  const handleGridSizeChange = (newSize: number) => {
+    setGridSize(newSize);
+    setGrid(Array(newSize * newSize).fill(DEFAULT_COLOR));
+    setHistory([Array(newSize * newSize).fill(DEFAULT_COLOR)]);
+    setHistoryIndex(0);
   };
 
   const undo = useCallback(() => {
@@ -109,7 +147,6 @@ export default function PixelArt() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [undo, redo]);
 
-  // BFS Flood Fill Algorithm
   const floodFill = (
     index: number,
     targetColor: string,
@@ -125,8 +162,8 @@ export default function PixelArt() {
       const curIndex = queue.shift()!;
       newGrid[curIndex] = replacementColor;
 
-      const x = curIndex % GRID_SIZE;
-      const y = Math.floor(curIndex / GRID_SIZE);
+      const x = curIndex % gridSize;
+      const y = Math.floor(curIndex / gridSize);
 
       const neighbors = [
         { dx: 0, dy: -1 },
@@ -139,8 +176,8 @@ export default function PixelArt() {
         const nx = x + dx;
         const ny = y + dy;
 
-        if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE) {
-          const nIndex = ny * GRID_SIZE + nx;
+        if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize) {
+          const nIndex = ny * gridSize + nx;
           if (!visited.has(nIndex) && newGrid[nIndex] === targetColor) {
             visited.add(nIndex);
             queue.push(nIndex);
@@ -181,7 +218,6 @@ export default function PixelArt() {
   const onMouseUpGlobal = () => {
     if (isDrawing) {
       setIsDrawing(false);
-      // Determine if grid changed compared to last history to push new state
       const currentHistoryGrid = history[historyIndex];
       if (JSON.stringify(grid) !== JSON.stringify(currentHistoryGrid)) {
         updateGrid(grid);
@@ -190,8 +226,6 @@ export default function PixelArt() {
   };
 
   const handleTouch = (e: React.TouchEvent) => {
-    // Scrolling disabled via `touch-action: none` in CSS.
-
     const touch = e.touches[0];
     if (!touch) return;
 
@@ -228,7 +262,7 @@ export default function PixelArt() {
       onMouseUp={onMouseUpGlobal}
     >
       <h1 className="text-xl md:text-4xl text-[#1d2b53] mb-4 md:mb-8 font-bold tracking-tighter pixel-font text-center px-2">
-        PIXEL_STUDIO_32
+        PIXEL STUDIO {gridSize}
       </h1>
 
       <div className="flex flex-col md:flex-row gap-4 items-center md:items-start md:justify-center w-full max-w-[100vw] overflow-hidden p-2">
@@ -290,13 +324,41 @@ export default function PixelArt() {
 
           <button
             onClick={() =>
-              updateGrid(Array(GRID_SIZE * GRID_SIZE).fill(DEFAULT_COLOR))
+              updateGrid(Array(gridSize * gridSize).fill(DEFAULT_COLOR))
             }
             className="p-3 rounded bg-[#ff004d] text-white hover:opacity-90 transition-all font-bold group relative flex justify-center"
             title="Clear Canvas"
           >
             <Trash2 className="w-5 h-5" />
           </button>
+
+          <button
+            onClick={exportToPNG}
+            className="p-3 rounded bg-[#00e436] text-[#1d2b53] hover:opacity-90 transition-all font-bold group relative flex justify-center"
+            title="Export PNG (Transparent White)"
+          >
+            <Download className="w-5 h-5" />
+          </button>
+
+          <div className="w-px h-full md:w-auto md:h-px bg-white/20 mx-1 md:mx-0 md:my-1" />
+          
+          {/* Grid Size Selectors */}
+          <div className="flex md:grid md:grid-cols-3 gap-1">
+            {[16, 32, 64].map((sz) => (
+              <button
+                key={sz}
+                onClick={() => handleGridSizeChange(sz)}
+                className={`p-2 rounded text-[10px] font-bold font-mono transition-all ${
+                  gridSize === sz
+                    ? "bg-[#29adff] text-white shadow-inner"
+                    : "bg-[#c2c3c7] text-[#1d2b53] hover:bg-white"
+                }`}
+                title={`Change grid size to ${sz}x${sz}`}
+              >
+                {sz}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Canvas Container */}
@@ -306,10 +368,10 @@ export default function PixelArt() {
               showGrid ? "gap-px bg-[#c2c3c7] border border-[#c2c3c7]" : ""
             }`}
             style={{
-              gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))`,
+              gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
               width: "min(90vw, 800px)",
               aspectRatio: "1/1",
-              touchAction: "none", // Critical for modifying browser gestures
+              touchAction: "none",
             }}
             onTouchStart={handleTouch}
             onTouchMove={handleTouch}
@@ -348,11 +410,6 @@ export default function PixelArt() {
           ))}
         </div>
       </div>
-
-      <p className="mt-4 text-[#5f574f] text-sm font-bold">
-        {GRID_SIZE}x{GRID_SIZE} • {activeTool.toUpperCase()} •{" "}
-        {historyIndex + 1}/{history.length}
-      </p>
 
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
