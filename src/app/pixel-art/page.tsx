@@ -343,8 +343,8 @@ export default function PixelArt() {
           <div className="w-px h-full md:w-auto md:h-px bg-white/20 mx-1 md:mx-0 md:my-1" />
           
           {/* Grid Size Selectors */}
-          <div className="flex md:grid md:grid-cols-3 gap-1">
-            {[16, 32, 64].map((sz) => (
+          <div className="flex md:grid md:grid-cols-2 gap-1">
+            {[8, 16, 32, 64].map((sz) => (
               <button
                 key={sz}
                 onClick={() => handleGridSizeChange(sz)}
