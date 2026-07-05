@@ -241,20 +241,20 @@ export default function PadSynth() {
   };
 
   return (
-    <div className="min-h-screen bg-[#e0e5ec] text-slate-600 font-sans flex items-center justify-center p-6 select-none transition-colors duration-500">
+    <div className="min-h-screen bg-[#e0e5ec] text-slate-600 font-sans flex items-center justify-center p-3 sm:p-6 select-none transition-colors duration-500">
       {/* Main Board */}
-      <div className="bg-[#e0e5ec] rounded-[3rem] p-8 md:p-12 shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff] max-w-4xl w-full mx-auto">
+      <div className="bg-[#e0e5ec] rounded-4xl sm:rounded-[3rem] p-4 sm:p-8 md:p-12 shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff] max-w-4xl w-full mx-auto">
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-[#e0e5ec] shadow-[5px_5px_10px_#bebebe,-5px_-5px_10px_#ffffff] flex items-center justify-center text-blue-400">
-              <Music className="w-8 h-8" />
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-10 gap-4 sm:gap-6">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#e0e5ec] shadow-[5px_5px_10px_#bebebe,-5px_-5px_10px_#ffffff] flex items-center justify-center text-blue-400">
+              <Music className="w-6 h-6 sm:w-8 sm:h-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-slate-700">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-700">
                 PAD SYNTH
               </h1>
-              <p className="text-sm font-medium text-slate-400">
+              <p className="text-xs sm:text-sm font-medium text-slate-400">
                 Soft Tactile Interface
               </p>
             </div>
@@ -264,7 +264,7 @@ export default function PadSynth() {
           <div className="flex gap-4">
             <button
               onClick={() => setIsReady(!isReady)}
-              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
                 isReady
                   ? "shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] text-blue-500"
                   : "shadow-[5px_5px_10px_#bebebe,-5px_-5px_10px_#ffffff] text-slate-400 hover:text-blue-400"
@@ -277,18 +277,18 @@ export default function PadSynth() {
         </div>
 
         {/* Controls Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8 mb-6 sm:mb-10">
           {/* Scale Selector */}
-          <div className="bg-[#e0e5ec] p-4 rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff]">
-            <label className="text-xs font-bold uppercase tracking-wider mb-3 block text-center text-slate-500">
+          <div className="bg-[#e0e5ec] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff]">
+            <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 block text-center text-slate-500">
               Scale Mode
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {Object.keys(SCALES).map((s) => (
                 <button
                   key={s}
                   onClick={() => setCurrentScale(s as keyof typeof SCALES)}
-                  className={`py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                  className={`py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all duration-200 ${
                     currentScale === s
                       ? "shadow-[inset_3px_3px_6px_#bebebe,inset_-3px_-3px_6px_#ffffff] text-blue-500"
                       : "shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] hover:translate-y-[-2px]"
@@ -301,11 +301,11 @@ export default function PadSynth() {
           </div>
 
           {/* Waveform Selector */}
-          <div className="bg-[#e0e5ec] p-4 rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff]">
-            <label className="text-xs font-bold uppercase tracking-wider mb-3 block text-center text-slate-500">
+          <div className="bg-[#e0e5ec] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff]">
+            <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 block text-center text-slate-500">
               Waveform
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {["sine", "triangle", "square", "sawtooth"].map((type) => {
                 const activeClasses =
                   {
@@ -326,7 +326,7 @@ export default function PadSynth() {
                         type as "sine" | "triangle" | "square" | "sawtooth",
                       )
                     }
-                    className={`py-2 rounded-xl text-xs font-bold capitalize transition-all duration-200 ${
+                    className={`py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold capitalize transition-all duration-200 ${
                       oscType === type
                         ? activeClasses
                         : "shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] hover:translate-y-[-2px]"
@@ -340,9 +340,9 @@ export default function PadSynth() {
           </div>
 
           {/* Knobs */}
-          <div className="bg-[#e0e5ec] p-4 rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] flex flex-col justify-center gap-4">
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-bold text-slate-500">
+          <div className="bg-[#e0e5ec] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] flex flex-col justify-center gap-3 sm:gap-4 col-span-1 sm:col-span-2 md:col-span-1">
+            <div className="space-y-1">
+              <div className="flex justify-between text-[10px] sm:text-xs font-bold text-slate-500">
                 <span>VOLUME</span>
                 <span>{Math.round((volume + 30) / 0.3)}%</span>
               </div>
@@ -352,11 +352,11 @@ export default function PadSynth() {
                 max="0"
                 value={volume}
                 onChange={(e) => handleVolumeChange(Number(e.target.value))}
-                className="w-full h-2 rounded-lg appearance-none bg-[#e0e5ec] shadow-[inset_2px_2px_5px_#bebebe,inset_-2px_-2px_5px_#ffffff]"
+                className="w-full appearance-none outline-none bg-transparent"
               />
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-bold text-slate-500">
+            <div className="space-y-1">
+              <div className="flex justify-between text-[10px] sm:text-xs font-bold text-slate-500">
                 <span>REVERB</span>
                 <span>{Math.round(reverbAmt * 100)}%</span>
               </div>
@@ -367,17 +367,17 @@ export default function PadSynth() {
                 step="0.05"
                 value={reverbAmt}
                 onChange={(e) => handleReverbChange(Number(e.target.value))}
-                className="w-full h-2 rounded-lg appearance-none bg-[#e0e5ec] shadow-[inset_2px_2px_5px_#bebebe,inset_-2px_-2px_5px_#ffffff]"
+                className="w-full appearance-none outline-none bg-transparent"
               />
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-bold text-slate-500 items-center">
-                <span className="flex items-center gap-2">
+            <div className="space-y-1">
+              <div className="flex justify-between text-[10px] sm:text-xs font-bold text-slate-500 items-center">
+                <span className="flex items-center gap-1.5 sm:gap-2">
                   ECHO
                   <button
                     onClick={toggleDelayTime}
-                    className="bg-[#e0e5ec] shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] active:shadow-[inset_2px_2px_5px_#bebebe,inset_-2px_-2px_5px_#ffffff] px-2 py-0.5 rounded text-[10px] hover:text-blue-500 transition-all font-mono"
+                    className="bg-[#e0e5ec] shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] active:shadow-[inset_2px_2px_5px_#bebebe,inset_-2px_-2px_5px_#ffffff] px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] hover:text-blue-500 transition-all font-mono"
                     title="Toggle Delay Time"
                   >
                     {delayTime === "16n"
@@ -396,7 +396,7 @@ export default function PadSynth() {
                 step="0.05"
                 value={delayAmt}
                 onChange={(e) => handleDelayChange(Number(e.target.value))}
-                className="w-full h-2 rounded-lg appearance-none bg-[#e0e5ec] shadow-[inset_2px_2px_5px_#bebebe,inset_-2px_-2px_5px_#ffffff]"
+                className="w-full appearance-none outline-none bg-transparent"
               />
             </div>
           </div>
@@ -404,7 +404,7 @@ export default function PadSynth() {
 
         {/* Note Grid */}
         <div
-          className="grid grid-cols-4 gap-4 md:gap-6 touch-none"
+          className="grid grid-cols-4 gap-2 sm:gap-4 md:gap-6 touch-none"
           onTouchMove={handleTouchMove}
         >
           {SCALES[currentScale].map((note) => {
@@ -433,8 +433,8 @@ export default function PadSynth() {
                   playNote(note);
                 }}
                 className={`
-                        aspect-square rounded-2xl md:rounded-3xl flex items-center justify-center
-                        text-lg font-bold transition-all duration-150 touch-none select-none
+                        aspect-square rounded-xl sm:rounded-2xl md:rounded-3xl flex items-center justify-center
+                        text-sm sm:text-lg font-bold transition-all duration-150 touch-none select-none
                         ${
                           activeNote === note
                             ? `shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] ${activeColor} scale-95`
@@ -450,6 +450,67 @@ export default function PadSynth() {
           })}
         </div>
       </div>
+      <style jsx>{`
+        input[type="range"] {
+          -webkit-appearance: none;
+          background: transparent;
+        }
+        input[type="range"]:focus {
+          outline: none;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+          width: 100%;
+          height: 6px;
+          cursor: pointer;
+          background: #e0e5ec;
+          border-radius: 9999px;
+          box-shadow:
+            inset 2px 2px 5px #bebebe,
+            inset -2px -2px 5px #ffffff;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+          height: 18px;
+          width: 18px;
+          border-radius: 50%;
+          background: #e0e5ec;
+          border: none;
+          box-shadow:
+            2px 2px 5px #bebebe,
+            -2px -2px 5px #ffffff;
+          cursor: pointer;
+          -webkit-appearance: none;
+          margin-top: -6px;
+          transition: background-color 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+          background: #d8dee8;
+        }
+        input[type="range"]::-moz-range-track {
+          width: 100%;
+          height: 6px;
+          cursor: pointer;
+          background: #e0e5ec;
+          border-radius: 9999px;
+          box-shadow:
+            inset 2px 2px 5px #bebebe,
+            inset -2px -2px 5px #ffffff;
+        }
+        input[type="range"]::-moz-range-thumb {
+          height: 18px;
+          width: 18px;
+          border-radius: 50%;
+          background: #e0e5ec;
+          border: none;
+          box-shadow:
+            2px 2px 5px #bebebe,
+            -2px -2px 5px #ffffff;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+        input[type="range"]::-moz-range-thumb:hover {
+          background: #d8dee8;
+        }
+      `}</style>
     </div>
   );
 }
