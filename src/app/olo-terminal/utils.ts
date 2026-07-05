@@ -1,30 +1,65 @@
 export const FILESYSTEM = {
   "~": {
     type: "dir",
+    permissions: "drwxr-xr-x",
+    owner: "user",
+    group: "user",
+    size: 4096,
+    modifiedDate: "Jul  4 10:22",
     children: {
       projects: {
         type: "dir",
+        permissions: "drwxr-xr-x",
+        owner: "user",
+        group: "user",
+        size: 4096,
+        modifiedDate: "Jul  4 11:05",
         children: {
           "secret_project.txt": {
             type: "file",
+            permissions: "-rw-r----",
+            owner: "user",
+            group: "user",
+            size: 69,
+            modifiedDate: "Jul  4 11:45",
             content:
               "Project: CHAOS\nStatus: [REDACTED]\nNext Step: Run 'matrix' command.",
           },
           "notes.txt": {
             type: "file",
+            permissions: "-rw-r----",
+            owner: "user",
+            group: "user",
+            size: 47,
+            modifiedDate: "Jul  4 11:12",
             content: "To-do:\n1. Become employed\n2. Get a cat\n3. Learn Rust",
           },
         },
       },
       "readme.txt": {
         type: "file",
-        content: "Welcome to OloOS v1.0\nUse 'help' to see available commands.",
+        permissions: "-rw-r--r--",
+        owner: "user",
+        group: "user",
+        size: 58,
+        modifiedDate: "Jul  4 10:22",
+        content: "Welcome to OloOS v2.0\nUse 'help' to see available commands.",
       },
       config: {
         type: "dir",
+        permissions: "drwxr-xr-x",
+        owner: "user",
+        group: "user",
+        size: 4096,
+        modifiedDate: "Jul  4 10:25",
         children: {
           "settings.json": {
             type: "file",
+            permissions: "-rw-r----",
+            owner: "user",
+            group: "user",
+            size: 48,
+            modifiedDate: "Jul  4 10:30",
             content: '{ "theme": "olo_green", "matrix_mode": true }',
           },
         },
