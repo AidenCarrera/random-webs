@@ -207,7 +207,7 @@ export default function MatrixRain() {
       {/* Top Banner UI */}
       <div className="absolute top-8 left-8 z-10 pointer-events-none">
         <h1 className="text-3xl md:text-4xl font-black text-[#0F0] tracking-widest drop-shadow-[0_0_10px_rgba(0,255,0,0.6)] uppercase">
-          matrix_core
+          matrix_rain
         </h1>
         <div className="flex items-center gap-2 text-[#0F0]/60 mt-1 text-xs">
           <Monitor className="w-3.5 h-3.5" />
@@ -252,7 +252,7 @@ export default function MatrixRain() {
             SECURE LINK ROOT AUTHENTICATED...<br />
             LOAD TARGET SPEC: <span className="text-[#0F0]/80 font-bold">src/app/matrix-rain/page.tsx</span><br />
             --------------------------------------------------------<br />
-            [INFO] BEGIN KEYBOARD INPUT OR SCREEN TAPS TO DECOMPILE...<br />
+            [INFO] <span className="text-[#0F0]/80 font-bold">BEGIN KEYBOARD INPUT OR SCREEN TAPS TO DECOMPILE...</span><br />
           </div>
 
           <pre className="white-space-pre-wrap break-all text-[#0F0] font-mono leading-relaxed">
