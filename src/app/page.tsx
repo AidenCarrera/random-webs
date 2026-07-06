@@ -36,6 +36,9 @@ const PAGES = [
   "/sorting-race",
   "/style-pet",
   "/solar-system",
+  // Phase 4
+  "/fractal-explorer",
+  "/lofi-pixel-study",
 ];
 
 export default function Home() {
