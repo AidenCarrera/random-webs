@@ -321,6 +321,8 @@ const CPU_DEEP_ZOOM_THRESHOLD = 1e5;
 const CPU_MAX_ITERATIONS = 1000;
 const MAX_RENDER_ITERATIONS = 2400;
 const MAX_ZOOM = 1e13;
+const JULIA_SEED_ADJUST_RANGE = 0.06;
+const JULIA_SEED_STEP = 0.00002;
 const GPU_PALETTE_INDEX: Record<PaletteName, number> = {
   Neon: 0,
   Solar: 1,
@@ -706,6 +708,9 @@ export default function FractalExplorer() {
   const [juliaCDisplay, setJuliaCDisplay] = useState<[number, number]>([
     -0.7, 0.27015,
   ]);
+  const [juliaCLocked, setJuliaCLocked] = useState<[number, number]>([
+    -0.7, 0.27015,
+  ]);
   const [isJuliaFrozen, setIsJuliaFrozen] = useState<boolean>(false);
 
   // Audio configuration state
@@ -721,8 +726,13 @@ export default function FractalExplorer() {
 
   // Interactive interaction states
   const isDraggingRef = useRef<boolean>(false);
+  const hasDraggedRef = useRef<boolean>(false);
+  const mouseDownStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const startDragMouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const DRAG_THRESHOLD_PX = 5;
   const isAnimatingRef = useRef<boolean>(false);
+  const recentTouchInteractionRef = useRef<boolean>(false);
+  const touchResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Render control state to handle cancelation
   const renderIdRef = useRef<number>(0);
@@ -1276,22 +1286,54 @@ export default function FractalExplorer() {
   // Event Listeners: Zooming and Panning
   // -------------------------------------------------------------
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isAnimatingRef.current) return;
+  const markRecentTouchInteraction = () => {
+    recentTouchInteractionRef.current = true;
+    if (touchResetTimerRef.current) clearTimeout(touchResetTimerRef.current);
+    touchResetTimerRef.current = setTimeout(() => {
+      recentTouchInteractionRef.current = false;
+    }, 500);
+  };
+
+  const getCanvasPointerPosition = (clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    return {
+      canvas,
+      rect,
+      px: (clientX - rect.left) * scaleX,
+      py: (clientY - rect.top) * scaleY,
+      widthInComplex: 3.0 / zoomRef.current,
+      heightInComplex:
+        (3.0 / zoomRef.current) * (canvas.height / canvas.width),
+    };
+  };
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (isAnimatingRef.current || !e.isPrimary) return;
+
+    if (e.pointerType === "touch") {
+      markRecentTouchInteraction();
+    }
+
+    e.currentTarget.setPointerCapture(e.pointerId);
     isDraggingRef.current = true;
+    hasDraggedRef.current = false;
+    mouseDownStartRef.current = { x: e.clientX, y: e.clientY };
     startDragMouseRef.current = { x: e.clientX, y: e.clientY };
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!e.isPrimary) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
+    const pointer = getCanvasPointerPosition(e.clientX, e.clientY);
+    if (!pointer) return;
 
-    const widthInComplex = 3.0 / zoomRef.current;
-    const heightInComplex = widthInComplex * (canvas.height / canvas.width);
+    const { canvas, px, py, rect, widthInComplex, heightInComplex } = pointer;
 
     const mouseX =
       centerXRef.current +
@@ -1306,16 +1348,25 @@ export default function FractalExplorer() {
     }
 
     if (isDraggingRef.current) {
+      const totalDx = e.clientX - mouseDownStartRef.current.x;
+      const totalDy = e.clientY - mouseDownStartRef.current.y;
+      if (
+        totalDx * totalDx + totalDy * totalDy >
+        DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX
+      ) {
+        hasDraggedRef.current = true;
+      }
+
       const dx = e.clientX - startDragMouseRef.current.x;
       const dy = e.clientY - startDragMouseRef.current.y;
       startDragMouseRef.current = { x: e.clientX, y: e.clientY };
 
-      centerXRef.current -= dx * (widthInComplex / canvas.width);
-      centerYRef.current -= dy * (heightInComplex / canvas.height);
+      centerXRef.current -= dx * (widthInComplex / rect.width);
+      centerYRef.current -= dy * (heightInComplex / rect.height);
 
       setUiCoords({ r: centerXRef.current, i: centerYRef.current });
       drawFastPreview();
-    } else {
+    } else if (e.pointerType === "mouse") {
       let iter = 0;
       let zr = 0.0;
       let zi = 0.0;
@@ -1353,9 +1404,18 @@ export default function FractalExplorer() {
     }
   };
 
-  const handleMouseUpOrLeave = () => {
+  const handlePointerUpOrCancel = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!e.isPrimary) return;
+
+    if (e.pointerType === "touch") {
+      markRecentTouchInteraction();
+    }
+
     if (isDraggingRef.current) {
       isDraggingRef.current = false;
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
       triggerProgressiveRender();
     }
   };
@@ -1407,9 +1467,10 @@ export default function FractalExplorer() {
     drawTimerRef.current = setTimeout(triggerProgressiveRender, 150);
   };
 
-  // Double click zooms into the clicked point
+  // Double click zooms into the clicked point (desktop only)
   const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isAnimatingRef.current) return;
+    if (isAnimatingRef.current || recentTouchInteractionRef.current) return;
+    e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -1444,17 +1505,23 @@ export default function FractalExplorer() {
     triggerProgressiveRender();
   };
 
-  // Click on main canvas Mandelbrot to freeze Julia constant or change it
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (modeRef.current === "mandelbrot") {
+  // Click on main canvas Mandelbrot to freeze Julia constant (not when dragging)
+  const handleCanvasClick = () => {
+    if (modeRef.current === "mandelbrot" && !hasDraggedRef.current) {
       setIsJuliaFrozen((f) => !f);
     }
   };
 
   // Enter Julia Mode using selected seed coordinate
   const enterJuliaModeWithSeed = () => {
+    const lockedSeed: [number, number] = [
+      juliaCDisplay[0],
+      juliaCDisplay[1],
+    ];
+
     modeRef.current = "julia";
-    juliaCRef.current = [juliaCDisplay[0], juliaCDisplay[1]];
+    juliaCRef.current = lockedSeed;
+    setJuliaCLocked(lockedSeed);
 
     centerXRef.current = 0.0;
     centerYRef.current = 0.0;
@@ -1464,6 +1531,12 @@ export default function FractalExplorer() {
     setZoomLevel(1.0);
     setUiCoords({ r: 0.0, i: 0.0 });
 
+    triggerProgressiveRender();
+  };
+
+  const resetJuliaSeedToLocked = () => {
+    juliaCRef.current = [juliaCLocked[0], juliaCLocked[1]];
+    setJuliaCDisplay([juliaCLocked[0], juliaCLocked[1]]);
     triggerProgressiveRender();
   };
 
@@ -1503,8 +1576,9 @@ export default function FractalExplorer() {
       const canvas = canvasRef.current;
       if (!canvas) return;
 
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const viewport = window.visualViewport;
+      canvas.width = viewport?.width ?? window.innerWidth;
+      canvas.height = viewport?.height ?? window.innerHeight;
       syncCpuCanvasSize();
 
       const currentRenderId = ++renderIdRef.current;
@@ -1514,11 +1588,16 @@ export default function FractalExplorer() {
     };
 
     window.addEventListener("resize", handleResize);
+    window.visualViewport?.addEventListener("resize", handleResize);
+    window.visualViewport?.addEventListener("scroll", handleResize);
     handleResize();
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      window.visualViewport?.removeEventListener("resize", handleResize);
+      window.visualViewport?.removeEventListener("scroll", handleResize);
       if (drawTimerRef.current) clearTimeout(drawTimerRef.current);
+      if (touchResetTimerRef.current) clearTimeout(touchResetTimerRef.current);
 
       // Cleanup synth sounds on navigation
       if (synthRef.current) {
@@ -1673,18 +1752,19 @@ export default function FractalExplorer() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black font-sans select-none">
+    <div className="relative w-screen h-screen overflow-hidden bg-black font-sans select-none overscroll-none">
       {/* Dynamic Background Shader / Main Rendering Canvas */}
       <canvas
         ref={canvasRef}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUpOrLeave}
-        onMouseLeave={handleMouseUpOrLeave}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUpOrCancel}
+        onPointerCancel={handlePointerUpOrCancel}
+        onPointerLeave={handlePointerUpOrCancel}
         onWheel={handleWheel}
         onDoubleClick={handleDoubleClick}
         onClick={handleCanvasClick}
-        className="absolute top-0 left-0 w-full h-full cursor-grab active:cursor-grabbing block animate-fade-in duration-300"
+        className="absolute top-0 left-0 w-full h-full cursor-grab active:cursor-grabbing block animate-fade-in duration-300 touch-none"
       />
       <canvas
         ref={cpuCanvasRef}
@@ -1705,9 +1785,9 @@ export default function FractalExplorer() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.2 }}
-            className="absolute bottom-4 left-4 pointer-events-none z-30 flex flex-col gap-2"
+            className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 pointer-events-none z-30 flex flex-col gap-2 max-w-[calc(100vw-5.5rem)] sm:max-w-70"
           >
-            <div className="px-4 py-3 bg-zinc-950/85 border border-zinc-800/70 text-zinc-400 rounded-xl backdrop-blur-md shadow-xl text-[10px] font-mono leading-relaxed max-w-70">
+            <div className="px-3 py-2.5 sm:px-4 sm:py-3 bg-zinc-950/85 border border-zinc-800/70 text-zinc-400 rounded-xl backdrop-blur-md shadow-xl text-[9px] sm:text-[10px] font-mono leading-relaxed">
               <div className="text-zinc-500 uppercase font-black tracking-widest text-[9px] mb-1.5 border-b border-zinc-800/50 pb-1">
                 <span>Coordinates</span>
               </div>
@@ -1740,7 +1820,7 @@ export default function FractalExplorer() {
       {/* -------------------------------------------------------------
           Interactive Sidebar Control Panel (Right Side)
           ------------------------------------------------------------- */}
-      <div className="absolute right-4 top-4 bottom-4 w-80 pointer-events-none z-30 flex flex-col justify-start items-end gap-3">
+      <div className="absolute right-2 top-2 bottom-2 sm:right-4 sm:top-4 sm:bottom-4 w-[min(20rem,calc(100vw-1rem))] sm:w-80 pointer-events-none z-30 flex flex-col justify-start items-end gap-3">
         {/* Floating Settings Trigger (only shown when closed) */}
         <AnimatePresence>
           {!isSettingsOpen && (
@@ -1749,7 +1829,7 @@ export default function FractalExplorer() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               onClick={() => setIsSettingsOpen(true)}
-              className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 bg-zinc-950/80 hover:bg-zinc-900 border border-zinc-800/80 text-zinc-300 rounded-xl shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 text-xs font-bold uppercase tracking-wider cursor-pointer"
+              className="pointer-events-auto flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 bg-zinc-950/80 hover:bg-zinc-900 border border-zinc-800/80 text-zinc-300 rounded-xl shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 text-[10px] sm:text-xs font-bold uppercase tracking-wider cursor-pointer"
             >
               <Settings className="w-4 h-4 text-purple-400" />
               <span>Settings</span>
@@ -1765,7 +1845,7 @@ export default function FractalExplorer() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="w-full flex-1 pointer-events-auto flex flex-col bg-zinc-950/85 border border-zinc-800/80 rounded-2xl backdrop-blur-md shadow-2xl overflow-y-auto max-h-[85vh] p-5 text-zinc-200"
+              className="w-full flex-1 pointer-events-auto flex flex-col bg-zinc-950/85 border border-zinc-800/80 rounded-2xl backdrop-blur-md shadow-2xl overflow-y-auto max-h-[72vh] sm:max-h-[85vh] p-4 sm:p-5 text-zinc-200 touch-pan-y"
             >
               <div className="flex justify-between items-center border-b border-zinc-800/60 pb-3 mb-4">
                 <h2 className="text-sm font-black uppercase tracking-widest text-zinc-100 flex items-center gap-1.5">
@@ -1941,9 +2021,13 @@ export default function FractalExplorer() {
               {currentMode === "mandelbrot" ? (
                 // Mandelbrot: Show interactive Julia seed generator
                 <div className="border-t border-zinc-900 pt-4 mb-4">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block mb-2">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block mb-1">
                     Julia Seed Finder
                   </label>
+                  <p className="text-[9px] text-zinc-500 leading-relaxed mb-2">
+                    Click or tap the canvas to lock the seed. Drag to pan
+                    without locking.
+                  </p>
                   <div className="relative flex justify-center bg-black/40 border border-zinc-900 rounded-xl p-3 mb-2.5 overflow-hidden">
                     <canvas
                       ref={miniCanvasRef}
@@ -1985,19 +2069,38 @@ export default function FractalExplorer() {
               ) : (
                 // Julia Mode controls: Sliders to adjust seed values manually
                 <div className="border-t border-zinc-900 pt-4 mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                      Seed Constants
+                    </label>
+                    <button
+                      onClick={resetJuliaSeedToLocked}
+                      className="flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer"
+                      title={`Reset to c = ${juliaCLocked[0].toFixed(6)} + ${juliaCLocked[1].toFixed(6)}i`}
+                    >
+                      <RefreshCw size={10} />
+                      Reset Seed
+                    </button>
+                  </div>
+                  <p className="text-[9px] text-zinc-500 leading-relaxed mb-3">
+                    Fine-tune around the selected seed (±
+                    {JULIA_SEED_ADJUST_RANGE}). Locked:{" "}
+                    {juliaCLocked[0].toFixed(5)} + {juliaCLocked[1].toFixed(5)}i
+                  </p>
+
                   <div className="flex justify-between items-center mb-1">
                     <label className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
                       Seed Constant R (c_r)
                     </label>
                     <span className="text-[11px] font-mono text-zinc-400">
-                      {juliaCDisplay[0].toFixed(4)}
+                      {juliaCDisplay[0].toFixed(6)}
                     </span>
                   </div>
                   <input
                     type="range"
-                    min="-2.0"
-                    max="2.0"
-                    step="0.001"
+                    min={Math.max(-2.0, juliaCLocked[0] - JULIA_SEED_ADJUST_RANGE)}
+                    max={Math.min(2.0, juliaCLocked[0] + JULIA_SEED_ADJUST_RANGE)}
+                    step={JULIA_SEED_STEP}
                     value={juliaCDisplay[0]}
                     onChange={(e) =>
                       handleJuliaCSlider(Number(e.target.value), false)
@@ -2010,14 +2113,14 @@ export default function FractalExplorer() {
                       Seed Constant I (c_i)
                     </label>
                     <span className="text-[11px] font-mono text-zinc-400">
-                      {juliaCDisplay[1].toFixed(4)}
+                      {juliaCDisplay[1].toFixed(6)}
                     </span>
                   </div>
                   <input
                     type="range"
-                    min="-2.0"
-                    max="2.0"
-                    step="0.001"
+                    min={Math.max(-2.0, juliaCLocked[1] - JULIA_SEED_ADJUST_RANGE)}
+                    max={Math.min(2.0, juliaCLocked[1] + JULIA_SEED_ADJUST_RANGE)}
+                    step={JULIA_SEED_STEP}
                     value={juliaCDisplay[1]}
                     onChange={(e) =>
                       handleJuliaCSlider(Number(e.target.value), true)
