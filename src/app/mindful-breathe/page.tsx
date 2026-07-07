@@ -59,7 +59,7 @@ export default function PastelDream() {
         </div>
 
         {/* Controls Card - fits cleanly at bottom */}
-        <div className="bg-white/20 backdrop-blur-md px-6 py-5 rounded-2xl border border-white/40 shadow-lg flex flex-col items-center gap-4 w-full max-w-[300px] md:max-w-[320px]">
+        <div className="bg-white/20 backdrop-blur-md px-6 py-5 rounded-2xl border border-white/40 shadow-lg flex flex-col items-center gap-4 w-full max-w-75 md:max-w-[320px]">
           <div className="relative flex items-center w-full h-5 cursor-pointer group">
             <input
               type="range"

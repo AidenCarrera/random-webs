@@ -352,7 +352,7 @@ export default function SubmitToVoid() {
         </div>
 
         {/* GLOWING SINGULARITY (Void Graphic) */}
-        <div className="w-full lg:w-[48%] flex items-center justify-center relative min-h-[400px] lg:translate-x-20">
+        <div className="w-full lg:w-[48%] flex items-center justify-center relative min-h-100 lg:translate-x-20">
           {/* Sucking particles overlay */}
           {phase === "SUCKING" && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
@@ -378,7 +378,7 @@ export default function SubmitToVoid() {
           {/* Singular Orb Container */}
           <div
             ref={voidCenterRef}
-            className="relative flex items-center justify-center w-96 h-96 md:w-[520px] md:h-[520px] lg:w-[580px] lg:h-[580px]"
+            className="relative flex items-center justify-center w-96 h-96 md:w-130 md:h-130 lg:w-145 lg:h-145"
           >
             <svg
               viewBox="0 0 400 400"

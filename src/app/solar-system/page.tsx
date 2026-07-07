@@ -168,7 +168,7 @@ export default function SolarSystem() {
       </button>
 
       {/* System Container - Perfectly Centered */}
-      <div className="relative w-[800px] h-[800px] flex items-center justify-center">
+      <div className="relative w-200 h-200 flex items-center justify-center">
         {/* The Sun */}
         <div className="absolute w-24 h-24 bg-[#fdb813] rounded-full shadow-[0_0_100px_#fdb813,0_0_40px_rgba(253,184,19,0.5)] z-20 flex items-center justify-center">
           <div className="w-full h-full bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.8),transparent)] rounded-full opacity-50" />

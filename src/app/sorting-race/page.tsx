@@ -397,7 +397,7 @@ export default function SortingRace() {
           <div className="flex gap-3">
             <button
               onClick={toggleRace}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 disabled:opacity-50 transition-all shadow-md min-w-[100px] justify-center"
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 disabled:opacity-50 transition-all shadow-md min-w-25 justify-center"
             >
               {isRunning && !isPaused ? (
                 <>
@@ -485,7 +485,7 @@ function SortVisualizer({
   complexity: string;
 }) {
   return (
-    <div className="bg-white p-3 rounded-xl shadow-lg flex flex-col aspect-square w-full max-w-[280px] md:max-w-[calc((100vh-190px)/3)] md:max-h-[calc((100vh-190px)/3)] xl:max-w-[calc((100vh-170px)/2)] xl:max-h-[calc((100vh-170px)/2)] mx-auto relative border border-slate-100 min-h-0 min-w-0">
+    <div className="bg-white p-3 rounded-xl shadow-lg flex flex-col aspect-square w-full max-w-70 md:max-w-[calc((100vh-190px)/3)] md:max-h-[calc((100vh-190px)/3)] xl:max-w-[calc((100vh-170px)/2)] xl:max-h-[calc((100vh-170px)/2)] mx-auto relative border border-slate-100 min-h-0 min-w-0">
       <div className="flex justify-between items-center mb-1.5">
         <h2 className="text-sm sm:text-base font-bold">{name}</h2>
         {rank && (

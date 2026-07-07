@@ -228,7 +228,7 @@ export default function MatrixRain() {
       {/* Floating Hacker Terminal */}
       <div 
         onPointerDown={(e) => e.stopPropagation()} 
-        className="w-[92vw] max-w-4xl h-[560px] relative rounded-xl border border-[#0F0]/25 bg-black/85 backdrop-blur-md flex flex-col p-5 font-mono text-xs text-[#0F0] shadow-[0_0_40px_rgba(0,255,0,0.18)] z-20 transition-transform hover:scale-101"
+        className="w-[92vw] max-w-4xl h-140 relative rounded-xl border border-[#0F0]/25 bg-black/85 backdrop-blur-md flex flex-col p-5 font-mono text-xs text-[#0F0] shadow-[0_0_40px_rgba(0,255,0,0.18)] z-20 transition-transform hover:scale-101"
       >
         {/* Terminal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-[#0F0]/15 mb-3 text-[10px] text-[#0F0]/50 tracking-wider">

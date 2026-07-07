@@ -296,7 +296,7 @@ export default function DarkDashboard() {
           </div>
 
           {/* Click Button Container */}
-          <div className="bg-[#1e293b] rounded-2xl border border-slate-700 p-8 flex flex-col items-center justify-center flex-1 min-h-[420px] relative">
+          <div className="bg-[#1e293b] rounded-2xl border border-slate-700 p-8 flex flex-col items-center justify-center flex-1 min-h-105 relative">
             <button
               onClick={handleClick}
               className={`w-64 h-64 rounded-full border-8 transition-all active:scale-95 flex flex-col items-center justify-center gap-2 select-none ${
@@ -374,7 +374,7 @@ export default function DarkDashboard() {
               <Calendar className="w-4 h-4 text-blue-400" />
               Session History
             </div>
-            <div className="flex-1 overflow-y-auto pr-1 max-h-[550px] lg:max-h-none flex flex-col gap-3">
+            <div className="flex-1 overflow-y-auto pr-1 max-h-137.5 lg:max-h-none flex flex-col gap-3">
               {history.length === 0 ? (
                 <div className="text-slate-500 text-sm text-center py-12 my-auto">
                   No runs recorded yet.

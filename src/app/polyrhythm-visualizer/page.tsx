@@ -420,7 +420,7 @@ export default function PolyrhythmVisualizer() {
     <div className="min-h-screen overflow-hidden bg-[#08090d] text-white font-sans">
       <div className="fixed inset-0 pointer-events-none opacity-60">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_32%),radial-gradient(circle_at_80%_20%,rgba(249,115,22,0.13),transparent_30%),linear-gradient(135deg,rgba(8,9,13,1),rgba(18,20,28,1))]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:42px_42px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[42px_42px]" />
       </div>
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
@@ -462,7 +462,7 @@ export default function PolyrhythmVisualizer() {
 
         <section className="grid flex-1 gap-4 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="flex flex-col gap-4">
-            <div className="rounded-lg border border-white/10 bg-white/[0.055] p-4 backdrop-blur">
+            <div className="rounded-lg border border-white/10 bg-white/5.5 p-4 backdrop-blur">
               <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.24em] text-white/55">
                 <Gauge className="h-4 w-4 text-white" />
                 BPM
@@ -496,7 +496,7 @@ export default function PolyrhythmVisualizer() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-white/10 bg-white/[0.055] p-4 backdrop-blur">
+            <div className="rounded-lg border border-white/10 bg-white/5.5 p-4 backdrop-blur">
               <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.24em] text-white/55">
                 <Clock3 className="h-4 w-4 text-white" />
                 Rhythms
@@ -526,7 +526,7 @@ export default function PolyrhythmVisualizer() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-white/10 bg-white/[0.055] p-4 backdrop-blur">
+            <div className="rounded-lg border border-white/10 bg-white/5.5 p-4 backdrop-blur">
               <div className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-white/55">
                 View
               </div>
@@ -563,7 +563,7 @@ export default function PolyrhythmVisualizer() {
             </div>
           </aside>
 
-          <section className="flex min-h-[700px] flex-col rounded-lg border border-white/10 bg-white/[0.045] p-4 shadow-2xl shadow-black/40 backdrop-blur sm:p-6">
+          <section className="flex min-h-175 flex-col rounded-lg border border-white/10 bg-white/4.5 p-4 shadow-2xl shadow-black/40 backdrop-blur sm:p-6">
             <div className="mb-2 flex justify-end">
               <div className="text-xs font-mono text-white/45">
                 Cycle {(progress * 100).toFixed(1)}%
@@ -666,7 +666,7 @@ function CircularVisualizer({
       </div>
       <svg
         viewBox={`0 0 ${size} ${size}`}
-        className="aspect-square w-full max-w-[780px]"
+        className="aspect-square w-full max-w-195"
         role="img"
         aria-label="Circular polyrhythm visualization"
       >
@@ -761,7 +761,7 @@ function TimelineVisualizer({
   activePulses: Set<PulseKey>;
 }) {
   return (
-    <div className="relative flex min-h-[560px] w-full max-w-[980px] flex-col justify-center gap-5 overflow-hidden rounded-lg border border-white/8 bg-white/[0.025] p-5 sm:p-8">
+    <div className="relative flex min-h-140 w-full max-w-245 flex-col justify-center gap-5 overflow-hidden rounded-lg border border-white/8 bg-white/2.5 p-5 sm:p-8">
       <div
         className="absolute bottom-8 top-8 w-px bg-white shadow-[0_0_18px_rgba(255,255,255,0.75)]"
         style={{ left: `calc(96px + (100% - 128px) * ${progress})` }}
@@ -840,7 +840,7 @@ function BloomVisualizer({
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="h-full min-h-[560px] w-full max-w-[1040px]"
+        className="h-full min-h-140 w-full max-w-260"
         role="img"
         aria-label="Bloom polyrhythm visualization"
       >
@@ -1138,7 +1138,7 @@ function Orbit3DVisualizer({
   }, [rhythms]);
 
   return (
-    <div className="relative h-full min-h-[560px] w-full overflow-hidden rounded-lg">
+    <div className="relative h-full min-h-140 w-full overflow-hidden rounded-lg">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.12),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.05),transparent)]" />
       <div ref={mountRef} className="absolute inset-0" />
     </div>
@@ -1160,7 +1160,7 @@ function IconButton({
       onClick={onClick}
       title={label}
       aria-label={label}
-      className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/[0.055] text-white transition-all hover:border-white/25 hover:bg-white/10"
+      className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/5.5 text-white transition-all hover:border-white/25 hover:bg-white/10"
     >
       {children}
     </button>

@@ -462,7 +462,7 @@ export default function TypeRacer() {
 
         {/* COUNTDOWN STATE */}
         {gameState === "countdown" && (
-          <div className="bg-[#120b24]/75 border border-purple-900/40 rounded-3xl p-24 backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center min-h-[350px] animate-in fade-in zoom-in duration-300">
+          <div className="bg-[#120b24]/75 border border-purple-900/40 rounded-3xl p-24 backdrop-blur-xl shadow-2xl flex flex-col items-center justify-center min-h-87.5 animate-in fade-in zoom-in duration-300">
             <span className="text-zinc-500 text-sm uppercase tracking-[0.3em] mb-12 relative z-10">
               DRIVERS PREPARE
             </span>
@@ -579,7 +579,7 @@ export default function TypeRacer() {
                 {/* Passage & Input area */}
                 <div className="lg:col-span-3 bg-[#110a22]/70 border border-purple-900/40 rounded-3xl p-8 backdrop-blur-xl shadow-xl flex flex-col gap-6">
                   {/* Passage block */}
-                  <div className="bg-black/30 border border-purple-950/50 rounded-2xl p-6 leading-relaxed select-text min-h-[120px]">
+                  <div className="bg-black/30 border border-purple-950/50 rounded-2xl p-6 leading-relaxed select-text min-h-30">
                     {renderPassage()}
                   </div>
 

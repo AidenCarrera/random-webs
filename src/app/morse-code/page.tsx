@@ -255,7 +255,7 @@ export default function MorseTelegraph() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="TYPE MESSAGE HERE..."
-              className="flex-1 min-h-[150px] bg-[#e6dcc3] text-[#2a2320] p-4 text-xl font-bold uppercase border-4 border-[#8b5a2b] shadow-[inset_0_0_20px_rgba(0,0,0,0.2)] focus:outline-none resize-none placeholder-[#2a2320]/30"
+              className="flex-1 min-h-37.5 bg-[#e6dcc3] text-[#2a2320] p-4 text-xl font-bold uppercase border-4 border-[#8b5a2b] shadow-[inset_0_0_20px_rgba(0,0,0,0.2)] focus:outline-none resize-none placeholder-[#2a2320]/30"
             />
           </div>
 
@@ -263,7 +263,7 @@ export default function MorseTelegraph() {
             <label className="text-sm font-bold uppercase tracking-wider text-[#8b5a2b]">
               Encoded Signal
             </label>
-            <div className="flex-1 min-h-[150px] bg-[#1a1512] text-[#ff8c00] p-4 text-2xl font-bold border-4 border-[#3e3228] shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] overflow-y-auto w-full break-all tracking-widest leading-loose">
+            <div className="flex-1 min-h-37.5 bg-[#1a1512] text-[#ff8c00] p-4 text-2xl font-bold border-4 border-[#3e3228] shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] overflow-y-auto w-full break-all tracking-widest leading-loose">
               {encoded || "AWAITING INPUT..."}
             </div>
           </div>
@@ -290,7 +290,7 @@ export default function MorseTelegraph() {
               </div>
             </div>
             {/* Base */}
-            <div className="w-16 h-8 bg-linear-to-b from-[#5c4033] to-[#3e2b22] mx-auto mt-[-4px] border-x-2 border-[#1a1512]" />
+            <div className="w-16 h-8 bg-linear-to-b from-[#5c4033] to-[#3e2b22] mx-auto -mt-1 border-x-2 border-[#1a1512]" />
           </div>
 
           {/* Controls */}

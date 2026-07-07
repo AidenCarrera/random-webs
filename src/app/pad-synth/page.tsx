@@ -291,7 +291,7 @@ export default function PadSynth() {
                   className={`py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all duration-200 ${
                     currentScale === s
                       ? "shadow-[inset_3px_3px_6px_#bebebe,inset_-3px_-3px_6px_#ffffff] text-blue-500"
-                      : "shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] hover:translate-y-[-2px]"
+                      : "shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] hover:-translate-y-0.5"
                   }`}
                 >
                   {s}
@@ -329,7 +329,7 @@ export default function PadSynth() {
                     className={`py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold capitalize transition-all duration-200 ${
                       oscType === type
                         ? activeClasses
-                        : "shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] hover:translate-y-[-2px]"
+                        : "shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] hover:-translate-y-0.5"
                     }`}
                   >
                     {type}
