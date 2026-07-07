@@ -39,6 +39,7 @@ const PAGES = [
   // Phase 4
   "/fractal-explorer",
   "/lofi-pixel-study",
+  "/polyrhythm-visualizer",
 ];
 
 export default function Home() {
