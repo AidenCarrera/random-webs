@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MousePointer2, RefreshCw, Trophy, Calendar, Zap, Award } from "lucide-react";
+import { MousePointer2, Trophy, Calendar, Zap, Award } from "lucide-react";
 
 type RunResult = {
   id: string;
@@ -16,6 +16,15 @@ type RecordEntry = {
   clicks: number;
   cps: number;
 };
+
+type SavedProgress = {
+  duration: number;
+  records: Record<number, RecordEntry>;
+  history: RunResult[];
+};
+
+const STORAGE_KEY = "click-speed-test-progress";
+const RESULT_BUFFER_MS = 2500;
 
 const MILESTONES_BY_DURATION: Record<number, { label: string; target: number; color: string }[]> = {
   5: [
@@ -50,6 +59,7 @@ export default function DarkDashboard() {
   const [timeLeft, setTimeLeft] = useState(10);
   const [isActive, setIsActive] = useState(false);
   const [cps, setCps] = useState(0);
+  const [canRestart, setCanRestart] = useState(true);
   
   // Track high score records individually per duration
   const [records, setRecords] = useState<Record<number, RecordEntry>>({
@@ -62,17 +72,74 @@ export default function DarkDashboard() {
   const [currentRunPace, setCurrentRunPace] = useState<number[]>([]);
   const lastClicksCountRef = useRef(0);
   const clicksRef = useRef(0);
+  const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Session History
   const [history, setHistory] = useState<RunResult[]>([]);
 
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(STORAGE_KEY);
+      if (!saved) {
+        return;
+      }
+
+      const parsed = JSON.parse(saved) as Partial<SavedProgress>;
+      if (parsed.duration && [5, 10, 30].includes(parsed.duration)) {
+        setDuration(parsed.duration);
+        setTimeLeft(parsed.duration);
+      }
+      if (parsed.records) {
+        setRecords({
+          5: parsed.records[5] ?? { clicks: 0, cps: 0 },
+          10: parsed.records[10] ?? { clicks: 0, cps: 0 },
+          30: parsed.records[30] ?? { clicks: 0, cps: 0 },
+        });
+      }
+      if (parsed.history) {
+        setHistory(parsed.history.slice(0, 5));
+      }
+    } catch {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    const progress: SavedProgress = {
+      duration,
+      records,
+      history,
+    };
+
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  }, [duration, records, history]);
+
   const startTest = () => {
+    if (!canRestart) {
+      return;
+    }
+
     setClicks(0);
     setTimeLeft(duration);
     setIsActive(true);
     setCps(0);
     setCurrentRunPace([]);
     lastClicksCountRef.current = 0;
+  };
+
+  const resetCurrentTest = () => {
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current);
+      restartTimeoutRef.current = null;
+    }
+    setIsActive(false);
+    setClicks(0);
+    setTimeLeft(duration);
+    setCps(0);
+    setCurrentRunPace([]);
+    setCanRestart(true);
+    lastClicksCountRef.current = 0;
+    clicksRef.current = 0;
   };
 
   const handleClick = () => {
@@ -113,10 +180,19 @@ export default function DarkDashboard() {
     return () => clearInterval(interval);
   }, [isActive]);
 
+  useEffect(() => {
+    return () => {
+      if (restartTimeoutRef.current) {
+        clearTimeout(restartTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Test termination and score tracking
   useEffect(() => {
     if (timeLeft === 0 && isActive) {
       setIsActive(false);
+      setCanRestart(false);
       const newCps = clicks / duration;
       setCps(newCps);
       
@@ -136,6 +212,7 @@ export default function DarkDashboard() {
       const totalLogged = currentRunPace.reduce((a, b) => a + b, 0);
       const lastSegment = clicks - totalLogged;
       const finalPace = [...currentRunPace, lastSegment].slice(0, duration);
+      setCurrentRunPace(finalPace);
 
       // Add to session history
       const newRun: RunResult = {
@@ -147,6 +224,14 @@ export default function DarkDashboard() {
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
       };
       setHistory((prev) => [newRun, ...prev].slice(0, 5)); // Keep last 5 runs
+
+      if (restartTimeoutRef.current) {
+        clearTimeout(restartTimeoutRef.current);
+      }
+      restartTimeoutRef.current = setTimeout(() => {
+        setCanRestart(true);
+        restartTimeoutRef.current = null;
+      }, RESULT_BUFFER_MS);
     }
   }, [timeLeft, isActive, clicks, duration, currentRunPace]);
 
@@ -262,7 +347,7 @@ export default function DarkDashboard() {
             </div>
 
             {/* Stat Card 2: Timer */}
-            <div className="bg-[#1e293b] p-6 rounded-xl border border-slate-700">
+            <div className="hidden md:block bg-[#1e293b] p-6 rounded-xl border border-slate-700">
               <div className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">
                 Time Remaining
               </div>
@@ -276,7 +361,7 @@ export default function DarkDashboard() {
             </div>
 
             {/* Stat Card 3: Session Record (Main Stat: Max Clicks, Sub Stat: Max CPS) */}
-            <div className="bg-[#1e293b] p-6 rounded-xl border border-slate-700 relative overflow-hidden">
+            <div className="hidden md:block bg-[#1e293b] p-6 rounded-xl border border-slate-700 relative overflow-hidden">
               <div className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1 flex items-center gap-1.5">
                 <Trophy className="w-4 h-4 text-emerald-400" />
                 Session Record ({duration}s)
@@ -295,14 +380,57 @@ export default function DarkDashboard() {
             </div>
           </div>
 
+          <div className="md:hidden bg-[#1e293b] rounded-xl border border-slate-700 overflow-hidden shrink-0">
+            <div className="grid grid-cols-2 divide-x divide-slate-700">
+              <div className="p-4">
+                <div className="text-slate-400 text-[11px] font-medium uppercase tracking-wider mb-1">
+                  Time Remaining
+                </div>
+                <div
+                  className={`text-2xl font-bold ${
+                    timeLeft <= 2 && isActive ? "text-red-500" : "text-slate-200"
+                  }`}
+                >
+                  {timeLeft}s
+                </div>
+              </div>
+              <div className="p-4">
+                <div className="text-slate-400 text-[11px] font-medium uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                  <Trophy className="w-3.5 h-3.5 text-emerald-400" />
+                  Record
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold text-emerald-400">{activeRecord.clicks}</span>
+                  <span className="text-slate-400 text-xs">clicks</span>
+                </div>
+                {activeRecord.clicks > 0 && (
+                  <div className="text-emerald-500/80 text-[11px] font-semibold">
+                    {activeRecord.cps.toFixed(1)} CPS
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Click Button Container */}
           <div className="bg-[#1e293b] rounded-2xl border border-slate-700 p-8 flex flex-col items-center justify-center flex-1 min-h-105 relative">
+            {isActive && (
+              <button
+                onClick={resetCurrentTest}
+                className="absolute right-4 top-4 rounded-lg border border-slate-600 bg-slate-900/70 px-3 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-800"
+              >
+                Reset Test
+              </button>
+            )}
             <button
               onClick={handleClick}
+              disabled={!isActive && !canRestart}
               className={`w-64 h-64 rounded-full border-8 transition-all active:scale-95 flex flex-col items-center justify-center gap-2 select-none ${
                 isActive
                   ? "bg-blue-600 border-blue-400 shadow-[0_0_50px_rgba(37,99,235,0.5)]"
-                  : "bg-slate-800 border-slate-600 hover:border-slate-500"
+                  : canRestart
+                    ? "bg-slate-800 border-slate-600 hover:border-slate-500"
+                    : "bg-slate-800/80 border-slate-700 cursor-not-allowed"
               }`}
             >
               <span className="text-5xl font-black">
@@ -350,18 +478,6 @@ export default function DarkDashboard() {
                     </div>
                   </div>
                 )}
-
-                <button
-                  onClick={() => {
-                    setCps(0);
-                    setClicks(0);
-                    setCurrentRunPace([]);
-                    setTimeLeft(duration);
-                  }}
-                  className="mt-4 flex items-center gap-2 text-blue-400 hover:text-blue-300 mx-auto"
-                >
-                  <RefreshCw className="w-4 h-4" /> Reset
-                </button>
               </div>
             )}
           </div>
