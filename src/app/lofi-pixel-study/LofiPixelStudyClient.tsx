@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft,
   Volume2,
   VolumeX,
   Play,
@@ -17,6 +15,10 @@ import {
   Sparkles,
   Maximize2,
   Minimize2,
+  Settings2,
+  ScanLine,
+  Eye,
+  Bell,
 } from "lucide-react";
 
 // Data structures
@@ -24,42 +26,42 @@ const BACKGROUNDS = [
   {
     id: "day-1",
     name: "Cozy Café (Sunny Day)",
-    path: "/lofi-pixel-study/lofi-cafe-day-1.png",
+    path: "/lofi-pixel-study/backgrounds/lofi-cafe-day-1.png",
   },
   {
     id: "day-2",
     name: "Greenhouse Café",
-    path: "/lofi-pixel-study/lofi-cafe-day-2.png",
+    path: "/lofi-pixel-study/backgrounds/lofi-cafe-day-2.png",
   },
   {
     id: "day-3",
     name: "Coffee Roastery",
-    path: "/lofi-pixel-study/lofi-cafe-day-3.png",
+    path: "/lofi-pixel-study/backgrounds/lofi-cafe-day-3.png",
   },
   {
     id: "night-1",
     name: "Quiet Café (Clear Night)",
-    path: "/lofi-pixel-study/lofi-cafe-night-1.png",
+    path: "/lofi-pixel-study/backgrounds/lofi-cafe-night-1.png",
   },
   {
     id: "night-2",
     name: "Neon Street Café",
-    path: "/lofi-pixel-study/lofi-cafe-night-2.png",
+    path: "/lofi-pixel-study/backgrounds/lofi-cafe-night-2.png",
   },
   {
     id: "rain-1",
     name: "Rainy Window Corner",
-    path: "/lofi-pixel-study/lofi-cafe-rain-1.png",
+    path: "/lofi-pixel-study/backgrounds/lofi-cafe-rain-1.png",
   },
   {
     id: "rain-2",
     name: "Rainy Street View",
-    path: "/lofi-pixel-study/lofi-cafe-rain-2.png",
+    path: "/lofi-pixel-study/backgrounds/lofi-cafe-rain-2.png",
   },
   {
     id: "rain-3",
     name: "Midnight Rain Bistro",
-    path: "/lofi-pixel-study/lofi-cafe-rain-3.png",
+    path: "/lofi-pixel-study/backgrounds/lofi-cafe-rain-3.png",
   },
 ];
 
@@ -70,17 +72,27 @@ interface Track {
   path: string;
 }
 
+interface AlarmSound {
+  id: string;
+  name: string;
+  path: string;
+}
+
 interface LofiPixelStudyClientProps {
   initialTracks: Track[];
+  initialAlarms: AlarmSound[];
 }
 
 const DEFAULT_TRACK_ARTIST = "leberch";
 const DEFAULT_TRACK_TITLE = "lofi hip hop";
+const DEFAULT_ALARM_NAME = "Beep Alarm";
+const STORAGE_KEY = "lofi-pixel-study-preferences";
 
 export default function LofiPixelStudyClient({
   initialTracks,
+  initialAlarms,
 }: LofiPixelStudyClientProps) {
-  const router = useRouter();
+  const hasLoadedPreferencesRef = useRef(false);
 
   // Background state (with preview on hover support)
   const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[0]);
@@ -96,6 +108,7 @@ export default function LofiPixelStudyClient({
 
   // Audio player state
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const alarmAudioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(() => {
     const defaultTrackIndex = initialTracks.findIndex(
@@ -114,8 +127,21 @@ export default function LofiPixelStudyClient({
 
   // UI state
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
   const [showRetroFilter, setShowRetroFilter] = useState(true);
+  const [showVignette, setShowVignette] = useState(true);
+  const [hoverPreviewEnabled, setHoverPreviewEnabled] = useState(true);
+  const [timerSoundEnabled, setTimerSoundEnabled] = useState(true);
+  const [showMinimizedTimerTime, setShowMinimizedTimerTime] = useState(false);
+  const [selectedAlarmIndex, setSelectedAlarmIndex] = useState(() => {
+    const defaultAlarmIndex = initialAlarms.findIndex(
+      (alarm) => alarm.name === DEFAULT_ALARM_NAME,
+    );
+
+    return defaultAlarmIndex >= 0 ? defaultAlarmIndex : 0;
+  });
+  const [isAlarmPreviewPlaying, setIsAlarmPreviewPlaying] = useState(false);
   const [hoverActive, setHoverActive] = useState(false);
 
   // Timer State
@@ -123,6 +149,7 @@ export default function LofiPixelStudyClient({
   const [timerActive, setTimerActive] = useState(false);
   const [timerDuration, setTimerDuration] = useState(25 * 60);
   const [timerMinimized, setTimerMinimized] = useState(false);
+  const isPortrait = windowSize.h > windowSize.w;
 
   // Safeguard in case initialTracks is empty
   const currentTrack = initialTracks[currentTrackIndex] || {
@@ -131,6 +158,7 @@ export default function LofiPixelStudyClient({
     artist: "Unknown",
     path: "",
   };
+  const selectedAlarm = initialAlarms[selectedAlarmIndex] || null;
 
   // Monitor Window Resize
   useEffect(() => {
@@ -144,17 +172,127 @@ export default function LofiPixelStudyClient({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const rawPreferences = window.localStorage.getItem(STORAGE_KEY);
+      if (!rawPreferences) {
+        hasLoadedPreferencesRef.current = true;
+        return;
+      }
+
+      const preferences = JSON.parse(rawPreferences) as {
+        selectedBgId?: string;
+        volume?: number;
+        isMuted?: boolean;
+        isLooping?: boolean;
+        showRetroFilter?: boolean;
+        showVignette?: boolean;
+        hoverPreviewEnabled?: boolean;
+        timerSoundEnabled?: boolean;
+        showMinimizedTimerTime?: boolean;
+        timerDuration?: number;
+        selectedAlarmId?: string;
+      };
+
+      if (preferences.selectedBgId) {
+        const matchedBackground = BACKGROUNDS.find(
+          (bg) => bg.id === preferences.selectedBgId,
+        );
+        if (matchedBackground) {
+          setSelectedBg(matchedBackground);
+        }
+      }
+
+      if (typeof preferences.volume === "number") {
+        setVolume(Math.min(1, Math.max(0, preferences.volume)));
+      }
+      if (typeof preferences.isMuted === "boolean") {
+        setIsMuted(preferences.isMuted);
+      }
+      if (typeof preferences.isLooping === "boolean") {
+        setIsLooping(preferences.isLooping);
+      }
+      if (typeof preferences.showRetroFilter === "boolean") {
+        setShowRetroFilter(preferences.showRetroFilter);
+      }
+      if (typeof preferences.showVignette === "boolean") {
+        setShowVignette(preferences.showVignette);
+      }
+      if (typeof preferences.hoverPreviewEnabled === "boolean") {
+        setHoverPreviewEnabled(preferences.hoverPreviewEnabled);
+      }
+      if (typeof preferences.timerSoundEnabled === "boolean") {
+        setTimerSoundEnabled(preferences.timerSoundEnabled);
+      }
+      if (typeof preferences.showMinimizedTimerTime === "boolean") {
+        setShowMinimizedTimerTime(preferences.showMinimizedTimerTime);
+      }
+      if (typeof preferences.timerDuration === "number") {
+        const nextDuration = Math.min(180 * 60, Math.max(60, preferences.timerDuration));
+        setTimerDuration(nextDuration);
+        setTimeLeft(nextDuration);
+      }
+      if (preferences.selectedAlarmId) {
+        const matchedAlarmIndex = initialAlarms.findIndex(
+          (alarm) => alarm.id === preferences.selectedAlarmId,
+        );
+        if (matchedAlarmIndex >= 0) {
+          setSelectedAlarmIndex(matchedAlarmIndex);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load study preferences:", error);
+    } finally {
+      hasLoadedPreferencesRef.current = true;
+    }
+  }, [initialAlarms]);
+
+  useEffect(() => {
+    if (!hasLoadedPreferencesRef.current || typeof window === "undefined") return;
+
+    const preferences = {
+      selectedBgId: selectedBg.id,
+      volume,
+      isMuted,
+      isLooping,
+      showRetroFilter,
+      showVignette,
+      hoverPreviewEnabled,
+      timerSoundEnabled,
+      showMinimizedTimerTime,
+      timerDuration,
+      selectedAlarmId: selectedAlarm?.id ?? null,
+    };
+
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(preferences));
+  }, [
+    hoverPreviewEnabled,
+    isLooping,
+    isMuted,
+    selectedAlarm?.id,
+    selectedBg.id,
+    showMinimizedTimerTime,
+    showRetroFilter,
+    showVignette,
+    timerDuration,
+    timerSoundEnabled,
+    volume,
+  ]);
+
   // Delay enabling hover preview to prevent accidental triggers upon drawer open
   useEffect(() => {
-    if (isPanelOpen) {
+    if (isPanelOpen && hoverPreviewEnabled) {
       const timer = setTimeout(() => {
         setHoverActive(true);
       }, 350);
       return () => clearTimeout(timer);
     } else {
       setHoverActive(false);
+      setPreviewBg(null);
     }
-  }, [isPanelOpen]);
+  }, [isPanelOpen, hoverPreviewEnabled]);
 
   // Countdown Timer Hook
   useEffect(() => {
@@ -166,22 +304,14 @@ export default function LofiPixelStudyClient({
     } else if (timeLeft === 0 && timerActive) {
       setTimerActive(false);
 
-      // Play a short retro synthesizer beep at completion
-      if (typeof window !== "undefined") {
+      // Play the selected alarm sound at completion
+      if (timerSoundEnabled && typeof window !== "undefined") {
         try {
-          const AudioContextClass =
-            window.AudioContext || (window as any).webkitAudioContext;
-          if (AudioContextClass) {
-            const audioCtx = new AudioContextClass();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = "square"; // 8-bit retro square wave
-            osc.frequency.value = 587.33; // D5 note
-            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.35);
+          if (alarmAudioRef.current && selectedAlarm?.path) {
+            alarmAudioRef.current.pause();
+            alarmAudioRef.current.currentTime = 0;
+            alarmAudioRef.current.volume = getAlarmVolume(selectedAlarm.name);
+            alarmAudioRef.current.play().catch(() => {});
           }
         } catch (e) {
           console.error("Timer beep failed:", e);
@@ -189,7 +319,7 @@ export default function LofiPixelStudyClient({
       }
     }
     return () => clearInterval(intervalId);
-  }, [timerActive, timeLeft]);
+  }, [selectedAlarm?.path, timerActive, timeLeft, timerSoundEnabled]);
 
   // Calculate Integer Scale: Cover viewport fully with 16:9 pixel-perfect scaling
   useEffect(() => {
@@ -247,6 +377,25 @@ export default function LofiPixelStudyClient({
       }
     }
   }, [currentTrackIndex]);
+
+  useEffect(() => {
+    const alarmAudio = alarmAudioRef.current;
+    if (!alarmAudio) return;
+
+    const handleAlarmEnded = () => {
+      setIsAlarmPreviewPlaying(false);
+    };
+
+    alarmAudio.addEventListener("ended", handleAlarmEnded);
+    return () => alarmAudio.removeEventListener("ended", handleAlarmEnded);
+  }, []);
+
+  useEffect(() => {
+    if (!alarmAudioRef.current) return;
+    alarmAudioRef.current.pause();
+    alarmAudioRef.current.currentTime = 0;
+    setIsAlarmPreviewPlaying(false);
+  }, [selectedAlarmIndex]);
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const { naturalWidth, naturalHeight } = e.currentTarget;
@@ -311,11 +460,38 @@ export default function LofiPixelStudyClient({
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
+  const getAlarmVolume = (alarmName?: string) => {
+    if (alarmName === "Beep Alarm") return 1;
+    if (alarmName === "Bedside Clock") return 0.82;
+    return 0.9;
+  };
+
+  const handleAlarmPreview = () => {
+    if (!alarmAudioRef.current || !selectedAlarm?.path) return;
+
+    if (isAlarmPreviewPlaying) {
+      alarmAudioRef.current.pause();
+      alarmAudioRef.current.currentTime = 0;
+      setIsAlarmPreviewPlaying(false);
+      return;
+    }
+
+    alarmAudioRef.current.currentTime = 0;
+    alarmAudioRef.current.volume = getAlarmVolume(selectedAlarm.name);
+    alarmAudioRef.current
+      .play()
+      .then(() => setIsAlarmPreviewPlaying(true))
+      .catch((err) => console.log("Alarm preview blocked: ", err));
+  };
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black text-zinc-100 select-none font-pixel text-base md:text-lg">
       {/* HTML5 Audio Node */}
       {currentTrack.path && (
         <audio ref={audioRef} src={currentTrack.path} loop={isLooping} />
+      )}
+      {selectedAlarm?.path && (
+        <audio ref={alarmAudioRef} src={selectedAlarm.path} preload="auto" />
       )}
 
       {/* Retro scanline & subpixel animation styling */}
@@ -413,21 +589,33 @@ export default function LofiPixelStudyClient({
               opacity: { duration: 0.45, ease: "easeOut" },
               scale: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
             }}
-            style={{
-              width: `${imgDimensions.w * scale}px`,
-              height: `${imgDimensions.h * scale}px`,
-              imageRendering: "pixelated",
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              x: "-50%",
-              y: "-50%",
-              willChange: "opacity, transform",
-            }}
+            className={isPortrait ? "absolute inset-0 w-full h-full" : ""}
+            style={
+              isPortrait
+                ? {
+                    imageRendering: "pixelated",
+                    objectFit: "cover",
+                    objectPosition: "center",
+                    willChange: "opacity, transform",
+                  }
+                : {
+                    width: `${imgDimensions.w * scale}px`,
+                    height: `${imgDimensions.h * scale}px`,
+                    imageRendering: "pixelated",
+                    position: "absolute",
+                    left: "50%",
+                    top: "50%",
+                    x: "-50%",
+                    y: "-50%",
+                    willChange: "opacity, transform",
+                  }
+            }
           />
         </AnimatePresence>
         {/* Subtle Vignette Layer */}
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_55%,rgba(0,0,0,0.32)_100%)] z-1" />
+        {showVignette && (
+          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_55%,rgba(0,0,0,0.32)_100%)] z-1" />
+        )}
         {/* Subtle grid pattern overlay to give CRT screen vibe */}
         {showRetroFilter && (
           <div className="absolute inset-0 pointer-events-none crt-overlay opacity-65 z-1" />
@@ -441,19 +629,21 @@ export default function LofiPixelStudyClient({
             <span className="text-xs md:text-sm font-bold text-purple-400 uppercase tracking-widest leading-none">
               Timer:
             </span>
-            <span className="text-xs md:text-sm font-pixel tracking-wide font-bold leading-none">
-              {formatTime(timeLeft)}
-            </span>
+            {showMinimizedTimerTime && (
+              <span className="text-xs md:text-sm font-pixel tracking-wide font-bold leading-none">
+                {formatTime(timeLeft)}
+              </span>
+            )}
             <button
               onClick={() => setTimerMinimized(false)}
-              className="p-1 pixel-btn cursor-pointer animate-pulse"
+              className="p-1 pixel-btn cursor-pointer"
               title="Expand Timer"
             >
               <Maximize2 className="w-2.5 h-2.5 md:w-3 md:h-3 text-zinc-300" />
             </button>
           </div>
         ) : (
-          <div className="pointer-events-auto pixel-box p-2.5 md:p-3 flex flex-col items-center gap-1.5 md:gap-2 min-w-33.75 sm:min-w-37.5 md:min-w-42.5 text-zinc-200">
+          <div className="pointer-events-auto pixel-box p-2.5 md:p-3 flex flex-col items-center gap-1.5 md:gap-2 min-w-[135px] sm:min-w-[150px] md:min-w-[170px] text-zinc-200">
             {/* Header with Minimize Button */}
             <div className="flex justify-between items-center w-full border-b border-zinc-800/85 pb-1 mb-0.5 gap-2">
               <span className="text-xs md:text-sm font-bold text-purple-400 uppercase tracking-widest leading-none">
@@ -541,26 +731,54 @@ export default function LofiPixelStudyClient({
                 +
               </button>
             </div>
+
+            <div className="flex w-full flex-col gap-1.5 border-t border-zinc-800/80 pt-1.5 md:pt-2">
+              <span className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-zinc-400">
+                Alarm Sound
+              </span>
+              <div className="flex w-full gap-1.5">
+                <select
+                  value={selectedAlarm?.id ?? ""}
+                  onChange={(e) =>
+                    setSelectedAlarmIndex(
+                      Math.max(
+                        0,
+                        initialAlarms.findIndex(
+                          (alarm) => alarm.id === e.target.value,
+                        ),
+                      ),
+                    )
+                  }
+                  className="min-w-0 flex-1 bg-zinc-950 border-2 border-[#5a3291] px-2 py-1 text-xs md:text-sm text-zinc-200 outline-none"
+                >
+                  {initialAlarms.map((alarm) => (
+                    <option key={alarm.id} value={alarm.id}>
+                      {alarm.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleAlarmPreview}
+                  disabled={!selectedAlarm}
+                  className={`px-2 py-1 text-xs md:text-sm uppercase cursor-pointer pixel-btn disabled:opacity-40 ${
+                    isAlarmPreviewPlaying ? "pixel-btn-active" : ""
+                  }`}
+                >
+                  {isAlarmPreviewPlaying ? "Stop" : "Preview"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Top Header Navigation & Scale Info */}
-      <header className="absolute top-4 right-4 z-10 pointer-events-none">
-        <button
-          onClick={() => setShowRetroFilter(!showRetroFilter)}
-          className="pointer-events-auto flex items-center px-3 py-1.5 pixel-btn text-sm uppercase tracking-wide cursor-pointer"
-        >
-          <span>Retro Filter: {showRetroFilter ? "ON" : "OFF"}</span>
-        </button>
-      </header>
-
       {/* Bottom Main UI Bar */}
       <div className="absolute bottom-6 left-4 right-4 flex flex-col items-center gap-3 md:gap-4 z-10 pointer-events-none">
         {/* Music Player & Background Selector Dock */}
-        <div className="relative w-full max-w-2xl pointer-events-auto pixel-box p-3 md:p-4 flex flex-col md:flex-row gap-3 md:gap-4 items-center justify-between text-xs md:text-sm">
+        <div className="relative w-full max-w-3xl pointer-events-auto pixel-box px-3 py-3 md:px-4 md:py-4 flex flex-col gap-3 md:gap-4 text-xs md:text-sm">
+          <div className="flex w-full min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
           {/* Active Track Info */}
-          <div className="flex items-center gap-2.5 md:gap-3 min-w-0 w-full md:flex-1 md:pr-16">
+          <div className="flex items-center gap-2.5 md:gap-3 min-w-0 w-full md:max-w-[28%]">
             <div
               className={`shrink-0 p-2 md:p-2.5 rounded-xl bg-purple-900/30 border-2 border-purple-500/30 text-purple-400 ${isPlaying ? "animate-pulse" : ""}`}
             >
@@ -577,7 +795,7 @@ export default function LofiPixelStudyClient({
           </div>
 
           {/* Audio Controls */}
-          <div className="flex items-center justify-center gap-2.5 md:gap-3 md:absolute md:left-1/2 md:top-1/2 md:w-28 md:-translate-x-1/2 md:-translate-y-1/2">
+          <div className="flex items-center justify-center gap-2.5 md:gap-3 md:flex-1">
             <button
               onClick={handlePrev}
               className="grid h-7 w-7 md:h-8 md:w-8 place-items-center pixel-btn cursor-pointer"
@@ -608,22 +826,11 @@ export default function LofiPixelStudyClient({
           </div>
 
           {/* Buttons and Volume Slider */}
-          <div className="flex items-center gap-2 md:gap-3 w-full md:flex-1 md:pl-16 justify-center md:justify-end text-[10px] md:text-xs">
-            {/* Background Picker Trigger */}
-            <button
-              onClick={() => setIsPanelOpen(!isPanelOpen)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 md:px-3 md:py-1.5 uppercase cursor-pointer pixel-btn ${
-                isPanelOpen ? "pixel-btn-active" : ""
-              }`}
-            >
-              <ImageIcon className="w-3 md:w-3.5 h-3 md:h-3.5" />
-              <span>Scenes</span>
-            </button>
-
+          <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2 text-[10px] md:flex md:w-auto md:flex-wrap md:justify-end md:gap-3 md:text-xs">
             {/* Loop Toggle */}
             <button
               onClick={() => setIsLooping(!isLooping)}
-              className={`p-1 md:p-1.5 cursor-pointer pixel-btn ${
+              className={`grid h-8 w-8 place-items-center cursor-pointer pixel-btn md:h-auto md:w-auto md:px-2 md:py-1.5 ${
                 isLooping ? "pixel-btn-active" : ""
               }`}
               title="Loop Single Track"
@@ -632,7 +839,7 @@ export default function LofiPixelStudyClient({
             </button>
 
             {/* Volume controls */}
-            <div className="flex items-center gap-1.5 md:gap-2 pl-1.5 md:pl-2 border-l border-zinc-800">
+            <div className="flex min-w-0 items-center gap-1.5 border-l border-zinc-800 pl-1.5 md:gap-2 md:pl-2">
               <button
                 onClick={() => setIsMuted(!isMuted)}
                 className="text-zinc-400 hover:text-white transition-colors cursor-pointer"
@@ -653,14 +860,43 @@ export default function LofiPixelStudyClient({
                   setVolume(parseFloat(e.target.value));
                   if (isMuted) setIsMuted(false);
                 }}
-                className="w-12 md:w-16 h-1.5 md:h-2 bg-zinc-950 border border-zinc-800 appearance-none cursor-pointer pixel-thumb"
+                className="w-full max-w-24 md:w-16 h-1.5 md:h-2 bg-zinc-950 border border-zinc-800 appearance-none cursor-pointer pixel-thumb"
               />
             </div>
+
+            {/* Background Picker Trigger */}
+            <button
+              onClick={() => {
+                setIsPanelOpen(!isPanelOpen);
+                setIsSettingsOpen(false);
+              }}
+              className={`flex min-w-0 items-center justify-center gap-1.5 px-2.5 py-1 md:px-3 md:py-1.5 uppercase cursor-pointer pixel-btn ${
+                isPanelOpen ? "pixel-btn-active" : ""
+              }`}
+            >
+              <ImageIcon className="w-3 md:w-3.5 h-3 md:h-3.5" />
+              <span>Background</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setIsSettingsOpen(!isSettingsOpen);
+                setIsPanelOpen(false);
+              }}
+              className={`grid h-8 w-8 place-items-center justify-self-end cursor-pointer pixel-btn ${
+                isSettingsOpen ? "pixel-btn-active" : ""
+              }`}
+              title="Open Settings"
+              aria-label="Open Settings"
+            >
+              <Settings2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            </button>
           </div>
+        </div>
         </div>
 
         {/* Progress Seek Bar */}
-        <div className="w-full max-w-2xl pointer-events-auto bg-black/60 border-2 border-zinc-900 px-3 md:px-4 py-1 md:py-2 rounded-none flex items-center gap-2.5 md:gap-3 text-[10px] md:text-xs text-zinc-400 shadow-md">
+        <div className="w-full max-w-3xl pointer-events-auto bg-black/60 border-2 border-zinc-900 px-3 md:px-4 py-1 md:py-2 rounded-none flex items-center gap-2.5 md:gap-3 text-[10px] md:text-xs text-zinc-400 shadow-md">
           <span>{formatTime(progress)}</span>
           <input
             type="range"
@@ -676,19 +912,106 @@ export default function LofiPixelStudyClient({
 
       {/* Floating Background Selector drawer */}
       <AnimatePresence>
+        {isSettingsOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            className="absolute bottom-56 md:bottom-44 left-4 right-4 mx-auto w-[min(22rem,calc(100vw-2rem))] pixel-box p-3 md:p-4 z-10 text-xs md:text-sm"
+          >
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className="text-xs md:text-sm font-bold uppercase tracking-wider text-purple-400">
+                Study Settings
+              </span>
+              <span className="text-[9px] md:text-[11px] text-zinc-500 font-medium">
+                tune the room
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              <button
+                onClick={() => setShowRetroFilter(!showRetroFilter)}
+                className={`flex items-center justify-between gap-3 px-2.5 py-2 text-left uppercase cursor-pointer pixel-btn ${
+                  showRetroFilter ? "pixel-btn-active" : ""
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Retro Filter
+                </span>
+                <span>{showRetroFilter ? "On" : "Off"}</span>
+              </button>
+
+              <button
+                onClick={() => setShowVignette(!showVignette)}
+                className={`flex items-center justify-between gap-3 px-2.5 py-2 text-left uppercase cursor-pointer pixel-btn ${
+                  showVignette ? "pixel-btn-active" : ""
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <ScanLine className="h-3.5 w-3.5" />
+                  Edge Vignette
+                </span>
+                <span>{showVignette ? "On" : "Off"}</span>
+              </button>
+
+              <button
+                onClick={() => setHoverPreviewEnabled(!hoverPreviewEnabled)}
+                className={`flex items-center justify-between gap-3 px-2.5 py-2 text-left uppercase cursor-pointer pixel-btn ${
+                  hoverPreviewEnabled ? "pixel-btn-active" : ""
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Eye className="h-3.5 w-3.5" />
+                  Scene Preview
+                </span>
+                <span>{hoverPreviewEnabled ? "On" : "Off"}</span>
+              </button>
+
+              <button
+                onClick={() => setTimerSoundEnabled(!timerSoundEnabled)}
+                className={`flex items-center justify-between gap-3 px-2.5 py-2 text-left uppercase cursor-pointer pixel-btn ${
+                  timerSoundEnabled ? "pixel-btn-active" : ""
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Bell className="h-3.5 w-3.5" />
+                  Timer Chime
+                </span>
+                <span>{timerSoundEnabled ? "On" : "Off"}</span>
+              </button>
+
+              <button
+                onClick={() => setShowMinimizedTimerTime(!showMinimizedTimerTime)}
+                className={`flex items-center justify-between gap-3 px-2.5 py-2 text-left uppercase cursor-pointer pixel-btn ${
+                  showMinimizedTimerTime ? "pixel-btn-active" : ""
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <Minimize2 className="h-3.5 w-3.5" />
+                  Show Minimized Timer Time
+                </span>
+                <span>{showMinimizedTimerTime ? "On" : "Off"}</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {isPanelOpen && (
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 30 }}
-            className="absolute bottom-36 left-4 right-4 mx-auto max-w-2xl pixel-box p-3 md:p-4 z-10 text-xs md:text-sm"
+            className="absolute bottom-56 md:bottom-44 left-4 right-4 mx-auto max-w-2xl pixel-box p-3 md:p-4 z-10 text-xs md:text-sm"
           >
             <div className="flex justify-between items-center mb-3">
               <span className="text-xs md:text-sm font-bold uppercase tracking-wider text-purple-400">
-                Select Scene (Hover for instant preview)
+                Select Background (Hover for instant preview)
               </span>
               <span className="text-[9px] md:text-[11px] text-zinc-500 font-medium">
-                {BACKGROUNDS.length} scenes available
+                {BACKGROUNDS.length} backgrounds available
               </span>
             </div>
 
@@ -700,9 +1023,10 @@ export default function LofiPixelStudyClient({
                   onClick={() => {
                     setSelectedBg(bg);
                     setPreviewBg(null);
+                    setIsPanelOpen(false);
                   }}
                   onMouseEnter={() => {
-                    if (hoverActive) setPreviewBg(bg);
+                    if (hoverActive && hoverPreviewEnabled) setPreviewBg(bg);
                   }}
                   onMouseLeave={() => setPreviewBg(null)}
                   className={`group relative flex flex-col gap-0.5 md:gap-1 p-1 border-2 text-left overflow-hidden cursor-pointer ${
@@ -766,3 +1090,5 @@ export default function LofiPixelStudyClient({
     </div>
   );
 }
+
+

@@ -8,19 +8,34 @@ export const metadata = {
     "Relax, study, or work in a cozy pixel art room with dynamic lofi music tracks and customizable backgrounds.",
 };
 
+const ALLOWED_ALARMS = new Set(["Bedside Clock", "Beep Alarm"]);
+
 export default async function Page() {
-  const audioDir = "normalized";
-  const dirPath = path.join(
+  const musicDir = "normalized";
+  const alarmDir = "alarms";
+  const musicPath = path.join(
     process.cwd(),
     "public",
     "lofi-pixel-study",
-    audioDir,
+    musicDir,
   );
-  let files: string[] = [];
+  const alarmPath = path.join(
+    process.cwd(),
+    "public",
+    "lofi-pixel-study",
+    alarmDir,
+  );
+  let musicFiles: string[] = [];
+  let alarmFiles: string[] = [];
   try {
-    if (fs.existsSync(dirPath)) {
-      files = fs
-        .readdirSync(dirPath)
+    if (fs.existsSync(musicPath)) {
+      musicFiles = fs
+        .readdirSync(musicPath)
+        .filter((file) => /\.(mp3|wav|ogg|m4a)$/i.test(file));
+    }
+    if (fs.existsSync(alarmPath)) {
+      alarmFiles = fs
+        .readdirSync(alarmPath)
         .filter((file) => /\.(mp3|wav|ogg|m4a)$/i.test(file));
     }
   } catch (error) {
@@ -28,7 +43,7 @@ export default async function Page() {
   }
 
   // Parse the format: "(Artist) - (Title)"
-  const tracks = files.map((filename) => {
+  const tracks = musicFiles.map((filename) => {
     const cleanName = filename.replace(/\.(mp3|wav|ogg|m4a)$/i, "");
     const parts = cleanName.split(" - ");
     const artist = parts[0] || "Unknown";
@@ -37,9 +52,18 @@ export default async function Page() {
       id: cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       title: title,
       artist: artist,
-      path: `/lofi-pixel-study/${audioDir}/${filename}`,
+      path: `/lofi-pixel-study/${musicDir}/${filename}`,
     };
   });
 
-  return <LofiPixelStudyClient initialTracks={tracks} />;
+  const alarms = alarmFiles.map((filename) => {
+    const cleanName = filename.replace(/\.(mp3|wav|ogg|m4a)$/i, "");
+    return {
+      id: cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      name: cleanName,
+      path: `/lofi-pixel-study/${alarmDir}/${filename}`,
+    };
+  }).filter((alarm) => ALLOWED_ALARMS.has(alarm.name));
+
+  return <LofiPixelStudyClient initialTracks={tracks} initialAlarms={alarms} />;
 }
