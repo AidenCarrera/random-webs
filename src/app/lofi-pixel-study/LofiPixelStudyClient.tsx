@@ -453,7 +453,7 @@ export default function LofiPixelStudyClient({
             </button>
           </div>
         ) : (
-          <div className="pointer-events-auto pixel-box p-2.5 md:p-3 flex flex-col items-center gap-1.5 md:gap-2 min-w-[135px] sm:min-w-[150px] md:min-w-[170px] text-zinc-200">
+          <div className="pointer-events-auto pixel-box p-2.5 md:p-3 flex flex-col items-center gap-1.5 md:gap-2 min-w-33.75 sm:min-w-37.5 md:min-w-42.5 text-zinc-200">
             {/* Header with Minimize Button */}
             <div className="flex justify-between items-center w-full border-b border-zinc-800/85 pb-1 mb-0.5 gap-2">
               <span className="text-xs md:text-sm font-bold text-purple-400 uppercase tracking-widest leading-none">
@@ -558,29 +558,29 @@ export default function LofiPixelStudyClient({
       {/* Bottom Main UI Bar */}
       <div className="absolute bottom-6 left-4 right-4 flex flex-col items-center gap-3 md:gap-4 z-10 pointer-events-none">
         {/* Music Player & Background Selector Dock */}
-        <div className="w-full max-w-2xl pointer-events-auto pixel-box p-3 md:p-4 flex flex-col md:flex-row gap-3 md:gap-4 items-center justify-between text-xs md:text-sm">
+        <div className="relative w-full max-w-2xl pointer-events-auto pixel-box p-3 md:p-4 flex flex-col md:flex-row gap-3 md:gap-4 items-center justify-between text-xs md:text-sm">
           {/* Active Track Info */}
-          <div className="flex items-center gap-2.5 md:gap-3 shrink-0 w-full md:w-auto">
+          <div className="flex items-center gap-2.5 md:gap-3 min-w-0 w-full md:flex-1 md:pr-16">
             <div
-              className={`p-1.5 md:p-2 rounded-xl bg-purple-900/30 border-2 border-purple-500/30 text-purple-400 ${isPlaying ? "animate-pulse" : ""}`}
+              className={`shrink-0 p-2 md:p-2.5 rounded-xl bg-purple-900/30 border-2 border-purple-500/30 text-purple-400 ${isPlaying ? "animate-pulse" : ""}`}
             >
-              <Music className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <Music className="w-4 h-4 md:w-5 md:h-5" />
             </div>
-            <div className="flex flex-col text-left">
-              <span className="text-xs md:text-sm font-bold text-zinc-200 tracking-wide line-clamp-1">
+            <div className="flex min-w-0 flex-col text-left">
+              <span className="text-base md:text-lg font-bold text-zinc-200 tracking-wide line-clamp-1">
                 {currentTrack.title}
               </span>
-              <span className="text-[9px] md:text-[11px] text-zinc-400 font-medium tracking-wider uppercase">
+              <span className="text-xs md:text-sm text-zinc-400 font-medium tracking-wider uppercase">
                 {currentTrack.artist}
               </span>
             </div>
           </div>
 
           {/* Audio Controls */}
-          <div className="flex items-center gap-2.5 md:gap-3">
+          <div className="flex items-center justify-center gap-2.5 md:gap-3 md:absolute md:left-1/2 md:top-1/2 md:w-28 md:-translate-x-1/2 md:-translate-y-1/2">
             <button
               onClick={handlePrev}
-              className="p-1 md:p-1.5 pixel-btn cursor-pointer"
+              className="grid h-7 w-7 md:h-8 md:w-8 place-items-center pixel-btn cursor-pointer"
               title="Previous Track"
             >
               <SkipBack className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -588,7 +588,7 @@ export default function LofiPixelStudyClient({
 
             <button
               onClick={handlePlayPause}
-              className="p-2 md:p-2.5 bg-[#4a148c] border-2 border-purple-500 text-white transition-all cursor-pointer shadow-[2px_2px_0px_#000] active:translate-x-px active:translate-y-px active:shadow-none"
+              className="grid h-9 w-9 md:h-10 md:w-10 place-items-center bg-[#4a148c] border-2 border-purple-500 text-white transition-all cursor-pointer shadow-[2px_2px_0px_#000] active:translate-x-px active:translate-y-px active:shadow-none"
               title={isPlaying ? "Pause" : "Play"}
             >
               {isPlaying ? (
@@ -600,7 +600,7 @@ export default function LofiPixelStudyClient({
 
             <button
               onClick={handleNext}
-              className="p-1 md:p-1.5 pixel-btn cursor-pointer"
+              className="grid h-7 w-7 md:h-8 md:w-8 place-items-center pixel-btn cursor-pointer"
               title="Next Track"
             >
               <SkipForward className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -608,7 +608,7 @@ export default function LofiPixelStudyClient({
           </div>
 
           {/* Buttons and Volume Slider */}
-          <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto justify-end text-[10px] md:text-xs">
+          <div className="flex items-center gap-2 md:gap-3 w-full md:flex-1 md:pl-16 justify-center md:justify-end text-[10px] md:text-xs">
             {/* Background Picker Trigger */}
             <button
               onClick={() => setIsPanelOpen(!isPanelOpen)}
@@ -693,7 +693,7 @@ export default function LofiPixelStudyClient({
             </div>
 
             {/* Thumbnail Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-3 max-h-[160px] md:max-h-[220px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-3 max-h-40 md:max-h-55 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
               {BACKGROUNDS.map((bg) => (
                 <button
                   key={bg.id}
@@ -742,7 +742,7 @@ export default function LofiPixelStudyClient({
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="max-w-[280px] w-full pixel-box p-4 flex flex-col gap-3 text-center items-center font-pixel"
+              className="max-w-70 w-full pixel-box p-4 flex flex-col gap-3 text-center items-center font-pixel"
             >
               <h2 className="text-xl font-bold tracking-wider text-purple-400">
                 LOFI STUDY
