@@ -2,6 +2,8 @@
 
 import { Download, Settings2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { ExportPreviewModal } from "@/components/ExportPreviewModal";
+import { canvasToBlob, downloadCanvasPng } from "@/lib/canvasExport";
 
 type ColorMode =
   | "default"
@@ -120,6 +122,12 @@ function getPaletteColor(t: number, mode: ColorMode): string {
   return `rgb(${red} ${green} ${blue})`;
 }
 
+function getSpectrumColor(offset: number): string {
+  const hue = (((offset * -8) % 360) + 360) % 360;
+  const [red, green, blue] = hslToRgb(hue, 100, 50);
+  return `rgb(${red} ${green} ${blue})`;
+}
+
 function getRingStrokeStyle(radius: number, offset: number, mode: ColorMode): string {
   if (mode === "default") {
     const hue = (radius * 0.5 + offset * 5) % 360;
@@ -130,14 +138,8 @@ function getRingStrokeStyle(radius: number, offset: number, mode: ColorMode): st
     return getSpectrumColor(offset);
   }
 
-  const palettePosition = (((radius * 0.5 + offset * 5) % 360) + 360) % 360;
+  const palettePosition = (((radius * 0.8 + offset * 14) % 360) + 360) % 360;
   return getPaletteColor(palettePosition / 360, mode);
-}
-
-function getSpectrumColor(offset: number): string {
-  const hue = (((offset * -8) % 360) + 360) % 360;
-  const [red, green, blue] = hslToRgb(hue, 100, 50);
-  return `rgb(${red} ${green} ${blue})`;
 }
 
 export default function HypnoSpiral() {
@@ -153,6 +155,9 @@ export default function HypnoSpiral() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [downloadCountdown, setDownloadCountdown] = useState<number | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewFileName, setPreviewFileName] = useState("hypno-spiral.png");
+  const [shareUrl, setShareUrl] = useState("");
 
   useEffect(() => {
     colorModeRef.current = colorMode;
@@ -168,6 +173,7 @@ export default function HypnoSpiral() {
     setIsTouchDevice(
       window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0,
     );
+    setShareUrl(window.location.href);
   }, []);
 
   useEffect(() => {
@@ -271,6 +277,27 @@ export default function HypnoSpiral() {
     };
   }, []);
 
+  useEffect(() => {
+    if (downloadCountdown === null) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+
+      for (const timeoutId of countdownTimeoutsRef.current) {
+        window.clearTimeout(timeoutId);
+      }
+
+      countdownTimeoutsRef.current = [];
+      setDownloadCountdown(null);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [downloadCountdown]);
+
   const handleDownload = () => {
     if (downloadCountdown !== null) return;
 
@@ -282,13 +309,26 @@ export default function HypnoSpiral() {
 
     const secondTickOne = window.setTimeout(() => setDownloadCountdown(2), 1000);
     const secondTickTwo = window.setTimeout(() => setDownloadCountdown(1), 2000);
-    const finalTick = window.setTimeout(() => {
-      const link = document.createElement("a");
-      link.download = `hypno-spiral-rings-${colorModeRef.current}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-      setDownloadCountdown(null);
-      countdownTimeoutsRef.current = [];
+    const finalTick = window.setTimeout(async () => {
+      const fileName = `hypno-spiral-rings-${colorModeRef.current}.png`;
+
+      try {
+        const dataUrl = canvas.toDataURL("image/png");
+        setPreviewImage(dataUrl);
+        setPreviewFileName(fileName);
+
+        if (!isTouchDevice) {
+          await downloadCanvasPng(canvas, fileName);
+        }
+      } catch {
+        const fallbackLink = document.createElement("a");
+        fallbackLink.download = fileName;
+        fallbackLink.href = canvas.toDataURL("image/png");
+        fallbackLink.click();
+      } finally {
+        setDownloadCountdown(null);
+        countdownTimeoutsRef.current = [];
+      }
     }, 3000);
 
     countdownTimeoutsRef.current = [secondTickOne, secondTickTwo, finalTick];
@@ -296,7 +336,7 @@ export default function HypnoSpiral() {
 
   return (
     <div
-      className="fixed inset-0 overflow-hidden bg-black text-white"
+      className="fixed inset-0 overflow-hidden bg-black text-white select-none"
       style={{ touchAction: "none" }}
     >
       <canvas ref={canvasRef} className="block h-full w-full" />
@@ -322,6 +362,43 @@ export default function HypnoSpiral() {
         </div>
       ) : null}
 
+      {previewImage ? (
+        <ExportPreviewModal
+          fileName={previewFileName}
+          imageSrc={previewImage}
+          isTouchDevice={isTouchDevice}
+          onClose={() => setPreviewImage(null)}
+          onSaveImage={async () => {
+            try {
+              const canvas = canvasRef.current;
+              if (!canvas) return;
+
+              const blob = await canvasToBlob(canvas);
+              const pngFile = new File([blob], previewFileName, {
+                type: "image/png",
+              });
+              const canShareFile =
+                typeof navigator !== "undefined" &&
+                "share" in navigator &&
+                "canShare" in navigator &&
+                navigator.canShare({ files: [pngFile] });
+
+              if (canShareFile) {
+                await navigator.share({
+                  files: [pngFile],
+                  title: "Hypno Spiral",
+                  text: "Save this spiral image.",
+                });
+                return;
+              }
+
+              window.open(previewImage, "_blank", "noopener,noreferrer");
+            } catch {}
+          }}
+          shareUrl={shareUrl}
+        />
+      ) : null}
+
       <div className="absolute right-3 top-3 z-10 sm:right-5 sm:top-5">
         <button
           type="button"
@@ -338,7 +415,7 @@ export default function HypnoSpiral() {
       {isMenuOpen ? (
         <div
           id="hypno-settings"
-          className="absolute right-3 top-16 z-10 w-[min(20rem,calc(100vw-1.5rem))] rounded-3xl border border-white/15 bg-black/72 p-4 text-white shadow-2xl backdrop-blur-xl sm:right-5 sm:w-80"
+          className="absolute inset-x-3 top-16 z-10 max-h-[calc(100vh-5.5rem)] overflow-y-auto rounded-3xl border border-white/15 bg-black/72 p-4 text-white shadow-2xl backdrop-blur-xl sm:inset-x-auto sm:right-5 sm:w-80 sm:max-h-[calc(100vh-7rem)]"
         >
           <div className="mb-4">
             <p className="font-mono text-xs uppercase tracking-[0.24em] text-white/60">
