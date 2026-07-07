@@ -14,9 +14,24 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://random-webs.vercel.app"),
+  manifest: "/site.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      {
+        url: "/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+    shortcut: ["/favicon.ico"],
+  },
   title: {
-    default: "Random Web",
-    template: "%s | Random Web",
+    default: "Random Webs",
+    template: "%s | Random Webs",
   },
   description:
     "A creative sandbox of interactive, unique mini web applications. Features physics engines, sound generators, digital art tools, coding mini-games, and other creative frontend experiments.",
@@ -41,24 +56,24 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://random-webs.vercel.app",
-    title: "Random Web",
+    title: "Random Webs",
     description: "A creative sandbox of interactive, unique mini web applications and frontend experiments.",
-    siteName: "Random Web",
+    siteName: "Random Webs",
     images: [
       {
-        url: "/thumbnail.jpg",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Random Web Preview",
+        alt: "Random Webs Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Random Web | Creative Coding",
+    title: "Random Webs | Creative Coding",
     description: "A creative sandbox of interactive, unique mini web applications and frontend experiments.",
-    images: ["/thumbnail.jpg"],
-    creator: "@randomweb",
+    images: ["/og-image.png"],
+    creator: "@randomwebs",
   },
   robots: {
     index: true,
@@ -79,7 +94,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -88,3 +103,6 @@ export default function RootLayout({
     </html>
   );
 }
+
+
+

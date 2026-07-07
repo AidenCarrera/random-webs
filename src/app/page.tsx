@@ -1,83 +1,147 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Shuffle } from "lucide-react";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { RANDOM_WEBSITE_PATHS, WEBSITES } from "@/lib/websites";
 
-const PAGES = [
-  // Phase 1
-  "/olo-terminal",
-  "/text-encrypt",
-  "/mindful-breathe",
-  "/magic-8-ball",
-  "/click-speed-test",
-  "/pixel-art",
-  "/zen-garden",
-  "/dont-click-me",
-  "/focus-timer",
-  // Phase 2
-  "/matrix-rain",
-  "/gravity-box",
-  "/beat-maker",
-  "/party-mode",
-  "/sticky-notes",
-  "/hypno-spiral",
-  "/submit-to-void",
-  "/text-decrypt",
-  "/emoji-rain",
-  // Phase 3
-  "/ascii-vision",
-  "/pad-synth",
-  "/typing-racer",
-  "/particle-collider",
-  "/mandala-maker",
-  "/morse-code",
-  "/arcana-tarot",
-  "/sorting-race",
-  "/style-pet",
-  "/solar-system",
-  // Phase 4
-  "/fractal-explorer",
-  "/lofi-pixel-study",
-  "/polyrhythm-visualizer",
-];
+const REVEALED_WEBSITES_KEY = "random-webs-revealed-websites";
+
+function maskText(value: string) {
+  return value.replace(/\S/g, "?");
+}
 
 export default function Home() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [revealedWebsites, setRevealedWebsites] = useState<string[]>([]);
 
-  const visitRandomWorld = () => {
+  useEffect(() => {
+    const savedWebsites = window.localStorage.getItem(REVEALED_WEBSITES_KEY);
+
+    if (!savedWebsites) {
+      return;
+    }
+
+    try {
+      const parsedWebsites = JSON.parse(savedWebsites);
+
+      if (Array.isArray(parsedWebsites)) {
+        setRevealedWebsites(parsedWebsites);
+      }
+    } catch {
+      window.localStorage.removeItem(REVEALED_WEBSITES_KEY);
+    }
+  }, []);
+
+  const visitRandomWebsite = () => {
     setLoading(true);
-    const randomPage = PAGES[Math.floor(Math.random() * PAGES.length)];
-    // Add artificial delay for effect
+    const randomPage =
+      RANDOM_WEBSITE_PATHS[
+        Math.floor(Math.random() * RANDOM_WEBSITE_PATHS.length)
+      ];
+    const nextRevealedWebsites = Array.from(
+      new Set([...revealedWebsites, randomPage]),
+    );
+
+    setRevealedWebsites(nextRevealedWebsites);
+    window.localStorage.setItem(
+      REVEALED_WEBSITES_KEY,
+      JSON.stringify(nextRevealedWebsites),
+    );
+
     setTimeout(() => {
       router.push(randomPage);
     }, 500);
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black overflow-hidden relative">
-      <div className="absolute inset-0 opacity-20 dark:opacity-10 pointer-events-none">
-        <div className="absolute top-20 left-20 w-64 h-64 bg-purple-500 rounded-full blur-[100px]" />
-        <div className="absolute bottom-20 right-20 w-80 h-80 bg-blue-500 rounded-full blur-[100px]" />
-      </div>
+    <main className="relative min-h-screen overflow-hidden bg-linear-to-b from-black via-zinc-950 to-zinc-950 text-white">
+      <section className="relative mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6 py-20 sm:px-8 lg:px-12">
+        <div className="flex w-full items-center justify-center">
+          <button
+            onClick={visitRandomWebsite}
+            disabled={loading}
+            className="group inline-flex items-center justify-center gap-4 rounded-full border border-white/12 bg-zinc-100 px-10 py-6 text-base font-black uppercase tracking-[0.28em] text-black transition-opacity duration-300 disabled:opacity-70"
+          >
+            <Shuffle className="h-5 w-5 transition-transform duration-500 group-hover:rotate-180" />
+            <span>Explore Random Website</span>
+          </button>
+        </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-10 text-center text-2xl text-white/35">
+          ↓
+        </div>
+      </section>
 
-      <main className="flex flex-col items-center justify-center z-10 text-center px-4">
-        <button
-          onClick={visitRandomWorld}
-          disabled={loading}
-          className="group relative flex items-center gap-4 px-8 py-5 bg-black dark:bg-white text-white dark:text-black rounded-full text-xl font-bold tracking-wide transition-all hover:scale-105 active:scale-95 disabled:opacity-70 disabled:scale-100 shadow-xl hover:shadow-2xl"
-        >
-          {loading ? (
-            <span className="animate-pulse">Teleporting...</span>
-          ) : (
-            <>
-              <Shuffle className="w-6 h-6 transition-transform group-hover:rotate-180 duration-500" />
-              <span>EXPLORE RANDOM WEBSITE</span>
-            </>
-          )}
-        </button>
-      </main>
-    </div>
+      <section className="relative mx-auto flex min-h-screen max-w-7xl items-start px-6 pb-20 sm:px-8 lg:px-12">
+        <div className="relative w-full pt-8">
+          <div className="relative rounded-4xl border border-white/6 bg-white/1.5 p-4 shadow-[0_12px_28px_rgba(0,0,0,0.2)]">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {WEBSITES.map((website, index) => {
+                const isRevealed = revealedWebsites.includes(website.path);
+                const cardClassName = isRevealed
+                  ? "group relative overflow-hidden rounded-[1.6rem] border border-white/8 bg-zinc-950 p-4 text-left text-zinc-100 shadow-[0_8px_18px_rgba(0,0,0,0.22)] transition-colors duration-300"
+                  : "relative overflow-hidden rounded-[1.6rem] border border-white/7 bg-black p-4 text-left text-white/90 shadow-[0_8px_18px_rgba(0,0,0,0.2)]";
+                const innerClassName = isRevealed
+                  ? "relative min-h-32 rounded-[1.2rem] bg-zinc-950 p-4"
+                  : "relative min-h-32 rounded-[1.2rem] bg-black p-4";
+
+                const cardContent = (
+                  <div className={innerClassName}>
+                    <h2
+                      className={
+                        isRevealed
+                          ? "text-xl font-black uppercase tracking-[0.08em] text-zinc-100"
+                          : "text-xl font-black uppercase tracking-[0.22em] text-white/95"
+                      }
+                    >
+                      {isRevealed ? website.title : maskText(website.title)}
+                    </h2>
+                    <p
+                      className={
+                        isRevealed
+                          ? "mt-3 max-w-56 text-sm leading-6 text-zinc-400"
+                          : "mt-3 max-w-56 text-sm leading-6 text-white/55"
+                      }
+                    >
+                      {isRevealed ? website.blurb : maskText(website.blurb)}
+                    </p>
+                  </div>
+                );
+
+                if (!isRevealed) {
+                  return (
+                    <div
+                      key={website.path}
+                      className={cardClassName}
+                      style={{
+                        animationDelay: `${index * 50}ms`,
+                      }}
+                    >
+                      {cardContent}
+                    </div>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={website.path}
+                    href={website.path}
+                    aria-label={website.title}
+                    className={cardClassName}
+                    style={{
+                      animationDelay: `${index * 50}ms`,
+                    }}
+                  >
+                    {cardContent}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }

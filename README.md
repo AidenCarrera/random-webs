@@ -1,4 +1,4 @@
-# Random Web
+# Random Webs
 
 A collection of interactive web experiments built with **Next.js**, **React**, and **Tailwind CSS**.
 
@@ -27,10 +27,10 @@ To clone and run this application:
 
 ```bash
 # Clone this repository
-git clone https://github.com/AidenCarrera/random-web.git
+git clone https://github.com/AidenCarrera/random-webs.git
 
 # Go into the repository
-cd random-web
+cd random-webs
 
 # Install dependencies
 pnpm install
