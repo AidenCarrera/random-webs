@@ -9,7 +9,13 @@ export const metadata = {
 };
 
 export default async function Page() {
-  const dirPath = path.join(process.cwd(), "public", "lofi-pixel-study");
+  const audioDir = "normalized";
+  const dirPath = path.join(
+    process.cwd(),
+    "public",
+    "lofi-pixel-study",
+    audioDir,
+  );
   let files: string[] = [];
   try {
     if (fs.existsSync(dirPath)) {
@@ -31,7 +37,7 @@ export default async function Page() {
       id: cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       title: title,
       artist: artist,
-      path: `/lofi-pixel-study/${filename}`,
+      path: `/lofi-pixel-study/${audioDir}/${filename}`,
     };
   });
 

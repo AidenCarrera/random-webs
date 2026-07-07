@@ -74,6 +74,9 @@ interface LofiPixelStudyClientProps {
   initialTracks: Track[];
 }
 
+const DEFAULT_TRACK_ARTIST = "leberch";
+const DEFAULT_TRACK_TITLE = "lofi hip hop";
+
 export default function LofiPixelStudyClient({
   initialTracks,
 }: LofiPixelStudyClientProps) {
@@ -94,7 +97,15 @@ export default function LofiPixelStudyClient({
   // Audio player state
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(() => {
+    const defaultTrackIndex = initialTracks.findIndex(
+      (track) =>
+        track.artist.toLowerCase() === DEFAULT_TRACK_ARTIST &&
+        track.title.toLowerCase() === DEFAULT_TRACK_TITLE,
+    );
+
+    return defaultTrackIndex >= 0 ? defaultTrackIndex : 0;
+  });
   const [volume, setVolume] = useState(0.5);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -389,21 +400,32 @@ export default function LofiPixelStudyClient({
 
       {/* Background Container */}
       <div className="absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center bg-zinc-950 z-0">
-        <img
-          src={activeBg.path}
-          alt={activeBg.name}
-          onLoad={handleImageLoad}
-          className="transition-all duration-300"
-          style={{
-            width: `${imgDimensions.w * scale}px`,
-            height: `${imgDimensions.h * scale}px`,
-            imageRendering: "pixelated",
-            position: "absolute",
-            left: "50%",
-            top: "50%",
-            transform: "translate(-50%, -50%)",
-          }}
-        />
+        <AnimatePresence initial={false}>
+          <motion.img
+            key={activeBg.id}
+            src={activeBg.path}
+            alt={activeBg.name}
+            onLoad={handleImageLoad}
+            initial={{ opacity: 0, scale: 1 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1 }}
+            transition={{
+              opacity: { duration: 0.45, ease: "easeOut" },
+              scale: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+            }}
+            style={{
+              width: `${imgDimensions.w * scale}px`,
+              height: `${imgDimensions.h * scale}px`,
+              imageRendering: "pixelated",
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              x: "-50%",
+              y: "-50%",
+              willChange: "opacity, transform",
+            }}
+          />
+        </AnimatePresence>
         {/* Subtle Vignette Layer */}
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_55%,rgba(0,0,0,0.32)_100%)] z-1" />
         {/* Subtle grid pattern overlay to give CRT screen vibe */}
