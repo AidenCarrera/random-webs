@@ -643,7 +643,7 @@ export default function LofiPixelStudyClient({
             </button>
           </div>
         ) : (
-          <div className="pointer-events-auto pixel-box p-2.5 md:p-3 flex flex-col items-center gap-1.5 md:gap-2 min-w-[135px] sm:min-w-[150px] md:min-w-[170px] text-zinc-200">
+          <div className="pointer-events-auto pixel-box p-2.5 md:p-3 flex flex-col items-center gap-1.5 md:gap-2 min-w-33.75 sm:min-w-37.5 md:min-w-42.5 text-zinc-200">
             {/* Header with Minimize Button */}
             <div className="flex justify-between items-center w-full border-b border-zinc-800/85 pb-1 mb-0.5 gap-2">
               <span className="text-xs md:text-sm font-bold text-purple-400 uppercase tracking-widest leading-none">
