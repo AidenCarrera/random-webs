@@ -2,19 +2,22 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as Tone from "tone";
+import * as THREE from "three";
 import {
   CircleDot,
   Clock3,
   Gauge,
   Pause,
   Play,
+  Sparkles,
   RotateCcw,
   Rows3,
+  Orbit,
   Volume2,
   VolumeX,
 } from "lucide-react";
 
-type ViewMode = "circle" | "timeline";
+type ViewMode = "circle" | "timeline" | "bloom" | "orbit3d";
 type PulseKey = `${number}-${number}`;
 
 type Rhythm = {
@@ -542,6 +545,20 @@ export default function PolyrhythmVisualizer() {
                 >
                   <Rows3 className="h-4 w-4" />
                 </ModeButton>
+                <ModeButton
+                  label="Bloom"
+                  active={mode === "bloom"}
+                  onClick={() => setMode("bloom")}
+                >
+                  <Sparkles className="h-4 w-4" />
+                </ModeButton>
+                <ModeButton
+                  label="3D"
+                  active={mode === "orbit3d"}
+                  onClick={() => setMode("orbit3d")}
+                >
+                  <Orbit className="h-4 w-4" />
+                </ModeButton>
               </div>
             </div>
           </aside>
@@ -560,8 +577,20 @@ export default function PolyrhythmVisualizer() {
                   progress={progress}
                   activePulses={activePulses}
                 />
-              ) : (
+              ) : mode === "timeline" ? (
                 <TimelineVisualizer
+                  rhythms={activeRhythmData}
+                  progress={progress}
+                  activePulses={activePulses}
+                />
+              ) : mode === "bloom" ? (
+                <BloomVisualizer
+                  rhythms={activeRhythmData}
+                  progress={progress}
+                  activePulses={activePulses}
+                />
+              ) : (
+                <Orbit3DVisualizer
                   rhythms={activeRhythmData}
                   progress={progress}
                   activePulses={activePulses}
@@ -787,6 +816,331 @@ function TimelineVisualizer({
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function BloomVisualizer({
+  rhythms,
+  progress,
+  activePulses,
+}: {
+  rhythms: Rhythm[];
+  progress: number;
+  activePulses: Set<PulseKey>;
+}) {
+  const width = 960;
+  const height = 680;
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const maxRadius = 286;
+  const phase = progress * Math.PI * 2;
+
+  return (
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-full min-h-[560px] w-full max-w-[1040px]"
+        role="img"
+        aria-label="Bloom polyrhythm visualization"
+      >
+        <defs>
+          <radialGradient id="bloom-core" cx="50%" cy="50%" r="60%">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.32)" />
+            <stop offset="48%" stopColor="rgba(255,255,255,0.08)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+          </radialGradient>
+          <filter id="soft-glow">
+            <feGaussianBlur stdDeviation="8" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <rect width={width} height={height} fill="transparent" />
+        <circle cx={centerX} cy={centerY} r="230" fill="url(#bloom-core)" />
+
+        {rhythms.map((rhythm, rhythmIndex) => {
+          const radius =
+            92 + (rhythmIndex / Math.max(1, rhythms.length - 1)) * maxRadius;
+          const spin = phase * (rhythmIndex % 2 === 0 ? 1 : -1) * 0.12;
+          const points = Array.from({ length: rhythm.count }, (_, pulse) => {
+            const angle = (pulse / rhythm.count) * Math.PI * 2 - Math.PI / 2 + spin;
+            return {
+              pulse,
+              x: centerX + Math.cos(angle) * radius,
+              y: centerY + Math.sin(angle) * radius,
+            };
+          });
+
+          return (
+            <g key={rhythm.count}>
+              <path
+                d={points
+                  .map((point, index) =>
+                    `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`,
+                  )
+                  .join(" ") + " Z"}
+                fill="none"
+                stroke={rhythm.color}
+                strokeOpacity="0.16"
+                strokeWidth="1.5"
+              />
+              {points.map((point) => {
+                const isDownbeat = point.pulse === 0;
+                const isActive = activePulses.has(
+                  getPulseKey(rhythm.count, point.pulse),
+                );
+                return (
+                  <g key={point.pulse} filter={isActive ? "url(#soft-glow)" : undefined}>
+                    <line
+                      x1={centerX}
+                      y1={centerY}
+                      x2={point.x}
+                      y2={point.y}
+                      stroke={rhythm.color}
+                      strokeOpacity={isActive ? 0.42 : 0.08}
+                      strokeWidth={isActive ? 2.5 : 1}
+                    />
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r={isActive ? 24 : isDownbeat ? 14 : 10}
+                      fill={isDownbeat ? "#ffffff" : rhythm.color}
+                      fillOpacity={isActive ? 0.95 : 0.72}
+                      stroke={rhythm.color}
+                      strokeOpacity="0.8"
+                      strokeWidth={isDownbeat ? 3 : 1}
+                      style={{
+                        transition:
+                          "r 90ms ease, fill-opacity 90ms ease, stroke-width 90ms ease",
+                      }}
+                    />
+                  </g>
+                );
+              })}
+            </g>
+          );
+        })}
+
+        <circle
+          cx={centerX}
+          cy={centerY}
+          r="52"
+          fill="rgba(0,0,0,0.45)"
+          stroke="rgba(255,255,255,0.2)"
+        />
+        <circle
+          cx={centerX + Math.cos(phase - Math.PI / 2) * 52}
+          cy={centerY + Math.sin(phase - Math.PI / 2) * 52}
+          r="8"
+          fill="#ffffff"
+        />
+      </svg>
+    </div>
+  );
+}
+
+function disposeThreeObject(object: THREE.Object3D) {
+  object.traverse((child) => {
+    const mesh = child as THREE.Mesh;
+    mesh.geometry?.dispose();
+    const material = mesh.material;
+    if (Array.isArray(material)) {
+      material.forEach((item) => item.dispose());
+    } else {
+      material?.dispose();
+    }
+  });
+}
+
+function Orbit3DVisualizer({
+  rhythms,
+  progress,
+  activePulses,
+}: {
+  rhythms: Rhythm[];
+  progress: number;
+  activePulses: Set<PulseKey>;
+}) {
+  const mountRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<{
+    camera: THREE.PerspectiveCamera;
+    renderer: THREE.WebGLRenderer;
+    group: THREE.Group;
+    nodes: Map<PulseKey, THREE.Mesh>;
+    rings: THREE.LineLoop[];
+    raf: number | null;
+  } | null>(null);
+  const progressRef = useRef(progress);
+  const activePulsesRef = useRef(activePulses);
+
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
+
+  useEffect(() => {
+    activePulsesRef.current = activePulses;
+  }, [activePulses]);
+
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x05060a, 9, 22);
+
+    const camera = new THREE.PerspectiveCamera(44, 1, 0.1, 100);
+    camera.position.set(0, 3.8, 10.5);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 0);
+    mount.appendChild(renderer.domElement);
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    const ambient = new THREE.AmbientLight(0xffffff, 1.15);
+    const key = new THREE.PointLight(0xffffff, 26, 24);
+    key.position.set(0, 5, 6);
+    scene.add(ambient, key);
+
+    const state = {
+      camera,
+      renderer,
+      group,
+      nodes: new Map<PulseKey, THREE.Mesh>(),
+      rings: [] as THREE.LineLoop[],
+      raf: null as number | null,
+    };
+    sceneRef.current = state;
+
+    const resize = () => {
+      const width = mount.clientWidth || 720;
+      const height = mount.clientHeight || 560;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height, false);
+    };
+
+    const animate = () => {
+      const phase = progressRef.current * Math.PI * 2;
+      group.rotation.y = phase * 0.22;
+      group.rotation.x = -0.42 + Math.sin(phase) * 0.06;
+
+      state.nodes.forEach((mesh, keyValue) => {
+        const material = mesh.material as THREE.MeshStandardMaterial;
+        const isActive = activePulsesRef.current.has(keyValue as PulseKey);
+        const baseScale = Number(mesh.userData.baseScale ?? 1);
+        const targetScale = isActive ? baseScale * 2.25 : baseScale;
+        mesh.scale.lerp(
+          new THREE.Vector3(targetScale, targetScale, targetScale),
+          0.22,
+        );
+        material.emissiveIntensity = THREE.MathUtils.lerp(
+          material.emissiveIntensity,
+          isActive ? 2.8 : 0.55,
+          0.18,
+        );
+      });
+
+      renderer.render(scene, camera);
+      state.raf = requestAnimationFrame(animate);
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+    animate();
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      if (state.raf !== null) cancelAnimationFrame(state.raf);
+      renderer.dispose();
+      mount.removeChild(renderer.domElement);
+      disposeThreeObject(scene);
+      sceneRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const state = sceneRef.current;
+    if (!state) return;
+
+    state.group.clear();
+    state.nodes.clear();
+    state.rings = [];
+
+    const nodeGeometry = new THREE.SphereGeometry(0.11, 24, 16);
+    const ringMaterial = new THREE.LineBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.18,
+    });
+
+    rhythms.forEach((rhythm, rhythmIndex) => {
+      const color = new THREE.Color(rhythm.color);
+      const radius = 1.45 + rhythmIndex * 0.34;
+      const y = (rhythmIndex - (rhythms.length - 1) / 2) * 0.18;
+      const zTilt = (rhythmIndex - (rhythms.length - 1) / 2) * 0.045;
+      const ringPoints = Array.from({ length: 144 }, (_, index) => {
+        const angle = (index / 144) * Math.PI * 2;
+        return new THREE.Vector3(
+          Math.cos(angle) * radius,
+          y + Math.sin(angle) * zTilt,
+          Math.sin(angle) * radius,
+        );
+      });
+      const ring = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints(ringPoints),
+        ringMaterial.clone(),
+      );
+      (ring.material as THREE.LineBasicMaterial).color = color;
+      (ring.material as THREE.LineBasicMaterial).opacity = 0.2;
+      state.group.add(ring);
+      state.rings.push(ring);
+
+      Array.from({ length: rhythm.count }, (_, pulse) => {
+        const angle = (pulse / rhythm.count) * Math.PI * 2 - Math.PI / 2;
+        const isDownbeat = pulse === 0;
+        const material = new THREE.MeshStandardMaterial({
+          color: isDownbeat ? 0xffffff : color,
+          emissive: color,
+          emissiveIntensity: isDownbeat ? 1.15 : 0.55,
+          roughness: 0.28,
+          metalness: 0.35,
+        });
+        const node = new THREE.Mesh(nodeGeometry, material);
+        node.position.set(
+          Math.cos(angle) * radius,
+          y + Math.sin(angle) * zTilt,
+          Math.sin(angle) * radius,
+        );
+        node.userData.baseScale = isDownbeat ? 1.35 : 1;
+        node.scale.setScalar(node.userData.baseScale);
+        state.nodes.set(getPulseKey(rhythm.count, pulse), node);
+        state.group.add(node);
+      });
+    });
+
+    return () => {
+      disposeThreeObject(state.group);
+      state.group.clear();
+      nodeGeometry.dispose();
+      ringMaterial.dispose();
+    };
+  }, [rhythms]);
+
+  return (
+    <div className="relative h-full min-h-[560px] w-full overflow-hidden rounded-lg">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.12),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.05),transparent)]" />
+      <div ref={mountRef} className="absolute inset-0" />
     </div>
   );
 }
