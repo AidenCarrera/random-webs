@@ -145,9 +145,9 @@ export const WEBSITES: WebsiteEntry[] = [
     accent: "from-sky-200/80 via-indigo-300/70 to-violet-500/70",
   },
   {
-    path: "/sorting-race",
-    title: "Sorting Race",
-    blurb: "Algorithms sorting race.",
+    path: "/algo-race",
+    title: "Algo Race",
+    blurb: "Algorithms race to the finish.",
     accent: "from-cyan-200/80 via-sky-300/70 to-blue-500/70",
   },
   {
