@@ -316,12 +316,361 @@ function getColor(
   }
 }
 
+const MAX_SHADER_ITERATIONS = 2400;
+const CPU_DEEP_ZOOM_THRESHOLD = 1e5;
+const CPU_MAX_ITERATIONS = 1000;
+const MAX_RENDER_ITERATIONS = 2400;
+const MAX_ZOOM = 1e13;
+const GPU_PALETTE_INDEX: Record<PaletteName, number> = {
+  Neon: 0,
+  Solar: 1,
+  Forest: 2,
+  Ocean: 3,
+  Spectrum: 4,
+  Monochrome: 5,
+};
+
+type GpuFractalRenderer = {
+  gl: WebGL2RenderingContext;
+  program: WebGLProgram;
+  vao: WebGLVertexArrayObject;
+  buffer: WebGLBuffer;
+  uniforms: {
+    resolution: WebGLUniformLocation;
+    centerX: WebGLUniformLocation;
+    centerY: WebGLUniformLocation;
+    pixelScaleX: WebGLUniformLocation;
+    pixelScaleY: WebGLUniformLocation;
+    maxIterations: WebGLUniformLocation;
+    palette: WebGLUniformLocation;
+    mode: WebGLUniformLocation;
+    juliaX: WebGLUniformLocation;
+    juliaY: WebGLUniformLocation;
+  };
+};
+
+const FRACTAL_VERTEX_SHADER = `#version 300 es
+in vec2 a_position;
+
+void main() {
+  gl_Position = vec4(a_position, 0.0, 1.0);
+}
+`;
+
+const FRACTAL_FRAGMENT_SHADER = `#version 300 es
+precision highp float;
+precision highp int;
+
+uniform vec2 u_resolution;
+uniform vec2 u_centerX;
+uniform vec2 u_centerY;
+uniform vec2 u_pixelScaleX;
+uniform vec2 u_pixelScaleY;
+uniform int u_maxIterations;
+uniform int u_palette;
+uniform int u_mode;
+uniform vec2 u_juliaX;
+uniform vec2 u_juliaY;
+
+out vec4 outColor;
+
+const float DS_SPLITTER = 4097.0;
+
+vec2 dsNormalize(float hi, float lo) {
+  float s = hi + lo;
+  float e = lo - (s - hi);
+  return vec2(s, e);
+}
+
+vec2 dsAdd(vec2 a, vec2 b) {
+  float s = a.x + b.x;
+  float v = s - a.x;
+  float e = (a.x - (s - v)) + (b.x - v) + a.y + b.y;
+  return dsNormalize(s, e);
+}
+
+vec2 dsSub(vec2 a, vec2 b) {
+  return dsAdd(a, vec2(-b.x, -b.y));
+}
+
+void dsSplit(float a, out float hi, out float lo) {
+  float t = DS_SPLITTER * a;
+  hi = t - (t - a);
+  lo = a - hi;
+}
+
+vec2 dsMul(vec2 a, vec2 b) {
+  float ahi;
+  float alo;
+  float bhi;
+  float blo;
+  dsSplit(a.x, ahi, alo);
+  dsSplit(b.x, bhi, blo);
+
+  float p = a.x * b.x;
+  float e = ((ahi * bhi - p) + ahi * blo + alo * bhi) + alo * blo;
+  e += a.x * b.y + a.y * b.x;
+  return dsNormalize(p, e);
+}
+
+vec2 dsMulFloat(vec2 a, float b) {
+  float ahi;
+  float alo;
+  float bhi;
+  float blo;
+  dsSplit(a.x, ahi, alo);
+  dsSplit(b, bhi, blo);
+
+  float p = a.x * b;
+  float e = ((ahi * bhi - p) + ahi * blo + alo * bhi) + alo * blo + a.y * b;
+  return dsNormalize(p, e);
+}
+
+float dsToFloat(vec2 a) {
+  return a.x + a.y;
+}
+
+vec3 mixPalette(float t, vec3 c0, vec3 c1, vec3 c2, vec3 c3, vec3 c4, vec3 c5) {
+  float scaled = clamp(t, 0.0, 1.0) * 5.0;
+  if (scaled < 1.0) return mix(c0, c1, scaled);
+  if (scaled < 2.0) return mix(c1, c2, scaled - 1.0);
+  if (scaled < 3.0) return mix(c2, c3, scaled - 2.0);
+  if (scaled < 4.0) return mix(c3, c4, scaled - 3.0);
+  return mix(c4, c5, scaled - 4.0);
+}
+
+vec3 hslToRgb(float h, float s, float l) {
+  vec3 rgb = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
+  return l + s * (rgb - 0.5) * (1.0 - abs(2.0 * l - 1.0));
+}
+
+vec3 getFractalColor(int iter, int maxIterations, float zr2, float zi2) {
+  if (iter >= maxIterations) {
+    return vec3(3.0, 3.0, 10.0) / 255.0;
+  }
+
+  float logZn = log(zr2 + zi2) / 2.0;
+  float nu = float(iter) + 1.0 - log(logZn / 0.693147) / 0.693147;
+  float t = pow(clamp(nu / float(maxIterations), 0.0, 1.0), 0.45);
+
+  if (u_palette == 0) {
+    return mixPalette(t,
+      vec3(3.0, 3.0, 15.0) / 255.0,
+      vec3(41.0, 10.0, 80.0) / 255.0,
+      vec3(106.0, 13.0, 173.0) / 255.0,
+      vec3(240.0, 0.0, 120.0) / 255.0,
+      vec3(0.0, 240.0, 255.0) / 255.0,
+      vec3(3.0, 3.0, 15.0) / 255.0);
+  }
+  if (u_palette == 1) {
+    return mixPalette(t,
+      vec3(2.0, 0.0, 4.0) / 255.0,
+      vec3(120.0, 0.0, 0.0) / 255.0,
+      vec3(240.0, 60.0, 0.0) / 255.0,
+      vec3(255.0, 200.0, 0.0) / 255.0,
+      vec3(255.0, 255.0, 220.0) / 255.0,
+      vec3(2.0, 0.0, 4.0) / 255.0);
+  }
+  if (u_palette == 2) {
+    return mixPalette(t,
+      vec3(2.0, 10.0, 8.0) / 255.0,
+      vec3(15.0, 60.0, 25.0) / 255.0,
+      vec3(160.0, 140.0, 40.0) / 255.0,
+      vec3(140.0, 35.0, 160.0) / 255.0,
+      vec3(220.0, 180.0, 255.0) / 255.0,
+      vec3(2.0, 10.0, 8.0) / 255.0);
+  }
+  if (u_palette == 3) {
+    return mixPalette(t,
+      vec3(0.0, 5.0, 20.0) / 255.0,
+      vec3(0.0, 40.0, 100.0) / 255.0,
+      vec3(0.0, 128.0, 160.0) / 255.0,
+      vec3(70.0, 220.0, 160.0) / 255.0,
+      vec3(200.0, 255.0, 240.0) / 255.0,
+      vec3(0.0, 5.0, 20.0) / 255.0);
+  }
+  if (u_palette == 4) {
+    return hslToRgb(mod(t * 3.5, 1.0), 1.0, 0.5);
+  }
+  return mixPalette(t,
+    vec3(0.0, 0.0, 0.0) / 255.0,
+    vec3(30.0, 30.0, 30.0) / 255.0,
+    vec3(110.0, 110.0, 110.0) / 255.0,
+    vec3(230.0, 230.0, 230.0) / 255.0,
+    vec3(255.0, 255.0, 255.0) / 255.0,
+    vec3(0.0, 0.0, 0.0) / 255.0);
+}
+
+void main() {
+  float px = gl_FragCoord.x - u_resolution.x * 0.5;
+  float py = (u_resolution.y - gl_FragCoord.y) - u_resolution.y * 0.5;
+  vec2 cx = dsAdd(u_centerX, dsMulFloat(u_pixelScaleX, px));
+  vec2 cy = dsAdd(u_centerY, dsMulFloat(u_pixelScaleY, py));
+
+  vec2 zr = u_mode == 0 ? vec2(0.0) : cx;
+  vec2 zi = u_mode == 0 ? vec2(0.0) : cy;
+  vec2 cr = u_mode == 0 ? cx : u_juliaX;
+  vec2 ci = u_mode == 0 ? cy : u_juliaY;
+  vec2 zr2 = dsMul(zr, zr);
+  vec2 zi2 = dsMul(zi, zi);
+  int iter = 0;
+
+  for (int i = 0; i < ${MAX_SHADER_ITERATIONS}; i++) {
+    if (i >= u_maxIterations || dsToFloat(zr2) + dsToFloat(zi2) > 4.0) {
+      break;
+    }
+
+    vec2 zrzi = dsMul(zr, zi);
+    vec2 nextZi = dsAdd(dsMulFloat(zrzi, 2.0), ci);
+    vec2 nextZr = dsAdd(dsSub(zr2, zi2), cr);
+
+    zr = nextZr;
+    zi = nextZi;
+    zr2 = dsMul(zr, zr);
+    zi2 = dsMul(zi, zi);
+    iter++;
+  }
+
+  outColor = vec4(
+    getFractalColor(iter, u_maxIterations, max(0.0, dsToFloat(zr2)), max(0.0, dsToFloat(zi2))),
+    1.0
+  );
+}
+`;
+
+function compileShader(
+  gl: WebGL2RenderingContext,
+  type: number,
+  source: string,
+): WebGLShader | null {
+  const shader = gl.createShader(type);
+  if (!shader) return null;
+
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error("Fractal shader compile failed", gl.getShaderInfoLog(shader));
+    gl.deleteShader(shader);
+    return null;
+  }
+
+  return shader;
+}
+
+function createGpuFractalRenderer(
+  canvas: HTMLCanvasElement,
+): GpuFractalRenderer | null {
+  const gl = canvas.getContext("webgl2", {
+    alpha: false,
+    antialias: false,
+    depth: false,
+    preserveDrawingBuffer: true,
+    stencil: false,
+  });
+  if (!gl) return null;
+
+  const vertexShader = compileShader(gl, gl.VERTEX_SHADER, FRACTAL_VERTEX_SHADER);
+  const fragmentShader = compileShader(
+    gl,
+    gl.FRAGMENT_SHADER,
+    FRACTAL_FRAGMENT_SHADER,
+  );
+  if (!vertexShader || !fragmentShader) return null;
+
+  const program = gl.createProgram();
+  if (!program) return null;
+
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+  gl.deleteShader(vertexShader);
+  gl.deleteShader(fragmentShader);
+
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error("Fractal shader link failed", gl.getProgramInfoLog(program));
+    gl.deleteProgram(program);
+    return null;
+  }
+
+  const vao = gl.createVertexArray();
+  const buffer = gl.createBuffer();
+  const positionLocation = gl.getAttribLocation(program, "a_position");
+  const resolution = gl.getUniformLocation(program, "u_resolution");
+  const centerX = gl.getUniformLocation(program, "u_centerX");
+  const centerY = gl.getUniformLocation(program, "u_centerY");
+  const pixelScaleX = gl.getUniformLocation(program, "u_pixelScaleX");
+  const pixelScaleY = gl.getUniformLocation(program, "u_pixelScaleY");
+  const maxIterations = gl.getUniformLocation(program, "u_maxIterations");
+  const palette = gl.getUniformLocation(program, "u_palette");
+  const mode = gl.getUniformLocation(program, "u_mode");
+  const juliaX = gl.getUniformLocation(program, "u_juliaX");
+  const juliaY = gl.getUniformLocation(program, "u_juliaY");
+
+  if (
+    !vao ||
+    !buffer ||
+    positionLocation < 0 ||
+    !resolution ||
+    !centerX ||
+    !centerY ||
+    !pixelScaleX ||
+    !pixelScaleY ||
+    !maxIterations ||
+    !palette ||
+    !mode ||
+    !juliaX ||
+    !juliaY
+  ) {
+    gl.deleteProgram(program);
+    return null;
+  }
+
+  gl.bindVertexArray(vao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([-1, -1, 3, -1, -1, 3]),
+    gl.STATIC_DRAW,
+  );
+  gl.enableVertexAttribArray(positionLocation);
+  gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+  gl.bindVertexArray(null);
+
+  return {
+    gl,
+    program,
+    vao,
+    buffer,
+    uniforms: {
+      resolution,
+      centerX,
+      centerY,
+      pixelScaleX,
+      pixelScaleY,
+      maxIterations,
+      palette,
+      mode,
+      juliaX,
+      juliaY,
+    },
+  };
+}
+
+function splitDouble(value: number): [number, number] {
+  const high = Math.fround(value);
+  return [high, value - high];
+}
+
 export default function FractalExplorer() {
   const router = useRouter();
 
   // Canvas Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cpuCanvasRef = useRef<HTMLCanvasElement>(null);
   const miniCanvasRef = useRef<HTMLCanvasElement>(null);
+  const gpuRendererRef = useRef<GpuFractalRenderer | null>(null);
+  const gpuUnavailableRef = useRef<boolean>(false);
 
   // Math View Parameters (Refs for high performance rendering loop)
   const centerXRef = useRef<number>(-0.7);
@@ -347,6 +696,7 @@ export default function FractalExplorer() {
   const [currentIterations, setCurrentIterations] = useState<number>(120);
   const [currentPalette, setCurrentPalette] = useState<PaletteName>("Neon");
   const [currentMode, setCurrentMode] = useState<FractalMode>("mandelbrot");
+  const [isCpuRenderActive, setIsCpuRenderActive] = useState<boolean>(false);
 
   // Display coordinates for UI tracking
   const [uiCoords, setUiCoords] = useState<{ r: number; i: number }>({
@@ -377,10 +727,90 @@ export default function FractalExplorer() {
   // Render control state to handle cancelation
   const renderIdRef = useRef<number>(0);
   const drawTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isCpuRenderActiveRef = useRef<boolean>(false);
 
   // -------------------------------------------------------------
-  // Progressive Drawing Pipeline
+  // Drawing Pipeline
   // -------------------------------------------------------------
+
+  const setCpuCanvasVisible = (visible: boolean) => {
+    const canvas = cpuCanvasRef.current;
+    if (!canvas) return;
+    canvas.style.opacity = visible ? "1" : "0";
+    if (isCpuRenderActiveRef.current !== visible) {
+      isCpuRenderActiveRef.current = visible;
+      setIsCpuRenderActive(visible);
+    }
+  };
+
+  const syncCpuCanvasSize = () => {
+    const sourceCanvas = canvasRef.current;
+    const cpuCanvas = cpuCanvasRef.current;
+    if (!sourceCanvas || !cpuCanvas) return;
+
+    if (
+      cpuCanvas.width !== sourceCanvas.width ||
+      cpuCanvas.height !== sourceCanvas.height
+    ) {
+      cpuCanvas.width = sourceCanvas.width;
+      cpuCanvas.height = sourceCanvas.height;
+    }
+  };
+
+  const renderGpuFractal = useCallback((renderId: number): boolean => {
+    if (
+      renderId !== renderIdRef.current ||
+      gpuUnavailableRef.current ||
+      zoomRef.current > CPU_DEEP_ZOOM_THRESHOLD
+    ) {
+      return false;
+    }
+
+    const canvas = canvasRef.current;
+    if (!canvas) return false;
+
+    let renderer = gpuRendererRef.current;
+    if (!renderer) {
+      renderer = createGpuFractalRenderer(canvas);
+      if (!renderer) {
+        gpuUnavailableRef.current = true;
+        return false;
+      }
+      gpuRendererRef.current = renderer;
+    }
+
+    const { gl, program, vao, uniforms } = renderer;
+    const widthInComplex = 3.0 / zoomRef.current;
+    const heightInComplex = widthInComplex * (canvas.height / canvas.width);
+    const centerX = splitDouble(centerXRef.current);
+    const centerY = splitDouble(centerYRef.current);
+    const pixelScaleX = splitDouble(widthInComplex / canvas.width);
+    const pixelScaleY = splitDouble(heightInComplex / canvas.height);
+    const juliaX = splitDouble(juliaCRef.current[0]);
+    const juliaY = splitDouble(juliaCRef.current[1]);
+
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.useProgram(program);
+    gl.bindVertexArray(vao);
+    gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
+    gl.uniform2f(uniforms.centerX, centerX[0], centerX[1]);
+    gl.uniform2f(uniforms.centerY, centerY[0], centerY[1]);
+    gl.uniform2f(uniforms.pixelScaleX, pixelScaleX[0], pixelScaleX[1]);
+    gl.uniform2f(uniforms.pixelScaleY, pixelScaleY[0], pixelScaleY[1]);
+    gl.uniform1i(
+      uniforms.maxIterations,
+      Math.min(iterationsRef.current, MAX_SHADER_ITERATIONS),
+    );
+    gl.uniform1i(uniforms.palette, GPU_PALETTE_INDEX[paletteRef.current]);
+    gl.uniform1i(uniforms.mode, modeRef.current === "mandelbrot" ? 0 : 1);
+    gl.uniform2f(uniforms.juliaX, juliaX[0], juliaX[1]);
+    gl.uniform2f(uniforms.juliaY, juliaY[0], juliaY[1]);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.bindVertexArray(null);
+    setCpuCanvasVisible(false);
+
+    return true;
+  }, []);
 
   // Immediate low-res rendering during panning or zooming
   const drawFastPreview = useCallback(() => {
@@ -394,6 +824,10 @@ export default function FractalExplorer() {
     if (drawTimerRef.current) clearTimeout(drawTimerRef.current);
     const currentRenderId = ++renderIdRef.current;
 
+    if (renderGpuFractal(currentRenderId)) {
+      return;
+    }
+
     // Pass 1: Render 4x4 pixel scaling (very fast)
     drawPass(4, currentRenderId, () => {
       // Pass 2: Render 2x2 pixel scaling (decent detail)
@@ -402,7 +836,7 @@ export default function FractalExplorer() {
         drawPassStriped(1, currentRenderId);
       });
     });
-  }, []);
+  }, [renderGpuFractal]);
 
   const drawPass = (
     ratio: number,
@@ -411,7 +845,17 @@ export default function FractalExplorer() {
   ) => {
     if (renderId !== renderIdRef.current) return;
 
-    const canvas = canvasRef.current;
+    if (renderGpuFractal(renderId)) {
+      if (onComplete) {
+        drawTimerRef.current = setTimeout(onComplete, 16);
+      }
+      return;
+    }
+
+    syncCpuCanvasSize();
+    setCpuCanvasVisible(true);
+
+    const canvas = cpuCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -425,7 +869,7 @@ export default function FractalExplorer() {
     const cxMin = centerXRef.current - widthInComplex / 2;
     const cyMin = centerYRef.current - heightInComplex / 2;
 
-    const maxIter = iterationsRef.current;
+    const maxIter = Math.min(iterationsRef.current, CPU_MAX_ITERATIONS);
     const palette = paletteRef.current;
     const fractalMode = modeRef.current;
     const juliaC = juliaCRef.current;
@@ -499,7 +943,12 @@ export default function FractalExplorer() {
   const drawPassStriped = (ratio: number, renderId: number) => {
     if (renderId !== renderIdRef.current) return;
 
-    const canvas = canvasRef.current;
+    if (renderGpuFractal(renderId)) return;
+
+    syncCpuCanvasSize();
+    setCpuCanvasVisible(true);
+
+    const canvas = cpuCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -512,7 +961,7 @@ export default function FractalExplorer() {
     const cxMin = centerXRef.current - widthInComplex / 2;
     const cyMin = centerYRef.current - heightInComplex / 2;
 
-    const maxIter = iterationsRef.current;
+    const maxIter = Math.min(iterationsRef.current, CPU_MAX_ITERATIONS);
     const palette = paletteRef.current;
     const fractalMode = modeRef.current;
     const juliaC = juliaCRef.current;
@@ -934,7 +1383,10 @@ export default function FractalExplorer() {
       (mousePy - canvas.height / 2) * (heightInComplex / canvas.height);
 
     const factor = e.deltaY < 0 ? 1.18 : 1 / 1.18;
-    const newZoom = Math.max(0.1, Math.min(1e15, zoomRef.current * factor));
+    const newZoom = Math.max(
+      0.1,
+      Math.min(MAX_ZOOM, zoomRef.current * factor),
+    );
 
     const newWidthInComplex = 3.0 / newZoom;
     const newHeightInComplex =
@@ -975,7 +1427,7 @@ export default function FractalExplorer() {
       centerYRef.current +
       (py - canvas.height / 2) * (heightInComplex / canvas.height);
 
-    const newZoom = zoomRef.current * 2.2;
+    const newZoom = Math.min(MAX_ZOOM, zoomRef.current * 2.2);
     const newWidthInComplex = 3.0 / newZoom;
     const newHeightInComplex =
       newWidthInComplex * (canvas.height / canvas.width);
@@ -1031,7 +1483,9 @@ export default function FractalExplorer() {
 
   // Download high-resolution PNG of canvas
   const downloadFractalImage = () => {
-    const canvas = canvasRef.current;
+    const cpuCanvas = cpuCanvasRef.current;
+    const canvas =
+      cpuCanvas?.style.opacity === "1" ? cpuCanvas : canvasRef.current;
     if (!canvas) return;
 
     const link = document.createElement("a");
@@ -1051,6 +1505,7 @@ export default function FractalExplorer() {
 
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+      syncCpuCanvasSize();
 
       const currentRenderId = ++renderIdRef.current;
       drawPass(8, currentRenderId, () => {
@@ -1077,6 +1532,13 @@ export default function FractalExplorer() {
       }
       if (reverbRef.current) {
         reverbRef.current.dispose();
+      }
+      if (gpuRendererRef.current) {
+        const { gl, program, vao, buffer } = gpuRendererRef.current;
+        gl.deleteBuffer(buffer);
+        gl.deleteVertexArray(vao);
+        gl.deleteProgram(program);
+        gpuRendererRef.current = null;
       }
     };
   }, [triggerProgressiveRender]);
@@ -1119,8 +1581,9 @@ export default function FractalExplorer() {
 
   // Adjust parameters when slider inputs change
   const handleIterationChange = (newVal: number) => {
-    iterationsRef.current = newVal;
-    setCurrentIterations(newVal);
+    const nextIterations = Math.min(MAX_RENDER_ITERATIONS, newVal);
+    iterationsRef.current = nextIterations;
+    setCurrentIterations(nextIterations);
     triggerProgressiveRender();
   };
 
@@ -1223,6 +1686,11 @@ export default function FractalExplorer() {
         onClick={handleCanvasClick}
         className="absolute top-0 left-0 w-full h-full cursor-grab active:cursor-grabbing block animate-fade-in duration-300"
       />
+      <canvas
+        ref={cpuCanvasRef}
+        aria-hidden="true"
+        className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-0 block"
+      />
 
       {/* Modern Neon Glow Overlays (Borders) */}
       <div className="absolute inset-0 border border-zinc-900 pointer-events-none z-10" />
@@ -1239,7 +1707,7 @@ export default function FractalExplorer() {
             transition={{ duration: 0.2 }}
             className="absolute bottom-4 left-4 pointer-events-none z-30 flex flex-col gap-2"
           >
-            <div className="px-4 py-3 bg-zinc-950/85 border border-zinc-800/70 text-zinc-400 rounded-xl backdrop-blur-md shadow-xl text-[10px] font-mono leading-relaxed max-w-[280px]">
+            <div className="px-4 py-3 bg-zinc-950/85 border border-zinc-800/70 text-zinc-400 rounded-xl backdrop-blur-md shadow-xl text-[10px] font-mono leading-relaxed max-w-70">
               <div className="text-zinc-500 uppercase font-black tracking-widest text-[9px] mb-1.5 border-b border-zinc-800/50 pb-1">
                 <span>Coordinates</span>
               </div>
@@ -1364,14 +1832,20 @@ export default function FractalExplorer() {
                 <input
                   type="range"
                   min="20"
-                  max="1200"
-                  step="10"
+                  max={MAX_RENDER_ITERATIONS}
+                  step="20"
                   value={currentIterations}
                   onChange={(e) =>
                     handleIterationChange(Number(e.target.value))
                   }
                   className="w-full h-1.5 bg-zinc-900 border border-zinc-800 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-purple-500 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white hover:[&::-webkit-slider-thumb]:bg-purple-400 [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.7)] [&::-webkit-slider-thumb]:transition-all active:[&::-webkit-slider-thumb]:scale-90 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-purple-500 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white hover:[&::-moz-range-thumb]:bg-purple-400 [&::-moz-range-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.7)] [&::-moz-range-thumb]:transition-all active:[&::-moz-range-thumb]:scale-90"
                 />
+                {isCpuRenderActive && (
+                  <p className="text-[9px] text-amber-300/90 mt-1 font-semibold">
+                    CPU precision mode active. Depth is capped at{" "}
+                    {CPU_MAX_ITERATIONS}.
+                  </p>
+                )}
                 <p className="text-[9px] text-zinc-500 mt-1">
                   Higher complexity increases detail but slows rendering.
                 </p>
