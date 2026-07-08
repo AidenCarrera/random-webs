@@ -21,7 +21,11 @@ export async function downloadCanvasPng(
 
   link.download = fileName;
   link.href = objectUrl;
+  link.rel = "noopener";
+  link.style.display = "none";
+  document.body.append(link);
   link.click();
+  link.remove();
 
   window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 }

@@ -20,21 +20,31 @@ import {
 } from "react-share";
 
 type ExportPreviewModalProps = {
+  description?: string;
   fileName: string;
+  imageAlt?: string;
   imageSrc: string;
   isTouchDevice: boolean;
   onClose: () => void;
   onSaveImage?: () => void | Promise<void>;
+  pixelatedPreview?: boolean;
   shareUrl: string;
+  shareHeading?: string;
+  title?: string;
 };
 
 export function ExportPreviewModal({
+  description = "Your PNG downloaded automatically. You can also save it manually or share it here.",
   fileName,
+  imageAlt = "Export preview",
   imageSrc,
   isTouchDevice,
   onClose,
   onSaveImage,
+  pixelatedPreview = false,
   shareUrl,
+  shareHeading = "Share Anywhere",
+  title = "Export preview",
 }: ExportPreviewModalProps) {
   const [copyLinkLabel, setCopyLinkLabel] = useState("Copy Link");
 
@@ -47,10 +57,10 @@ export function ExportPreviewModal({
               Export Preview
             </p>
             <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-xl">
-              Spiral snapshot
+              {title}
             </h2>
             <p className="mt-1 text-sm leading-relaxed text-white/62">
-              Your PNG downloaded automatically. You can also save it manually or share it here.
+              {description}
             </p>
           </div>
           <button
@@ -67,8 +77,13 @@ export function ExportPreviewModal({
           <div className="rounded-[1.6rem] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),rgba(255,255,255,0.02)_45%,rgba(0,0,0,0.24)_100%)] p-2 shadow-inner shadow-black/30 sm:p-3">
             <img
               src={imageSrc}
-              alt="Hypno Spiral preview"
-              className="block max-h-[38vh] w-full rounded-[1.15rem] border border-white/8 bg-black object-contain sm:max-h-[52vh]"
+              alt={imageAlt}
+              className={`mx-auto block rounded-[1.15rem] border border-white/8 bg-black object-contain ${
+                pixelatedPreview
+                  ? "h-auto max-h-[38vh] w-auto max-w-full sm:max-h-[52vh]"
+                  : "max-h-[38vh] w-full sm:max-h-[52vh]"
+              }`}
+              style={pixelatedPreview ? { imageRendering: "pixelated" } : undefined}
             />
           </div>
 
@@ -94,7 +109,7 @@ export function ExportPreviewModal({
 
           <div className="mt-5">
             <p className="mb-3 text-[10px] font-medium uppercase tracking-[0.24em] text-white/42">
-              Share Anywhere
+              {shareHeading}
             </p>
             <div className="grid grid-cols-3 gap-3 rounded-[1.6rem] border border-white/8 bg-white/3 p-3">
               <button
