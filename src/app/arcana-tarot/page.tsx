@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { RefreshCw, Eye } from "lucide-react";
+import { RefreshCw, Eye, BookOpenText } from "lucide-react";
 import { Cinzel_Decorative } from "next/font/google";
 
 const cinzel = Cinzel_Decorative({
@@ -303,8 +303,8 @@ export default function TarotSpread() {
     <div
       className={`min-h-screen bg-[#1a0b2e] text-[#e0b0ff] font-serif flex flex-col items-center md:justify-center py-8 px-4 overflow-x-hidden ${cinzel.className}`}
     >
-      <header className="mb-6 md:mb-8 text-center relative z-10">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-purple-900/40 rounded-full blur-[80px] -z-10" />
+      <header className="mb-6 md:mb-8 text-center relative isolate z-10">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(88,28,135,0.55)_0%,rgba(88,28,135,0.22)_42%,rgba(88,28,135,0)_74%)] md:h-64 md:w-64" />
         <h1 className="text-5xl md:text-7xl font-bold text-[#ffd700] mb-4 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
           Arcana
         </h1>
@@ -375,8 +375,11 @@ export default function TarotSpread() {
                         e.stopPropagation();
                         setSelectedCard(slot.card);
                       }}
-                      className="px-4 py-1.5 border border-[#ffd700]/40 text-[#ffd700] hover:bg-[#ffd700] hover:text-[#1a0b2e] rounded-sm text-xs font-serif uppercase tracking-widest transition-all duration-300 active:scale-95 z-10"
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-[#ffd700]/40 text-[#ffd700] hover:bg-[#ffd700] hover:text-[#1a0b2e] rounded-sm text-xs font-serif uppercase tracking-widest transition-all duration-300 active:scale-95 z-10"
                     >
+                      <span className="flex h-4 w-4 items-center justify-center">
+                        <BookOpenText className="h-4 w-4" />
+                      </span>
                       Details
                     </button>
                   </div>
