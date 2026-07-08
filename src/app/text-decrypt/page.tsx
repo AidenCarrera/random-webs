@@ -4,39 +4,90 @@ import { useEffect, useRef, useState } from "react";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+const getDeterministicLetter = (text: string, index: number) => {
+  const seed = text.charCodeAt(index % text.length) + text.length + index * 17;
+  return LETTERS[seed % LETTERS.length];
+};
+
+const getInitialDisplay = (
+  text: string,
+  preserveSpacesInitially: boolean,
+  isRevealed: boolean,
+) => {
+  if (isRevealed) return text;
+
+  return text
+    .split("")
+    .map((char, index) => {
+      if (char === " ") {
+        return preserveSpacesInitially
+          ? " "
+          : getDeterministicLetter(text, index);
+      }
+      return getDeterministicLetter(text, index);
+    })
+    .join("");
+};
+
 const ScrambleText = ({
   text,
   className,
   speed,
   preserveSpacesInitially = true,
+  onStart,
+  onComplete,
 }: {
   text: string;
   className?: string;
   speed?: number;
   preserveSpacesInitially?: boolean;
+  onStart?: () => void;
+  onComplete?: () => void;
 }) => {
-  const [display, setDisplay] = useState(text);
+  const isRevealedRef = useRef(false);
+  const [display, setDisplay] = useState(() =>
+    getInitialDisplay(text, preserveSpacesInitially, isRevealedRef.current),
+  );
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const iterationRef = useRef(0);
   const [isRevealed, setIsRevealed] = useState(false);
+  const hasStartedRef = useRef(false);
 
   useEffect(() => {
-    setDisplay(
-      text
-        .split("")
-        .map((char) => {
-          if (char === " ") {
-            return preserveSpacesInitially ? " " : LETTERS[Math.floor(Math.random() * 26)];
-          }
-          return LETTERS[Math.floor(Math.random() * 26)];
-        })
-        .join(""),
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    const initialDisplay = getInitialDisplay(
+      text,
+      preserveSpacesInitially,
+      isRevealedRef.current,
     );
+
+    setDisplay(initialDisplay);
+
+    if (!isRevealedRef.current) {
+      iterationRef.current = 0;
+      hasStartedRef.current = false;
+      setIsRevealed(false);
+    }
   }, [text, preserveSpacesInitially]);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
 
   const startScramble = () => {
     if (isRevealed) return;
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (intervalRef.current) return;
+
+    if (!hasStartedRef.current) {
+      hasStartedRef.current = true;
+      onStart?.();
+    }
 
     intervalRef.current = setInterval(() => {
       setDisplay(
@@ -53,7 +104,11 @@ const ScrambleText = ({
 
       if (iterationRef.current >= text.length) {
         if (intervalRef.current) clearInterval(intervalRef.current);
+        intervalRef.current = null;
+        isRevealedRef.current = true;
         setIsRevealed(true);
+        setDisplay(text);
+        onComplete?.();
       }
 
       // Automatically scale decryption speed based on text length if no speed is explicitly provided
@@ -64,13 +119,21 @@ const ScrambleText = ({
   };
 
   const stopScramble = () => {
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches)
+      return;
     if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = null;
   };
 
   return (
     <div
-      onMouseEnter={startScramble}
-      onMouseLeave={stopScramble}
+      onPointerEnter={(event) => {
+        if (event.pointerType === "mouse") startScramble();
+      }}
+      onPointerLeave={(event) => {
+        if (event.pointerType === "mouse") stopScramble();
+      }}
+      onClick={startScramble}
       className={`cursor-default font-mono ${className} wrap-break-word`}
     >
       {display}
@@ -81,6 +144,14 @@ const ScrambleText = ({
 const LITERATURE_TEXT = `No one would have believed in the last years of the nineteenth century that this world was being watched keenly and closely by intelligences greater than man's and yet as mortal as his own; that as men busied themselves about their various concerns they were scrutinised and studied, perhaps almost as narrowly as a man with a microscope might scrutinise the transient creatures that swarm and multiply in a drop of water. With infinite complacency men went to and fro over this globe about their little affairs, serene in their assurance of their empire over matter. It is possible that the infusoria under the microscope do the same. No one gave a thought to the older worlds of space as sources of human danger, or thought of them only to dismiss the idea of life upon them as impossible or improbable. It is curious to recall some of the mental habits of those departed days. At most terrestrial men fancied there might be other men upon Mars, perhaps inferior to themselves and ready to welcome a missionary enterprise. Yet across the gulf of space, minds that are to our minds as ours are to those of the beasts that perish, intellects vast and cool and unsympathetic, regarded this earth with envious eyes, and slowly and surely drew their plans against us.`;
 
 export default function TextDecrypt() {
+  const [mainTextTouched, setMainTextTouched] = useState(false);
+  const [mainTextComplete, setMainTextComplete] = useState(false);
+  const statusText = mainTextComplete
+    ? "STATUS: COMPLETE"
+    : mainTextTouched
+      ? "STATUS: IN PROGRESS"
+      : "STATUS: ?????";
+
   return (
     <div className="min-h-screen bg-[#111] text-white flex flex-col items-center justify-start gap-8 p-8 overflow-y-auto pt-16">
       <div className="flex flex-col gap-0 text-center shrink-0">
@@ -107,6 +178,8 @@ export default function TextDecrypt() {
           <ScrambleText
             text={LITERATURE_TEXT}
             preserveSpacesInitially={false}
+            onStart={() => setMainTextTouched(true)}
+            onComplete={() => setMainTextComplete(true)}
             className="text-lg md:text-xl text-gray-300 leading-relaxed text-justify"
           />
         </div>
@@ -117,10 +190,7 @@ export default function TextDecrypt() {
           text="PROJECT: THE WAR OF THE WORLDS"
           className="text-xl text-red-500"
         />
-        <ScrambleText
-          text="STATUS: IN PROGRESS"
-          className="text-xl text-blue-500"
-        />
+        <ScrambleText text={statusText} className="text-xl text-blue-500" />
       </div>
     </div>
   );
