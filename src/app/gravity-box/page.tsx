@@ -3,8 +3,58 @@
 import { useEffect, useRef, useState } from "react";
 import Matter from "matter-js";
 
+const MIN_BOX_WIDTH = 220;
+const MIN_BOX_HEIGHT = 220;
+const MOBILE_BREAKPOINT = 768;
+const SHAKE_THRESHOLD = 18;
+const SHAKE_COOLDOWN_MS = 900;
+
+function getBoxCenter(
+  viewportWidth: number,
+  viewportHeight: number,
+  toolbarHeight: number,
+) {
+  const availableHeight = Math.max(viewportHeight - toolbarHeight, MIN_BOX_HEIGHT);
+
+  return {
+    x: viewportWidth / 2,
+    y: toolbarHeight + availableHeight / 2,
+  };
+}
+
+function getBoxLimits(
+  viewportWidth: number,
+  viewportHeight: number,
+  toolbarHeight: number,
+) {
+  const isMobile = viewportWidth < MOBILE_BREAKPOINT;
+  const isLandscape = viewportWidth > viewportHeight;
+  const horizontalPadding = isMobile ? 24 : 80;
+  const bottomPadding = isMobile ? 20 : 48;
+  const availableWidth = Math.max(viewportWidth - horizontalPadding, MIN_BOX_WIDTH);
+  const availableHeight = Math.max(
+    viewportHeight - toolbarHeight - bottomPadding,
+    MIN_BOX_HEIGHT,
+  );
+
+  const defaultWidth = isMobile
+    ? Math.min(availableWidth, isLandscape ? viewportWidth * 0.72 : viewportWidth - 32)
+    : Math.min(800, availableWidth);
+  const defaultHeight = isMobile
+    ? Math.min(availableHeight, isLandscape ? viewportHeight * 0.5 : viewportHeight * 0.42)
+    : Math.min(600, availableHeight);
+
+  return {
+    maxWidth: availableWidth,
+    maxHeight: availableHeight,
+    defaultWidth: Math.max(MIN_BOX_WIDTH, Math.floor(defaultWidth)),
+    defaultHeight: Math.max(MIN_BOX_HEIGHT, Math.floor(defaultHeight)),
+  };
+}
+
 export default function GravityBox() {
   const sceneRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<Matter.Engine | null>(null);
   const renderRef = useRef<Matter.Render | null>(null);
 
@@ -14,11 +64,16 @@ export default function GravityBox() {
   const bottomWallRef = useRef<Matter.Body | null>(null);
 
   const [windowSize, setWindowSize] = useState({ width: 1200, height: 800 });
+  const [toolbarHeight, setToolbarHeight] = useState(104);
   const [boxWidth, setBoxWidth] = useState(800);
   const [boxHeight, setBoxHeight] = useState(600);
+  const [shakeEnabled, setShakeEnabled] = useState(false);
 
   const boxWidthRef = useRef(boxWidth);
   const boxHeightRef = useRef(boxHeight);
+  const windowSizeRef = useRef(windowSize);
+  const toolbarHeightRef = useRef(toolbarHeight);
+  const shakeCooldownRef = useRef(0);
 
   useEffect(() => {
     boxWidthRef.current = boxWidth;
@@ -28,27 +83,79 @@ export default function GravityBox() {
     boxHeightRef.current = boxHeight;
   }, [boxHeight]);
 
+  useEffect(() => {
+    windowSizeRef.current = windowSize;
+  }, [windowSize]);
+
+  useEffect(() => {
+    toolbarHeightRef.current = toolbarHeight;
+  }, [toolbarHeight]);
+
   // Window sizing & resize canvas sync
   useEffect(() => {
-    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    setBoxWidth(Math.min(800, window.innerWidth - 80));
-    setBoxHeight(Math.min(600, window.innerHeight - 200));
+    const syncViewport = () => {
+      const nextWindowSize = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      };
+      const nextToolbarHeight = toolbarRef.current?.offsetHeight ?? toolbarHeightRef.current;
+      const limits = getBoxLimits(
+        nextWindowSize.width,
+        nextWindowSize.height,
+        nextToolbarHeight,
+      );
+      setWindowSize((current) =>
+        current.width === nextWindowSize.width && current.height === nextWindowSize.height
+          ? current
+          : nextWindowSize,
+      );
+      setToolbarHeight((current) =>
+        current === nextToolbarHeight ? current : nextToolbarHeight,
+      );
+      setBoxWidth((current) => {
+        const nextWidth = Math.min(
+          limits.maxWidth,
+          Math.max(MIN_BOX_WIDTH, current || limits.defaultWidth),
+        );
+        return current === nextWidth ? current : nextWidth;
+      });
+      setBoxHeight((current) => {
+        const nextHeight = Math.min(
+          limits.maxHeight,
+          Math.max(MIN_BOX_HEIGHT, current || limits.defaultHeight),
+        );
+        return current === nextHeight ? current : nextHeight;
+      });
 
-    const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
       if (renderRef.current) {
-        renderRef.current.options.width = window.innerWidth;
-        renderRef.current.options.height = window.innerHeight;
+        renderRef.current.options.width = nextWindowSize.width;
+        renderRef.current.options.height = nextWindowSize.height;
         if (renderRef.current.canvas) {
-          renderRef.current.canvas.width = window.innerWidth;
-          renderRef.current.canvas.height = window.innerHeight;
+          renderRef.current.canvas.width = nextWindowSize.width;
+          renderRef.current.canvas.height = nextWindowSize.height;
         }
       }
     };
 
+    syncViewport();
+
+    const handleResize = () => syncViewport();
+    const shouldObserveToolbar = window.innerWidth < MOBILE_BREAKPOINT;
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" && toolbarRef.current && shouldObserveToolbar
+        ? new ResizeObserver(() => syncViewport())
+        : null;
+
+    if (toolbarRef.current && resizeObserver) {
+      resizeObserver.observe(toolbarRef.current);
+    }
+
     window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
     return () => {
       window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+      resizeObserver?.disconnect();
     };
   }, []);
 
@@ -88,8 +195,11 @@ export default function GravityBox() {
     // Reset shapes if they leak outside the containment box
     Events.on(engine, "beforeUpdate", () => {
       const allBodies = Composite.allBodies(engine.world);
-      const cx = window.innerWidth / 2;
-      const cy = window.innerHeight / 2;
+      const { x: cx, y: cy } = getBoxCenter(
+        windowSizeRef.current.width,
+        windowSizeRef.current.height,
+        toolbarHeightRef.current,
+      );
       const w = boxWidthRef.current;
       const h = boxHeightRef.current;
 
@@ -110,11 +220,17 @@ export default function GravityBox() {
     });
 
     // Populate initial shapes centered inside the default box area
+    const initialToolbarHeight = toolbarRef.current?.offsetHeight ?? toolbarHeightRef.current;
+    const limits = getBoxLimits(window.innerWidth, window.innerHeight, initialToolbarHeight);
     const cx = window.innerWidth / 2;
-    const cy = window.innerHeight / 2;
+    const cy = getBoxCenter(window.innerWidth, window.innerHeight, initialToolbarHeight).y;
+    setToolbarHeight(initialToolbarHeight);
+    setBoxWidth(limits.defaultWidth);
+    setBoxHeight(limits.defaultHeight);
+
     for (let i = 0; i < 40; i++) {
-      const x = cx + (Math.random() - 0.5) * (boxWidthRef.current * 0.7);
-      const y = cy + (Math.random() - 0.5) * (boxHeightRef.current * 0.7);
+      const x = cx + (Math.random() - 0.5) * (limits.defaultWidth * 0.7);
+      const y = cy + (Math.random() - 0.5) * (limits.defaultHeight * 0.7);
       const size = Math.random() * 40 + 20;
       const color = ["#ff006e", "#8338ec", "#3a86ff", "#fb5607", "#ffbe0b"][
         Math.floor(Math.random() * 5)
@@ -158,6 +274,29 @@ export default function GravityBox() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!shakeEnabled || typeof window === "undefined" || !("DeviceMotionEvent" in window)) {
+      return;
+    }
+
+    const handleMotion = (event: DeviceMotionEvent) => {
+      const acceleration = event.accelerationIncludingGravity ?? event.acceleration;
+      if (!acceleration) return;
+
+      const totalForce = Math.abs(acceleration.x ?? 0) + Math.abs(acceleration.y ?? 0) + Math.abs(acceleration.z ?? 0);
+      const now = Date.now();
+      if (totalForce > SHAKE_THRESHOLD && now - shakeCooldownRef.current > SHAKE_COOLDOWN_MS) {
+        shakeCooldownRef.current = now;
+        throwShapes();
+      }
+    };
+
+    window.addEventListener("devicemotion", handleMotion);
+    return () => {
+      window.removeEventListener("devicemotion", handleMotion);
+    };
+  }, [shakeEnabled]);
+
   // Dyn walls reconstruction matching sliders
   useEffect(() => {
     const engine = engineRef.current;
@@ -168,8 +307,7 @@ export default function GravityBox() {
     if (topWallRef.current) Matter.Composite.remove(engine.world, topWallRef.current);
     if (bottomWallRef.current) Matter.Composite.remove(engine.world, bottomWallRef.current);
 
-    const cx = windowSize.width / 2;
-    const cy = windowSize.height / 2;
+    const { x: cx, y: cy } = getBoxCenter(windowSize.width, windowSize.height, toolbarHeight);
     const thickness = 100; // Deep 100px thickness prevents tunneling completely
     const wallOptions = { isStatic: true, render: { fillStyle: "#475569" } };
 
@@ -189,8 +327,7 @@ export default function GravityBox() {
 
   const addShape = () => {
     if (!engineRef.current) return;
-    const cx = windowSize.width / 2;
-    const cy = windowSize.height / 2;
+    const { x: cx, y: cy } = getBoxCenter(windowSize.width, windowSize.height, toolbarHeight);
     const x = cx + (Math.random() - 0.5) * (boxWidth * 0.6);
     const y = cy - boxHeight / 2 + 30; // Spawn near the top of the box
     const size = Math.random() * 40 + 20;
@@ -235,7 +372,7 @@ export default function GravityBox() {
     });
   };
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const startAction = (action: () => void) => {
     if (intervalRef.current) return;
@@ -250,12 +387,31 @@ export default function GravityBox() {
     }
   };
 
+  const enableShake = async () => {
+    if (typeof window === "undefined" || !("DeviceMotionEvent" in window)) return;
+
+    const motionEvent = DeviceMotionEvent as typeof DeviceMotionEvent & {
+      requestPermission?: () => Promise<"granted" | "denied">;
+    };
+
+    if (typeof motionEvent.requestPermission === "function") {
+      const permission = await motionEvent.requestPermission();
+      if (permission !== "granted") return;
+    }
+
+    setShakeEnabled(true);
+  };
+
   // Clean up timers on unmount
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
+
+  const boxLimits = getBoxLimits(windowSize.width, windowSize.height, toolbarHeight);
+  const isMobile = windowSize.width < MOBILE_BREAKPOINT;
+  const canUseShake = typeof window !== "undefined" && "DeviceMotionEvent" in window;
 
   return (
     <div ref={sceneRef} className="fixed inset-0 overflow-hidden text-white">
@@ -266,7 +422,10 @@ export default function GravityBox() {
       </div>
 
       {/* Floating Top Toolbar */}
-      <div className="fixed top-8 left-1/2 -translate-x-1/2 flex items-center gap-4 px-6 py-3 bg-slate-900/40 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl z-50 transition-transform duration-300 hover:scale-102">
+      <div
+        ref={toolbarRef}
+        className="fixed top-0 inset-x-0 z-50 flex flex-wrap items-center justify-center gap-3.5 border-b border-white/10 bg-slate-950/70 px-3.5 pb-3.5 pt-[max(0.85rem,env(safe-area-inset-top))] shadow-2xl backdrop-blur-xl select-none md:left-1/2 md:right-auto md:top-4 md:w-auto md:-translate-x-1/2 md:flex-nowrap md:justify-start md:rounded-full md:border md:px-7 md:py-3.5"
+      >
         <button
           onClick={(e) => e.preventDefault()}
           onMouseDown={() => startAction(addShape)}
@@ -274,7 +433,7 @@ export default function GravityBox() {
           onMouseLeave={stopAction}
           onTouchStart={(e) => { e.preventDefault(); startAction(addShape); }}
           onTouchEnd={stopAction}
-          className="group flex flex-col items-center justify-center p-3 rounded-full bg-white/5 hover:bg-white/10 active:scale-90 transition-all duration-200 w-12 h-12 md:w-14 md:h-14 md:hover:w-36 md:hover:rounded-2xl overflow-hidden relative"
+          className="group relative flex h-[3.25rem] w-[3.25rem] flex-col items-center justify-center overflow-hidden rounded-full bg-white/5 p-3.5 transition-all duration-200 active:scale-90 hover:bg-white/10 select-none touch-manipulation md:h-16 md:w-16 md:hover:w-40 md:hover:rounded-2xl"
           title="Add Shape (Hold)"
         >
           <span className="absolute md:group-hover:opacity-0 transition-opacity duration-200">
@@ -293,7 +452,7 @@ export default function GravityBox() {
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
           </span>
-          <span className="hidden md:flex opacity-0 group-hover:opacity-100 absolute text-xs font-bold whitespace-nowrap">
+          <span className="hidden md:flex opacity-0 group-hover:opacity-100 absolute text-sm font-bold whitespace-nowrap">
             Add (Hold)
           </span>
         </button>
@@ -305,7 +464,7 @@ export default function GravityBox() {
           onMouseLeave={stopAction}
           onTouchStart={(e) => { e.preventDefault(); startAction(removeShape); }}
           onTouchEnd={stopAction}
-          className="group flex flex-col items-center justify-center p-3 rounded-full bg-white/5 hover:bg-rose-500/20 hover:text-rose-400 active:scale-90 transition-all duration-200 w-12 h-12 md:w-14 md:h-14 md:hover:w-36 md:hover:rounded-2xl overflow-hidden relative"
+          className="group relative flex h-[3.25rem] w-[3.25rem] flex-col items-center justify-center overflow-hidden rounded-full bg-white/5 p-3.5 transition-all duration-200 active:scale-90 hover:bg-rose-500/20 hover:text-rose-400 select-none touch-manipulation md:h-16 md:w-16 md:hover:w-40 md:hover:rounded-2xl"
           title="Remove Shape (Hold)"
         >
           <span className="absolute md:group-hover:opacity-0 transition-opacity duration-200">
@@ -324,16 +483,16 @@ export default function GravityBox() {
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
           </span>
-          <span className="hidden md:flex opacity-0 group-hover:opacity-100 absolute text-xs font-bold whitespace-nowrap">
+          <span className="hidden md:flex opacity-0 group-hover:opacity-100 absolute text-sm font-bold whitespace-nowrap">
             Remove (Hold)
           </span>
         </button>
 
-        <div className="w-px h-8 bg-white/10 mx-1"></div>
+        <div className="hidden h-9 w-px bg-white/10 md:block"></div>
 
         <button
           onClick={throwShapes}
-          className="group flex flex-col items-center justify-center p-3 rounded-full bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] active:scale-95 transition-all duration-200 w-12 h-12 md:w-14 md:h-14 md:hover:w-32 md:hover:rounded-2xl overflow-hidden relative"
+          className="group relative flex h-[3.25rem] w-[3.25rem] flex-col items-center justify-center overflow-hidden rounded-full bg-blue-500/20 p-3.5 text-blue-400 transition-all duration-200 active:scale-95 hover:bg-blue-500 hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] select-none touch-manipulation md:h-16 md:w-16 md:hover:w-36 md:hover:rounded-2xl"
           title="Chaos Mode"
         >
           <span className="absolute md:group-hover:opacity-0 transition-opacity duration-200">
@@ -351,20 +510,34 @@ export default function GravityBox() {
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
             </svg>
           </span>
-          <span className="hidden md:flex opacity-0 group-hover:opacity-100 absolute text-xs font-bold whitespace-nowrap">
+          <span className="hidden md:flex opacity-0 group-hover:opacity-100 absolute text-sm font-bold whitespace-nowrap">
             CHAOS
           </span>
         </button>
 
-        <div className="w-px h-8 bg-white/10 mx-1"></div>
+        {isMobile && canUseShake ? (
+          <button
+            onClick={enableShake}
+            className={`flex h-[3.25rem] min-w-24 items-center justify-center rounded-full px-[1.125rem] text-xs font-black uppercase tracking-[0.18em] transition-colors ${
+              shakeEnabled
+                ? "bg-emerald-500/20 text-emerald-300"
+                : "bg-white/5 text-slate-200 hover:bg-white/10"
+            } select-none touch-manipulation`}
+            title="Enable phone shake chaos"
+          >
+            {shakeEnabled ? "Shake On" : "Enable Shake"}
+          </button>
+        ) : null}
+
+        <div className="hidden h-9 w-px bg-white/10 md:block"></div>
 
         {/* Dynamic Box Width Slider */}
-        <div className="flex flex-col gap-1 w-20 sm:w-28 text-left">
-          <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Width</span>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-left md:w-32 md:flex-none">
+          <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Width</span>
           <input
             type="range"
-            min="250"
-            max={Math.max(windowSize.width - 60, 400)}
+            min={MIN_BOX_WIDTH}
+            max={boxLimits.maxWidth}
             value={boxWidth}
             onChange={(e) => setBoxWidth(parseInt(e.target.value))}
             className="sandbox-slider"
@@ -372,12 +545,12 @@ export default function GravityBox() {
         </div>
 
         {/* Dynamic Box Height Slider */}
-        <div className="flex flex-col gap-1 w-20 sm:w-28 text-left">
-          <span className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Height</span>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-left md:w-32 md:flex-none">
+          <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Height</span>
           <input
             type="range"
-            min="250"
-            max={Math.max(windowSize.height - 180, 400)}
+            min={MIN_BOX_HEIGHT}
+            max={boxLimits.maxHeight}
             value={boxHeight}
             onChange={(e) => setBoxHeight(parseInt(e.target.value))}
             className="sandbox-slider"
