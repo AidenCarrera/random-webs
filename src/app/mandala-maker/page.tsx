@@ -2,6 +2,8 @@
 
 import { useRef, useEffect, useState } from "react";
 import { Download, Trash2, Palette, Eye, EyeOff, Undo, Redo, Square, Maximize } from "lucide-react";
+import { ExportPreviewModal } from "@/components/ExportPreviewModal";
+import { canvasToBlob, downloadCanvasPng } from "@/lib/canvasExport";
 
 export default function MandalaMaker() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -12,6 +14,11 @@ export default function MandalaMaker() {
   const [rainbowMode, setRainbowMode] = useState(false);
   const [showUI, setShowUI] = useState(true);
   const [isSquareCanvas, setIsSquareCanvas] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [shareUrl, setShareUrl] = useState("");
+  const [canvasCssSize, setCanvasCssSize] = useState({ width: 1200, height: 800 });
 
   // Undo/Redo History Stacks
   const historyRef = useRef<string[]>([]);
@@ -20,6 +27,7 @@ export default function MandalaMaker() {
   const [canRedo, setCanRedo] = useState(false);
 
   const [windowSize, setWindowSize] = useState({ width: 1200, height: 800 });
+  const shouldUseSquareCanvas = isSquareCanvas || windowSize.width < 640;
 
   // For rainbow cycle
   const hueRef = useRef(0);
@@ -80,6 +88,11 @@ export default function MandalaMaker() {
   // Sync window resize dimensions state
   useEffect(() => {
     setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    setIsTouchDevice(
+      window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0,
+    );
+    setShareUrl(window.location.href);
+
     const handleResize = () => {
       setWindowSize({ width: window.innerWidth, height: window.innerHeight });
     };
@@ -95,9 +108,17 @@ export default function MandalaMaker() {
     if (!ctx) return;
 
     // Calculate dimensions
-    const side = Math.min(window.innerWidth - 32, window.innerHeight - 180, 750);
-    const w = isSquareCanvas ? side : window.innerWidth;
-    const h = isSquareCanvas ? side : window.innerHeight;
+    const mobileChromeOffset = windowSize.width < 640 ? 156 : 180;
+    const side = Math.max(
+      240,
+      Math.min(window.innerWidth - 16, window.innerHeight - mobileChromeOffset, 750),
+    );
+    const cssWidth = shouldUseSquareCanvas ? side : window.innerWidth;
+    const cssHeight = shouldUseSquareCanvas ? side : window.innerHeight;
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 3);
+    const w = Math.round(cssWidth * pixelRatio);
+    const h = Math.round(cssHeight * pixelRatio);
+    setCanvasCssSize({ width: cssWidth, height: cssHeight });
 
     // Copy current state if it exists
     const tempUrl = canvas.toDataURL();
@@ -125,7 +146,7 @@ export default function MandalaMaker() {
       historyIndexRef.current = 0;
       setCanUndo(false);
     }
-  }, [isSquareCanvas, windowSize]);
+  }, [shouldUseSquareCanvas, windowSize]);
 
   // Keyboard shortcut listener (Ctrl+Z, Ctrl+Y)
   useEffect(() => {
@@ -154,13 +175,23 @@ export default function MandalaMaker() {
   const lastPos = useRef<{ x: number; y: number } | null>(null);
   const hasDrawnRef = useRef(false);
 
+  const getCanvasPoint = (e: React.PointerEvent, canvas: HTMLCanvasElement) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  };
+
   const startDrawing = (e: React.PointerEvent) => {
     setIsDrawing(true);
     hasDrawnRef.current = false;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    lastPos.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    lastPos.current = getCanvasPoint(e, canvas);
   };
 
   const stopDrawing = () => {
@@ -180,9 +211,10 @@ export default function MandalaMaker() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const currentX = e.clientX - rect.left;
-    const currentY = e.clientY - rect.top;
+    const currentPoint = getCanvasPoint(e, canvas);
+    const currentX = currentPoint.x;
+    const currentY = currentPoint.y;
+    const strokeScale = canvas.width / canvas.getBoundingClientRect().width;
 
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
@@ -203,7 +235,7 @@ export default function MandalaMaker() {
       // Line to CURRENT pos relative to center
       ctx.lineTo(currentX - centerX, currentY - centerY);
 
-      ctx.lineWidth = lineWidth;
+      ctx.lineWidth = lineWidth * strokeScale;
       ctx.lineCap = "round";
       ctx.strokeStyle = rainbowMode
         ? `hsl(${hueRef.current}, 100%, 50%)`
@@ -229,32 +261,49 @@ export default function MandalaMaker() {
     pushToHistory();
   };
 
-  const download = () => {
-    const link = document.createElement("a");
-    link.download = "mandala.png";
-    link.href = canvasRef.current?.toDataURL() || "";
-    link.click();
+  const exportToPNG = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    setIsSaving(true);
+    try {
+      const fileName = "mandala.png";
+      const dataUrl = canvas.toDataURL("image/png");
+      setPreviewImage(dataUrl);
+
+      if (!isTouchDevice) {
+        await downloadCanvasPng(canvas, fileName);
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 overflow-hidden font-sans relative touch-none flex items-center justify-center">
+    <div className="relative flex min-h-screen touch-none items-center justify-center overflow-hidden bg-neutral-950 px-2 py-32 font-sans sm:p-0">
       <canvas
         ref={canvasRef}
         onPointerDown={startDrawing}
         onPointerMove={drawMove}
         onPointerUp={stopDrawing}
         onPointerLeave={stopDrawing}
-        className={`bg-black cursor-crosshair transition-all duration-300 ${
-          isSquareCanvas
+        className={`cursor-crosshair bg-black transition-[border-color,border-radius,box-shadow] duration-300 ${
+          shouldUseSquareCanvas
             ? "shadow-[0_0_50px_rgba(0,0,0,0.85)] border border-white/10 rounded-2xl relative"
             : "absolute inset-0"
         }`}
+        style={{
+          width: shouldUseSquareCanvas ? canvasCssSize.width : "100%",
+          height: shouldUseSquareCanvas ? canvasCssSize.height : "100%",
+        }}
       />
 
       {/* Toggle UI Button */}
       <button
         onClick={() => setShowUI(!showUI)}
-        className="absolute top-4 right-4 z-50 p-3 bg-gray-900/50 backdrop-blur-md text-white/50 hover:text-white hover:bg-gray-900/80 rounded-xl transition-all border border-white/10 shadow-lg cursor-pointer"
+        className={`absolute right-3 top-3 z-10 rounded-xl border border-white/10 bg-gray-900/50 p-2.5 text-white/50 shadow-lg backdrop-blur-md transition-all hover:bg-gray-900/80 hover:text-white sm:right-4 sm:top-4 sm:flex sm:p-3 ${
+          showUI ? "hidden" : "flex"
+        }`}
         title={showUI ? "Hide Controls" : "Show Controls"}
       >
         {showUI ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -262,36 +311,36 @@ export default function MandalaMaker() {
 
       {/* Controls */}
       <div
-        className={`absolute top-0 left-0 w-full p-4 flex flex-wrap justify-center items-start gap-4 pointer-events-none transition-opacity duration-300 z-35 ${
+        className={`pointer-events-none absolute left-0 top-0 z-10 flex w-full flex-wrap items-start justify-center gap-2 p-2 transition-opacity duration-300 sm:gap-4 sm:p-4 ${
           showUI ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       >
-        <div className="bg-gray-900/80 backdrop-blur-xl p-4 rounded-2xl border border-white/10 shadow-2xl flex flex-wrap items-center gap-6 pointer-events-auto">
+        <div className="pointer-events-auto flex max-w-[calc(100vw-4rem)] flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-gray-900/80 p-2 shadow-2xl backdrop-blur-xl sm:max-w-none sm:gap-6 sm:p-4">
           {/* Layout Toggle */}
-          <div className="flex flex-col gap-2">
-            <label className="text-xs text-white/50 font-bold uppercase">
+          <div className="flex flex-col gap-1.5 sm:gap-2">
+            <label className="text-[10px] font-bold uppercase text-white/50 sm:text-xs">
               Layout
             </label>
             <button
               onClick={() => setIsSquareCanvas(!isSquareCanvas)}
-              className={`p-2 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 font-bold text-xs ${
-                isSquareCanvas
+              className={`flex cursor-pointer items-center gap-1.5 rounded-lg p-2 text-xs font-bold transition-colors ${
+                shouldUseSquareCanvas
                   ? "bg-cyan-500 text-white shadow-lg"
                   : "bg-white/10 text-white hover:bg-white/15"
               }`}
-              title={isSquareCanvas ? "Fullscreen Canvas" : "Square Canvas"}
+              title={shouldUseSquareCanvas ? "Fullscreen Canvas" : "Square Canvas"}
             >
-              {isSquareCanvas ? <Maximize className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+              {shouldUseSquareCanvas ? <Maximize className="h-4 w-4" /> : <Square className="h-4 w-4" />}
               <span className="hidden sm:inline">
-                {isSquareCanvas ? "Fullscreen" : "Square"}
+                {shouldUseSquareCanvas ? "Fullscreen" : "Square"}
               </span>
             </button>
           </div>
 
-          <div className="h-8 w-px bg-white/10" />
+          <div className="hidden h-8 w-px bg-white/10 sm:block" />
 
-          <div className="flex flex-col gap-2">
-            <label className="text-xs text-white/50 font-bold uppercase">
+          <div className="flex flex-col gap-1.5 sm:gap-2">
+            <label className="text-[10px] font-bold uppercase text-white/50 sm:text-xs">
               Color
             </label>
             <div className="flex items-center gap-2">
@@ -318,8 +367,8 @@ export default function MandalaMaker() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 w-32">
-            <label className="text-xs text-white/50 font-bold uppercase">
+          <div className="flex w-24 flex-col gap-1.5 sm:w-32 sm:gap-2">
+            <label className="text-[10px] font-bold uppercase text-white/50 sm:text-xs">
               Segments: {segments}
             </label>
             <input
@@ -333,8 +382,8 @@ export default function MandalaMaker() {
             />
           </div>
 
-          <div className="flex flex-col gap-2 w-32">
-            <label className="text-xs text-white/50 font-bold uppercase">
+          <div className="flex w-24 flex-col gap-1.5 sm:w-32 sm:gap-2">
+            <label className="text-[10px] font-bold uppercase text-white/50 sm:text-xs">
               Size: {lineWidth}
             </label>
             <input
@@ -347,60 +396,109 @@ export default function MandalaMaker() {
             />
           </div>
 
-          <div className="h-8 w-px bg-white/10" />
+          <div className="hidden h-8 w-px bg-white/10 sm:block" />
 
           {/* Action buttons including Undo / Redo */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={undo}
               disabled={!canUndo}
-              className={`p-3 rounded-xl transition-all cursor-pointer ${
+              className={`cursor-pointer rounded-xl p-2.5 transition-all sm:p-3 ${
                 canUndo
                   ? "bg-white/10 text-white hover:bg-white/20 active:scale-95"
                   : "bg-white/5 text-white/25 cursor-not-allowed"
               }`}
               title="Undo (Ctrl+Z)"
             >
-              <Undo className="w-5 h-5" />
+              <Undo className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
             <button
               onClick={redo}
               disabled={!canRedo}
-              className={`p-3 rounded-xl transition-all cursor-pointer ${
+              className={`cursor-pointer rounded-xl p-2.5 transition-all sm:p-3 ${
                 canRedo
                   ? "bg-white/10 text-white hover:bg-white/20 active:scale-95"
                   : "bg-white/5 text-white/25 cursor-not-allowed"
               }`}
               title="Redo (Ctrl+Y)"
             >
-              <Redo className="w-5 h-5" />
+              <Redo className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
 
-            <div className="h-8 w-px bg-white/10 mx-1" />
+            <div className="mx-0.5 h-8 w-px bg-white/10 sm:mx-1" />
 
             <button
               onClick={clearCanvas}
-              className="p-3 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all active:scale-95 cursor-pointer"
+              className="cursor-pointer rounded-xl bg-red-500/20 p-2.5 text-red-500 transition-all hover:bg-red-500 hover:text-white active:scale-95 sm:p-3"
               title="Clear"
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
             </button>
             <button
-              onClick={download}
-              className="p-3 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-white rounded-xl transition-all active:scale-95 cursor-pointer"
+              onClick={exportToPNG}
+              disabled={isSaving}
+              className="cursor-pointer rounded-xl bg-cyan-500/20 p-2.5 text-cyan-400 transition-all hover:bg-cyan-500 hover:text-white active:scale-95 disabled:cursor-wait disabled:opacity-60 sm:p-3"
               title="Download"
             >
-              <Download className="w-5 h-5" />
+              <Download className="h-4 w-4 sm:h-5 sm:w-5" />
+            </button>
+            <button
+              onClick={() => setShowUI(false)}
+              className="cursor-pointer rounded-xl bg-white/10 p-2.5 text-white/60 transition-all hover:bg-white/20 hover:text-white active:scale-95 sm:hidden"
+              title="Hide Controls"
+            >
+              <EyeOff className="h-4 w-4" />
             </button>
           </div>
         </div>
       </div>
 
-      <div className="absolute bottom-6 w-full text-center pointer-events-none">
-        <h1 className="text-white/20 text-4xl font-black uppercase tracking-[1em]">
+      <div className="pointer-events-none absolute bottom-6 hidden w-full text-center sm:block">
+        <h1 className="text-4xl font-black uppercase tracking-[1em] text-white/20">
           Mandala
         </h1>
       </div>
+
+      {previewImage ? (
+        <ExportPreviewModal
+          description="Your PNG downloaded automatically. You can also save it manually or share it here."
+          fileName="mandala.png"
+          imageAlt="Mandala export preview"
+          imageSrc={previewImage}
+          isTouchDevice={isTouchDevice}
+          onClose={() => setPreviewImage(null)}
+          onSaveImage={async () => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+
+            try {
+              const blob = await canvasToBlob(canvas);
+              const pngFile = new File([blob], "mandala.png", {
+                type: "image/png",
+              });
+              const canShareFile =
+                typeof navigator !== "undefined" &&
+                "share" in navigator &&
+                "canShare" in navigator &&
+                navigator.canShare({ files: [pngFile] });
+
+              if (canShareFile) {
+                await navigator.share({
+                  files: [pngFile],
+                  title: "Mandala Maker",
+                  text: "Sharing this mandala.",
+                });
+                return;
+              }
+
+              window.open(previewImage, "_blank", "noopener,noreferrer");
+            } catch {}
+          }}
+          shareHeading="Share your mandala"
+          shareUrl={shareUrl}
+          title="Mandala snapshot"
+        />
+      ) : null}
     </div>
   );
 }
