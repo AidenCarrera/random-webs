@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { RefreshCw } from "lucide-react";
 
 const ANSWERS = [
@@ -47,7 +47,6 @@ export default function MagicEightBall() {
     setIsShaking(true);
     setShowAnswer(false);
 
-    // Select random answer
     const randomAnswer = ANSWERS[Math.floor(Math.random() * ANSWERS.length)];
 
     setTimeout(() => {
@@ -55,15 +54,15 @@ export default function MagicEightBall() {
       setBallMode("answer");
       setIsShaking(false);
 
-      // Delay the fade-in slightly so it starts as soon as shaking stops
       setTimeout(() => {
         setShowAnswer(true);
       }, 50);
-    }, 600); // Match CSS shake duration (0.6s)
+    }, 600);
   };
 
   const resetBall = () => {
     if (isShaking) return;
+
     setQuestion("");
     setAnswer("");
     setBallMode("default");
@@ -78,17 +77,13 @@ export default function MagicEightBall() {
           "radial-gradient(circle at center, #111116 0%, #030305 100%)",
       }}
     >
-
-
       <div className="max-w-md w-full flex flex-col items-center z-10 text-center gap-8">
-        {/* Header */}
         <header className="flex flex-col items-center">
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-[0.2em] text-stone-100 uppercase font-serif">
             Magic Eight Ball
           </h1>
         </header>
 
-        {/* 3D Magic 8 Ball */}
         <div className="relative py-2 flex items-center justify-center">
           <div
             onClick={() => askBall()}
@@ -97,27 +92,16 @@ export default function MagicEightBall() {
             }`}
             style={{
               background:
-                "radial-gradient(circle at 35% 35%, #2a2a2e 0%, #0e0e11 35%, #020203 100%)",
+                "linear-gradient(to bottom, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.06) 18%, rgba(255,255,255,0) 38%), radial-gradient(circle at 35% 35%, #2a2a2e 0%, #0e0e11 35%, #020203 100%)",
             }}
           >
-            {/* Specular gloss shine highlight */}
-            <div
-              className="absolute top-[0%] left-[12%] w-[76%] h-[38%] rounded-full opacity-[0.14] pointer-events-none"
-              style={{
-                background:
-                  "linear-gradient(to bottom, #ffffff 0%, rgba(255,255,255,0) 100%)",
-                filter: "blur(2px)",
-              }}
-            />
-
-            {/* Inner display window */}
             {ballMode === "default" ? (
-              /* The classic number "8" face */
               <div className="w-36 h-36 md:w-44 md:h-44 rounded-full bg-stone-100 flex items-center justify-center shadow-[inset_0_-8px_16px_rgba(0,0,0,0.15),0_6px_15px_rgba(0,0,0,0.5)] border border-stone-300">
-                <span className="text-stone-950 font-sans text-7xl md:text-8xl font-black tracking-tighter">8</span>
+                <span className="text-stone-950 font-sans text-7xl md:text-8xl font-black tracking-tighter">
+                  8
+                </span>
               </div>
             ) : (
-              /* The liquid cavity window displaying the die */
               <div
                 className="w-36 h-36 md:w-44 md:h-44 rounded-full overflow-hidden flex items-center justify-center relative shadow-[inset_0_12px_24px_rgba(0,0,0,0.95)]"
                 style={{
@@ -126,7 +110,6 @@ export default function MagicEightBall() {
                   border: "4px solid #0f141e",
                 }}
               >
-                {/* Floating Die Transition */}
                 <div
                   className={`absolute inset-0 flex items-center justify-center p-4 transition-all duration-1800 ease-out ${
                     showAnswer
@@ -134,7 +117,6 @@ export default function MagicEightBall() {
                       : "opacity-0 scale-75 translate-y-8 filter blur-[3px]"
                   }`}
                 >
-                  {/* Floating Triangle Die */}
                   <div className="relative w-32 h-32 md:w-36 md:h-36 flex items-center justify-center">
                     <svg
                       viewBox="0 0 100 100"
@@ -148,7 +130,6 @@ export default function MagicEightBall() {
                       />
                     </svg>
 
-                    {/* Centered Response Text inside the die */}
                     <div className="absolute top-[16%] left-[16%] right-[16%] bottom-[34%] flex items-center justify-center text-center">
                       <span className="text-[7.5px] md:text-[8.5px] font-bold text-blue-200 uppercase tracking-wide leading-snug font-serif select-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)] whitespace-pre-line">
                         {answer}
@@ -161,7 +142,6 @@ export default function MagicEightBall() {
           </div>
         </div>
 
-        {/* Input Form & Controls */}
         <div className="w-full flex flex-col items-center gap-6">
           <form
             ref={formRef}
@@ -176,6 +156,7 @@ export default function MagicEightBall() {
               disabled={isShaking}
               className="w-full bg-transparent text-stone-150 placeholder-stone-600 focus:outline-none font-serif text-sm italic py-1 disabled:opacity-50 text-center"
             />
+
             <button
               type="submit"
               disabled={isShaking}
@@ -190,7 +171,8 @@ export default function MagicEightBall() {
               onClick={resetBall}
               className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 hover:text-amber-500 transition-all border border-stone-800/80 rounded-sm px-4 py-2 bg-stone-950/40 hover:border-amber-900/30"
             >
-              <RefreshCw className="w-2.5 h-2.5" /> Reset Sphere
+              <RefreshCw className="w-2.5 h-2.5" />
+              Reset Sphere
             </button>
           )}
         </div>
