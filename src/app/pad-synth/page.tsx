@@ -79,6 +79,9 @@ const SCALES = {
   ],
 };
 
+const DEFAULT_REVERB_AMT = 0.2;
+const DEFAULT_DELAY_AMT = 0.05;
+
 export default function PadSynth() {
   const [isReady, setIsReady] = useState(false);
   const [activeNote, setActiveNote] = useState<string | null>(null);
@@ -88,25 +91,30 @@ export default function PadSynth() {
   >("triangle");
   const [currentScale, setCurrentScale] =
     useState<keyof typeof SCALES>("Major");
-  const [reverbAmt, setReverbAmt] = useState(0.15);
-  // Delay State
-  const [delayAmt, setDelayAmt] = useState(0);
+  const [reverbAmt, setReverbAmt] = useState(DEFAULT_REVERB_AMT);
+  const [delayAmt, setDelayAmt] = useState(DEFAULT_DELAY_AMT);
   const [delayTime, setDelayTime] = useState<"16n" | "8n" | "4n">("8n");
+  const [stylesReady, setStylesReady] = useState(false);
 
   const synthRef = useRef<Tone.PolySynth | null>(null);
   const reverbRef = useRef<Tone.Reverb | null>(null);
   const delayRef = useRef<Tone.FeedbackDelay | null>(null);
 
-  // Drag State
   const isMouseDown = useRef(false);
   const lastPlayedNote = useRef<string | null>(null);
+
+  useEffect(() => {
+    setStylesReady(true);
+  }, []);
 
   useEffect(() => {
     const handleMouseUp = () => {
       isMouseDown.current = false;
       lastPlayedNote.current = null;
     };
+
     window.addEventListener("mouseup", handleMouseUp);
+
     return () => {
       window.removeEventListener("mouseup", handleMouseUp);
       synthRef.current?.dispose();
@@ -118,6 +126,15 @@ export default function PadSynth() {
   const initAudio = async () => {
     await Tone.start();
 
+    if (Tone.getContext().state !== "running") {
+      await Tone.getContext().resume();
+    }
+
+    if (synthRef.current && reverbRef.current && delayRef.current) {
+      setIsReady(true);
+      return;
+    }
+
     const reverb = new Tone.Reverb(3).toDestination();
     reverb.wet.value = reverbAmt;
     reverbRef.current = reverb;
@@ -126,7 +143,6 @@ export default function PadSynth() {
     delay.wet.value = delayAmt;
     delayRef.current = delay;
 
-    // Connect Delay -> Reverb -> Dest
     delay.connect(reverb);
 
     const synth = new Tone.PolySynth(Tone.Synth, {
@@ -139,7 +155,7 @@ export default function PadSynth() {
         sustain: 0.3,
         release: 1,
       },
-    }).connect(delay); // Connect Synth -> Delay
+    }).connect(delay);
 
     const volOffset =
       oscType === "sine"
@@ -149,40 +165,45 @@ export default function PadSynth() {
           : oscType === "square"
             ? -2
             : 0;
+
     synth.volume.value = volume + volOffset;
     synthRef.current = synth;
     setIsReady(true);
   };
 
-  const playNote = (note: string) => {
-    if (!isReady) initAudio();
+  const playNote = async (note: string) => {
+    if (!isReady || !synthRef.current) {
+      await initAudio();
+    }
+
     if (synthRef.current) {
-      // Don't re-trigger same note if dragging
       if (lastPlayedNote.current === note) return;
 
       synthRef.current.triggerAttackRelease(note, "8n");
       setActiveNote(note);
       lastPlayedNote.current = note;
+
       setTimeout(() => {
         setActiveNote((prev) => (prev === note ? null : prev));
       }, 200);
     }
   };
 
-  // Touch Drag Handler
   const handleTouchMove = (e: React.TouchEvent) => {
     const touch = e.touches[0];
     const element = document.elementFromPoint(touch.clientX, touch.clientY);
     const note = element?.getAttribute("data-note");
+
     if (note) {
       playNote(note);
     } else {
-      lastPlayedNote.current = null; // Reset if off a key to allow re-entry
+      lastPlayedNote.current = null;
     }
   };
 
   const handleVolumeChange = (val: number) => {
     setVolume(val);
+
     if (synthRef.current) {
       const offset =
         oscType === "sine"
@@ -192,6 +213,7 @@ export default function PadSynth() {
             : oscType === "square"
               ? -2
               : 0;
+
       synthRef.current.volume.value = val + offset;
     }
   };
@@ -200,8 +222,10 @@ export default function PadSynth() {
     type: "sine" | "triangle" | "square" | "sawtooth",
   ) => {
     setOscType(type);
+
     if (synthRef.current) {
       synthRef.current.set({ oscillator: { type } });
+
       const offset =
         type === "sine"
           ? 3
@@ -210,12 +234,14 @@ export default function PadSynth() {
             : type === "square"
               ? -2
               : 0;
+
       synthRef.current.volume.value = volume + offset;
     }
   };
 
   const handleReverbChange = (val: number) => {
     setReverbAmt(val);
+
     if (reverbRef.current) {
       reverbRef.current.wet.value = val;
     }
@@ -223,6 +249,7 @@ export default function PadSynth() {
 
   const handleDelayChange = (val: number) => {
     setDelayAmt(val);
+
     if (delayRef.current) {
       delayRef.current.wet.value = val;
     }
@@ -235,16 +262,19 @@ export default function PadSynth() {
     const nextTime = options[nextIndex];
 
     setDelayTime(nextTime);
+
     if (delayRef.current) {
       delayRef.current.delayTime.value = nextTime;
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#e0e5ec] text-slate-600 font-sans flex items-center justify-center p-3 sm:p-6 select-none transition-colors duration-500">
-      {/* Main Board */}
+    <div
+      className={`min-h-screen bg-[#e0e5ec] text-slate-600 font-sans flex items-center justify-center p-3 sm:p-6 select-none transition-opacity duration-150 ${
+        stylesReady ? "opacity-100" : "opacity-0"
+      }`}
+    >
       <div className="bg-[#e0e5ec] rounded-4xl sm:rounded-[3rem] p-4 sm:p-8 md:p-12 shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff] max-w-4xl w-full mx-auto">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-10 gap-4 sm:gap-6">
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#e0e5ec] shadow-[5px_5px_10px_#bebebe,-5px_-5px_10px_#ffffff] flex items-center justify-center text-blue-400">
@@ -260,7 +290,6 @@ export default function PadSynth() {
             </div>
           </div>
 
-          {/* Master Controls */}
           <div className="flex gap-4">
             <button
               onClick={() => setIsReady(!isReady)}
@@ -276,9 +305,7 @@ export default function PadSynth() {
           </div>
         </div>
 
-        {/* Controls Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8 mb-6 sm:mb-10">
-          {/* Scale Selector */}
           <div className="bg-[#e0e5ec] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff]">
             <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 block text-center text-slate-500">
               Scale Mode
@@ -300,7 +327,6 @@ export default function PadSynth() {
             </div>
           </div>
 
-          {/* Waveform Selector */}
           <div className="bg-[#e0e5ec] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff]">
             <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 block text-center text-slate-500">
               Waveform
@@ -339,7 +365,6 @@ export default function PadSynth() {
             </div>
           </div>
 
-          {/* Knobs */}
           <div className="bg-[#e0e5ec] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] flex flex-col justify-center gap-3 sm:gap-4 col-span-1 sm:col-span-2 md:col-span-1">
             <div className="space-y-1">
               <div className="flex justify-between text-[10px] sm:text-xs font-bold text-slate-500">
@@ -355,6 +380,7 @@ export default function PadSynth() {
                 className="w-full appearance-none outline-none bg-transparent"
               />
             </div>
+
             <div className="space-y-1">
               <div className="flex justify-between text-[10px] sm:text-xs font-bold text-slate-500">
                 <span>REVERB</span>
@@ -402,10 +428,12 @@ export default function PadSynth() {
           </div>
         </div>
 
-        {/* Note Grid */}
         <div
           className="grid grid-cols-4 gap-2 sm:gap-4 md:gap-6 touch-none"
-          onTouchMove={handleTouchMove}
+          onTouchMove={(e) => {
+            e.preventDefault();
+            handleTouchMove(e);
+          }}
         >
           {SCALES[currentScale].map((note) => {
             const colorClasses = {
@@ -415,8 +443,7 @@ export default function PadSynth() {
               sawtooth: "text-red-500 hover:text-red-400",
             }[oscType];
 
-            // Split active vs inactive color application
-            const activeColor = colorClasses.split(" ")[0]; // e.g., text-blue-500
+            const activeColor = colorClasses.split(" ")[0];
 
             return (
               <button
@@ -429,20 +456,21 @@ export default function PadSynth() {
                 onMouseEnter={() => {
                   if (isMouseDown.current) playNote(note);
                 }}
-                onTouchStart={() => {
+                onTouchStart={(e) => {
+                  e.preventDefault();
                   playNote(note);
                 }}
                 className={`
-                        aspect-square rounded-xl sm:rounded-2xl md:rounded-3xl flex items-center justify-center
-                        text-sm sm:text-lg font-bold transition-all duration-150 touch-none select-none
-                        ${
-                          activeNote === note
-                            ? `shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] ${activeColor} scale-95`
-                            : `shadow-[8px_8px_16px_#bebebe,-8px_-8px_16px_#ffffff] text-slate-500 ${
-                                colorClasses.split(" ")[1]
-                              } active:scale-95`
-                        }
-                    `}
+                  aspect-square rounded-xl sm:rounded-2xl md:rounded-3xl flex items-center justify-center
+                  text-sm sm:text-lg font-bold transition-all duration-150 touch-none select-none
+                  ${
+                    activeNote === note
+                      ? `shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] ${activeColor} scale-95`
+                      : `shadow-[8px_8px_16px_#bebebe,-8px_-8px_16px_#ffffff] text-slate-500 ${
+                          colorClasses.split(" ")[1]
+                        } active:scale-95`
+                  }
+                `}
               >
                 {note}
               </button>
@@ -450,14 +478,18 @@ export default function PadSynth() {
           })}
         </div>
       </div>
+
       <style jsx>{`
         input[type="range"] {
           -webkit-appearance: none;
+          appearance: none;
           background: transparent;
         }
+
         input[type="range"]:focus {
           outline: none;
         }
+
         input[type="range"]::-webkit-slider-runnable-track {
           width: 100%;
           height: 6px;
@@ -468,23 +500,27 @@ export default function PadSynth() {
             inset 2px 2px 5px #bebebe,
             inset -2px -2px 5px #ffffff;
         }
+
         input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
           height: 18px;
           width: 18px;
-          border-radius: 50%;
+          border-radius: 9999px;
           background: #e0e5ec;
           border: none;
           box-shadow:
             2px 2px 5px #bebebe,
             -2px -2px 5px #ffffff;
           cursor: pointer;
-          -webkit-appearance: none;
           margin-top: -6px;
           transition: background-color 0.2s;
         }
+
         input[type="range"]::-webkit-slider-thumb:hover {
           background: #d8dee8;
         }
+
         input[type="range"]::-moz-range-track {
           width: 100%;
           height: 6px;
@@ -495,10 +531,11 @@ export default function PadSynth() {
             inset 2px 2px 5px #bebebe,
             inset -2px -2px 5px #ffffff;
         }
+
         input[type="range"]::-moz-range-thumb {
           height: 18px;
           width: 18px;
-          border-radius: 50%;
+          border-radius: 9999px;
           background: #e0e5ec;
           border: none;
           box-shadow:
@@ -507,6 +544,7 @@ export default function PadSynth() {
           cursor: pointer;
           transition: background-color 0.2s;
         }
+
         input[type="range"]::-moz-range-thumb:hover {
           background: #d8dee8;
         }
