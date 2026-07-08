@@ -15,7 +15,7 @@ export default function PartyMode() {
     if (resetTimeoutRef.current) {
       clearTimeout(resetTimeoutRef.current);
     }
-    
+
     resetTimeoutRef.current = setTimeout(() => {
       setIsPartying(false);
     }, 5500);
@@ -58,21 +58,23 @@ export default function PartyMode() {
   };
 
   return (
-    <div className={`min-h-screen bg-linear-to-t from-yellow-300 to-orange-400 flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ${
-      isPartying ? "animate-party-bg" : ""
-    }`}>
+    <div
+      className={`min-h-screen bg-linear-to-t from-yellow-300 to-orange-400 flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ${
+        isPartying ? "animate-party-bg" : ""
+      }`}
+    >
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/confetti.png')] opacity-20 pointer-events-none" />
 
       {/* Floating Party Emojis */}
       {isPartying && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
-          {Array.from({ length: 15 }).map((_, i) => {
+          {Array.from({ length: 28 }).map((_, i) => {
             const emojis = ["🎈", "🎉", "🥳", "✨", "🎁", "🍰", "🍾", "🥂"];
-            const left = (i * 7) + 5; // Spaced evenly across screen
-            const delay = (i * 0.45) + "s";
-            const duration = (4.5 + (i % 3) * 1.2) + "s";
+            const left = ((i * 37) % 94) + 3;
+            const delay = i * 0.12 + "s";
+            const duration = 3.6 + (i % 3) * 0.9 + "s";
             const emoji = emojis[i % emojis.length];
-            const size = (32 + (i % 4) * 12) + "px";
+            const size = 32 + (i % 4) * 12 + "px";
             return (
               <div
                 key={i}
@@ -92,7 +94,7 @@ export default function PartyMode() {
       )}
 
       <h1
-        className={`text-4xl md:text-6xl font-black text-center text-white drop-shadow-md mb-12 origin-center transition-all duration-300 ${
+        className={`text-6xl md:text-8xl font-black text-center text-white drop-shadow-md mb-12 origin-center transition-all duration-300 ${
           isPartying ? "animate-dance scale-110" : ""
         }`}
       >

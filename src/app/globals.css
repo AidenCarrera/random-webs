@@ -64,10 +64,10 @@ body {
 
 @keyframes float-up {
   0% {
-    transform: translateY(105vh) rotate(0deg) scale(0.7);
+    transform: translateY(96vh) rotate(0deg) scale(0.7);
     opacity: 0;
   }
-  10% {
+  2% {
     opacity: 0.95;
   }
   95% {
