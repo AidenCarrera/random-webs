@@ -1,8 +1,19 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Terminal, Maximize2, X, Minus } from "lucide-react";
-import { FILESYSTEM, ASCII_ART, JOKES, SYSTEM_INFO } from "./utils";
+import { Check, Settings, Terminal, Maximize2, X, Minus } from "lucide-react";
+import {
+  ADVICE,
+  ASCII_ART,
+  FILESYSTEM,
+  FORTUNES,
+  getVirtualCPU,
+  JOKES,
+  MATRIX_THEME,
+  SYSTEM_INFO,
+  TERMINAL_THEMES,
+  type TerminalTheme,
+} from "./utils";
 
 type FileSystemNode = {
   type: "file" | "dir";
@@ -38,7 +49,6 @@ interface ShellContext {
   setIsPanic: (val: boolean) => void;
   isSudoElevated: boolean;
   setIsSudoElevated: (val: boolean) => void;
-  executeCommand: (line: string) => Promise<CommandResult>;
   resolveAbsolutePath: (path: string) => string;
   getNodeByAbsolutePath: (
     absPath: string,
@@ -242,28 +252,49 @@ const expandHistory = (
 // Command definitions registry
 const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   help: () => {
-    const list = [
-      "OLO GNU/Linux Shell v2.0 - Core Commands",
-      "==========================================",
-      "help                  - Display this help information",
-      "ls [-l] [-a] [path]   - List files and directories",
-      "cd [path]             - Change current working directory",
-      "pwd                   - Print absolute working directory",
-      "mkdir [-p] [path]     - Make new directory",
-      "touch [path]          - Update timestamp or create empty file",
-      "cat [path...]         - Output file content",
-      "rm [-r] [-f] [--no-preserve-root] [path] - Delete file or folder",
-      "clear                 - Clear screen buffer",
-      "whoami                - Show current active user",
-      "joke                  - Read a developer joke",
-      "cowsay [text...]      - Speak through a cow bubble",
-      "ghostsay [text...]    - Speak through a ghost bubble",
-      "matrix                - Toggle Matrix digital rain theme",
-      "fetch / neofetch      - Fetch system/browser info card",
-      "sudo [cmd...]         - Execute command as superuser",
-      "",
-      "Supports operators: | (pipe), &&, ||, ;, variables, tab completion",
-    ];
+    const isSmallScreen =
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 640px)").matches;
+    const list = isSmallScreen
+      ? [
+          "OLO Shell - Try These",
+          "=====================",
+          "help        - Show this list",
+          "ls          - See files",
+          "cd docs     - Move around",
+          "cat file    - Read a file",
+          "clear       - Clean the screen",
+          "joke        - Tell a dev joke",
+          "advice      - Get a bit of guidance",
+          "fortune     - Get a tiny prophecy",
+          "cowsay hi   - Make it moo",
+          "matrix      - Toggle rain mode",
+          "fetch       - System card",
+        ]
+      : [
+          "OLO Shell v2.0 - Core Commands",
+          "================================",
+          "help                  - Display this help information",
+          "ls [-l] [-a] [path]   - List files and directories",
+          "cd [path]             - Change current working directory",
+          "pwd                   - Print absolute working directory",
+          "mkdir [-p] [path]     - Make new directory",
+          "touch [path]          - Update timestamp or create empty file",
+          "cat [path...]         - Output file content",
+          "rm [-r] [-f] [--no-preserve-root] [path] - Delete file or folder",
+          "clear                 - Clear screen buffer",
+          "whoami                - Show current active user",
+          "joke                  - Read a developer joke",
+          "advice                - Get a bit of guidance",
+          "fortune               - Get a tiny prophecy",
+          "cowsay [text...]      - Speak through a cow bubble",
+          "ghostsay [text...]    - Speak through a ghost bubble",
+          "matrix                - Toggle Matrix digital rain theme",
+          "fetch / neofetch      - Fetch system/browser info card",
+          "sudo [cmd...]         - Execute command as superuser",
+          "",
+          "Supports operators: | (pipe), &&, ||, ;, variables, tab completion",
+        ];
     return { stdout: list.join("\n"), stderr: "", exitCode: 0 };
   },
 
@@ -296,13 +327,12 @@ const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   uname: (args, flags) => {
     if (flags.a) {
       return {
-        stdout:
-          "FakeOS browser-simulation 5.15.0-fake-generic #1 SMP Jul 4 x86_64 GNU/Linux",
+        stdout: "OloOS browser-simulation 5.15.0-olo-generic #1 SMP Jul 4 x86_64 OloOS",
         stderr: "",
         exitCode: 0,
       };
     }
-    return { stdout: "Linux", stderr: "", exitCode: 0 };
+    return { stdout: "OloOS", stderr: "", exitCode: 0 };
   },
 
   export: (args, flags, ctx) => {
@@ -740,17 +770,12 @@ const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   },
 
   fortune: () => {
-    const fortunes = [
-      "You will soon build a magnificent Next.js application.",
-      "Simplify your design, find the zen in your code.",
-      "Do not seek to follow in the footsteps of the wise. Seek what they sought.",
-      "Error: Keyboard not found. Press F1 to continue.",
-      "There is a 100% chance of rain. Matrix code rain, that is.",
-      "A clean desk is a sign of a cluttered desk drawer.",
-      "Computers are good at following instructions, but not at reading your mind.",
-      "Your bugs are just unexpected features waiting to be discovered.",
-    ];
-    const item = fortunes[Math.floor(Math.random() * fortunes.length)];
+    const item = FORTUNES[Math.floor(Math.random() * FORTUNES.length)];
+    return { stdout: item, stderr: "", exitCode: 0 };
+  },
+
+  advice: () => {
+    const item = ADVICE[Math.floor(Math.random() * ADVICE.length)];
     return { stdout: item, stderr: "", exitCode: 0 };
   },
 
@@ -796,6 +821,10 @@ const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   },
 
   fetch: (args, flags, ctx) => {
+    const isMobilePortrait =
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 640px) and (orientation: portrait)")
+        .matches;
     const resolution =
       typeof window !== "undefined"
         ? `${window.innerWidth}x${window.innerHeight}`
@@ -839,13 +868,22 @@ const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       `Shell: Olo-Shell v2.0`,
       `Resolution: ${resolution}`,
       `Terminal: OloTerm (React Canvas)`,
-      `CPU: ${SYSTEM_INFO.cpu}`,
+      `CPU: ${getVirtualCPU()}`,
       `GPU: ${SYSTEM_INFO.gpu}`,
     ];
 
     const asciiLines = SYSTEM_INFO.ascii
       .split("\n")
       .filter((l) => l.trim() !== "");
+
+    if (isMobilePortrait) {
+      return {
+        stdout: [...asciiLines, "", ...info].join("\n"),
+        stderr: "",
+        exitCode: 0,
+      };
+    }
+
     const maxAsciiHeight = asciiLines.length;
     const maxInfoHeight = info.length;
     const maxHeight = Math.max(maxAsciiHeight, maxInfoHeight);
@@ -883,7 +921,7 @@ const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 export default function OloTerminal() {
   const loadTimeRef = useRef(Date.now());
   const [history, setHistory] = useState<string[]>([
-    "Welcome to Olo-Shell v2.0",
+    "Welcome to OloOS v2.0 browser terminal.",
     "Initializing OloOS environment...",
     "System loaded.",
     "Type 'help' for available commands.",
@@ -893,6 +931,11 @@ export default function OloTerminal() {
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [isMatrixMode, setIsMatrixMode] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [themeId, setThemeId] = useState("tokyo");
+  const [previewThemeId, setPreviewThemeId] = useState<string | null>(null);
+  const [customAccent, setCustomAccent] = useState("");
+  const [customBackground, setCustomBackground] = useState("");
   const [fs, setFs] = useState<Record<string, FileSystemNode>>(
     FILESYSTEM as unknown as Record<string, FileSystemNode>,
   );
@@ -905,9 +948,7 @@ export default function OloTerminal() {
   });
   const [isSudoElevated, setIsSudoElevated] = useState(false);
   const [passwordState, setPasswordState] = useState<{
-    active: boolean;
     command: string;
-    attempts: number;
   } | null>(null);
 
   // System States: Booting & Panic screen
@@ -936,17 +977,7 @@ export default function OloTerminal() {
 
   // Dynamic Browser environment CPU detection helper
   const getBrowserCPU = (): string => {
-    if (typeof navigator !== "undefined") {
-      const cores = navigator.hardwareConcurrency || 8;
-      const ua = navigator.userAgent.toLowerCase();
-      if (ua.includes("macintosh") || ua.includes("mac os")) {
-        return `Apple Silicon M-Series (${cores} Cores)`;
-      } else if (ua.includes("android") || ua.includes("iphone")) {
-        return `ARM Cortex CPU (${cores} Cores)`;
-      }
-      return `Intel Core i7-12700H / AMD Ryzen (${cores} Cores)`;
-    }
-    return "Intel Core i7-12700H @ 2.7GHz";
+    return getVirtualCPU();
   };
 
   // Dynamic Browser memory helper
@@ -964,7 +995,7 @@ export default function OloTerminal() {
     `CPU: ${getBrowserCPU()}`,
     `Memory Test: ${getBrowserMemory()} OK`,
     "Detecting storage devices... /dev/sda1 (50GB SSD) detected.",
-    "Loading kernel fake-linux-5.15.0-fake-generic... done.",
+    "Loading kernel olo-kernel-5.15.0-olo-generic... done.",
     "Mounting root filesystem (type ext4) on /dev/sda1...",
     "Initializing OloOS system services...",
     "[  OK  ] Started LVM Metadata Daemon.",
@@ -974,7 +1005,7 @@ export default function OloTerminal() {
     "[  OK  ] Reached target Multi-User System.",
     "[  OK  ] Started Olo Shell Environment.",
     "",
-    "Welcome to OloOS v2.0 GNU/Linux browser terminal!",
+    "Welcome to OloOS v2.0 browser terminal.",
     "Type 'help' to see available commands.",
     "",
   ];
@@ -1223,6 +1254,23 @@ export default function OloTerminal() {
     return `${currentUser}@olo:${cwd}${branchText}${symbol}`;
   };
 
+  const selectedTheme =
+    TERMINAL_THEMES.find((theme) => theme.id === themeId) ||
+    TERMINAL_THEMES[0];
+  const previewTheme =
+    TERMINAL_THEMES.find((theme) => theme.id === previewThemeId) || null;
+  const activeTheme = isMatrixMode
+    ? MATRIX_THEME
+    : previewTheme
+      ? previewTheme
+      : {
+          ...selectedTheme,
+          bg: customBackground || selectedTheme.bg,
+          panel: customBackground || selectedTheme.panel,
+          border: customAccent || selectedTheme.border,
+          text: customAccent || selectedTheme.text,
+        };
+
   // Executing pipeline logic chaining
   const executeChainedCommands = async (
     tokens: ChainedCommand[],
@@ -1248,7 +1296,6 @@ export default function OloTerminal() {
       setIsPanic,
       isSudoElevated,
       setIsSudoElevated,
-      executeCommand,
       resolveAbsolutePath,
       getNodeByAbsolutePath,
       getParentAndName,
@@ -1268,7 +1315,7 @@ export default function OloTerminal() {
         pipeInput = null;
       }
 
-      lastResult = await runContext.executeCommand(cmdToRun);
+      lastResult = await executeCommand(cmdToRun);
 
       if (token.operator === "|") {
         pipeInput = lastResult.stdout || lastResult.stderr;
@@ -1340,7 +1387,6 @@ export default function OloTerminal() {
       setIsPanic,
       isSudoElevated,
       setIsSudoElevated,
-      executeCommand,
       resolveAbsolutePath,
       getNodeByAbsolutePath,
       getParentAndName,
@@ -1429,6 +1475,64 @@ export default function OloTerminal() {
     }
 
     setHistory((prev) => [...prev, promptLine, ...outputLines]);
+  };
+
+  const submitCurrentInput = () => {
+    const lineToRun = input;
+    setInput("");
+    setHistoryIndex(-1);
+    inputRef.current?.focus();
+
+    if (!lineToRun.trim() && !passwordState) return;
+
+    if (passwordState) {
+      // Accept any sudo password and elevate
+      setHistory((prev) => [...prev, "[sudo] password for user: "]);
+
+      setIsSudoElevated(true);
+      setEnv((prev) => ({ ...prev, USER: "root" }));
+
+      const tokens = tokenizeCommandLine(passwordState.command);
+      executeChainedCommands(tokens, { isSudoElevated: true }).then((res) => {
+        printResultToHistory(passwordState.command, res);
+        setIsSudoElevated(false);
+        setEnv((prev) => ({ ...prev, USER: "user" }));
+      });
+      setPasswordState(null);
+      return;
+    }
+
+    // Expansions log check
+    const { expanded, error: expError } = expandHistory(
+      lineToRun,
+      commandHistory,
+    );
+    if (expError) {
+      setHistory((prev) => [
+        ...prev,
+        `${getPromptString()} ${lineToRun}`,
+        expError,
+      ]);
+      return;
+    }
+
+    setCommandHistory((prev) => [...prev, lineToRun]);
+
+    const tokens = tokenizeCommandLine(expanded);
+
+    executeChainedCommands(tokens).then((res) => {
+      // Intercept sudo request initiate password prompts
+      if (res.stdout.startsWith("INITIATE_PASSWORD_PROMPT:")) {
+        const targetCmd = res.stdout.replace("INITIATE_PASSWORD_PROMPT:", "");
+        setPasswordState({
+          command: targetCmd,
+        });
+        setHistory((prev) => [...prev, `${getPromptString()} ${lineToRun}`]);
+        return;
+      }
+
+      printResultToHistory(lineToRun, res);
+    });
   };
 
   // Tab completion
@@ -1536,62 +1640,7 @@ export default function OloTerminal() {
     }
 
     if (e.key === "Enter") {
-      const lineToRun = input;
-      setInput("");
-      setHistoryIndex(-1);
-
-      if (!lineToRun.trim() && !passwordState) return;
-
-      if (passwordState) {
-        // Accept any sudo password and elevate
-        setHistory((prev) => [...prev, "[sudo] password for user: "]);
-
-        setIsSudoElevated(true);
-        setEnv((prev) => ({ ...prev, USER: "root" }));
-
-        const tokens = tokenizeCommandLine(passwordState.command);
-        executeChainedCommands(tokens, { isSudoElevated: true }).then((res) => {
-          printResultToHistory(passwordState.command, res);
-          setIsSudoElevated(false);
-          setEnv((prev) => ({ ...prev, USER: "user" }));
-        });
-        setPasswordState(null);
-        return;
-      }
-
-      // Expansions log check
-      const { expanded, error: expError } = expandHistory(
-        lineToRun,
-        commandHistory,
-      );
-      if (expError) {
-        setHistory((prev) => [
-          ...prev,
-          `${getPromptString()} ${lineToRun}`,
-          expError,
-        ]);
-        return;
-      }
-
-      setCommandHistory((prev) => [...prev, lineToRun]);
-
-      const tokens = tokenizeCommandLine(expanded);
-
-      executeChainedCommands(tokens).then((res) => {
-        // Intercept sudo request initiate password prompts
-        if (res.stdout.startsWith("INITIATE_PASSWORD_PROMPT:")) {
-          const targetCmd = res.stdout.replace("INITIATE_PASSWORD_PROMPT:", "");
-          setPasswordState({
-            active: true,
-            command: targetCmd,
-            attempts: 0,
-          });
-          setHistory((prev) => [...prev, `${getPromptString()} ${lineToRun}`]);
-          return;
-        }
-
-        printResultToHistory(lineToRun, res);
-      });
+      submitCurrentInput();
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       if (commandHistory.length > 0) {
@@ -1687,9 +1736,13 @@ export default function OloTerminal() {
 
   return (
     <div
-      className={`min-h-screen p-4 font-mono transition-colors duration-500 flex items-center justify-center ${
-        isMatrixMode ? "bg-black text-[#00ff41]" : "bg-[#1a1b26] text-[#a9b1d6]"
-      }`}
+      className="min-h-screen p-4 font-mono flex items-center justify-center transition-[background-color,color] duration-200 ease-out"
+      style={
+        {
+          backgroundColor: activeTheme.bg,
+          color: activeTheme.text,
+        } as React.CSSProperties
+      }
     >
       {isMatrixMode && (
         <canvas
@@ -1699,11 +1752,12 @@ export default function OloTerminal() {
       )}
 
       <div
-        className={`relative z-10 w-full max-w-5xl border-2 overflow-hidden ${
-          isMatrixMode
-            ? "border-[#008f11]/60 bg-black shadow-[0_0_20px_rgba(0,143,17,0.25)]"
-            : "border-[#414868] bg-[#1a1b26] shadow-2xl"
-        } p-6 rounded-lg min-h-[80vh] flex flex-col`}
+        className="relative z-10 w-full max-w-5xl border-2 overflow-hidden p-6 rounded-lg min-h-[80vh] flex flex-col transition-[background-color,border-color,color,box-shadow] duration-200 ease-out"
+        style={{
+          backgroundColor: activeTheme.panel,
+          borderColor: `${activeTheme.border}99`,
+          boxShadow: activeTheme.shadow,
+        }}
       >
         {isMatrixMode && (
           <div className="absolute inset-0 pointer-events-none opacity-[0.06] z-50 bg-scanlines bg-size-[100%_4px]" />
@@ -1711,9 +1765,8 @@ export default function OloTerminal() {
 
         {/* Header / Window Controls */}
         <div
-          className={`mb-4 flex items-center justify-between border-b ${
-            isMatrixMode ? "border-[#008f11]/45" : "border-[#414868]"
-          } pb-2`}
+          className="mb-4 flex items-center justify-between border-b pb-2 transition-[border-color,color] duration-200 ease-out"
+          style={{ borderColor: `${activeTheme.border}73` }}
         >
           <div className="flex items-center gap-2">
             <Terminal className="h-5 w-5" />
@@ -1721,16 +1774,99 @@ export default function OloTerminal() {
               {isMatrixMode ? "@@@@@@@@@@" : "OLO_SHELL_V2.0"}
             </span>
           </div>
-          <div className="flex gap-2">
+          <div className="relative flex gap-2">
+            <button
+              type="button"
+              aria-label="Open settings"
+              title="Settings"
+              onClick={() => setSettingsOpen((open) => !open)}
+              className="opacity-60 hover:opacity-100 cursor-pointer"
+            >
+              <Settings className="h-4 w-4" />
+            </button>
             <Minus className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer" />
             <Maximize2 className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer" />
             <X className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer" />
+            {settingsOpen && (
+              <div
+                className="absolute right-0 top-7 z-60 w-56 rounded border p-3 text-xs shadow-xl transition-[background-color,border-color,color,box-shadow] duration-200 ease-out"
+                onMouseLeave={() => setPreviewThemeId(null)}
+                style={{
+                  backgroundColor: activeTheme.panel,
+                  borderColor: `${activeTheme.border}99`,
+                  boxShadow: activeTheme.shadow,
+                }}
+              >
+                <div className="mb-2 font-bold uppercase tracking-wider opacity-80">
+                  Settings
+                </div>
+                <div className="mb-3 grid grid-cols-3 gap-2">
+                  {TERMINAL_THEMES.map((theme) => (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      title={theme.name}
+                      onMouseEnter={() => setPreviewThemeId(theme.id)}
+                      onFocus={() => setPreviewThemeId(theme.id)}
+                      onBlur={() => setPreviewThemeId(null)}
+                      onClick={() => {
+                        setThemeId(theme.id);
+                        setPreviewThemeId(null);
+                        setCustomAccent("");
+                        setCustomBackground("");
+                        setSettingsOpen(false);
+                      }}
+                      className="flex h-9 items-center justify-center rounded border opacity-75 hover:opacity-100 transition-[background-color,border-color,color,opacity] duration-200 ease-out"
+                      style={{
+                        backgroundColor: theme.panel,
+                        borderColor: theme.border,
+                        color: theme.text,
+                      }}
+                    >
+                      {themeId === theme.id &&
+                      !customAccent &&
+                      !customBackground ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <span className="h-3 w-3 rounded-full border border-current" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <label className="mb-2 flex items-center justify-between gap-3">
+                  <span className="opacity-75">Accent</span>
+                  <input
+                    type="color"
+                    value={customAccent || selectedTheme.text}
+                    onFocus={() => setPreviewThemeId(null)}
+                    onChange={(event) => {
+                      setPreviewThemeId(null);
+                      setCustomAccent(event.target.value);
+                    }}
+                    className="h-7 w-10 cursor-pointer border-0 bg-transparent p-0"
+                  />
+                </label>
+                <label className="flex items-center justify-between gap-3">
+                  <span className="opacity-75">Background</span>
+                  <input
+                    type="color"
+                    value={customBackground || selectedTheme.bg}
+                    onFocus={() => setPreviewThemeId(null)}
+                    onChange={(event) => {
+                      setPreviewThemeId(null);
+                      setCustomBackground(event.target.value);
+                    }}
+                    className="h-7 w-10 cursor-pointer border-0 bg-transparent p-0"
+                  />
+                </label>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Terminal Output */}
         <div
-          className="flex-1 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-current scrollbar-track-transparent pr-2 font-bold"
+          className="flex-1 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-current scrollbar-track-transparent pr-2 font-bold transition-colors duration-200 ease-out"
           onClick={() => inputRef.current?.focus()}
         >
           {history.map((line, i) => {
@@ -1746,43 +1882,19 @@ export default function OloTerminal() {
               return (
                 <div
                   key={i}
-                  className="whitespace-pre-wrap break-all mb-1 leading-relaxed"
+                  className="whitespace-pre-wrap break-all mb-0.5 text-[13px] leading-tight transition-colors duration-200 ease-out sm:mb-1 sm:text-base sm:leading-relaxed"
                 >
-                  <span
-                    className={
-                      isMatrixMode ? "text-[#00ff41]" : "text-[#a9b1d6]"
-                    }
-                  >
-                    {host}
-                  </span>
-                  <span
-                    className={
-                      isMatrixMode ? "text-[#00ff41]" : "text-[#a9b1d6]"
-                    }
-                  >
-                    :
-                  </span>
-                  <span
-                    className={
-                      isMatrixMode ? "text-[#00ff41]" : "text-[#a9b1d6]"
-                    }
-                  >
-                    {path}
-                  </span>
-                  <span
-                    className={
-                      isMatrixMode ? "text-[#00ff41]" : "text-[#a9b1d6]"
-                    }
-                  >
-                    {rest}
-                  </span>
+                  <span style={{ color: activeTheme.text }}>{host}</span>
+                  <span style={{ color: activeTheme.text }}>:</span>
+                  <span style={{ color: activeTheme.text }}>{path}</span>
+                  <span style={{ color: activeTheme.text }}>{rest}</span>
                 </div>
               );
             }
             return (
               <div
                 key={i}
-                className="whitespace-pre-wrap break-all mb-1 leading-relaxed text-sm"
+                className="whitespace-pre-wrap break-all mb-0.5 text-[12px] leading-tight transition-colors duration-200 ease-out sm:mb-1 sm:text-sm sm:leading-relaxed"
               >
                 {line}
               </div>
@@ -1792,17 +1904,13 @@ export default function OloTerminal() {
         </div>
 
         {/* Input Area */}
-        <div className="flex items-center gap-2 text-lg font-bold">
+        <div className="flex flex-wrap items-center gap-1.5 text-[13px] font-bold leading-tight transition-colors duration-200 ease-out sm:gap-2 sm:text-lg sm:leading-normal">
           {passwordState ? (
-            <span
-              className={`${isMatrixMode ? "text-[#00ff41]" : "text-[#a9b1d6]"}`}
-            >
+            <span className="break-all" style={{ color: activeTheme.text }}>
               [sudo] password for user:
             </span>
           ) : (
-            <span
-              className={`${isMatrixMode ? "text-[#00ff41]" : "text-[#a9b1d6]"}`}
-            >
+            <span className="break-all" style={{ color: activeTheme.text }}>
               {getPromptString()}
             </span>
           )}
@@ -1812,13 +1920,22 @@ export default function OloTerminal() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className={`flex-1 bg-transparent border-none outline-none ${
-              isMatrixMode
-                ? "text-[#00ff41] placeholder-[#003300]"
-                : "text-[#a9b1d6] placeholder-[#565f89]"
-            } ${passwordState ? "text-transparent caret-transparent" : ""}`}
+            className={`olo-shell-input min-w-0 flex-1 bg-transparent border-none text-base outline-none sm:text-lg ${
+              passwordState ? "text-transparent caret-transparent" : ""
+            } transition-colors duration-200 ease-out`}
+            style={
+              passwordState
+                ? undefined
+                : ({
+                    color: activeTheme.text,
+                    caretColor: activeTheme.text,
+                  } as React.CSSProperties)
+            }
             autoFocus
             autoComplete="off"
+            enterKeyHint="send"
+            inputMode="text"
+            placeholder=""
             spellCheck="false"
           />
         </div>
