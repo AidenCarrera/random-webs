@@ -306,6 +306,10 @@ const GRADIENTS = {
 
 const emojiCache = new Map<string, HTMLCanvasElement>();
 
+const MAX_INTENSITY = 3;
+const DEFAULT_INTENSITY_PERCENT = 15;
+const HOLD_TO_MIX_DELAY_MS = 325;
+
 const getEmojiCanvas = (emoji: string): HTMLCanvasElement | null => {
   let cached = emojiCache.get(emoji);
   if (!cached) {
@@ -342,13 +346,34 @@ const CategoryButtons = memo(function CategoryButtons({
   selectedCategories,
   isAllSelected,
   accentColor,
-  onCategoryClick,
+  onCategoryPress,
 }: {
   selectedCategories: string[];
   isAllSelected: boolean;
   accentColor: string;
-  onCategoryClick: (key: string, isShiftKey: boolean) => void;
+  onCategoryPress: (key: string, shouldMix: boolean) => void;
 }) {
+  const holdTimersRef = useRef<Record<string, number | undefined>>({});
+  const longPressStateRef = useRef<Record<string, boolean>>({});
+
+  const clearHoldTimer = (key: string) => {
+    const timerId = holdTimersRef.current[key];
+    if (timerId !== undefined) {
+      window.clearTimeout(timerId);
+      delete holdTimersRef.current[key];
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      Object.values(holdTimersRef.current).forEach((timerId) => {
+        if (timerId !== undefined) {
+          window.clearTimeout(timerId);
+        }
+      });
+    };
+  }, []);
+
   return (
     <div className="flex flex-wrap justify-center gap-2.5 shrink-0">
       {CATEGORY_KEYS.map((key) => {
@@ -357,11 +382,32 @@ const CategoryButtons = memo(function CategoryButtons({
           isSelected && isAllSelected
             ? "animate-button-glow border-transparent"
             : "";
+        const startHold = () => {
+          clearHoldTimer(key);
+          longPressStateRef.current[key] = false;
+          holdTimersRef.current[key] = window.setTimeout(() => {
+            longPressStateRef.current[key] = true;
+            onCategoryPress(key, true);
+          }, HOLD_TO_MIX_DELAY_MS);
+        };
+
         return (
           <button
             key={key}
-            onClick={(e) => onCategoryClick(key, e.shiftKey)}
-            className={`px-4 py-2 rounded-full capitalize font-bold text-sm transition-all whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95 select-none ${
+            onPointerDown={startHold}
+            onPointerUp={() => clearHoldTimer(key)}
+            onPointerLeave={() => clearHoldTimer(key)}
+            onPointerCancel={() => clearHoldTimer(key)}
+            onClick={(e) => {
+              clearHoldTimer(key);
+              if (longPressStateRef.current[key]) {
+                longPressStateRef.current[key] = false;
+                e.preventDefault();
+                return;
+              }
+              onCategoryPress(key, e.shiftKey);
+            }}
+            className={`px-3.5 py-2 rounded-full capitalize font-bold text-xs sm:text-sm transition-all whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95 select-none touch-manipulation ${
               isSelected
                 ? `text-white shadow-lg ${buttonGlowClass}`
                 : "bg-slate-100 text-slate-500 hover:bg-slate-200"
@@ -463,9 +509,12 @@ export default function EmojiRain() {
     "money",
   ]);
   const [mode, setMode] = useState<keyof typeof EMOJIS>("money");
-
-  const [intensity, setIntensity] = useState(0.2);
+  const [isControlsMinimized, setIsControlsMinimized] = useState(false);
+  const [intensityPercent, setIntensityPercent] = useState(
+    DEFAULT_INTENSITY_PERCENT,
+  );
   const [speedMultiplier, setSpeedMultiplier] = useState(1.0);
+  const intensity = (intensityPercent / 100) * MAX_INTENSITY;
 
   // Refs for animation loop
   const intensityRef = useRef(intensity);
@@ -485,6 +534,19 @@ export default function EmojiRain() {
       .filter((arr) => arr && arr.length > 0);
     activePoolRef.current = pool.length > 0 ? pool : [["✨"]];
   }, [selectedCategories]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(max-width: 640px)");
+    const syncMinimizedState = (event?: MediaQueryList | MediaQueryListEvent) => {
+      setIsControlsMinimized(event?.matches ?? mediaQuery.matches);
+    };
+
+    syncMinimizedState(mediaQuery);
+    mediaQuery.addEventListener("change", syncMinimizedState);
+
+    return () => mediaQuery.removeEventListener("change", syncMinimizedState);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -599,9 +661,9 @@ export default function EmojiRain() {
   // Stable across renders (functional updates avoid needing selectedCategories
   // / mode in the dependency array), so memoized children that receive this
   // as a prop never re-render just because this callback got recreated.
-  const handleCategoryClick = useCallback(
-    (key: string, isShiftKey: boolean) => {
-      if (isShiftKey) {
+  const handleCategoryPress = useCallback(
+    (key: string, shouldMix: boolean) => {
+      if (shouldMix) {
         setSelectedCategories((prev) => {
           if (prev.includes(key)) {
             if (prev.length <= 1) return prev;
@@ -634,15 +696,14 @@ export default function EmojiRain() {
     return "a custom mix";
   };
 
-  const percentage = ((intensity - 0.05) / (5.0 - 0.05)) * 100;
   const speedPercentage = ((speedMultiplier - 0.1) / (2.0 - 0.1)) * 100;
   const gradientInfo = GRADIENTS[mode] || GRADIENTS.money;
 
   const bgOpacity = isAllSelected
-    ? Math.min(0.25 + (intensity / 5.0) * 0.45, 0.9)
+    ? Math.min(0.25 + (intensity / MAX_INTENSITY) * 0.45, 0.9)
     : gradientInfo.isDark
-      ? Math.min(0.6 + (intensity / 5.0) * 0.38, 0.98)
-      : Math.min(0.04 + (intensity / 5.0) * 0.76, 0.8);
+      ? Math.min(0.6 + (intensity / MAX_INTENSITY) * 0.38, 0.98)
+      : Math.min(0.04 + (intensity / MAX_INTENSITY) * 0.76, 0.8);
 
   return (
     <div
@@ -694,64 +755,85 @@ export default function EmojiRain() {
       />
 
       {/* Control Card Overlay */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-white/85 backdrop-blur-md p-6 rounded-3xl shadow-xl flex flex-col gap-5 max-w-2xl w-[90%] max-h-[48vh] z-20 overflow-y-auto border border-slate-200/50">
-        {/* Sliders Container */}
-        <div className="flex flex-col gap-4 border-b border-slate-200/60 pb-5 shrink-0">
-          {/* Intensity Slider */}
-          <div className="w-full flex flex-col gap-1.5">
-            <div className="flex justify-between text-xs font-bold text-slate-600">
-              <span>Rain Intensity</span>
-              <span>{intensity.toFixed(2)}</span>
+      <div className="absolute bottom-4 left-1/2 z-20 flex w-[min(92vw,42rem)] -translate-x-1/2 flex-col rounded-[1.75rem] border border-slate-200/50 bg-white/85 p-3 shadow-xl backdrop-blur-md sm:bottom-6 sm:p-4 md:bottom-10 md:w-[90%] md:max-w-2xl md:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+              Emoji Rain
             </div>
-            <input
-              type="range"
-              min="0.05"
-              max="5.0"
-              step="0.05"
-              value={intensity}
-              onChange={(e) => setIntensity(parseFloat(e.target.value))}
-              className="custom-slider cursor-pointer"
-              style={{
-                background: isAllSelected
-                  ? `linear-gradient(to right, #ff3366, #ff9933, #ffff33, #33cc66, #3399ff, #9933ff)`
-                  : `linear-gradient(to right, ${gradientInfo.accent} 0%, ${gradientInfo.accent} ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`,
-              }}
-            />
-          </div>
-
-          {/* Speed Slider */}
-          <div className="w-full flex flex-col gap-1.5">
-            <div className="flex justify-between text-xs font-bold text-slate-600">
-              <span>Falling Speed</span>
-              <span>{Math.round(speedMultiplier * 100)}%</span>
+            <div className="text-sm font-semibold text-slate-700 sm:text-base">
+              Controls
             </div>
-            <input
-              type="range"
-              min="0.1"
-              max="2.0"
-              step="0.1"
-              value={speedMultiplier}
-              onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
-              className="custom-slider cursor-pointer"
-              style={{
-                background: isAllSelected
-                  ? `linear-gradient(to right, #ff3366, #ff9933, #ffff33, #33cc66, #3399ff, #9933ff)`
-                  : `linear-gradient(to right, ${gradientInfo.accent} 0%, ${gradientInfo.accent} ${speedPercentage}%, #e2e8f0 ${speedPercentage}%, #e2e8f0 100%)`,
-              }}
-            />
           </div>
+          <button
+            type="button"
+            onClick={() => setIsControlsMinimized((prev) => !prev)}
+            className="rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-slate-600 transition hover:bg-white"
+          >
+            {isControlsMinimized ? "Open" : "Minimize"}
+          </button>
         </div>
 
-        <CategoryButtons
-          selectedCategories={selectedCategories}
-          isAllSelected={isAllSelected}
-          accentColor={gradientInfo.accent}
-          onCategoryClick={handleCategoryClick}
-        />
+        {!isControlsMinimized && (
+          <>
+            <div className="mt-4 flex max-h-[50vh] flex-col gap-4 overflow-y-auto pr-1 sm:gap-5">
+              <div className="flex flex-col gap-4 border-b border-slate-200/60 pb-4 shrink-0 sm:pb-5">
+                <div className="w-full flex flex-col gap-1.5">
+                  <div className="flex justify-between text-xs font-bold text-slate-600">
+                    <span>Rain Intensity</span>
+                    <span>{intensityPercent}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={intensityPercent}
+                    onChange={(e) => setIntensityPercent(parseInt(e.target.value, 10))}
+                    className="custom-slider cursor-pointer"
+                    style={{
+                      background: isAllSelected
+                        ? `linear-gradient(to right, #ff3366, #ff9933, #ffff33, #33cc66, #3399ff, #9933ff)`
+                        : `linear-gradient(to right, ${gradientInfo.accent} 0%, ${gradientInfo.accent} ${intensityPercent}%, #e2e8f0 ${intensityPercent}%, #e2e8f0 100%)`,
+                    }}
+                  />
+                </div>
 
-        <div className="text-center text-[11px] font-medium text-slate-400 select-none shrink-0">
-          💡 Shift-click categories to mix them together!
-        </div>
+                <div className="w-full flex flex-col gap-1.5">
+                  <div className="flex justify-between text-xs font-bold text-slate-600">
+                    <span>Falling Speed</span>
+                    <span>{Math.round(speedMultiplier * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="2.0"
+                    step="0.1"
+                    value={speedMultiplier}
+                    onChange={(e) => setSpeedMultiplier(parseFloat(e.target.value))}
+                    className="custom-slider cursor-pointer"
+                    style={{
+                      background: isAllSelected
+                        ? `linear-gradient(to right, #ff3366, #ff9933, #ffff33, #33cc66, #3399ff, #9933ff)`
+                        : `linear-gradient(to right, ${gradientInfo.accent} 0%, ${gradientInfo.accent} ${speedPercentage}%, #e2e8f0 ${speedPercentage}%, #e2e8f0 100%)`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <CategoryButtons
+                selectedCategories={selectedCategories}
+                isAllSelected={isAllSelected}
+                accentColor={gradientInfo.accent}
+                onCategoryPress={handleCategoryPress}
+              />
+
+              <div className="text-center text-[11px] font-medium text-slate-400 select-none shrink-0">
+                💡 Press and hold to mix categories.
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <HeaderTitle
