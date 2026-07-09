@@ -234,7 +234,7 @@ export default function SolarSystem() {
   const [showMoons, setShowMoons] = useState(true);
   const [enableGlow, setEnableGlow] = useState(true);
   const [bgTheme, setBgTheme] = useState<"stars" | "stars_milky_way">("stars");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Export Modal state
   const [exportImage, setExportImage] = useState<string | null>(null);
@@ -258,6 +258,7 @@ export default function SolarSystem() {
 
   // Scaler state for responsive fitting
   const [containerScale, setContainerScale] = useState(1);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
 
   // Refs for animation loop updates (to prevent loop resets)
   const exportStageRef = useRef<HTMLDivElement>(null);
@@ -285,13 +286,21 @@ export default function SolarSystem() {
     const handleResize = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
+      const isMobile = w < 768;
+      setIsMobileViewport(isMobile);
+
+      if (isMobile) {
+        const scaleX = (w - 12) / 760;
+        const scaleY = (h - 260) / 760;
+        const scale = Math.min(scaleX, scaleY);
+        setContainerScale(Math.min(0.62, Math.max(0.42, scale)));
+        return;
+      }
+
       // We target fitting the 900px wide system orbits
       const scaleX = (w - (w < 1024 ? 40 : 380)) / 920;
       const scaleY = (h - 160) / 920;
       let scale = Math.min(scaleX, scaleY);
-      if (w < 640) {
-        scale = (w - 20) / 900;
-      }
       setContainerScale(Math.min(1.2, Math.max(0.25, scale)));
     };
 
@@ -299,6 +308,10 @@ export default function SolarSystem() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    setSidebarOpen(!isMobileViewport);
+  }, [isMobileViewport]);
 
   // Frame animation loop
   useEffect(() => {
@@ -802,7 +815,7 @@ export default function SolarSystem() {
       : "rgba(253,184,19,0.15)";
 
   return (
-    <div className="min-h-screen text-white font-sans overflow-hidden flex items-center justify-center relative select-none">
+    <div className="min-h-screen text-white font-sans relative select-none overflow-x-hidden overflow-y-auto md:overflow-hidden flex flex-col items-center md:justify-center px-3 pt-4 pb-6 md:px-0 md:pt-0 md:pb-0">
       {/* Texture Spin Keyframe styles */}
       <style>{`
         @keyframes rotate-texture {
@@ -844,7 +857,7 @@ export default function SolarSystem() {
       <div className="absolute inset-0 bg-black/40 -z-10" />
 
       {/* Header Title */}
-      <div className="absolute top-6 left-6 z-40 pointer-events-none">
+      <div className="relative z-40 w-full max-w-sm self-start px-1 pb-3 pointer-events-none md:absolute md:top-6 md:left-6 md:w-auto md:max-w-none md:px-0 md:pb-0">
         <h1 className="text-3xl font-extralight tracking-[0.2em] uppercase text-white/95 leading-none">
           Solar System Creator
         </h1>
@@ -855,8 +868,8 @@ export default function SolarSystem() {
 
       {/* Collapsible Settings & Creator Panel */}
       <div
-        className={`absolute top-1/2 left-6 -translate-y-1/2 z-40 w-80 bg-black/50 backdrop-blur-xl border border-white/10 p-5 rounded-2xl flex flex-col shadow-[0_15px_40px_rgba(0,0,0,0.6)] transition-all duration-300 ${
-          sidebarOpen ? "max-h-[80vh]" : "max-h-13.5 overflow-hidden"
+        className={`order-2 relative z-40 mb-4 w-full max-w-sm self-stretch bg-black/50 backdrop-blur-xl border border-white/10 p-5 rounded-2xl flex flex-col shadow-[0_15px_40px_rgba(0,0,0,0.6)] transition-all duration-300 md:absolute md:top-1/2 md:left-6 md:mb-0 md:w-80 md:max-w-none md:-translate-y-1/2 ${
+          sidebarOpen ? "max-h-[70vh] md:max-h-[80vh]" : "max-h-13.5 overflow-hidden"
         }`}
       >
         {/* Clickable Header Area */}
@@ -877,7 +890,7 @@ export default function SolarSystem() {
         </div>
 
         {sidebarOpen && (
-          <div className="flex flex-col gap-6 mt-5 animate-in fade-in duration-300 overflow-y-auto custom-scrollbar pr-1 max-h-[calc(80vh-80px)]">
+          <div className="flex flex-col gap-6 mt-5 animate-in fade-in duration-300 overflow-y-auto custom-scrollbar pr-1 max-h-[calc(70vh-80px)] md:max-h-[calc(80vh-80px)]">
             {/* Preset Selector */}
             <div>
               <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-white/60 mb-3 border-b border-white/5 pb-1">
@@ -1271,28 +1284,29 @@ export default function SolarSystem() {
         )}
       </div>
       {/* Orbit Canvas System Viewport */}
-      <div
-        ref={exportStageRef}
-        data-export-stage="true"
-        className="relative shrink-0 overflow-hidden"
-        style={{
-          width: "900px",
-          height: "900px",
-          transform: `scale(${containerScale})`,
-          transformOrigin: "center center",
-        }}
-      >
+      <div className="order-5 relative z-10 flex w-full justify-center overflow-hidden px-1 pt-2 md:block md:w-auto md:overflow-visible md:px-0 md:pt-0">
         <div
-          className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+          ref={exportStageRef}
+          data-export-stage="true"
+          className="relative shrink-0 overflow-hidden"
           style={{
-            backgroundImage: `url(${TEXTURE_MAP[bgTheme]})`,
+            width: "900px",
+            height: "900px",
+            transform: `scale(${containerScale})`,
+            transformOrigin: isMobileViewport ? "center top" : "center center",
           }}
-        />
-        <div className="absolute inset-0 bg-black/40" />
-        <div
-          ref={systemViewportRef}
-          className="relative flex h-full w-full items-center justify-center transition-transform duration-300"
         >
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+            style={{
+              backgroundImage: `url(${TEXTURE_MAP[bgTheme]})`,
+            }}
+          />
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            ref={systemViewportRef}
+            className="relative flex h-full w-full items-center justify-center transition-transform duration-300"
+          >
           {/* Stellar Core: The Sun */}
           <div
             data-texture-url={TEXTURE_MAP.sun}
@@ -1455,12 +1469,13 @@ export default function SolarSystem() {
               </div>
             </div>
           ))}
+          </div>
         </div>
       </div>
 
       {/* Right Control & Live Planet Editor Overlay */}
       {selectedPlanet && (
-        <div className="absolute top-1/2 right-6 -translate-y-1/2 z-40 w-80 max-h-[80vh] overflow-y-auto custom-scrollbar bg-black/60 backdrop-blur-xl border border-white/10 p-6 text-left shadow-[0_15px_40px_rgba(0,0,0,0.7)] rounded-2xl animate-in slide-in-from-right-10 fade-in duration-300">
+        <div className="order-3 relative z-40 -mt-1 mb-4 w-full max-w-sm self-stretch overflow-y-auto custom-scrollbar bg-black/60 backdrop-blur-xl border border-white/10 p-6 text-left shadow-[0_15px_40px_rgba(0,0,0,0.7)] rounded-2xl animate-in fade-in duration-300 md:absolute md:top-1/2 md:right-6 md:mb-0 md:mt-0 md:w-80 md:max-w-none md:max-h-[80vh] md:-translate-y-1/2 md:slide-in-from-right-10">
           {/* Close Panel Button */}
           <button
             onClick={() => setSelectedPlanet(null)}
@@ -1714,7 +1729,7 @@ export default function SolarSystem() {
       )}
 
       {/* Bottom Timeline Controls */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-5 bg-black/50 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <div className="order-4 relative z-40 -mt-1 mb-4 flex max-w-full flex-wrap items-center justify-center gap-4 rounded-[1.75rem] border border-white/10 bg-black/50 px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md md:absolute md:bottom-6 md:left-1/2 md:mb-0 md:mt-0 md:-translate-x-1/2 md:flex-nowrap md:gap-5 md:rounded-full md:px-6">
         <button
           onClick={togglePause}
           className="p-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-all hover:scale-105 group cursor-pointer"
@@ -1746,7 +1761,7 @@ export default function SolarSystem() {
       </div>
 
       {/* Attribution footer */}
-      <div className="absolute bottom-4 right-4 z-40 font-mono text-[9px] text-white/25 hover:text-white/50 transition-colors pointer-events-auto">
+      <div className="order-6 mt-4 text-center font-mono text-[9px] text-white/25 transition-colors pointer-events-auto md:absolute md:bottom-4 md:right-4 md:mt-0 md:text-left hover:text-white/50">
         Planet texture maps by{" "}
         <a
           href="https://www.solarsystemscope.com/textures/"
