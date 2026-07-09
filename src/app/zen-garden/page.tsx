@@ -19,8 +19,11 @@ import {
   Smile,
   Check,
   Music,
+  Camera,
 } from "lucide-react";
 import Link from "next/link";
+import { ExportPreviewModal } from "@/components/ExportPreviewModal";
+
 
 // -------------------------------------------------------------
 // TYPES
@@ -220,6 +223,28 @@ const generateDefaultStrokes = (): Stroke[] => {
     });
   }
   return strokes;
+};
+
+const blendColors = (c1: string, c2: string, ratio: number) => {
+  // Simple hex blend helper
+  if (!c1.startsWith("#")) return c1;
+  const r1 = parseInt(c1.substring(1, 3), 16);
+  const g1 = parseInt(c1.substring(3, 5), 16);
+  const b1 = parseInt(c1.substring(5, 7), 16);
+
+  const r2 = parseInt(c2.substring(1, 3), 16);
+  const g2 = parseInt(c2.substring(3, 5), 16);
+  const b2 = parseInt(c2.substring(5, 7), 16);
+
+  const r = Math.round(r1 * (1 - ratio) + r2 * ratio);
+  const g = Math.round(g1 * (1 - ratio) + g2 * ratio);
+  const b = Math.round(b1 * (1 - ratio) + b2 * ratio);
+
+  const rs = r.toString(16).padStart(2, "0");
+  const gs = g.toString(16).padStart(2, "0");
+  const bs = b.toString(16).padStart(2, "0");
+
+  return `#${rs}${gs}${bs}`;
 };
 
 // -------------------------------------------------------------
@@ -450,6 +475,12 @@ export default function ZenGarden() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
+  // Image download preview states
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewFileName, setPreviewFileName] = useState<string>("");
+  const [isTouchDevice, setIsTouchDevice] = useState<boolean>(false);
+  const [shareUrl, setShareUrl] = useState<string>("");
+
   // Configuration
   const [activeTab, setActiveTab] = useState<string>("flora");
   const [selectedEmoji, setSelectedEmoji] = useState<string>("🌱");
@@ -489,6 +520,16 @@ export default function ZenGarden() {
   const audioRef = useRef<ZenAudio | null>(null);
 
   const activeTheme = THEMES.find((t) => t.id === selectedTheme) || THEMES[0];
+
+  const getActiveBgColor = () => {
+    let bg = activeTheme.bg;
+    if (atmosphere === "dusk") {
+      bg = blendColors(bg, "#f97316", 0.15);
+    } else if (atmosphere === "night") {
+      bg = blendColors(bg, "#1e1b4b", 0.35);
+    }
+    return bg;
+  };
 
   // Initialize Audio
   useEffect(() => {
@@ -544,6 +585,13 @@ export default function ZenGarden() {
     };
     setHistory([initialEntry]);
     setHistoryIndex(0);
+
+    if (typeof window !== "undefined") {
+      const isMobilePointer =
+        window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+      setIsTouchDevice(isMobilePointer);
+      setShareUrl(window.location.href);
+    }
   }, []);
 
   // Canvas resize and render listener
@@ -634,28 +682,6 @@ export default function ZenGarden() {
     ripples.forEach((ripple) => {
       drawRipple(ctx, ripple, width, height, shadow, highlight, groove);
     });
-  };
-
-  const blendColors = (c1: string, c2: string, ratio: number) => {
-    // Simple hex blend helper
-    if (!c1.startsWith("#")) return c1;
-    const r1 = parseInt(c1.substring(1, 3), 16);
-    const g1 = parseInt(c1.substring(3, 5), 16);
-    const b1 = parseInt(c1.substring(5, 7), 16);
-
-    const r2 = parseInt(c2.substring(1, 3), 16);
-    const g2 = parseInt(c2.substring(3, 5), 16);
-    const b2 = parseInt(c2.substring(5, 7), 16);
-
-    const r = Math.round(r1 * (1 - ratio) + r2 * ratio);
-    const g = Math.round(g1 * (1 - ratio) + g2 * ratio);
-    const b = Math.round(b1 * (1 - ratio) + b2 * ratio);
-
-    const rs = r.toString(16).padStart(2, "0");
-    const gs = g.toString(16).padStart(2, "0");
-    const bs = b.toString(16).padStart(2, "0");
-
-    return `#${rs}${gs}${bs}`;
   };
 
   const drawSandGrain = (
@@ -993,6 +1019,10 @@ export default function ZenGarden() {
     const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
 
     if (draggingPlantId) {
+      if (e.buttons !== 1) {
+        handleContainerMouseUp();
+        return;
+      }
       setPlants((prev) =>
         prev.map((p) => (p.id === draggingPlantId ? { ...p, x, y } : p)),
       );
@@ -1000,11 +1030,19 @@ export default function ZenGarden() {
     }
 
     if (isShoveling) {
+      if (e.buttons !== 1) {
+        handleContainerMouseUp();
+        return;
+      }
       shovelEmojiAt(x, y);
       return;
     }
 
     if (currentStroke) {
+      if (e.buttons !== 1) {
+        handleContainerMouseUp();
+        return;
+      }
       const lastPoint = currentStroke.points[currentStroke.points.length - 1];
       const dx = x - lastPoint.x;
       const dy = y - lastPoint.y;
@@ -1316,7 +1354,20 @@ export default function ZenGarden() {
     }, 2500);
   };
 
-  // Export base64 hash of layout
+  // Helper to convert data URL to Blob for touch saving/sharing
+  const dataURLtoBlob = (dataurl: string) => {
+    const arr = dataurl.split(",");
+    const mime = arr[0].match(/:(.*?);/)?.[1] || "image/png";
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  };
+
+  // Export base64 hash of layout to a text file
   const exportLayout = () => {
     try {
       const data = {
@@ -1327,17 +1378,25 @@ export default function ZenGarden() {
         atmosphere,
       };
       const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-      navigator.clipboard.writeText(b64);
-      showToast("Layout code copied to clipboard!");
+      
+      const element = document.createElement("a");
+      const file = new Blob([b64], { type: "text/plain;charset=utf-8" });
+      element.href = URL.createObjectURL(file);
+      element.download = "zen-garden-layout.txt";
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+      
+      showToast("Layout text file downloaded!");
     } catch (e) {
       showToast("Failed to export garden.");
     }
   };
 
-  // Import base64 hash of layout
-  const importLayout = () => {
+  // Shared import layout function
+  const importLayoutFromString = (code: string) => {
     try {
-      const decoded = decodeURIComponent(escape(atob(importString.trim())));
+      const decoded = decodeURIComponent(escape(atob(code.trim())));
       const data = JSON.parse(decoded);
 
       const parsedPlants = (data.plants || []).map((p: any) => ({
@@ -1361,14 +1420,68 @@ export default function ZenGarden() {
       setImportString("");
       showToast("Garden loaded successfully!");
     } catch (e) {
-      showToast("Invalid code. Please try again.");
+      showToast("Invalid code or file format.");
     }
+  };
+
+  // Import base64 hash of layout
+  const importLayout = () => {
+    importLayoutFromString(importString);
+  };
+
+  // Download Zen Garden as Image
+  const downloadGardenAsImage = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Draw the canvas elements first (background, sand, rakes, ripples)
+    drawCanvas();
+
+    // Draw emojis on the canvas temporarily
+    plants.forEach((plant) => {
+      const px = plant.x * width;
+      const py = plant.y * height;
+
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate((plant.rotation * Math.PI) / 180);
+
+      const baseFontSize = 56;
+      const finalFontSize = baseFontSize * plant.scale * dpr;
+
+      ctx.font = `${finalFontSize}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      ctx.fillText(plant.type, 0, 0);
+      ctx.restore();
+    });
+
+    try {
+      const dataUrl = canvas.toDataURL("image/png");
+      const filename = `my-zen-garden-${Date.now()}.png`;
+      setPreviewFileName(filename);
+      setPreviewImage(dataUrl);
+      showToast("Preparing image preview...");
+    } catch (err) {
+      console.error("Failed to export image:", err);
+      showToast("Failed to prepare image preview.");
+    }
+
+    // Immediately restore the clean canvas state without emojis drawn on it
+    drawCanvas();
   };
 
   return (
     <div
-      className={`min-h-screen ${activeTheme.textColor} select-none relative overflow-hidden transition-colors duration-1000 bg-zinc-950 font-sans`}
-      style={{ touchAction: "none" }}
+      className={`min-h-screen ${activeTheme.textColor} select-none relative overflow-hidden transition-colors duration-1000 font-sans`}
+      style={{ touchAction: "none", backgroundColor: getActiveBgColor() }}
     >
       <style>{`
         .zen-slider {
@@ -1427,7 +1540,6 @@ export default function ZenGarden() {
         ref={containerRef}
         onMouseMove={handleContainerMouseMove}
         onMouseUp={handleContainerMouseUp}
-        onMouseLeave={handleContainerMouseUp}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleContainerMouseUp}
         className="absolute inset-0 z-0 cursor-crosshair overflow-hidden"
@@ -1536,9 +1648,9 @@ export default function ZenGarden() {
       {/* -------------------------------------------------------------
           TOP LEFT TITLE AREA
           ------------------------------------------------------------- */}
-      <div className="absolute top-10 left-10 z-30 pointer-events-none">
+      <div className="absolute top-3 left-4 sm:top-10 sm:left-10 z-30 pointer-events-none">
         <h1
-          className={`text-4xl font-light tracking-wide font-serif transition-colors duration-1000 pointer-events-none ${
+          className={`text-lg sm:text-4xl font-light tracking-wide font-serif transition-colors duration-1000 pointer-events-none ${
             activeTheme.id === "moss" || activeTheme.id === "obsidian"
               ? "text-emerald-50 dark:text-emerald-100 drop-shadow-sm"
               : "text-green-900"
@@ -1547,7 +1659,7 @@ export default function ZenGarden() {
           The Zen Garden
         </h1>
         <p
-          className={`mt-2 transition-colors duration-1000 pointer-events-none ${
+          className={`hidden md:block mt-2 transition-colors duration-1000 pointer-events-none ${
             activeTheme.id === "moss" || activeTheme.id === "obsidian"
               ? "text-emerald-100/70 dark:text-emerald-200/60"
               : "text-green-700/60 opacity-60"
@@ -1560,13 +1672,13 @@ export default function ZenGarden() {
       {/* -------------------------------------------------------------
           TOP BAR CONTROLS
           ------------------------------------------------------------- */}
-      <header className="absolute top-0 inset-x-0 p-4 flex justify-end items-center z-30 gap-4 pointer-events-none">
+      <header className="absolute top-3 right-4 sm:top-0 sm:inset-x-0 sm:p-4 flex justify-end items-center z-30 gap-4 pointer-events-none">
         {/* Quick Toolbar */}
-        <div className="flex items-center gap-2 bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md p-1.5 rounded-2xl border border-emerald-200/60 dark:border-emerald-700/60 shadow-lg pointer-events-auto">
+        <div className="flex items-center gap-1 sm:gap-2 bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-emerald-200/60 dark:border-emerald-700/60 shadow-lg pointer-events-auto">
           {/* Sound toggle */}
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className={`p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95 ${
+            className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl transition-all hover:scale-105 active:scale-95 ${
               soundEnabled
                 ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-inner"
                 : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
@@ -1574,61 +1686,75 @@ export default function ZenGarden() {
             title={soundEnabled ? "Mute chimes" : "Enable ambient wind chimes"}
           >
             {soundEnabled ? (
-              <Volume2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
             ) : (
-              <VolumeX className="w-5 h-5 text-emerald-700 dark:text-emerald-300" />
+              <VolumeX className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-700 dark:text-emerald-300" />
             )}
+          </button>
+
+          {/* Download image shortcut */}
+          <button
+            onClick={downloadGardenAsImage}
+            className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 transition-all hover:scale-105 active:scale-95"
+            title="Download Garden as Image"
+          >
+            <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           {/* History control */}
           <button
             onClick={triggerUndo}
             disabled={historyIndex <= 0}
-            className="p-2.5 rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
+            className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
             title="Undo"
           >
-            <Undo className="w-5 h-5" />
+            <Undo className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           <button
             onClick={triggerRedo}
             disabled={historyIndex >= history.length - 1}
-            className="p-2.5 rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
+            className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
             title="Redo"
           >
-            <Redo className="w-5 h-5" />
+            <Redo className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
-          <span className="w-px h-6 bg-emerald-200/60 dark:bg-emerald-700/60 mx-1" />
+          <span className="w-px h-4 sm:h-6 bg-emerald-200/60 dark:bg-emerald-700/60 mx-0.5 sm:mx-1" />
 
           {/* Settings panel toggle */}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={`p-2.5 rounded-xl transition-all hover:scale-105 active:scale-95 ${
+            className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl transition-all hover:scale-105 active:scale-95 ${
               sidebarOpen
                 ? "bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 shadow-inner"
                 : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
             }`}
             title="Settings and Themes"
           >
-            <Settings2 className="w-5 h-5" />
+            <Settings2 className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </header>
       {/* -------------------------------------------------------------
           BOTTOM INTERACTION DOCK
           ------------------------------------------------------------- */}
-      <footer className="absolute bottom-6 inset-x-0 px-4 flex flex-col items-center gap-3 z-30 pointer-events-none">
+      <footer className="absolute bottom-3 sm:bottom-6 inset-x-0 px-2 sm:px-4 flex flex-col items-center gap-2 sm:gap-3 z-30 pointer-events-none">
         {/* Emojis selection grid (Visible when plant tool is active) */}
         {activeTool === "plant" && (
-          <div className="w-full max-w-2xl bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md rounded-3xl border border-emerald-200/50 dark:border-emerald-700/60 shadow-2xl p-4 pointer-events-auto flex flex-col gap-3">
+          <div className="w-full max-w-lg sm:max-w-2xl bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-emerald-200/50 dark:border-emerald-700/60 shadow-2xl p-2 sm:p-4 pointer-events-auto flex flex-col gap-1.5 sm:gap-3">
             {/* Category tabs */}
-            <div className="flex justify-between items-center border-b border-emerald-200/30 dark:border-emerald-700/40 pb-2 gap-2 overflow-x-auto">
-              <div className="flex gap-1">
+            <div className="flex justify-between items-center border-b border-emerald-200/30 dark:border-emerald-700/40 pb-1 sm:pb-2 gap-2 overflow-x-auto">
+              <div className="flex gap-0.5 sm:gap-1">
                 {EMOJI_CATEGORIES.map((cat) => (
                   <button
                     key={cat.id}
-                    onClick={() => setActiveTab(cat.id)}
-                    className={`px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-all ${
+                    onClick={() => {
+                      setActiveTab(cat.id);
+                      if (cat.emojis.length > 0) {
+                        selectEmoji(cat.emojis[0]);
+                      }
+                    }}
+                    className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-md sm:rounded-lg text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5 transition-all shrink-0 ${
                       activeTab === cat.id
                         ? "bg-amber-100 dark:bg-emerald-800 text-amber-900 dark:text-emerald-100 font-semibold"
                         : "text-emerald-850/70 dark:text-emerald-300/70 hover:text-emerald-900 dark:hover:text-emerald-100"
@@ -1643,26 +1769,26 @@ export default function ZenGarden() {
               {/* Random Mode Trigger */}
               <button
                 onClick={() => setRandomMode(!randomMode)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 border transition-all ${
+                className={`px-2 py-1 sm:px-3.5 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs flex items-center gap-1 sm:gap-1.5 border transition-all shrink-0 ${
                   randomMode
                     ? "bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/40 font-bold"
                     : "text-emerald-850/70 dark:text-emerald-300/70 hover:text-emerald-900 dark:hover:text-emerald-100 border-emerald-200/30 dark:border-emerald-700/45"
                 }`}
                 title="Plant a random emoji from the active tab on click"
               >
-                <Shuffle className="w-3.5 h-3.5" />
+                <Shuffle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span>Random Mode</span>
               </button>
             </div>
 
-            {/* Emojis grid */}
-            <div className="grid grid-cols-6 sm:grid-cols-10 gap-2 max-h-36 overflow-y-auto px-2 py-1.5">
+            {/* Emojis list/grid */}
+            <div className="flex overflow-x-auto sm:grid sm:grid-cols-10 gap-1.5 max-h-14 sm:max-h-36 overflow-y-hidden sm:overflow-y-auto px-1 py-1 no-scrollbar">
               {EMOJI_CATEGORIES.find((c) => c.id === activeTab)?.emojis.map(
                 (emoji) => (
                   <button
                     key={emoji}
                     onClick={() => selectEmoji(emoji)}
-                    className={`aspect-square text-3xl flex items-center justify-center rounded-xl transition-all duration-100 ${
+                    className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 text-2xl sm:text-3xl flex items-center justify-center rounded-xl transition-all duration-100 ${
                       selectedEmoji === emoji && !randomMode
                         ? "bg-amber-200 dark:bg-emerald-800 border border-amber-400 dark:border-emerald-500 scale-105 shadow-inner"
                         : "bg-transparent border border-transparent hover:bg-emerald-100/60 dark:hover:bg-emerald-800/40 active:scale-95 text-emerald-900 dark:text-emerald-100"
@@ -1675,7 +1801,7 @@ export default function ZenGarden() {
             </div>
 
             {randomMode && (
-              <div className="text-center text-xs text-indigo-700 dark:text-indigo-300 italic animate-pulse font-medium">
+              <div className="hidden sm:block text-center text-xs text-indigo-700 dark:text-indigo-300 italic animate-pulse font-medium">
                 ✨ Random Mode active: Clicking on sand plants a random emoji
                 from the "
                 {EMOJI_CATEGORIES.find((c) => c.id === activeTab)?.name}"
@@ -1686,10 +1812,10 @@ export default function ZenGarden() {
         )}
 
         {/* Tool selector */}
-        <div className="flex items-center gap-1.5 bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md p-1 rounded-full border border-emerald-200/60 dark:border-emerald-700/60 shadow-xl pointer-events-auto">
+        <div className="flex items-center gap-1 sm:gap-1.5 bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md p-0.5 sm:p-1 rounded-full border border-emerald-200/60 dark:border-emerald-700/60 shadow-xl pointer-events-auto">
           <button
             onClick={() => setActiveTool("plant")}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
               activeTool === "plant"
                 ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/25"
                 : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
@@ -1699,7 +1825,7 @@ export default function ZenGarden() {
           </button>
           <button
             onClick={() => setActiveTool("rake")}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
               activeTool === "rake"
                 ? "bg-amber-500 text-white shadow-md shadow-amber-500/25"
                 : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
@@ -1709,7 +1835,7 @@ export default function ZenGarden() {
           </button>
           <button
             onClick={() => setActiveTool("water")}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
               activeTool === "water"
                 ? "bg-sky-500 text-white shadow-md shadow-sky-500/25"
                 : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
@@ -1719,7 +1845,7 @@ export default function ZenGarden() {
           </button>
           <button
             onClick={() => setActiveTool("prune")}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
               activeTool === "prune"
                 ? "bg-rose-500 text-white shadow-md shadow-rose-500/25"
                 : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
@@ -1747,7 +1873,7 @@ export default function ZenGarden() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="absolute right-0 top-0 bottom-0 w-80 bg-emerald-50/95 dark:bg-emerald-900/90 text-emerald-950 dark:text-emerald-50 border-l border-emerald-200/60 dark:border-emerald-700/60 backdrop-blur-lg shadow-2xl p-6 z-50 overflow-y-auto flex flex-col gap-6"
+              className="absolute right-0 top-0 bottom-0 w-full max-w-[280px] sm:max-w-xs bg-emerald-50/95 dark:bg-emerald-900/90 text-emerald-950 dark:text-emerald-50 border-l border-emerald-200/60 dark:border-emerald-700/60 backdrop-blur-lg shadow-2xl p-4 sm:p-6 z-50 overflow-y-auto flex flex-col gap-4 sm:gap-6"
             >
               <div className="flex justify-between items-center pb-4 border-b border-emerald-200/60 dark:border-emerald-700/60">
                 <h2 className="text-lg font-serif font-semibold flex items-center gap-2 text-emerald-800 dark:text-emerald-200">
@@ -1878,13 +2004,20 @@ export default function ZenGarden() {
                 </button>
               </div>
 
-              {/* Import / Export layout */}
+              {/* Import / Export layout & Download Image */}
               <div className="flex flex-col gap-2 border-t border-emerald-200/60 dark:border-emerald-700/60 pt-4 mt-auto">
+                <button
+                  onClick={downloadGardenAsImage}
+                  className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  Download Garden Image
+                </button>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={exportLayout}
                     className="py-2.5 rounded-xl bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-500 dark:hover:bg-emerald-600 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow"
-                    title="Copy layout code to clipboard"
+                    title="Export layout to text file"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Export
@@ -1913,17 +2046,45 @@ export default function ZenGarden() {
                 Import Zen Garden Layout
               </h3>
               <p className="text-xs text-zinc-400">
-                Paste your exported garden string below to rebuild your garden
-                sanctuary.
+                Select a layout text file (`.txt`) exported from Zen Garden to rebuild your sanctuary.
               </p>
+              
+              <label className="flex flex-col items-center justify-center border border-dashed border-emerald-500/30 hover:border-emerald-500/50 rounded-xl p-4 cursor-pointer bg-zinc-950/40 hover:bg-zinc-950/60 transition-all">
+                <Upload className="w-6 h-6 text-emerald-500 mb-1" />
+                <span className="text-xs font-semibold text-zinc-200">Choose layout text file</span>
+                <span className="text-[10px] text-zinc-500">Accepts .txt files</span>
+                <input
+                  type="file"
+                  accept=".txt"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const text = event.target?.result as string;
+                        if (text) {
+                          importLayoutFromString(text);
+                        }
+                      };
+                      reader.readAsText(file);
+                    }
+                  }}
+                />
+              </label>
+
+              <div className="text-center text-zinc-500 text-[10px] uppercase font-bold tracking-widest my-0.5">
+                — OR PASTE CODE —
+              </div>
+
               <textarea
                 value={importString}
                 onChange={(e) => setImportString(e.target.value)}
                 placeholder="Paste code here..."
-                rows={4}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-300 focus:outline-none focus:border-amber-500 font-mono resize-none"
+                rows={2}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 text-xs text-zinc-300 focus:outline-none focus:border-amber-500 font-mono resize-none"
               />
-              <div className="flex justify-end gap-2 text-xs font-semibold mt-2">
+              <div className="flex justify-end gap-2 text-xs font-semibold mt-1">
                 <button
                   onClick={() => {
                     setShowImportDialog(false);
@@ -1938,7 +2099,7 @@ export default function ZenGarden() {
                   disabled={!importString.trim()}
                   className="px-4 py-2 rounded-xl bg-amber-500 text-black hover:bg-amber-400 transition-colors disabled:opacity-50"
                 >
-                  Import Garden
+                  Import Code
                 </button>
               </div>
             </div>
@@ -1962,6 +2123,50 @@ export default function ZenGarden() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* -------------------------------------------------------------
+          EXPORT PREVIEW MODAL
+          ------------------------------------------------------------- */}
+      {previewImage ? (
+        <ExportPreviewModal
+          description="You can save the image manually or share it here."
+          fileName={previewFileName}
+          imageAlt="Zen garden export preview"
+          imageSrc={previewImage}
+          isTouchDevice={isTouchDevice}
+          onClose={() => setPreviewImage(null)}
+          onSaveImage={async () => {
+            if (!previewImage) return;
+            try {
+              const blob = dataURLtoBlob(previewImage);
+              const pngFile = new File([blob], previewFileName, {
+                type: "image/png",
+              });
+              const canShareFile =
+                typeof navigator !== "undefined" &&
+                "share" in navigator &&
+                "canShare" in navigator &&
+                navigator.canShare({ files: [pngFile] });
+
+              if (canShareFile) {
+                await navigator.share({
+                  files: [pngFile],
+                  title: "Zen Garden",
+                  text: "Check out my Zen Garden sanctuary!",
+                });
+                return;
+              }
+
+              window.open(previewImage, "_blank", "noopener,noreferrer");
+            } catch (err) {
+              console.error(err);
+            }
+          }}
+          shareHeading="Share with friends"
+          shareUrl={shareUrl}
+          title="Zen Garden Snap"
+        />
+      ) : null}
     </div>
   );
 }
