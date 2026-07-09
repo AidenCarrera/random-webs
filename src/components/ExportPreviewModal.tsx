@@ -49,7 +49,7 @@ export function ExportPreviewModal({
   const [copyLinkLabel, setCopyLinkLabel] = useState("Copy Link");
 
   return (
-    <div className="export-preview-modal absolute inset-0 z-20 flex items-end justify-center bg-black/82 px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
+    <div className="export-preview-modal fixed inset-0 z-[100] flex items-end justify-center bg-black/82 px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
       <div className="export-preview-card flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-4xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] text-white shadow-[0_32px_120px_rgba(0,0,0,0.6)] ring-1 ring-black/30 sm:max-h-208 sm:rounded-3xl">
         <div className="flex items-start justify-between gap-3 border-b border-white/10 bg-white/3 px-4 pb-3 pt-4 sm:px-5">
           <div>
@@ -203,6 +203,8 @@ export function ExportPreviewModal({
       <style jsx>{`
         @media (orientation: landscape) and (max-height: 560px) {
           .export-preview-modal {
+            position: fixed !important;
+            z-index: 100 !important;
             align-items: center;
             padding: 0.25rem;
           }

@@ -42,18 +42,20 @@ export function DeveloperGate({ websites }: DeveloperGateProps) {
               Direct-link access only.
             </p>
 
-            <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+            <form className="mt-8 space-y-4" onSubmit={handleSubmit} suppressHydrationWarning>
               <input
                 type="password"
                 value={value}
                 onChange={(event) => setValue(event.target.value)}
                 className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white outline-none transition-colors focus:border-cyan-300/40"
                 placeholder="Password"
+                suppressHydrationWarning
               />
               {error ? <p className="text-sm text-rose-300">{error}</p> : null}
               <button
                 type="submit"
                 className="rounded-full border border-white/10 bg-white px-5 py-3 text-sm font-bold uppercase tracking-[0.24em] text-black"
+                suppressHydrationWarning
               >
                 Unlock
               </button>

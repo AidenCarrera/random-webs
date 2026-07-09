@@ -1452,7 +1452,9 @@ export default function ZenGarden() {
       ctx.translate(px, py);
       ctx.rotate((plant.rotation * Math.PI) / 180);
 
-      const baseFontSize = 56;
+      const isMobileSize = typeof window !== "undefined" && 
+        (window.innerWidth < 640 || (window.innerHeight < 520 && window.innerWidth > window.innerHeight));
+      const baseFontSize = isMobileSize ? 32 : 56;
       const finalFontSize = baseFontSize * plant.scale * dpr;
 
       ctx.font = `${finalFontSize}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
@@ -1532,6 +1534,83 @@ export default function ZenGarden() {
         .zen-slider::-moz-range-thumb:hover {
           transform: scale(1.15);
         }
+
+        @media (orientation: landscape) and (max-height: 480px) {
+          .zen-title {
+            display: none !important;
+          }
+          .zen-header {
+            top: 0.5rem !important;
+            right: 0.5rem !important;
+            padding: 0 !important;
+          }
+          .zen-footer {
+            flex-direction: row !important;
+            justify-content: center !important;
+            align-items: center !important;
+            bottom: 0.5rem !important;
+            gap: 0.5rem !important;
+            padding: 0 0.5rem !important;
+          }
+          .zen-emoji-box {
+            max-width: 320px !important;
+            padding: 0.35rem !important;
+            border-radius: 1rem !important;
+            gap: 0.25rem !important;
+          }
+          .zen-emoji-box button {
+            padding: 0.15rem 0.35rem !important;
+            font-size: 0.75rem !important;
+          }
+          .zen-emoji-box .no-scrollbar button {
+            width: 2rem !important;
+            height: 2rem !important;
+            font-size: 1.25rem !important;
+          }
+          .zen-emoji-box .no-scrollbar {
+            max-height: 2.2rem !important;
+          }
+          .zen-cat-text {
+            display: none !important;
+          }
+          .zen-random-text {
+            display: none !important;
+          }
+          .zen-header-btn {
+            display: none !important;
+          }
+          .zen-header-sep {
+            display: none !important;
+          }
+          .zen-sidebar-actions {
+            display: flex !important;
+          }
+          .zen-tool-bar {
+            padding: 0.25rem !important;
+          }
+          .zen-tool-bar button {
+            padding: 0.35rem 0.5rem !important;
+            font-size: 0.75rem !important;
+          }
+        }
+
+        .zen-emoji {
+          width: 80px;
+          height: 80px;
+          font-size: 3.5rem;
+          margin-left: -40px;
+          margin-top: -40px;
+        }
+
+        @media (max-width: 640px), (orientation: landscape) and (max-height: 520px) {
+          .zen-emoji {
+            width: 48px !important;
+            height: 48px !important;
+            font-size: 2rem !important;
+            margin-left: -24px !important;
+            margin-top: -24px !important;
+          }
+        }
       `}</style>
       {/* -------------------------------------------------------------
           BACKGROUND INTERACTIVE LAYER (CANVAS)
@@ -1600,7 +1679,7 @@ export default function ZenGarden() {
                       handlePlantClick(e, plant.id);
                     }
                   }}
-                  className={`absolute select-none origin-center flex items-center justify-center transition-transform duration-100 ${
+                  className={`zen-emoji absolute select-none origin-center flex items-center justify-center transition-transform duration-100 ${
                     isRakeOrWater
                       ? "pointer-events-none"
                       : "pointer-events-auto cursor-grab active:cursor-grabbing hover:scale-110 active:scale-95"
@@ -1608,11 +1687,6 @@ export default function ZenGarden() {
                   style={{
                     left: `${plant.x * 100}%`,
                     top: `${plant.y * 100}%`,
-                    marginLeft: "-40px",
-                    marginTop: "-40px",
-                    fontSize: "3.5rem",
-                    width: "80px",
-                    height: "80px",
                   }}
                 >
                   {plant.type}
@@ -1648,7 +1722,7 @@ export default function ZenGarden() {
       {/* -------------------------------------------------------------
           TOP LEFT TITLE AREA
           ------------------------------------------------------------- */}
-      <div className="absolute top-3 left-4 sm:top-10 sm:left-10 z-30 pointer-events-none">
+      <div className="zen-title absolute top-3 left-4 sm:top-10 sm:left-10 z-30 pointer-events-none">
         <h1
           className={`text-lg sm:text-4xl font-light tracking-wide font-serif transition-colors duration-1000 pointer-events-none ${
             activeTheme.id === "moss" || activeTheme.id === "obsidian"
@@ -1672,13 +1746,13 @@ export default function ZenGarden() {
       {/* -------------------------------------------------------------
           TOP BAR CONTROLS
           ------------------------------------------------------------- */}
-      <header className="absolute top-3 right-4 sm:top-0 sm:inset-x-0 sm:p-4 flex justify-end items-center z-30 gap-4 pointer-events-none">
+      <header className="zen-header absolute top-3 right-4 sm:top-0 sm:inset-x-0 sm:p-4 flex justify-end items-center z-30 gap-4 pointer-events-none">
         {/* Quick Toolbar */}
         <div className="flex items-center gap-1 sm:gap-2 bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-emerald-200/60 dark:border-emerald-700/60 shadow-lg pointer-events-auto">
           {/* Sound toggle */}
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl transition-all hover:scale-105 active:scale-95 ${
+            className={`zen-header-btn p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl transition-all hover:scale-105 active:scale-95 ${
               soundEnabled
                 ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-inner"
                 : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
@@ -1695,7 +1769,7 @@ export default function ZenGarden() {
           {/* Download image shortcut */}
           <button
             onClick={downloadGardenAsImage}
-            className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 transition-all hover:scale-105 active:scale-95"
+            className="zen-header-btn p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 transition-all hover:scale-105 active:scale-95"
             title="Download Garden as Image"
           >
             <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1705,7 +1779,7 @@ export default function ZenGarden() {
           <button
             onClick={triggerUndo}
             disabled={historyIndex <= 0}
-            className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
+            className="zen-header-btn p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
             title="Undo"
           >
             <Undo className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1713,13 +1787,13 @@ export default function ZenGarden() {
           <button
             onClick={triggerRedo}
             disabled={historyIndex >= history.length - 1}
-            className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
+            className="zen-header-btn p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
             title="Redo"
           >
             <Redo className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
-          <span className="w-px h-4 sm:h-6 bg-emerald-200/60 dark:bg-emerald-700/60 mx-0.5 sm:mx-1" />
+          <span className="zen-header-sep w-px h-4 sm:h-6 bg-emerald-200/60 dark:bg-emerald-700/60 mx-0.5 sm:mx-1" />
 
           {/* Settings panel toggle */}
           <button
@@ -1738,10 +1812,9 @@ export default function ZenGarden() {
       {/* -------------------------------------------------------------
           BOTTOM INTERACTION DOCK
           ------------------------------------------------------------- */}
-      <footer className="absolute bottom-3 sm:bottom-6 inset-x-0 px-2 sm:px-4 flex flex-col items-center gap-2 sm:gap-3 z-30 pointer-events-none">
-        {/* Emojis selection grid (Visible when plant tool is active) */}
+      <footer className="zen-footer absolute bottom-3 sm:bottom-6 inset-x-0 px-2 sm:px-4 flex flex-col items-center gap-2 sm:gap-3 z-30 pointer-events-none">
         {activeTool === "plant" && (
-          <div className="w-full max-w-lg sm:max-w-2xl bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-emerald-200/50 dark:border-emerald-700/60 shadow-2xl p-2 sm:p-4 pointer-events-auto flex flex-col gap-1.5 sm:gap-3">
+          <div className="zen-emoji-box w-full max-w-lg sm:max-w-2xl bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-emerald-200/50 dark:border-emerald-700/60 shadow-2xl p-2 sm:p-4 pointer-events-auto flex flex-col gap-1.5 sm:gap-3">
             {/* Category tabs */}
             <div className="flex justify-between items-center border-b border-emerald-200/30 dark:border-emerald-700/40 pb-1 sm:pb-2 gap-2 overflow-x-auto">
               <div className="flex gap-0.5 sm:gap-1">
@@ -1751,7 +1824,12 @@ export default function ZenGarden() {
                     onClick={() => {
                       setActiveTab(cat.id);
                       if (cat.emojis.length > 0) {
-                        selectEmoji(cat.emojis[0]);
+                        if (randomMode) {
+                          setSelectedEmoji(cat.emojis[0]);
+                          setActiveTool("plant");
+                        } else {
+                          selectEmoji(cat.emojis[0]);
+                        }
                       }
                     }}
                     className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-md sm:rounded-lg text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5 transition-all shrink-0 ${
@@ -1761,7 +1839,7 @@ export default function ZenGarden() {
                     }`}
                   >
                     <span>{cat.icon}</span>
-                    <span className="hidden sm:inline">{cat.name}</span>
+                    <span className="zen-cat-text hidden sm:inline">{cat.name}</span>
                   </button>
                 ))}
               </div>
@@ -1777,7 +1855,7 @@ export default function ZenGarden() {
                 title="Plant a random emoji from the active tab on click"
               >
                 <Shuffle className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                <span>Random Mode</span>
+                <span className="zen-random-text">Random Mode</span>
               </button>
             </div>
 
@@ -1800,19 +1878,11 @@ export default function ZenGarden() {
               )}
             </div>
 
-            {randomMode && (
-              <div className="hidden sm:block text-center text-xs text-indigo-700 dark:text-indigo-300 italic animate-pulse font-medium">
-                ✨ Random Mode active: Clicking on sand plants a random emoji
-                from the "
-                {EMOJI_CATEGORIES.find((c) => c.id === activeTab)?.name}"
-                category.
-              </div>
-            )}
           </div>
         )}
 
         {/* Tool selector */}
-        <div className="flex items-center gap-1 sm:gap-1.5 bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md p-0.5 sm:p-1 rounded-full border border-emerald-200/60 dark:border-emerald-700/60 shadow-xl pointer-events-auto">
+        <div className="zen-tool-bar flex items-center gap-1 sm:gap-1.5 bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md p-0.5 sm:p-1 rounded-full border border-emerald-200/60 dark:border-emerald-700/60 shadow-xl pointer-events-auto">
           <button
             onClick={() => setActiveTool("plant")}
             className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
@@ -1886,6 +1956,48 @@ export default function ZenGarden() {
                 >
                   &times;
                 </button>
+              </div>
+
+              {/* Quick Actions (Only visible in mobile landscape menu) */}
+              <div className="zen-sidebar-actions hidden flex-col gap-2.5">
+                <label className="text-xs text-emerald-800/80 dark:text-emerald-300/80 uppercase tracking-widest font-bold">
+                  Quick Actions
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    className={`py-2 rounded-xl flex flex-col items-center justify-center gap-1 border transition-all text-xs font-semibold ${
+                      soundEnabled
+                        ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-bold"
+                        : "bg-emerald-50/50 dark:bg-emerald-950/20 border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 text-emerald-950 dark:text-emerald-50"
+                    }`}
+                  >
+                    {soundEnabled ? (
+                      <Volume2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    ) : (
+                      <VolumeX className="w-4 h-4 text-emerald-700 dark:text-emerald-300" />
+                    )}
+                    <span>Sound</span>
+                  </button>
+
+                  <button
+                    onClick={triggerUndo}
+                    disabled={historyIndex <= 0}
+                    className="py-2 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 disabled:opacity-35 text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-colors"
+                  >
+                    <Undo className="w-4 h-4" />
+                    <span>Undo</span>
+                  </button>
+
+                  <button
+                    onClick={triggerRedo}
+                    disabled={historyIndex >= history.length - 1}
+                    className="py-2 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-transparent hover:border-emerald-200 dark:hover:border-emerald-800 disabled:opacity-35 text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-colors"
+                  >
+                    <Redo className="w-4 h-4" />
+                    <span>Redo</span>
+                  </button>
+                </div>
               </div>
 
               {/* Sand Themes selection */}
