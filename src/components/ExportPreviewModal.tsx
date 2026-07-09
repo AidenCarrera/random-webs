@@ -49,7 +49,7 @@ export function ExportPreviewModal({
   const [copyLinkLabel, setCopyLinkLabel] = useState("Copy Link");
 
   return (
-    <div className="export-preview-modal fixed inset-0 z-[100] flex items-end justify-center bg-black/82 px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
+    <div className="export-preview-modal fixed inset-0 z-100 flex items-end justify-center bg-black/82 px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
       <div className="export-preview-card flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-4xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] text-white shadow-[0_32px_120px_rgba(0,0,0,0.6)] ring-1 ring-black/30 sm:max-h-208 sm:rounded-3xl">
         <div className="flex items-start justify-between gap-3 border-b border-white/10 bg-white/3 px-4 pb-3 pt-4 sm:px-5">
           <div>
@@ -83,7 +83,9 @@ export function ExportPreviewModal({
                   ? "h-auto max-h-[38vh] w-auto max-w-full sm:max-h-[52vh]"
                   : "max-h-[38vh] w-full sm:max-h-[52vh]"
               }`}
-              style={pixelatedPreview ? { imageRendering: "pixelated" } : undefined}
+              style={
+                pixelatedPreview ? { imageRendering: "pixelated" } : undefined
+              }
             />
           </div>
 
@@ -119,7 +121,10 @@ export function ExportPreviewModal({
                     try {
                       await navigator.clipboard.writeText(shareUrl);
                       setCopyLinkLabel("Copied");
-                      window.setTimeout(() => setCopyLinkLabel("Copy Link"), 1600);
+                      window.setTimeout(
+                        () => setCopyLinkLabel("Copy Link"),
+                        1600,
+                      );
                     } catch {}
                   }}
                   className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
