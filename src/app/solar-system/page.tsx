@@ -10,7 +10,9 @@ import {
   X,
   Settings,
   RotateCcw,
+  Download,
 } from "lucide-react";
+import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 
 // Asset texture mappings
 const TEXTURE_MAP = {
@@ -233,6 +235,10 @@ export default function SolarSystem() {
   const [bgTheme, setBgTheme] = useState<"stars" | "stars_milky_way">("stars");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Export Modal state
+  const [exportImage, setExportImage] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
   // Custom Planet Form State
   const [newPlanetName, setNewPlanetName] = useState("");
   const [newPlanetTexture, setNewPlanetTexture] = useState<TextureKey>("mars");
@@ -252,6 +258,7 @@ export default function SolarSystem() {
   const [containerScale, setContainerScale] = useState(1);
 
   // Refs for animation loop updates (to prevent loop resets)
+  const systemViewportRef = useRef<HTMLDivElement>(null);
   const planetRotations = useRef<{ [id: string]: number }>({});
   const planetElements = useRef<{ [id: string]: HTMLDivElement | null }>({});
   const requestRef = useRef<number>(0);
@@ -292,10 +299,10 @@ export default function SolarSystem() {
 
   // Frame animation loop
   useEffect(() => {
-    // Seed initial rotations
-    planetsRef.current.forEach((planet) => {
+    // Seed initial rotations based on index to match inline starting styles
+    planetsRef.current.forEach((planet, index) => {
       if (planetRotations.current[planet.id] === undefined) {
-        planetRotations.current[planet.id] = Math.random() * 360;
+        planetRotations.current[planet.id] = (index * 45) % 360;
       }
     });
 
@@ -363,7 +370,9 @@ export default function SolarSystem() {
         }
       });
     } else {
-      setPlanets((prev) => prev.filter((p: Planet) => p.id !== "preview-planet"));
+      setPlanets((prev) =>
+        prev.filter((p: Planet) => p.id !== "preview-planet"),
+      );
     }
   }, [
     isAdding,
@@ -389,10 +398,176 @@ export default function SolarSystem() {
     setSelectedPlanet(null);
   };
 
+  // Capture the already-rendered DOM system into a square PNG.
+  const captureSolarSystem = async (): Promise<string> => {
+    const systemViewport = systemViewportRef.current;
+    if (!systemViewport) return "";
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 900;
+    canvas.height = 900;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "";
+
+    const loadImage = (url: string): Promise<HTMLImageElement | null> => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = url;
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+      });
+    };
+
+    const urlToDataUrl = async (url: string): Promise<string> => {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+
+        return await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(String(reader.result));
+          reader.readAsDataURL(blob);
+        });
+      } catch {
+        return url;
+      }
+    };
+
+    const textureDataUrls = await Promise.all(
+      Object.values(TEXTURE_MAP).map(
+        async (url): Promise<[string[], string]> => [
+          [url, new URL(url, window.location.href).href],
+          await urlToDataUrl(url),
+        ],
+      ),
+    );
+    const textureDataUrlByUrl = new Map<string, string>();
+    textureDataUrls.forEach(([urls, dataUrl]) => {
+      urls.forEach((url) => textureDataUrlByUrl.set(url, dataUrl));
+    });
+
+    const replaceTextureUrls = (value: string) => {
+      let nextValue = value;
+      textureDataUrls.forEach(([urls, dataUrl]) => {
+        urls.forEach((url) => {
+          nextValue = nextValue.replaceAll(`"${url}"`, `"${dataUrl}"`);
+          nextValue = nextValue.replaceAll(`'${url}'`, `"${dataUrl}"`);
+          nextValue = nextValue.replaceAll(url, dataUrl);
+        });
+      });
+      return nextValue;
+    };
+
+    const inlineComputedStyles = (source: Element, clone: Element) => {
+      const computedStyle = window.getComputedStyle(source);
+      const cloneElement = clone as HTMLElement;
+
+      for (const property of Array.from(computedStyle)) {
+        cloneElement.style.setProperty(
+          property,
+          replaceTextureUrls(computedStyle.getPropertyValue(property)),
+          computedStyle.getPropertyPriority(property),
+        );
+      }
+
+      cloneElement.style.animation = "none";
+      cloneElement.style.transition = "none";
+      cloneElement.style.transform = computedStyle.transform;
+
+      Array.from(source.children).forEach((sourceChild, index) => {
+        const cloneChild = clone.children[index];
+        if (cloneChild) {
+          inlineComputedStyles(sourceChild, cloneChild);
+        }
+      });
+
+      const textureUrl = (source as HTMLElement).dataset?.textureUrl;
+      if (textureUrl) {
+        cloneElement.style.backgroundImage = "none";
+        cloneElement.style.backgroundColor = "transparent";
+        cloneElement.style.overflow = "visible";
+      }
+    };
+
+    const clone = systemViewport.cloneNode(true) as HTMLElement;
+    inlineComputedStyles(systemViewport, clone);
+    clone.style.margin = "0";
+    clone.style.transform = "none";
+
+    const bgImg = await loadImage(TEXTURE_MAP[bgTheme]);
+    ctx.fillStyle = "#03030b";
+    ctx.fillRect(0, 0, 900, 900);
+    if (bgImg?.complete && bgImg.naturalWidth > 0) {
+      ctx.drawImage(bgImg, 0, 0, 900, 900);
+    }
+    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    ctx.fillRect(0, 0, 900, 900);
+
+    const viewportRect = systemViewport.getBoundingClientRect();
+    const viewportScale = viewportRect.width / 900 || 1;
+    const texturedBodies = Array.from(
+      systemViewport.querySelectorAll<HTMLElement>("[data-texture-url]"),
+    );
+
+    for (const body of texturedBodies) {
+      const textureUrl = body.dataset.textureUrl;
+      if (!textureUrl) continue;
+
+      const textureDataUrl =
+        textureDataUrlByUrl.get(textureUrl) ||
+        textureDataUrlByUrl.get(new URL(textureUrl, window.location.href).href);
+      if (!textureDataUrl) continue;
+
+      const textureImage = await loadImage(textureDataUrl);
+      if (!textureImage?.complete || textureImage.naturalWidth <= 0) continue;
+
+      const bodyRect = body.getBoundingClientRect();
+      const x = (bodyRect.left - viewportRect.left) / viewportScale;
+      const y = (bodyRect.top - viewportRect.top) / viewportScale;
+      const width = bodyRect.width / viewportScale;
+      const height = bodyRect.height / viewportScale;
+      const radius = Math.min(width, height) / 2;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(x + width / 2, y + height / 2, radius, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(textureImage, x, y, width, height);
+      ctx.restore();
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+    wrapper.style.width = "900px";
+    wrapper.style.height = "900px";
+    wrapper.style.display = "flex";
+    wrapper.style.alignItems = "center";
+    wrapper.style.justifyContent = "center";
+    wrapper.appendChild(clone);
+
+    const serializedHtml = new XMLSerializer().serializeToString(wrapper);
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900">
+        <foreignObject width="900" height="900">${serializedHtml}</foreignObject>
+      </svg>
+    `;
+
+    const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    const systemImage = await loadImage(svgUrl);
+    if (systemImage?.complete && systemImage.naturalWidth > 0) {
+      ctx.drawImage(systemImage, 0, 0, 900, 900);
+    }
+
+    return canvas.toDataURL("image/png");
+  };
+
   // Add planet
   const handleAddPlanet = (e: React.FormEvent) => {
     e.preventDefault();
-    const name = newPlanetName.trim() || `Planet ${planets.filter((p: Planet) => p.id !== "preview-planet").length + 1}`;
+    const name =
+      newPlanetName.trim() ||
+      `Planet ${planets.filter((p: Planet) => p.id !== "preview-planet").length + 1}`;
     const id = `planet_${Date.now()}`;
     const newP: Planet = {
       id,
@@ -601,6 +776,18 @@ export default function SolarSystem() {
                     <option value="stars_milky_way">Milky Way</option>
                   </select>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const dataUrl = await captureSolarSystem();
+                    setExportImage(dataUrl);
+                    setIsExporting(true);
+                  }}
+                  className="mt-4 w-full py-3.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-[10px] font-bold tracking-widest uppercase transition-all hover:scale-[1.01] flex items-center justify-center gap-1.5 cursor-pointer text-white"
+                >
+                  <Download className="w-3.5 h-3.5" /> Download PNG
+                </button>
               </div>
             </div>
 
@@ -610,7 +797,8 @@ export default function SolarSystem() {
                 CELESTIAL BODIES
               </h3>
               <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
-                {planets.filter((p: Planet) => p.id !== "preview-planet").length === 0 ? (
+                {planets.filter((p: Planet) => p.id !== "preview-planet")
+                  .length === 0 ? (
                   <span className="text-[10px] text-white/30 italic">
                     No celestial bodies in orbit
                   </span>
@@ -874,7 +1062,7 @@ export default function SolarSystem() {
                       ),
                     );
                   }}
-                  className="w-full py-3.5 text-[10px] font-bold tracking-widest uppercase bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all duration-300 hover:scale-[1.01] text-white/70 hover:text-white cursor-pointer flex items-center justify-center gap-1.5"
+                  className="w-full py-3.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-[10px] font-bold tracking-widest uppercase transition-all hover:scale-[1.01] flex items-center justify-center gap-1.5 cursor-pointer text-white"
                 >
                   <Plus className="w-3.5 h-3.5" /> Create a new Planet
                 </button>
@@ -885,6 +1073,7 @@ export default function SolarSystem() {
       </div>
       {/* Orbit Canvas System Viewport */}
       <div
+        ref={systemViewportRef}
         className="relative flex items-center justify-center transition-transform duration-300"
         style={{
           width: "900px",
@@ -894,11 +1083,12 @@ export default function SolarSystem() {
       >
         {/* Stellar Core: The Sun */}
         <div
+          data-texture-url={TEXTURE_MAP.sun}
           className="absolute w-24 h-24 rounded-full z-20 flex items-center justify-center planet-texture-spin-slow cursor-pointer"
           style={{
             backgroundImage: `url(${TEXTURE_MAP.sun})`,
             boxShadow: enableGlow
-              ? `0 0 40px rgba(253, 184, 19, 0.25), 0 0 15px rgba(253, 184, 19, 0.15)`
+              ? `0 0 60px rgba(253, 184, 19, 0.40), 0 0 25px rgba(253, 184, 19, 0.25)`
               : "none",
             animationPlayState: paused ? "paused" : "running",
           }}
@@ -921,7 +1111,7 @@ export default function SolarSystem() {
         </div>
 
         {/* Dynamic Planets Render Loop */}
-        {planets.map((planet) => (
+        {planets.map((planet, index) => (
           <div
             key={planet.id}
             ref={(el) => {
@@ -939,6 +1129,7 @@ export default function SolarSystem() {
             style={{
               width: `${planet.orbitSize}px`,
               height: `${planet.orbitSize}px`,
+              transform: `rotate(${(index * 45) % 360}deg)`,
             }}
           >
             {/* Planet Group Wrapper (positioned at the top edge of orbit circle) */}
@@ -970,6 +1161,7 @@ export default function SolarSystem() {
 
               {/* Planet sphere */}
               <div
+                data-texture-url={TEXTURE_MAP[planet.textureKey]}
                 className={`rounded-full relative transition-transform duration-300 cursor-pointer group planet-texture-spin`}
                 style={{
                   width: `${planet.size}px`,
@@ -1030,6 +1222,7 @@ export default function SolarSystem() {
                   <div className="absolute inset-0 moon-carrier">
                     {/* Moon visual sphere */}
                     <div
+                      data-texture-url={TEXTURE_MAP.moon}
                       className="absolute rounded-full planet-texture-spin"
                       style={{
                         width: "5px",
@@ -1360,6 +1553,55 @@ export default function SolarSystem() {
           CC BY 4.0
         </a>
       </div>
+
+      {/* Render Export Preview Modal */}
+      {isExporting && exportImage && (
+        <ExportPreviewModal
+          imageSrc={exportImage}
+          fileName={`helios-solar-system-${Date.now()}.png`}
+          imageAlt="Helios Solar System Export"
+          title="Helios System Snapshot"
+          description="Capture of your custom simulated celestial alignment."
+          isTouchDevice={
+            typeof window !== "undefined" &&
+            ("ontouchstart" in window || navigator.maxTouchPoints > 0)
+          }
+          onSaveImage={async () => {
+            try {
+              const response = await fetch(exportImage);
+              const blob = await response.blob();
+              const pngFile = new File(
+                [blob],
+                `helios-solar-system-${Date.now()}.png`,
+                {
+                  type: "image/png",
+                },
+              );
+              const canShareFile =
+                typeof navigator !== "undefined" &&
+                "share" in navigator &&
+                "canShare" in navigator &&
+                navigator.canShare({ files: [pngFile] });
+
+              if (canShareFile) {
+                await navigator.share({
+                  files: [pngFile],
+                  title: "Helios Solar System",
+                  text: "Save this solar system snapshot.",
+                });
+                return;
+              }
+
+              window.open(exportImage, "_blank", "noopener,noreferrer");
+            } catch {}
+          }}
+          shareUrl={typeof window !== "undefined" ? window.location.href : ""}
+          onClose={() => {
+            setIsExporting(false);
+            setExportImage(null);
+          }}
+        />
+      )}
     </div>
   );
 }
