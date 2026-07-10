@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Info,
   LoaderCircle,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { canvasToBlob } from "@/lib/canvasExport";
+import { ThreeSolarSystem } from "./ThreeSolarSystem";
 
 // Asset texture mappings
 const TEXTURE_MAP = {
@@ -264,6 +265,7 @@ export default function SolarSystem() {
   // Refs for animation loop updates (to prevent loop resets)
   const exportStageRef = useRef<HTMLDivElement>(null);
   const systemViewportRef = useRef<HTMLDivElement>(null);
+  const threeCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const exportObjectUrlRef = useRef<string | null>(null);
   const planetRotations = useRef<{ [id: string]: number }>({});
   const planetElements = useRef<{ [id: string]: HTMLDivElement | null }>({});
@@ -499,6 +501,23 @@ export default function SolarSystem() {
 
   // Capture the already-rendered DOM system into a square PNG.
   const captureSolarSystem = async (): Promise<string> => {
+    // Three renders a complete, self-contained scene. Exporting its canvas is
+    // deterministic and avoids the fragile DOM/CSS reconstruction previously
+    // required for textures, gradients, clipping, and transforms.
+    const rendererCanvas = threeCanvasRef.current;
+    if (rendererCanvas) {
+      if (exportObjectUrlRef.current) {
+        URL.revokeObjectURL(exportObjectUrlRef.current);
+        exportObjectUrlRef.current = null;
+      }
+
+      const blob = await canvasToBlob(rendererCanvas);
+      const objectUrl = URL.createObjectURL(blob);
+      exportObjectUrlRef.current = objectUrl;
+      return objectUrl;
+    }
+
+    // This fallback only applies before WebGL has initialized.
     const systemViewport = systemViewportRef.current;
     if (!systemViewport) return "";
 
@@ -989,6 +1008,29 @@ export default function SolarSystem() {
       return prev;
     });
   };
+
+  const handleThreePlanetSelect = useCallback((id: string) => {
+    const planet = planetsRef.current.find((item) => item.id === id);
+    if (planet && planet.id !== "preview-planet") setSelectedPlanet(planet);
+  }, []);
+
+  const handleThreeSunSelect = useCallback(() => {
+    setSelectedPlanet({
+      id: "sun",
+      name: "The Sun",
+      textureKey: "sun",
+      size: 96,
+      orbitSize: 0,
+      duration: 0,
+      type: "Yellow Dwarf Star",
+      temp: "5,778 K",
+      desc: "The yellow dwarf star at the gravitational heart of our system. It comprises roughly 99.8% of the system's total mass.",
+    });
+  }, []);
+
+  const handleThreeCanvasReady = useCallback((canvas: HTMLCanvasElement | null) => {
+    threeCanvasRef.current = canvas;
+  }, []);
 
   const selectedGlow =
     selectedPlanet?.id !== "sun" && selectedPlanet
@@ -1493,6 +1535,21 @@ export default function SolarSystem() {
             ref={systemViewportRef}
             className="relative flex h-full w-full items-center justify-center transition-transform duration-300"
           >
+          <div className="absolute inset-0 z-30">
+            <ThreeSolarSystem
+              planets={planets}
+              paused={paused}
+              timeScale={timeScale}
+              showOrbits={showOrbits}
+              showMoons={showMoons}
+              enableGlow={enableGlow}
+              bgTheme={bgTheme}
+              onPlanetSelect={handleThreePlanetSelect}
+              onSunSelect={handleThreeSunSelect}
+              onCanvasReady={handleThreeCanvasReady}
+            />
+          </div>
+          <div className="hidden">
           {/* Stellar Core: The Sun */}
           <div
             data-texture-url={TEXTURE_MAP.sun}
@@ -1655,6 +1712,7 @@ export default function SolarSystem() {
               </div>
             </div>
           ))}
+          </div>
           </div>
         </div>
       </div>
