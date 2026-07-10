@@ -67,6 +67,12 @@ export const WEBSITES: WebsiteEntry[] = [
     accent: "from-purple-300/80 via-fuchsia-400/70 to-indigo-500/70",
   },
   {
+    path: "/lava-lamp",
+    title: "Lava Lamp",
+    blurb: "A simulated lava lamp.",
+    accent: "from-amber-200/80 via-orange-300/70 to-red-500/70",
+  },
+  {
     path: "/lofi-pixel-study",
     title: "Lofi Pixel Study",
     blurb: "Music and pixels.",
