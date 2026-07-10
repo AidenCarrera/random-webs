@@ -112,7 +112,72 @@ export default function ClickSpeedTest() {
   const activeRecord = records[duration];
   const elapsed = duration - timeLeft;
   const liveCps = isActive ? clicks / Math.max(elapsed, 0.1) : resultCps;
-  const paceHeights = useMemo(() => scaleValues(pace, 15, 100), [pace]);
+
+  const livePace = useMemo(() => {
+    if (!isActive || !startTimeRef.current) return pace;
+    const startTime = startTimeRef.current;
+    const clickTimes = clickTimestampsRef.current;
+    const paceData: number[] = [];
+    const now = Date.now();
+    for (let i = 0; i < duration; i++) {
+      const startRange = startTime + i * 1000;
+      const endRange = startTime + (i + 1) * 1000;
+      if (now >= startRange) {
+        const count = clickTimes.filter((t) => t >= startRange && t < endRange).length;
+        paceData.push(count);
+      } else {
+        paceData.push(0);
+      }
+    }
+    return paceData;
+  }, [clicks, isActive, duration, timeLeft, pace]);
+
+  const livePaceHeights = useMemo(() => scaleValues(livePace, 15, 100), [livePace]);
+
+  const displayData = useMemo(() => {
+    if (isActive) {
+      return {
+        title: "",
+        clicks: clicks,
+        cps: liveCps,
+        pace: livePace,
+        heights: livePaceHeights,
+        show: true,
+      };
+    }
+    
+    if (resultCps > 0 || clicks > 0) {
+      return {
+        title: "Result",
+        clicks: clicks,
+        cps: resultCps,
+        pace: pace,
+        heights: scaleValues(pace, 15, 100),
+        show: true,
+      };
+    }
+    
+    if (history.length > 0) {
+      const lastRun = history[0];
+      return {
+        title: "Latest Result",
+        clicks: lastRun.clicks,
+        cps: lastRun.cps,
+        pace: lastRun.pace,
+        heights: scaleValues(lastRun.pace, 15, 100),
+        show: true,
+      };
+    }
+    
+    return {
+      title: "",
+      clicks: 0,
+      cps: 0,
+      pace: [],
+      heights: [],
+      show: false,
+    };
+  }, [isActive, clicks, liveCps, livePace, livePaceHeights, resultCps, pace, history]);
 
   useEffect(() => {
     try {
@@ -366,20 +431,22 @@ export default function ClickSpeedTest() {
               </span>
             </button>
 
-            {history.length > 0 && (
-              <div className={`mt-8 w-full text-center transition-all duration-300 ${isActive ? "opacity-20 pointer-events-none" : "opacity-100 animate-in slide-in-from-bottom-5"}`}>
-                <p className="mb-2 text-slate-400">
-                  {isActive ? "Previous Result" : "Result"}
-                </p>
+            {displayData.show && (
+              <div className="mt-8 w-full text-center transition-all duration-300 animate-in fade-in">
+                {displayData.title && (
+                  <p className="mb-2 flex items-center justify-center gap-1.5 text-slate-400 font-semibold tracking-wider text-xs uppercase">
+                    {displayData.title}
+                  </p>
+                )}
                 <div className="mb-2 text-3xl font-bold text-white">
-                  {isActive ? history[0].clicks : clicks} Clicks{" "}
+                  {displayData.clicks} Clicks{" "}
                   <span className="text-xl text-slate-500">
-                    ({(isActive ? history[0].cps : resultCps).toFixed(2)} CPS)
+                    ({displayData.cps.toFixed(2)} CPS)
                   </span>
                 </div>
                 <PaceChart 
-                  pace={isActive ? history[0].pace : pace} 
-                  heights={isActive ? scaleValues(history[0].pace, 15, 100) : paceHeights} 
+                  pace={displayData.pace} 
+                  heights={displayData.heights} 
                 />
               </div>
             )}
