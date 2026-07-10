@@ -1005,7 +1005,7 @@ export default function LavaLampPage() {
     >
       <section
         ref={stageRef}
-        className={`relative w-full max-w-[1080px] flex-1 min-h-0 mx-auto overflow-visible select-none touch-none lamp-stage cursor-${cursorMode}`}
+        className={`relative w-full max-w-270 flex-1 min-h-0 mx-auto overflow-visible select-none touch-none lamp-stage cursor-${cursorMode}`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -1020,7 +1020,7 @@ export default function LavaLampPage() {
         />
 
         <div
-          className="absolute z-10 left-1/2 bottom-3.5 max-[700px]:bottom-5 max-[700px]:landscape:bottom-[6px] -translate-x-1/2 flex items-center gap-[10px] max-[700px]:gap-[7px] w-max max-w-[calc(100%-28px)] max-[700px]:w-[calc(100%-24px)] max-[700px]:justify-between p-1.5 border border-white/10 rounded-2xl bg-[#08090c]/58 shadow-[0_12px_38px_rgba(0,0,0,0.3)] backdrop-blur-lg cursor-default controls"
+          className="absolute z-10 left-1/2 bottom-3.5 max-[700px]:bottom-5 max-[700px]:landscape:bottom-1.5 -translate-x-1/2 flex items-center gap-2.5 max-[700px]:gap-1.75 w-max max-w-[calc(100%-28px)] max-[700px]:w-[calc(100%-24px)] max-[700px]:justify-between p-1.5 border border-white/10 rounded-2xl bg-[#08090c]/58 shadow-[0_12px_38px_rgba(0,0,0,0.3)] backdrop-blur-lg cursor-default controls"
           onPointerDown={(event) => event.stopPropagation()}
         >
           <div
@@ -1031,10 +1031,10 @@ export default function LavaLampPage() {
               <button
                 key={id}
                 type="button"
-                className={`flex-none px-[11px] max-[700px]:px-[9px] max-[410px]:px-2 py-2 border-0 rounded-[9px] text-[0.76rem] max-[410px]:text-[0.7rem] font-[610] tracking-[0.015em] cursor-pointer transition-all duration-150 active:scale-95 ${
+                className={`flex-none px-2.75 max-[700px]:px-2.25 max-[410px]:px-2 py-2 border-0 rounded-[9px] text-[0.76rem] max-[410px]:text-[0.7rem] font-[610] tracking-[0.015em] cursor-pointer transition-all duration-150 active:scale-95 ${
                   id === presetId && isUsingExactPreset
                     ? "text-white bg-white/11 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.045)] active"
-                    : "text-white/58 bg-transparent hover:text-white/92 hover:bg-white/[0.075]"
+                    : "text-white/58 bg-transparent hover:text-white/92 hover:bg-white/7.5"
                 }`}
                 onClick={() => {
                   setPresetId(id);
@@ -1049,7 +1049,7 @@ export default function LavaLampPage() {
 
           <div className="flex items-center gap-1 pl-1.5 border-l border-white/8 icon-actions">
             <label
-              className="grid w-[34px] h-[34px] place-items-center border border-white/11 rounded-[9px] bg-white/[0.045] cursor-pointer color-picker"
+              className="grid w-8.5 h-8.5 place-items-center border border-white/11 rounded-[9px] bg-white/4.5 cursor-pointer color-picker"
               title="Liquid color"
             >
               <span className="sr-only">Liquid color</span>
@@ -1062,7 +1062,7 @@ export default function LavaLampPage() {
               />
             </label>
             <label
-              className="grid w-[34px] h-[34px] place-items-center border border-white/11 rounded-[9px] bg-white/[0.045] cursor-pointer color-picker"
+              className="grid w-8.5 h-8.5 place-items-center border border-white/11 rounded-[9px] bg-white/4.5 cursor-pointer color-picker"
               title="Bubble color"
             >
               <span className="sr-only">Bubble color</span>
@@ -1077,7 +1077,7 @@ export default function LavaLampPage() {
 
             <button
               type="button"
-              className="grid w-[34px] h-[34px] place-items-center border-0 rounded-[9px] cursor-pointer transition-all duration-150 active:scale-95 text-white/58 bg-transparent hover:text-white/92 hover:bg-white/[0.075] icon-button"
+              className="grid w-8.5 h-8.5 place-items-center border-0 rounded-[9px] cursor-pointer transition-all duration-150 active:scale-95 text-white/58 bg-transparent hover:text-white/92 hover:bg-white/7.5 icon-button"
               onClick={() => setIsPaused((value) => !value)}
               aria-label={isPaused ? "Resume animation" : "Pause animation"}
               title={isPaused ? "Resume" : "Pause"}
@@ -1086,7 +1086,7 @@ export default function LavaLampPage() {
             </button>
             <button
               type="button"
-              className="grid w-[34px] h-[34px] place-items-center border-0 rounded-[9px] cursor-pointer transition-all duration-150 active:scale-95 text-white/58 bg-transparent hover:text-white/92 hover:bg-white/[0.075] icon-button"
+              className="grid w-8.5 h-8.5 place-items-center border-0 rounded-[9px] cursor-pointer transition-all duration-150 active:scale-95 text-white/58 bg-transparent hover:text-white/92 hover:bg-white/7.5 icon-button"
               onClick={() => setResetKey((value) => value + 1)}
               aria-label="Reset fluid"
               title="Reset"
@@ -1095,7 +1095,7 @@ export default function LavaLampPage() {
             </button>
             <button
               type="button"
-              className="hidden sm:grid w-[34px] h-[34px] place-items-center border-0 rounded-[9px] cursor-pointer transition-all duration-150 active:scale-95 text-white/58 bg-transparent hover:text-white/92 hover:bg-white/[0.075] icon-button"
+              className="hidden sm:grid w-8.5 h-8.5 place-items-center border-0 rounded-[9px] cursor-pointer transition-all duration-150 active:scale-95 text-white/58 bg-transparent hover:text-white/92 hover:bg-white/7.5 icon-button"
               onClick={toggleFullscreen}
               aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
               title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
