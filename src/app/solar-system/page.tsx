@@ -14,6 +14,7 @@ import {
   Download,
 } from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
+import { canvasToBlob } from "@/lib/canvasExport";
 
 // Asset texture mappings
 const TEXTURE_MAP = {
@@ -263,8 +264,17 @@ export default function SolarSystem() {
   // Refs for animation loop updates (to prevent loop resets)
   const exportStageRef = useRef<HTMLDivElement>(null);
   const systemViewportRef = useRef<HTMLDivElement>(null);
+  const exportObjectUrlRef = useRef<string | null>(null);
   const planetRotations = useRef<{ [id: string]: number }>({});
   const planetElements = useRef<{ [id: string]: HTMLDivElement | null }>({});
+  const textureAssetCacheRef = useRef<Map<string, string> | null>(null);
+  const textureAssetCachePromiseRef = useRef<Promise<Map<string, string>> | null>(
+    null,
+  );
+  const loadedImageCacheRef = useRef<Map<string, Promise<HTMLImageElement | null>>>(
+    new Map(),
+  );
+  const ringTextureCacheRef = useRef<Map<TextureKey, HTMLCanvasElement>>(new Map());
   const requestRef = useRef<number>(0);
   const planetsRef = useRef(planets);
   const pausedRef = useRef(paused);
@@ -312,6 +322,79 @@ export default function SolarSystem() {
   useEffect(() => {
     setSidebarOpen(!isMobileViewport);
   }, [isMobileViewport]);
+
+  useEffect(() => {
+    return () => {
+      if (exportObjectUrlRef.current) {
+        URL.revokeObjectURL(exportObjectUrlRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const warmTextureExportCache = async () => {
+      if (textureAssetCacheRef.current || textureAssetCachePromiseRef.current) {
+        return;
+      }
+
+      const urlToDataUrl = async (url: string): Promise<string> => {
+        try {
+          const response = await fetch(url);
+          const blob = await response.blob();
+
+          return await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(String(reader.result));
+            reader.readAsDataURL(blob);
+          });
+        } catch {
+          return url;
+        }
+      };
+
+      textureAssetCachePromiseRef.current = Promise.all(
+        Object.values(TEXTURE_MAP).map(
+          async (url): Promise<[string[], string]> => [
+            [url, new URL(url, window.location.href).href],
+            await urlToDataUrl(url),
+          ],
+        ),
+      ).then((textureDataUrls) => {
+        const nextCache = new Map<string, string>();
+        textureDataUrls.forEach(([urls, dataUrl]) => {
+          urls.forEach((url) => nextCache.set(url, dataUrl));
+        });
+        if (!cancelled) {
+          textureAssetCacheRef.current = nextCache;
+        }
+        return nextCache;
+      });
+    };
+
+    let idleCallbackId: number | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    if ("requestIdleCallback" in window) {
+      idleCallbackId = window.requestIdleCallback(warmTextureExportCache);
+    } else {
+      timeoutId = setTimeout(warmTextureExportCache, 600);
+    }
+
+    return () => {
+      cancelled = true;
+      if (
+        idleCallbackId !== null &&
+        "cancelIdleCallback" in window
+      ) {
+        window.cancelIdleCallback(idleCallbackId);
+      }
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, []);
 
   // Frame animation loop
   useEffect(() => {
@@ -416,23 +499,28 @@ export default function SolarSystem() {
 
   // Capture the already-rendered DOM system into a square PNG.
   const captureSolarSystem = async (): Promise<string> => {
-    const exportStage = exportStageRef.current;
-    if (!exportStage) return "";
+    const systemViewport = systemViewportRef.current;
+    if (!systemViewport) return "";
 
-    const loadImage = (url: string): Promise<HTMLImageElement | null> =>
-      new Promise((resolve) => {
+    const loadImage = (url: string): Promise<HTMLImageElement | null> => {
+      const cachedPromise = loadedImageCacheRef.current.get(url);
+      if (cachedPromise) return cachedPromise;
+
+      const nextPromise = new Promise<HTMLImageElement | null>((resolve) => {
         const image = new Image();
         image.crossOrigin = "anonymous";
         image.src = url;
         image.onload = () => resolve(image);
         image.onerror = () => resolve(null);
       });
+      loadedImageCacheRef.current.set(url, nextPromise);
+      return nextPromise;
+    };
 
     const urlToDataUrl = async (url: string): Promise<string> => {
       try {
         const response = await fetch(url);
         const blob = await response.blob();
-
         return await new Promise((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(String(reader.result));
@@ -443,38 +531,35 @@ export default function SolarSystem() {
       }
     };
 
-    const textureDataUrls = await Promise.all(
-      Object.values(TEXTURE_MAP).map(
-        async (url): Promise<[string[], string]> => [
-          [url, new URL(url, window.location.href).href],
-          await urlToDataUrl(url),
-        ],
-      ),
-    );
-    const textureDataUrlByUrl = new Map<string, string>();
-    textureDataUrls.forEach(([urls, dataUrl]) => {
-      urls.forEach((url) => textureDataUrlByUrl.set(url, dataUrl));
-    });
-
-    const replaceTextureUrls = (value: string) => {
-      let nextValue = value;
-      textureDataUrls.forEach(([urls, dataUrl]) => {
-        urls.forEach((url) => {
-          nextValue = nextValue.replaceAll(`"${url}"`, `"${dataUrl}"`);
-          nextValue = nextValue.replaceAll(`'${url}'`, `"${dataUrl}"`);
-          nextValue = nextValue.replaceAll(url, dataUrl);
+    const buildTextureAssetCache = async () => {
+      if (textureAssetCacheRef.current) return textureAssetCacheRef.current;
+      if (!textureAssetCachePromiseRef.current) {
+        textureAssetCachePromiseRef.current = Promise.all(
+          Object.values(TEXTURE_MAP).map(
+            async (url): Promise<[string[], string]> => [
+              [url, new URL(url, window.location.href).href],
+              await urlToDataUrl(url),
+            ],
+          ),
+        ).then((textureDataUrls) => {
+          const nextCache = new Map<string, string>();
+          textureDataUrls.forEach(([urls, dataUrl]) => {
+            urls.forEach((url) => nextCache.set(url, dataUrl));
+          });
+          textureAssetCacheRef.current = nextCache;
+          return nextCache;
         });
-      });
-      return nextValue;
+      }
+      return textureAssetCachePromiseRef.current;
     };
+
+    const textureDataUrlByUrl = await buildTextureAssetCache();
 
     const resolveTextureAssetUrl = (url: string) => {
       if (!url) return "";
-
       if (textureDataUrlByUrl.has(url)) {
         return textureDataUrlByUrl.get(url) || url;
       }
-
       try {
         const absoluteUrl = new URL(url, window.location.href).href;
         return textureDataUrlByUrl.get(absoluteUrl) || absoluteUrl;
@@ -483,70 +568,19 @@ export default function SolarSystem() {
       }
     };
 
-    const resolvedValueCache = new Map<string, string>();
-
-    const resolveComputedStyleValue = (
-      sourceDocument: Document,
-      property: string,
-      value: string,
-    ) => {
-      if (
-        !value.includes("oklab(") &&
-        !value.includes("oklch(") &&
-        !value.includes("color(")
-      ) {
-        return value;
-      }
-
-      const cacheKey = `${property}:${value}`;
-      const cachedValue = resolvedValueCache.get(cacheKey);
-      if (cachedValue) {
-        return cachedValue;
-      }
-
-      const probe = sourceDocument.createElement("div");
-      probe.style.position = "fixed";
-      probe.style.left = "-99999px";
-      probe.style.top = "0";
-      probe.style.pointerEvents = "none";
-      probe.style.setProperty(property, value);
-      sourceDocument.body.appendChild(probe);
-      const resolvedValue =
-        sourceDocument.defaultView
-          ?.getComputedStyle(probe)
-          .getPropertyValue(property) || value;
-      probe.remove();
-      resolvedValueCache.set(cacheKey, resolvedValue);
-      return resolvedValue;
-    };
-
-    const parseBackgroundImageUrl = (value: string) => {
-      const match = value.match(/url\((['"]?)(.*?)\1\)/i);
-      return match?.[2] ?? "";
-    };
-
     const parseBackgroundLength = (
       value: string,
       containerSize: number,
       fallbackSize: number,
     ) => {
       const normalized = value.trim().toLowerCase();
-      if (!normalized || normalized === "auto") {
-        return fallbackSize;
-      }
-
-      if (normalized === "cover" || normalized === "contain") {
-        return fallbackSize;
-      }
-
+      if (!normalized || normalized === "auto") return fallbackSize;
       if (normalized.endsWith("%")) {
         return (containerSize * Number.parseFloat(normalized)) / 100;
       }
-
       if (normalized.endsWith("px")) {
         return Number.parseFloat(normalized);
       }
-
       const numericValue = Number.parseFloat(normalized);
       return Number.isFinite(numericValue) ? numericValue : fallbackSize;
     };
@@ -558,202 +592,349 @@ export default function SolarSystem() {
     ) => {
       const normalized = value.trim().toLowerCase();
       if (!normalized) return 0;
-
-      if (normalized === "left" || normalized === "top") {
-        return 0;
-      }
-
-      if (normalized === "center") {
-        return (containerSize - imageSize) / 2;
-      }
-
+      if (normalized === "left" || normalized === "top") return 0;
+      if (normalized === "center") return (containerSize - imageSize) / 2;
       if (normalized === "right" || normalized === "bottom") {
         return containerSize - imageSize;
       }
-
       if (normalized.endsWith("%")) {
         return ((containerSize - imageSize) * Number.parseFloat(normalized)) / 100;
       }
-
       if (normalized.endsWith("px")) {
         return Number.parseFloat(normalized);
       }
-
       return 0;
     };
 
-    const materializeBackgroundImage = (
-      sourceElement: Element,
-      clonedElement: HTMLElement,
-      sourceDocument: Document,
-    ) => {
-      const computedStyle = window.getComputedStyle(sourceElement);
-      const backgroundImage = computedStyle.backgroundImage;
-      const textureUrl = parseBackgroundImageUrl(backgroundImage);
-      if (!textureUrl || textureUrl === "none") {
-        return;
-      }
-
-      const sourceRect =
-        sourceElement instanceof HTMLElement
-          ? sourceElement.getBoundingClientRect()
-          : { width: 0, height: 0 };
-      const width = sourceRect.width || Number.parseFloat(computedStyle.width) || 0;
-      const height =
-        sourceRect.height || Number.parseFloat(computedStyle.height) || 0;
-      if (width <= 0 || height <= 0) {
-        return;
-      }
-
-      const backgroundSizeParts = computedStyle.backgroundSize.split(" ");
-      const backgroundPositionParts = computedStyle.backgroundPosition.split(" ");
-      const backgroundRepeat = computedStyle.backgroundRepeat || "repeat";
-      const renderedWidth = parseBackgroundLength(
-        backgroundSizeParts[0] || "100%",
-        width,
-        width,
-      );
-      const renderedHeight = parseBackgroundLength(
-        backgroundSizeParts[1] || backgroundSizeParts[0] || "100%",
-        height,
-        height,
-      );
-      const offsetX = parseBackgroundPosition(
-        backgroundPositionParts[0] || "0%",
-        width,
-        renderedWidth,
-      );
-      const offsetY = parseBackgroundPosition(
-        backgroundPositionParts[1] || "0%",
-        height,
-        renderedHeight,
-      );
-
-      clonedElement.style.backgroundImage = "none";
-      clonedElement.style.backgroundColor = "transparent";
-      clonedElement.style.overflow = "hidden";
-
-      const imageLayer = sourceDocument.createElement("img");
-      imageLayer.setAttribute("src", resolveTextureAssetUrl(textureUrl));
-      imageLayer.setAttribute("alt", "");
-      imageLayer.setAttribute("aria-hidden", "true");
-      imageLayer.style.position = "absolute";
-      imageLayer.style.pointerEvents = "none";
-      imageLayer.style.userSelect = "none";
-      imageLayer.style.maxWidth = "none";
-      imageLayer.style.left = `${offsetX}px`;
-      imageLayer.style.top = `${offsetY}px`;
-      imageLayer.style.width = `${renderedWidth}px`;
-      imageLayer.style.height = `${renderedHeight}px`;
-      imageLayer.style.objectFit =
-        backgroundSizeParts[0] === "cover" ? "cover" : "fill";
-      imageLayer.style.objectPosition = computedStyle.backgroundPosition;
-      imageLayer.style.zIndex = "0";
-
-      if (backgroundRepeat.includes("repeat")) {
-        const tilesX = Math.max(1, Math.ceil(width / renderedWidth) + 2);
-        const tilesY = Math.max(1, Math.ceil(height / renderedHeight) + 2);
-        const tileWrapper = sourceDocument.createElement("div");
-        tileWrapper.setAttribute("aria-hidden", "true");
-        tileWrapper.style.position = "absolute";
-        tileWrapper.style.inset = "0";
-        tileWrapper.style.overflow = "hidden";
-        tileWrapper.style.pointerEvents = "none";
-        tileWrapper.style.zIndex = "0";
-
-        for (let yIndex = -1; yIndex < tilesY - 1; yIndex += 1) {
-          for (let xIndex = -1; xIndex < tilesX - 1; xIndex += 1) {
-            const tileImage = imageLayer.cloneNode(false) as HTMLImageElement;
-            tileImage.style.left = `${offsetX + xIndex * renderedWidth}px`;
-            tileImage.style.top = `${offsetY + yIndex * renderedHeight}px`;
-            tileWrapper.appendChild(tileImage);
-          }
-        }
-
-        clonedElement.insertBefore(tileWrapper, clonedElement.firstChild);
-        return;
-      }
-
-      clonedElement.insertBefore(imageLayer, clonedElement.firstChild);
-    };
-
-    const inlineResolvedStyles = (
-      sourceElement: Element,
-      clonedElement: Element,
-      sourceDocument: Document,
-    ) => {
-      const computedStyle = window.getComputedStyle(sourceElement);
-      const clonedHtmlElement = clonedElement as HTMLElement;
-
-      if (clonedHtmlElement instanceof HTMLElement) {
-        clonedHtmlElement.className = "";
-      }
-
-      for (const property of Array.from(computedStyle)) {
-        clonedHtmlElement.style.setProperty(
-          property,
-          replaceTextureUrls(
-            resolveComputedStyleValue(
-              sourceDocument,
-              property,
-              computedStyle.getPropertyValue(property),
-            ),
-          ),
-          computedStyle.getPropertyPriority(property),
-        );
-      }
-
-      clonedHtmlElement.style.animation = "none";
-      clonedHtmlElement.style.transition = "none";
-
-      Array.from(sourceElement.children).forEach((sourceChild, index) => {
-        const clonedChild = clonedElement.children[index];
-        if (clonedChild) {
-          inlineResolvedStyles(sourceChild, clonedChild, sourceDocument);
-        }
-      });
-
-      materializeBackgroundImage(sourceElement, clonedHtmlElement, sourceDocument);
-    };
-
-    const sanitizedStage = exportStage.cloneNode(true) as HTMLElement;
-    inlineResolvedStyles(exportStage, sanitizedStage, document);
-    sanitizedStage.style.transform = "none";
-    sanitizedStage.style.transformOrigin = "center center";
-    sanitizedStage.style.margin = "0";
-    sanitizedStage.style.width = "900px";
-    sanitizedStage.style.height = "900px";
-    sanitizedStage.setAttribute("aria-hidden", "true");
-    sanitizedStage.removeAttribute("data-export-stage");
-
-    const wrapper = document.createElement("div");
-    wrapper.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-    wrapper.style.width = "900px";
-    wrapper.style.height = "900px";
-    wrapper.style.overflow = "hidden";
-    wrapper.appendChild(sanitizedStage);
-
-    const serializedHtml = new XMLSerializer().serializeToString(wrapper);
-    const svg = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900">
-        <foreignObject width="900" height="900">${serializedHtml}</foreignObject>
-      </svg>
-    `;
-
-    const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-    const renderedScene = await loadImage(svgUrl);
-    if (!renderedScene?.complete || renderedScene.naturalWidth <= 0) {
-      return "";
-    }
-
+    const baseSize = 900;
+    const exportResolution = isMobileViewport ? 960 : 1200;
+    const renderScale = exportResolution / baseSize;
     const canvas = document.createElement("canvas");
-    canvas.width = 1800;
-    canvas.height = 1800;
+    canvas.width = exportResolution;
+    canvas.height = exportResolution;
     const ctx = canvas.getContext("2d");
     if (!ctx) return "";
 
-    ctx.drawImage(renderedScene, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/png");
+    const drawOrbit = (diameter: number) => {
+      if (!showOrbits) return;
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,255,255,0.1)";
+      ctx.lineWidth = Math.max(1, renderScale);
+      ctx.beginPath();
+      ctx.arc(
+        450 * renderScale,
+        450 * renderScale,
+        (diameter / 2) * renderScale,
+        0,
+        Math.PI * 2,
+      );
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    const drawRingHalf = (
+      x: number,
+      y: number,
+      size: number,
+      textureKey: TextureKey,
+      frontHalf: boolean,
+    ) => {
+      const ringDiameter =
+        size *
+        (textureKey === "saturn" ? 2.8 : textureKey === "uranus" ? 2.2 : 2.4);
+      const scaleDiameter = ringDiameter * renderScale;
+      const cx = x * renderScale;
+      const cy = y * renderScale;
+      const rotation = 12 * (Math.PI / 180);
+      const verticalScale = textureKey === "uranus" ? 0.24 : 0.3;
+      let ringTexture = ringTextureCacheRef.current.get(textureKey);
+      if (!ringTexture) {
+        ringTexture = document.createElement("canvas");
+        ringTexture.width = 512;
+        ringTexture.height = 512;
+        const ringCtx = ringTexture.getContext("2d");
+        if (ringCtx) {
+          const gradient = ringCtx.createRadialGradient(256, 256, 0, 256, 256, 256);
+          if (textureKey === "saturn") {
+            gradient.addColorStop(0.38, "rgba(0,0,0,0)");
+            gradient.addColorStop(0.39, "rgba(224,205,167,0.25)");
+            gradient.addColorStop(0.42, "rgba(224,205,167,0.65)");
+            gradient.addColorStop(0.46, "rgba(168,132,94,0.35)");
+            gradient.addColorStop(0.48, "rgba(0,0,0,0)");
+            gradient.addColorStop(0.5, "rgba(224,205,167,0.55)");
+            gradient.addColorStop(0.55, "rgba(199,165,117,0.45)");
+            gradient.addColorStop(0.62, "rgba(224,205,167,0.25)");
+            gradient.addColorStop(0.65, "rgba(0,0,0,0)");
+          } else if (textureKey === "uranus") {
+            gradient.addColorStop(0.55, "rgba(0,0,0,0)");
+            gradient.addColorStop(0.56, "rgba(173,216,230,0.4)");
+            gradient.addColorStop(0.58, "rgba(173,216,230,0.1)");
+            gradient.addColorStop(0.59, "rgba(0,0,0,0)");
+          } else {
+            gradient.addColorStop(0.42, "rgba(0,0,0,0)");
+            gradient.addColorStop(0.43, "rgba(255,255,255,0.2)");
+            gradient.addColorStop(0.46, "rgba(255,255,255,0.45)");
+            gradient.addColorStop(0.48, "rgba(0,0,0,0)");
+            gradient.addColorStop(0.52, "rgba(255,255,255,0.2)");
+            gradient.addColorStop(0.56, "rgba(0,0,0,0)");
+          }
+          ringCtx.fillStyle = gradient;
+          ringCtx.fillRect(0, 0, 512, 512);
+        }
+        ringTextureCacheRef.current.set(textureKey, ringTexture);
+      }
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(rotation);
+      ctx.scale(1, verticalScale);
+      ctx.beginPath();
+      if (frontHalf) {
+        ctx.rect(-scaleDiameter, 0, scaleDiameter * 2, scaleDiameter);
+      } else {
+        ctx.rect(-scaleDiameter, -scaleDiameter, scaleDiameter * 2, scaleDiameter);
+      }
+      ctx.clip();
+      ctx.globalAlpha = frontHalf ? 0.8 : 0.68;
+      ctx.drawImage(
+        ringTexture,
+        -scaleDiameter / 2,
+        -scaleDiameter / 2,
+        scaleDiameter,
+        scaleDiameter,
+      );
+      ctx.restore();
+    };
+
+    const drawShadowOverlay = (
+      x: number,
+      y: number,
+      size: number,
+      highlightAlpha: number,
+      shadowAlpha: number,
+    ) => {
+      const cx = x * renderScale;
+      const cy = y * renderScale;
+      const radius = (size / 2) * renderScale;
+      const gradient = ctx.createRadialGradient(
+        cx - radius * 0.25,
+        cy - radius * 0.25,
+        radius * 0.1,
+        cx,
+        cy,
+        radius,
+      );
+      gradient.addColorStop(0, `rgba(255,255,255,${highlightAlpha})`);
+      gradient.addColorStop(0.45, "rgba(255,255,255,0.02)");
+      gradient.addColorStop(1, `rgba(0,0,0,${shadowAlpha})`);
+      ctx.save();
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    };
+
+    const drawTexturedSphere = async (
+      x: number,
+      y: number,
+      size: number,
+      textureUrl: string,
+      element: HTMLElement | null,
+      glowColor?: string,
+      highlightAlpha = 0.12,
+      shadowAlpha = 0.88,
+    ) => {
+      const resolvedTextureUrl = resolveTextureAssetUrl(textureUrl);
+      const textureImage = await loadImage(resolvedTextureUrl);
+      const scaledSize = size * renderScale;
+      const cx = x * renderScale;
+      const cy = y * renderScale;
+      const radius = scaledSize / 2;
+
+      if (glowColor && enableGlow) {
+        ctx.save();
+        ctx.shadowColor = glowColor;
+        ctx.shadowBlur = radius * 0.45;
+        ctx.fillStyle = "rgba(255,255,255,0.02)";
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius * 0.96, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.clip();
+
+      if (textureImage?.complete && textureImage.naturalWidth > 0) {
+        const computedStyle = element ? window.getComputedStyle(element) : null;
+        const backgroundSizeParts =
+          computedStyle?.backgroundSize.split(" ") || ["200%", "140%"];
+        const backgroundPositionParts =
+          computedStyle?.backgroundPosition.split(" ") || ["0%", "50%"];
+        const renderedWidth = parseBackgroundLength(
+          backgroundSizeParts[0] || "200%",
+          size,
+          size * 2,
+        );
+        const renderedHeight = parseBackgroundLength(
+          backgroundSizeParts[1] || "140%",
+          size,
+          size * 1.4,
+        );
+        const offsetX = parseBackgroundPosition(
+          backgroundPositionParts[0] || "0%",
+          size,
+          renderedWidth,
+        );
+        const offsetY = parseBackgroundPosition(
+          backgroundPositionParts[1] || "50%",
+          size,
+          renderedHeight,
+        );
+
+        const patternCanvas = document.createElement("canvas");
+        patternCanvas.width = Math.max(1, Math.round(renderedWidth * renderScale));
+        patternCanvas.height = Math.max(
+          1,
+          Math.round(renderedHeight * renderScale),
+        );
+        const patternCtx = patternCanvas.getContext("2d");
+        if (patternCtx) {
+          patternCtx.drawImage(
+            textureImage,
+            0,
+            0,
+            patternCanvas.width,
+            patternCanvas.height,
+          );
+          const pattern = ctx.createPattern(patternCanvas, "repeat");
+          if (pattern) {
+            pattern.setTransform(
+              new DOMMatrix().translate(
+                (x - size / 2 + offsetX) * renderScale,
+                (y - size / 2 + offsetY) * renderScale,
+              ),
+            );
+            ctx.fillStyle = pattern;
+            ctx.fillRect(cx - radius, cy - radius, scaledSize, scaledSize);
+          }
+        }
+      } else {
+        ctx.fillStyle = "#555";
+        ctx.fillRect(cx - radius, cy - radius, scaledSize, scaledSize);
+      }
+
+      drawShadowOverlay(x, y, size, highlightAlpha, shadowAlpha);
+      ctx.restore();
+    };
+
+    const backgroundImage = await loadImage(resolveTextureAssetUrl(TEXTURE_MAP[bgTheme]));
+    ctx.fillStyle = "#03030b";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (backgroundImage?.complete && backgroundImage.naturalWidth > 0) {
+      ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+    }
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (showOrbits) {
+      planets.forEach((planet) => drawOrbit(planet.orbitSize));
+    }
+
+    await drawTexturedSphere(
+      450,
+      450,
+      96,
+      TEXTURE_MAP.sun,
+      systemViewport.querySelector(`[data-texture-url="${TEXTURE_MAP.sun}"]`),
+      "rgba(253, 184, 19, 0.32)",
+      0.25,
+      0.5,
+    );
+
+    for (let index = 0; index < planets.length; index += 1) {
+      const planet = planets[index];
+      const angleDeg =
+        planetRotations.current[planet.id] ?? ((index * 45) % 360);
+      const angle = (angleDeg * Math.PI) / 180;
+      const orbitRadius = planet.orbitSize / 2;
+      const x = 450 + Math.sin(angle) * orbitRadius;
+      const y = 450 - Math.cos(angle) * orbitRadius;
+      const orbitElement = planetElements.current[planet.id];
+      const sphereElement = orbitElement?.querySelector(
+        `[data-texture-url="${TEXTURE_MAP[planet.textureKey]}"]`,
+      ) as HTMLElement | null;
+
+      if (planet.hasRings) {
+        drawRingHalf(x, y, planet.size, planet.textureKey, false);
+      }
+
+      await drawTexturedSphere(
+        x,
+        y,
+        planet.size,
+        TEXTURE_MAP[planet.textureKey],
+        sphereElement,
+        undefined,
+        0.08,
+        0.9,
+      );
+
+      if (planet.hasRings) {
+        drawRingHalf(x, y, planet.size, planet.textureKey, true);
+      }
+
+      if (planet.hasMoon && showMoons) {
+        const moonOrbitDiameter = planet.size + 22;
+        const moonOrbitRadius = moonOrbitDiameter / 2;
+        const moonAngle = (((planetRotations.current[planet.id] ?? angleDeg) * 4.5) *
+          Math.PI) /
+          180;
+
+        ctx.save();
+        ctx.strokeStyle = "rgba(255,255,255,0.05)";
+        ctx.lineWidth = Math.max(1, renderScale * 0.75);
+        ctx.beginPath();
+        ctx.arc(
+          x * renderScale,
+          y * renderScale,
+          moonOrbitRadius * renderScale,
+          0,
+          Math.PI * 2,
+        );
+        ctx.stroke();
+        ctx.restore();
+
+        const moonX = x + Math.sin(moonAngle) * moonOrbitRadius;
+        const moonY = y - Math.cos(moonAngle) * moonOrbitRadius;
+        const moonElement = orbitElement?.querySelector(
+          `[data-texture-url="${TEXTURE_MAP.moon}"]`,
+        ) as HTMLElement | null;
+        await drawTexturedSphere(
+          moonX,
+          moonY,
+          5,
+          TEXTURE_MAP.moon,
+          moonElement,
+          undefined,
+          0.08,
+          0.92,
+        );
+      }
+    }
+
+    if (exportObjectUrlRef.current) {
+      URL.revokeObjectURL(exportObjectUrlRef.current);
+      exportObjectUrlRef.current = null;
+    }
+
+    const blob = await canvasToBlob(canvas);
+    const objectUrl = URL.createObjectURL(blob);
+    exportObjectUrlRef.current = objectUrl;
+    return objectUrl;
   };
 
   // Add planet
@@ -978,6 +1159,11 @@ export default function SolarSystem() {
 
                     setIsGeneratingPng(true);
                     try {
+                      await new Promise<void>((resolve) => {
+                        requestAnimationFrame(() => {
+                          setTimeout(resolve, 0);
+                        });
+                      });
                       const dataUrl = await captureSolarSystem();
                       if (!dataUrl) return;
                       setExportImage(dataUrl);
@@ -1825,6 +2011,10 @@ export default function SolarSystem() {
           }}
           shareUrl={typeof window !== "undefined" ? window.location.href : ""}
           onClose={() => {
+            if (exportObjectUrlRef.current) {
+              URL.revokeObjectURL(exportObjectUrlRef.current);
+              exportObjectUrlRef.current = null;
+            }
             setIsExporting(false);
             setExportImage(null);
           }}
