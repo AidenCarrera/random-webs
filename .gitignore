@@ -25,6 +25,7 @@
 *.pem
 .vscode
 /test.ps1
+/tasks/
 
 # debug
 npm-debug.log*
