@@ -11,9 +11,89 @@ import {
   Smartphone,
   Volume2,
 } from "lucide-react";
-import { PRESETS } from "./presets";
+import { PRESETS, type BeatPreset } from "./presets";
 
 const STEPS = 16;
+const BASS_NOTES = [
+  "C2",
+  "B1",
+  "A#1",
+  "A1",
+  "G#1",
+  "G1",
+  "F#1",
+  "F1",
+  "E1",
+  "D#1",
+  "D1",
+  "C#1",
+  "C1",
+];
+
+type BassNote = {
+  id: number;
+  pitchIndex: number;
+  start: number;
+  length: number;
+};
+
+type KitDefinition = {
+  id: string;
+  name: string;
+  folder: string | null;
+  samples: Record<string, string>;
+};
+
+type DrumKit = string;
+
+const SYNTH_KIT: KitDefinition = {
+  id: "synth",
+  name: "Synth Kit",
+  folder: null,
+  samples: {},
+};
+
+const sampleFiles = {
+  kick: "kick.wav",
+  snare: "snare.wav",
+  hihat: "hi-hat.wav",
+  clap: "clap.wav",
+  openhat: "open-hat.wav",
+  ride: "ride.wav",
+  cowbell: "cowbell.wav",
+  perc: "perc.wav",
+  bass: "808.wav",
+};
+
+const KIT_ORDER = ["808", "edm", "house", "trap"];
+
+const FALLBACK_KITS: KitDefinition[] = [
+  ...["808", "EDM", "House", "Trap"].map((folder) => ({
+    id: folder.toLowerCase(),
+    name: `${folder} Kit`,
+    folder,
+    samples: sampleFiles,
+  })),
+  SYNTH_KIT,
+];
+
+let kitRegistry = Object.fromEntries(FALLBACK_KITS.map((kit) => [kit.id, kit]));
+
+const PRESET_KITS: Record<string, DrumKit> = {
+  default: "808",
+  house: "house",
+  techno: "edm",
+  hiphop: "808",
+  trap: "trap",
+  fullkit: "edm",
+};
+
+const sampleUrl = (kitId: DrumKit, trackId: string) => {
+  const kit = kitRegistry[kitId];
+  const file = kit?.samples[trackId];
+  if (!kit?.folder || !file) return null;
+  return `/beat-maker/${encodeURIComponent(kit.folder)}/${encodeURIComponent(file)}`;
+};
 
 type TrackConfig = {
   id: string;
@@ -85,8 +165,8 @@ const EXTRA_TRACKS: TrackConfig[] = [
     glow: "rgba(244,114,182,0.4)",
   },
   {
-    id: "rim",
-    name: "RIM",
+    id: "perc",
+    name: "PERC",
     color: "bg-teal-400",
     text: "text-teal-400",
     accent: "#2dd4bf",
@@ -94,16 +174,27 @@ const EXTRA_TRACKS: TrackConfig[] = [
   },
 ];
 
+const BASS_MIXER_TRACK: TrackConfig = {
+  id: "bass",
+  name: "808 BASS",
+  color: "bg-indigo-500",
+  text: "text-indigo-400",
+  accent: "#818cf8",
+  glow: "rgba(99,102,241,0.5)",
+};
+
 class AudioEngine {
   instruments: Record<
     string,
-    Tone.MembraneSynth | Tone.NoiseSynth | Tone.MetalSynth | Tone.Sampler
+    Tone.Player | Tone.MembraneSynth | Tone.NoiseSynth | Tone.MetalSynth
   > = {};
+  filters: Record<string, Tone.Filter> = {};
   channels: Record<string, Tone.Channel> = {};
   meters: Record<string, Tone.Meter> = {};
   master: Tone.Volume | null = null;
   masterMeter: Tone.Meter | null = null;
   limit: Tone.Limiter | null = null;
+  bass: Tone.Sampler | Tone.MembraneSynth | null = null;
 
   async init() {
     await Tone.start();
@@ -114,20 +205,110 @@ class AudioEngine {
     this.masterMeter = new Tone.Meter();
     this.master.connect(this.masterMeter);
     INITIAL_TRACKS.forEach((t) => this.initTrack(t.id));
+    const bassChannel = new Tone.Channel({ volume: 0 }).connect(this.master);
+    const bassMeter = new Tone.Meter();
+    bassChannel.connect(bassMeter);
+    this.channels.bass = bassChannel;
+    this.meters.bass = bassMeter;
+    this.setBassSample("808");
   }
 
   addTrack(id: string) {
     if (!this.instruments[id]) this.initTrack(id);
   }
 
-  initTrack(id: string) {
+  initTrack(id: string, kit: DrumKit = "808") {
     if (!this.master) return;
-    const channel = new Tone.Channel({ volume: -6 }).connect(this.master);
+    const channel = new Tone.Channel({ volume: 0 }).connect(this.master);
     const meter = new Tone.Meter();
     channel.connect(meter);
     this.channels[id] = channel;
     this.meters[id] = meter;
-    let inst;
+    this.setKit(id, kit);
+  }
+
+  trigger(id: string, time: number) {
+    const inst = this.instruments[id];
+    if (inst instanceof Tone.Player) {
+      if (inst.loaded) inst.start(time);
+    } else if (inst instanceof Tone.MembraneSynth) {
+      inst.triggerAttackRelease("C1", "8n", time);
+    } else if (inst instanceof Tone.MetalSynth) {
+      inst.triggerAttackRelease("C5", "32n", time, 1);
+    } else if (inst instanceof Tone.NoiseSynth) {
+      if (id === "clap") {
+        inst.triggerAttackRelease("32n", time, 1);
+        inst.triggerAttackRelease("32n", time + 0.01, 0.7);
+        inst.triggerAttackRelease("32n", time + 0.02, 0.5);
+      } else {
+        inst.triggerAttackRelease("32n", time, 0.8);
+      }
+    }
+  }
+
+  triggerBass(note: string, time: number, steps = 1) {
+    const duration = Tone.Time("16n").toSeconds() * steps;
+    if (this.bass instanceof Tone.Sampler) {
+      if (this.bass.loaded)
+        this.bass.triggerAttackRelease(note, duration, time, 0.95);
+    } else {
+      this.bass?.triggerAttackRelease(note, duration, time, 0.95);
+    }
+  }
+
+  setBassSample(kit: DrumKit) {
+    const channel = this.channels.bass;
+    if (!channel) return;
+    this.bass?.dispose();
+
+    if (kit === "synth") {
+      const distortion = new Tone.Distortion({
+        distortion: 0.4,
+        oversample: "4x",
+      });
+
+      this.bass = new Tone.MembraneSynth({
+        pitchDecay: 0.05,
+        octaves: 2,
+        oscillator: {
+          type: "triangle",
+        },
+        envelope: {
+          attack: 0.001,
+          decay: 0.4,
+          sustain: 0.4,
+          release: 0.8,
+        },
+      });
+
+      this.bass.chain(distortion, channel);
+      this.bass.volume.value = -6;
+    } else {
+      const url = sampleUrl(kit, "bass");
+      if (!url) return;
+
+      this.bass = new Tone.Sampler({
+        urls: { C1: url },
+      }).connect(channel);
+      this.bass.volume.value = -4;
+    }
+  }
+
+  setKit(id: string, kit: DrumKit) {
+    const old = this.instruments[id];
+    const channel = this.channels[id];
+    if (!channel) return;
+    old?.dispose();
+    this.filters[id]?.dispose();
+    delete this.filters[id];
+    if (kit !== "synth") {
+      const url = sampleUrl(kit, id);
+      if (!url) return;
+      this.instruments[id] = new Tone.Player(url).connect(channel);
+      return;
+    }
+
+    let inst: Tone.MembraneSynth | Tone.NoiseSynth | Tone.MetalSynth;
     switch (id) {
       case "kick":
         inst = new Tone.MembraneSynth({
@@ -156,21 +337,20 @@ class AudioEngine {
         inst.frequency.value = 250;
         inst.volume.value = -10;
         break;
-      case "clap": {
-        const filter = new Tone.Filter(1500, "bandpass");
+      case "clap":
         inst = new Tone.NoiseSynth({
           noise: { type: "white" },
           envelope: { attack: 0.001, decay: 0.18, sustain: 0, release: 0.08 },
         });
         inst.volume.value = 2;
-        inst.connect(filter);
-        filter.connect(channel);
+        this.filters[id] = new Tone.Filter(1500, "bandpass");
+        inst.connect(this.filters[id]);
+        this.filters[id].connect(channel);
         this.instruments[id] = inst;
         return;
-      }
       case "openhat":
         inst = new Tone.MetalSynth({
-          envelope: { attack: 0.001, decay: 0.2, release: 1.0 },
+          envelope: { attack: 0.001, decay: 0.2, release: 1 },
           harmonicity: 5.1,
           modulationIndex: 32,
           resonance: 4000,
@@ -181,7 +361,7 @@ class AudioEngine {
         break;
       case "ride":
         inst = new Tone.MetalSynth({
-          envelope: { attack: 0.001, decay: 1.0, release: 1.2 },
+          envelope: { attack: 0.001, decay: 1, release: 1.2 },
           harmonicity: 3.1,
           modulationIndex: 20,
           resonance: 2800,
@@ -200,7 +380,7 @@ class AudioEngine {
         inst.frequency.value = 750;
         inst.volume.value = -10;
         break;
-      case "rim":
+      default:
         inst = new Tone.MembraneSynth({
           pitchDecay: 0.01,
           octaves: 2,
@@ -208,30 +388,9 @@ class AudioEngine {
           envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 },
         });
         inst.volume.value = -4;
-        break;
     }
-    if (inst) {
-      inst.connect(channel);
-      this.instruments[id] = inst;
-    }
-  }
-
-  trigger(id: string, time: number) {
-    const inst = this.instruments[id];
-    if (!inst) return;
-    if (inst instanceof Tone.MembraneSynth) {
-      inst.triggerAttackRelease("C1", "8n", time);
-    } else if (inst instanceof Tone.MetalSynth) {
-      inst.triggerAttackRelease("C5", "32n", time, 1);
-    } else if (inst instanceof Tone.NoiseSynth) {
-      if (id === "clap") {
-        inst.triggerAttackRelease("32n", time, 1);
-        inst.triggerAttackRelease("32n", time + 0.01, 0.7);
-        inst.triggerAttackRelease("32n", time + 0.02, 0.5);
-      } else {
-        inst.triggerAttackRelease("32n", time, 0.8);
-      }
-    }
+    inst.connect(channel);
+    this.instruments[id] = inst;
   }
 
   setVolume(id: string, dB: number) {
@@ -269,7 +428,7 @@ class AudioEngine {
     this.master.mute = mutes["master"] || false;
     const activeSolos = Object.values(solos).some((s) => s);
     Object.keys(this.channels).forEach((id) => {
-      this.setVolume(id, volumes[id] ?? -6);
+      this.setVolume(id, volumes[id] ?? 0);
       const ch = this.channels[id];
       if (ch) {
         ch.mute = mutes[id] || false || (activeSolos && !(solos[id] || false));
@@ -288,6 +447,9 @@ export default function BeatMaker() {
       .fill(null)
       .map(() => Array(STEPS).fill(false)),
   );
+  const [bassNotes, setBassNotes] = useState<BassNote[]>([]);
+  const bassNoteId = useRef(0);
+  const lastBassNoteLength = useRef(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [tempo, setTempo] = useState(120);
@@ -305,31 +467,69 @@ export default function BeatMaker() {
     setTempoInput(val.toString());
   };
   const [volumes, setVolumes] = useState<Record<string, number>>({
-    kick: -6,
-    snare: -6,
-    hihat: -6,
-    clap: -6,
-    openhat: -6,
-    ride: -6,
-    cowbell: -6,
-    rim: -6,
+    kick: 0,
+    snare: 0,
+    hihat: 0,
+    clap: 0,
+    openhat: 0,
+    ride: 0,
+    cowbell: 0,
+    perc: 0,
+    bass: 0,
     master: 0,
   });
   const [meterValues, setMeterValues] = useState<Record<string, number>>({});
   const [mutes, setMutes] = useState<Record<string, boolean>>({});
   const [solos, setSolos] = useState<Record<string, boolean>>({});
   const [swing, setSwing] = useState(50);
+  const [drumKits, setDrumKits] = useState<KitDefinition[]>(FALLBACK_KITS);
+  const [activeKit, setActiveKit] = useState<DrumKit>("808");
+  const [sampleAssignments, setSampleAssignments] = useState<
+    Record<string, DrumKit>
+  >(() =>
+    Object.fromEntries(
+      [...INITIAL_TRACKS, ...EXTRA_TRACKS, BASS_MIXER_TRACK].map((track) => [
+        track.id,
+        "808",
+      ]),
+    ),
+  );
   const isPainting = useRef(false);
   const paintState = useRef(false);
   const seqRef = useRef<Tone.Sequence | null>(null);
   const meterRaf = useRef<number | null>(null);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/beat-maker/kits", { signal: controller.signal })
+      .then((response) => response.json() as Promise<KitDefinition[]>)
+      .then((loadedKits) => {
+        const kits = [
+          ...loadedKits.sort((a, b) => {
+            const aRank = KIT_ORDER.indexOf(a.id);
+            const bRank = KIT_ORDER.indexOf(b.id);
+            return (
+              (aRank === -1 ? KIT_ORDER.length : aRank) -
+              (bRank === -1 ? KIT_ORDER.length : bRank)
+            );
+          }),
+          SYNTH_KIT,
+        ];
+        kitRegistry = Object.fromEntries(kits.map((kit) => [kit.id, kit]));
+        setDrumKits(kits);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+
   const gridRef = useRef(grid);
+  const bassNotesRef = useRef(bassNotes);
   const tracksRef = useRef(tracks);
   useEffect(() => {
     gridRef.current = grid;
+    bassNotesRef.current = bassNotes;
     tracksRef.current = tracks;
-  }, [grid, tracks]);
+  }, [grid, bassNotes, tracks]);
 
   useEffect(() => {
     const update = () => {
@@ -366,21 +566,59 @@ export default function BeatMaker() {
     engine.setSwing(Math.max(0, (val - 50) / 25));
   };
 
+  const loadDrumKit = (kit: DrumKit) => {
+    setActiveKit(kit);
+    const assignments = Object.fromEntries(
+      [...INITIAL_TRACKS, ...EXTRA_TRACKS, BASS_MIXER_TRACK].map((track) => [
+        track.id,
+        kit,
+      ]),
+    ) as Record<string, DrumKit>;
+    setSampleAssignments(assignments);
+    if (engine.master) {
+      engine.setBassSample(kit);
+      Object.entries(assignments).forEach(([id, selectedKit]) => {
+        if (id !== "bass") engine.setKit(id, selectedKit);
+      });
+    }
+  };
+
+  const setTrackSample = (id: string, kit: DrumKit) => {
+    setSampleAssignments((previous) => ({ ...previous, [id]: kit }));
+    if (engine.master) {
+      if (id === "bass") engine.setBassSample(kit);
+      else engine.setKit(id, kit);
+    }
+  };
+
   const loadPreset = (key: string) => {
     if (!PRESETS[key]) return;
     const p = PRESETS[key];
+    loadDrumKit(PRESET_KITS[key] ?? "808");
     const all = [...INITIAL_TRACKS, ...EXTRA_TRACKS];
     const cnt = Math.min(p.grid.length, all.length);
     const newTracks = all.slice(0, cnt);
     if (engine.master) newTracks.forEach((t) => engine.addTrack(t.id));
     setTracks(newTracks);
-    setGrid(p.grid.slice(0, cnt).map((row) => row.map((c) => c === 1)));
+    setGrid(
+      p.grid
+        .slice(0, cnt)
+        .map((row: number[]) => row.map((c: number) => c === 1)),
+    );
+    setBassNotes(
+      p.bass.map((note) => ({
+        id: ++bassNoteId.current,
+        pitchIndex: Math.max(0, BASS_NOTES.indexOf(note.pitch)),
+        start: note.start,
+        length: note.length,
+      })),
+    );
     handleSwingChange(p.swing);
     setTempo(p.tempo);
     setVolumes((prev) => {
       const n: Record<string, number> = { ...prev };
       newTracks.forEach((t) => {
-        if (n[t.id] === undefined) n[t.id] = -6;
+        if (n[t.id] === undefined) n[t.id] = 0;
       });
       // Sync audio engine with the freshly computed volumes
       const nm: Record<string, boolean> = {};
@@ -410,6 +648,10 @@ export default function BeatMaker() {
             engine.trigger(track.id, time);
           }
         });
+        bassNotesRef.current.forEach((note) => {
+          if (note.start === step)
+            engine.triggerBass(BASS_NOTES[note.pitchIndex], time, note.length);
+        });
       },
       Array.from({ length: STEPS }, (_, i) => i),
       "16n",
@@ -429,7 +671,11 @@ export default function BeatMaker() {
   const togglePlay = useCallback(async () => {
     if (!engine.master) {
       await engine.init();
+      engine.setBassSample(sampleAssignments.bass ?? activeKit);
       tracks.forEach((t) => engine.addTrack(t.id));
+      tracks.forEach((t) =>
+        engine.setKit(t.id, sampleAssignments[t.id] ?? "808"),
+      );
       engine.syncState(volumes, mutes, solos);
     }
     if (Tone.getContext().state !== "running") await Tone.start();
@@ -440,7 +686,7 @@ export default function BeatMaker() {
       Tone.Transport.start();
       setIsPlaying(true);
     }
-  }, [isPlaying, volumes, mutes, solos, tracks]);
+  }, [isPlaying, volumes, mutes, solos, tracks, sampleAssignments, activeKit]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -453,23 +699,27 @@ export default function BeatMaker() {
     return () => window.removeEventListener("keydown", h);
   }, [togglePlay]);
 
-  const clearGrid = () =>
+  const clearGrid = () => {
     setGrid(
       Array(tracks.length)
         .fill(null)
         .map(() => Array(STEPS).fill(false)),
     );
+    setBassNotes([]);
+  };
 
   const handleAddTrack = useCallback(() => {
     const idx = tracks.length - INITIAL_TRACKS.length;
     if (idx < EXTRA_TRACKS.length) {
       const t = EXTRA_TRACKS[idx];
       engine.addTrack(t.id);
+      if (engine.master)
+        engine.setKit(t.id, sampleAssignments[t.id] ?? activeKit);
       setTracks((p) => [...p, t]);
       setGrid((p) => [...p, Array(STEPS).fill(false)]);
-      setVolumes((p) => ({ ...p, [t.id]: -6 }));
+      setVolumes((p) => ({ ...p, [t.id]: 0 }));
     }
-  }, [tracks.length]);
+  }, [tracks.length, sampleAssignments, activeKit]);
 
   const updateStep = useCallback((ti: number, si: number, val: boolean) => {
     setGrid((p) => {
@@ -479,11 +729,103 @@ export default function BeatMaker() {
     });
   }, []);
 
+  const addBassNote = useCallback((pitchIndex: number, start: number) => {
+    setBassNotes((previous) => {
+      const occupied = previous.some(
+        (note) =>
+          note.pitchIndex === pitchIndex &&
+          start >= note.start &&
+          start < note.start + note.length,
+      );
+      if (occupied) return previous;
+      const nextNoteStart = Math.min(
+        STEPS,
+        ...previous
+          .filter(
+            (note) => note.pitchIndex === pitchIndex && note.start > start,
+          )
+          .map((note) => note.start),
+      );
+      const length = Math.max(
+        1,
+        Math.min(
+          lastBassNoteLength.current,
+          STEPS - start,
+          nextNoteStart - start,
+        ),
+      );
+      return [
+        ...previous,
+        { id: ++bassNoteId.current, pitchIndex, start, length },
+      ];
+    });
+  }, []);
+
+  const removeBassNote = useCallback((id: number) => {
+    setBassNotes((previous) => previous.filter((note) => note.id !== id));
+  }, []);
+
+  const resizeBassNote = useCallback(
+    (id: number, proposedStart: number, proposedLength: number) => {
+      setBassNotes((previous) => {
+        const target = previous.find((note) => note.id === id);
+        if (!target) return previous;
+        const samePitch = previous.filter(
+          (note) => note.pitchIndex === target.pitchIndex && note.id !== id,
+        );
+        const previousEnd = Math.max(
+          0,
+          ...samePitch
+            .filter((note) => note.start < target.start)
+            .map((note) => note.start + note.length),
+        );
+        const nextStart = Math.min(
+          STEPS,
+          ...samePitch
+            .filter((note) => note.start > target.start)
+            .map((note) => note.start),
+        );
+        const start = Math.max(previousEnd, Math.min(proposedStart, STEPS - 1));
+        const end = Math.max(
+          start + 1,
+          Math.min(nextStart, proposedStart + proposedLength),
+        );
+        lastBassNoteLength.current = end - start;
+        return previous.map((note) =>
+          note.id === id ? { ...note, start, length: end - start } : note,
+        );
+      });
+    },
+    [],
+  );
+
+  const moveBassNote = useCallback(
+    (id: number, pitchIndex: number, start: number) => {
+      setBassNotes((previous) => {
+        const target = previous.find((note) => note.id === id);
+        if (!target) return previous;
+        const nextStart = Math.max(0, Math.min(STEPS - target.length, start));
+        const overlaps = previous.some(
+          (note) =>
+            note.id !== id &&
+            note.pitchIndex === pitchIndex &&
+            nextStart < note.start + note.length &&
+            nextStart + target.length > note.start,
+        );
+        if (overlaps) return previous;
+        return previous.map((note) =>
+          note.id === id ? { ...note, pitchIndex, start: nextStart } : note,
+        );
+      });
+    },
+    [],
+  );
+
   const handleMouseDown = useCallback(
-    (ti: number, si: number) => {
+    (ti: number, si: number, active?: boolean) => {
       isPainting.current = true;
       // Read from ref so this callback never needs to depend on grid state
-      const ns = !gridRef.current[ti]?.[si];
+      const ns = active ?? !gridRef.current[ti]?.[si];
       paintState.current = ns;
       updateStep(ti, si, ns);
     },
@@ -518,6 +860,8 @@ export default function BeatMaker() {
           step="1"
           value={vol}
           onChange={(e) => handleVolumeChange(id, parseInt(e.target.value))}
+          onDoubleClick={() => handleVolumeChange(id, 0)}
+          title="Double-click to reset to 0 dB"
           className="absolute inset-0 w-36 md:w-44 h-6 origin-top-left -rotate-90 translate-y-36 md:translate-y-44 opacity-0 cursor-pointer z-20 touch-none"
         />
         <div
@@ -720,13 +1064,37 @@ export default function BeatMaker() {
                   >
                     LOAD...
                   </option>
-                  {Object.entries(PRESETS).map(([k, p]) => (
+                  {(Object.entries(PRESETS) as [string, BeatPreset][]).map(
+                    ([k, p]) => (
+                      <option
+                        key={k}
+                        value={k}
+                        style={{ background: "#0d0d14", color: "#e4e4e7" }}
+                      >
+                        {p.name}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] md:text-[10px] text-zinc-400 font-bold uppercase tracking-widest px-1">
+                  Drum Kit
+                </label>
+                <select
+                  title="Drum sample kit"
+                  value={activeKit}
+                  onChange={(e) => loadDrumKit(e.target.value as DrumKit)}
+                  className="text-[10px] md:text-xs font-bold px-3 py-1.5 md:py-2 rounded-xl border border-indigo-400/25 focus:outline-none cursor-pointer"
+                  style={{ background: "#0d0d14", color: "#c7d2fe" }}
+                >
+                  {drumKits.map((kit) => (
                     <option
-                      key={k}
-                      value={k}
+                      key={kit.id}
+                      value={kit.id}
                       style={{ background: "#0d0d14", color: "#e4e4e7" }}
                     >
-                      {p.name}
+                      {kit.name}
                     </option>
                   ))}
                 </select>
@@ -745,6 +1113,15 @@ export default function BeatMaker() {
           showAddButton={
             tracks.length < INITIAL_TRACKS.length + EXTRA_TRACKS.length
           }
+        />
+
+        <BassPianoRoll
+          notes={bassNotes}
+          currentStep={currentStep}
+          onAdd={addBassNote}
+          onRemove={removeBassNote}
+          onResize={resizeBassNote}
+          onMove={moveBassNote}
         />
 
         <div
@@ -767,7 +1144,7 @@ export default function BeatMaker() {
             />
           </div>
           <div className="flex justify-start lg:justify-center gap-3 md:gap-6 px-2 overflow-x-auto pb-2 w-full">
-            {tracks.map((track) => {
+            {[...tracks, BASS_MIXER_TRACK].map((track) => {
               const lvl = Math.max(-60, meterValues[track.id] || -60);
               const ht = ((lvl + 60) / 60) * 100;
               const meterBg =
@@ -785,7 +1162,7 @@ export default function BeatMaker() {
                     className="text-[9px] font-mono tabular-nums"
                     style={{ color: "rgba(161,161,170,0.5)" }}
                   >
-                    {(volumes[track.id] ?? -6).toFixed(0)}
+                    {(volumes[track.id] ?? 0).toFixed(0)}
                   </span>
                   <div className="flex gap-1">
                     <button
@@ -829,7 +1206,7 @@ export default function BeatMaker() {
                     className="flex gap-1.5 md:gap-2 h-36 md:h-44 p-1.5 rounded-xl border border-white/4"
                     style={{ background: "rgba(0,0,0,0.3)" }}
                   >
-                    {renderFader(track.id, volumes[track.id] ?? -6)}
+                    {renderFader(track.id, volumes[track.id] ?? 0)}
                     <div
                       className="w-1.5 h-full rounded-full relative overflow-hidden"
                       style={{ background: "rgba(255,255,255,0.04)" }}
@@ -859,6 +1236,25 @@ export default function BeatMaker() {
                     >
                       {track.name}
                     </span>
+                    <select
+                      aria-label={`${track.name} sample`}
+                      title={`Change ${track.name} sample`}
+                      value={sampleAssignments[track.id] ?? "808"}
+                      onChange={(e) =>
+                        setTrackSample(track.id, e.target.value as DrumKit)
+                      }
+                      className="w-12 md:w-14 px-1 py-0.5 rounded border border-white/10 bg-transparent text-[7px] md:text-[8px] font-bold text-zinc-400 cursor-pointer focus:outline-none focus:border-indigo-400"
+                    >
+                      {drumKits.map((kit) => (
+                        <option
+                          key={kit.id}
+                          value={kit.id}
+                          style={{ background: "#0d0d14" }}
+                        >
+                          {kit.name.replace(" Kit", "")}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               );
@@ -923,11 +1319,269 @@ export default function BeatMaker() {
   );
 }
 
+interface BassPianoRollProps {
+  notes: BassNote[];
+  currentStep: number;
+  onAdd: (pitchIndex: number, step: number) => void;
+  onRemove: (id: number) => void;
+  onResize: (id: number, start: number, length: number) => void;
+  onMove: (id: number, pitchIndex: number, start: number) => void;
+}
+
+const BassPianoRoll = memo(function BassPianoRoll({
+  notes,
+  currentStep,
+  onAdd,
+  onRemove,
+  onResize,
+  onMove,
+}: BassPianoRollProps) {
+  const isErasing = useRef(false);
+  const [eraseMode, setEraseMode] = useState(false);
+  const resizing = useRef<{
+    id: number;
+    edge: "left" | "right";
+    start: number;
+    end: number;
+    rowLeft: number;
+    rowWidth: number;
+  } | null>(null);
+  const moving = useRef<{
+    id: number;
+    pitchIndex: number;
+    start: number;
+    pointerX: number;
+    pointerY: number;
+    rowWidth: number;
+    rowHeight: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const resize = (event: MouseEvent) => {
+      const active = resizing.current;
+      if (active) {
+        const step = Math.max(
+          0,
+          Math.min(
+            STEPS - 1,
+            Math.floor(
+              ((event.clientX - active.rowLeft) / active.rowWidth) * STEPS,
+            ),
+          ),
+        );
+        if (active.edge === "left") {
+          const start = Math.min(step, active.end - 1);
+          onResize(active.id, start, active.end - start);
+        } else {
+          const end = Math.max(active.start + 1, step + 1);
+          onResize(active.id, active.start, end - active.start);
+        }
+        return;
+      }
+
+      const dragged = moving.current;
+      if (dragged) {
+        const stepDelta = Math.round(
+          (event.clientX - dragged.pointerX) / (dragged.rowWidth / STEPS),
+        );
+        const pitchDelta = Math.round(
+          (event.clientY - dragged.pointerY) / dragged.rowHeight,
+        );
+        onMove(
+          dragged.id,
+          Math.max(
+            0,
+            Math.min(BASS_NOTES.length - 1, dragged.pitchIndex + pitchDelta),
+          ),
+          dragged.start + stepDelta,
+        );
+      }
+    };
+    const stop = () => {
+      isErasing.current = false;
+      setEraseMode(false);
+      resizing.current = null;
+      moving.current = null;
+    };
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stop);
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stop);
+    };
+  }, [onMove, onResize]);
+
+  const beginResize = (
+    event: React.MouseEvent,
+    note: BassNote,
+    edge: "left" | "right",
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.button !== 0) return;
+    const row = event.currentTarget.closest("[data-bass-row]");
+    if (!row) return;
+    const bounds = row.getBoundingClientRect();
+    resizing.current = {
+      id: note.id,
+      edge,
+      start: note.start,
+      end: note.start + note.length,
+      rowLeft: bounds.left,
+      rowWidth: bounds.width,
+    };
+  };
+
+  const beginMove = (event: React.MouseEvent, note: BassNote) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const row = event.currentTarget.closest("[data-bass-row]");
+    const rows = event.currentTarget.closest("[data-piano-rows]");
+    if (!row || !rows) return;
+    const rowBounds = row.getBoundingClientRect();
+    const rowsBounds = rows.getBoundingClientRect();
+    moving.current = {
+      id: note.id,
+      pitchIndex: note.pitchIndex,
+      start: note.start,
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      rowWidth: rowBounds.width,
+      rowHeight: rowsBounds.height / BASS_NOTES.length,
+    };
+  };
+  return (
+    <div
+      className={`w-full max-w-6xl rounded-2xl border border-indigo-400/20 p-3 md:p-4 mb-3 md:mb-4 overflow-hidden ${eraseMode ? "cursor-not-allowed" : ""}`}
+      style={{ background: "linear-gradient(135deg,#101018,#0b0b12)" }}
+      onContextMenu={(event) => event.preventDefault()}
+      onMouseDownCapture={(event) => {
+        if (event.button === 2) {
+          event.preventDefault();
+          isErasing.current = true;
+          setEraseMode(true);
+        }
+      }}
+    >
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-3">
+          <div>
+            <h2 className="text-zinc-200 font-bold text-[10px] uppercase tracking-[0.3em]">
+              808 Bass Piano Roll
+            </h2>
+            <p className="hidden">Piano roll · choose a pitch for each step</p>
+          </div>
+        </div>
+      </div>
+      <div
+        className="rounded-xl overflow-hidden"
+        style={{ background: "rgba(0,0,0,0.22)" }}
+        data-piano-rows
+      >
+        {BASS_NOTES.map((note, noteIndex) => {
+          const blackKey = note.includes("#");
+          return (
+            <div
+              key={note}
+              className="flex items-stretch gap-3 md:gap-4 min-h-6 md:min-h-7"
+            >
+              <button
+                type="button"
+                onDoubleClick={() => {
+                  if (!engine.master) return;
+                  engine.triggerBass(note, Tone.now());
+                }}
+                className="w-16 md:w-20 shrink-0 py-1 text-left px-2 md:px-3 text-[9px] md:text-[10px] font-bold tracking-widest transition-colors"
+                style={{
+                  background: blackKey
+                    ? "#09090d"
+                    : "linear-gradient(90deg,#e4e4e7,#b8b8c1)",
+                  color: blackKey ? "#71717a" : "#18181b",
+                }}
+                title={`Double-click to preview ${note}`}
+              >
+                {note}
+              </button>
+              <div className="relative flex-1 grid grid-cols-16" data-bass-row>
+                {Array.from({ length: STEPS }, (_, step) => (
+                  <button
+                    type="button"
+                    key={step}
+                    aria-label={`Add ${note} at step ${step + 1}`}
+                    onClick={() => onAdd(noteIndex, step)}
+                    className="min-h-6 md:min-h-7 border-r border-b border-white/5"
+                    style={{
+                      background: blackKey
+                        ? "rgba(0,0,0,0.25)"
+                        : step % 4 === 0
+                          ? "rgba(255,255,255,0.075)"
+                          : "rgba(255,255,255,0.03)",
+                      boxShadow:
+                        currentStep === step
+                          ? "inset 0 0 0 1px rgba(255,255,255,0.5)"
+                          : "none",
+                    }}
+                  />
+                ))}
+                {notes
+                  .filter((bassNote) => bassNote.pitchIndex === noteIndex)
+                  .map((bassNote) => (
+                    <div
+                      key={bassNote.id}
+                      className={`absolute top-0 bottom-0 z-10 rounded-sm border border-indigo-200 select-none ${eraseMode ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing"}`}
+                      style={{
+                        left: `calc(${(bassNote.start / STEPS) * 100}% + 1px)`,
+                        width: `calc(${(bassNote.length / STEPS) * 100}% - 2px)`,
+                        background: "linear-gradient(135deg,#a5b4fc,#4f46e5)",
+                        boxShadow:
+                          "inset 0 0 12px rgba(255,255,255,0.22),0 0 8px rgba(99,102,241,0.55)",
+                      }}
+                      onMouseDownCapture={(event) => {
+                        if (event.button === 2) {
+                          event.preventDefault();
+                          onRemove(bassNote.id);
+                        }
+                      }}
+                      onMouseDown={(event) => beginMove(event, bassNote)}
+                      onMouseEnter={() => {
+                        if (isErasing.current) onRemove(bassNote.id);
+                      }}
+                      onDoubleClick={() => onRemove(bassNote.id)}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onRemove(bassNote.id);
+                      }}
+                      title="Left-drag either edge to resize. Right-click to remove."
+                    >
+                      <span
+                        onMouseDown={(event) =>
+                          beginResize(event, bassNote, "left")
+                        }
+                        className={`absolute left-0 top-0 bottom-0 w-2 ${eraseMode ? "cursor-not-allowed" : "cursor-ew-resize"}`}
+                      />
+                      <span
+                        onMouseDown={(event) =>
+                          beginResize(event, bassNote, "right")
+                        }
+                        className={`absolute right-0 top-0 bottom-0 w-2 ${eraseMode ? "cursor-not-allowed" : "cursor-ew-resize"}`}
+                      />
+                    </div>
+                  ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
+
 interface SequencerGridProps {
   tracks: TrackConfig[];
   grid: boolean[][];
   currentStep: number;
-  onMouseDown: (ti: number, si: number) => void;
+  onMouseDown: (ti: number, si: number, active?: boolean) => void;
   onMouseEnter: (ti: number, si: number) => void;
   onAddTrack: () => void;
   showAddButton: boolean;
@@ -944,6 +1598,13 @@ const SequencerGrid = memo(function SequencerGrid({
 }: SequencerGridProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTouchRef = useRef<{ track: number; step: number } | null>(null);
+  const [eraseMode, setEraseMode] = useState(false);
+
+  useEffect(() => {
+    const stopErasing = () => setEraseMode(false);
+    window.addEventListener("mouseup", stopErasing);
+    return () => window.removeEventListener("mouseup", stopErasing);
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -991,7 +1652,8 @@ const SequencerGrid = memo(function SequencerGrid({
   return (
     <div
       ref={containerRef}
-      className="w-full max-w-6xl rounded-2xl border border-white/6 p-3 md:p-4 mb-3 md:mb-4"
+      onContextMenu={(event) => event.preventDefault()}
+      className={`w-full max-w-6xl rounded-2xl border border-white/6 p-3 md:p-4 mb-3 md:mb-4 ${eraseMode ? "cursor-not-allowed" : ""}`}
       style={{
         background: "#121218",
       }}
@@ -1019,10 +1681,17 @@ const SequencerGrid = memo(function SequencerGrid({
               return (
                 <div
                   key={si}
-                  className="aspect-square relative touch-none cursor-pointer"
+                  className={`aspect-square relative touch-none ${eraseMode ? "cursor-not-allowed" : "cursor-pointer"}`}
                   data-track={ti}
                   data-step={si}
-                  onMouseDown={() => onMouseDown(ti, si)}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    if (event.button === 0) onMouseDown(ti, si, true);
+                    if (event.button === 2) {
+                      setEraseMode(true);
+                      onMouseDown(ti, si, false);
+                    }
+                  }}
                   onMouseEnter={() => onMouseEnter(ti, si)}
                 >
                   <div
