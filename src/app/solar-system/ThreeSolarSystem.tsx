@@ -41,6 +41,8 @@ type Props = {
   onPlanetSelect: (id: string) => void;
   onSunSelect: () => void;
   onCanvasReady: (canvas: HTMLCanvasElement | null) => void;
+  isExporting?: boolean;
+  onLoaded?: () => void;
 };
 
 type RingKind = "saturn" | "uranus" | "generic";
@@ -214,6 +216,8 @@ export function ThreeSolarSystem({
   onPlanetSelect,
   onSunSelect,
   onCanvasReady,
+  isExporting = false,
+  onLoaded,
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRevisionRef = useRef(0);
@@ -228,6 +232,8 @@ export function ThreeSolarSystem({
     onPlanetSelect,
     onSunSelect,
     onCanvasReady,
+    isExporting,
+    onLoaded,
   });
 
   propsRef.current = {
@@ -241,11 +247,13 @@ export function ThreeSolarSystem({
     onPlanetSelect,
     onSunSelect,
     onCanvasReady,
+    isExporting,
+    onLoaded,
   };
 
   useEffect(() => {
     sceneRevisionRef.current += 1;
-  }, [planets, showOrbits, showMoons, enableGlow, bgTheme]);
+  }, [planets, showOrbits, showMoons, enableGlow, bgTheme, isExporting]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -265,13 +273,14 @@ export function ThreeSolarSystem({
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
-      alpha: false,
+      alpha: true,
       preserveDrawingBuffer: true,
       powerPreference: "high-performance",
     });
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
-    renderer.domElement.className = "block h-full w-full cursor-crosshair touch-manipulation";
+    renderer.domElement.className =
+      "block h-full w-full cursor-crosshair touch-manipulation";
     renderer.domElement.setAttribute("role", "img");
     renderer.domElement.setAttribute(
       "aria-label",
@@ -285,10 +294,26 @@ export function ThreeSolarSystem({
     scene.add(staticRoot, planetRoot);
 
     let needsRender = true;
+    let texturesLoaded = false;
+    let hasRenderedFirstFrame = false;
 
-    const textureLoader = new THREE.TextureLoader();
+    const loadingManager = new THREE.LoadingManager();
+    loadingManager.onLoad = () => {
+      texturesLoaded = true;
+      needsRender = true;
+    };
+
+    const loadTimeout = setTimeout(() => {
+      texturesLoaded = true;
+      needsRender = true;
+    }, 2500);
+
+    const textureLoader = new THREE.TextureLoader(loadingManager);
     const textureCache = new Map<SolarTextureKey, THREE.Texture>();
-    const planetMaterialCache = new Map<SolarTextureKey, THREE.MeshStandardMaterial>();
+    const planetMaterialCache = new Map<
+      SolarTextureKey,
+      THREE.MeshStandardMaterial
+    >();
     const ringTextureCache = new Map<RingKind, THREE.CanvasTexture>();
     const ringGeometryCache = new Map<RingKind, THREE.RingGeometry>();
     const ringMaterialCache = new Map<RingKind, THREE.MeshBasicMaterial>();
@@ -305,7 +330,10 @@ export function ThreeSolarSystem({
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.wrapS = THREE.RepeatWrapping;
       texture.wrapT = THREE.ClampToEdgeWrapping;
-      texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      texture.anisotropy = Math.min(
+        8,
+        renderer.capabilities.getMaxAnisotropy(),
+      );
       textureCache.set(key, texture);
       return texture;
     };
@@ -328,7 +356,10 @@ export function ThreeSolarSystem({
       if (cached) return cached;
 
       const texture = createRingTexture(kind);
-      texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+      texture.anisotropy = Math.min(
+        4,
+        renderer.capabilities.getMaxAnisotropy(),
+      );
       ringTextureCache.set(kind, texture);
       return texture;
     };
@@ -361,7 +392,6 @@ export function ThreeSolarSystem({
     const backgroundGeometry = new THREE.PlaneGeometry(1, 1);
     const backgroundMaterial = new THREE.MeshBasicMaterial({
       map: getTexture(propsRef.current.bgTheme),
-      color: 0x777777,
       depthWrite: false,
     });
     const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
@@ -372,7 +402,7 @@ export function ThreeSolarSystem({
     const shadeMaterial = new THREE.MeshBasicMaterial({
       color: 0x000000,
       transparent: true,
-      opacity: 0.38,
+      opacity: 0.4,
       depthWrite: false,
     });
     const shade = new THREE.Mesh(backgroundGeometry, shadeMaterial);
@@ -540,6 +570,9 @@ export function ThreeSolarSystem({
       const current = propsRef.current;
       const seenIds = new Set<string>();
 
+      background.visible = Boolean(current.isExporting);
+      shade.visible = Boolean(current.isExporting);
+
       backgroundMaterial.map = getTexture(current.bgTheme);
       backgroundMaterial.needsUpdate = true;
       sunGlow.visible = current.enableGlow;
@@ -565,7 +598,9 @@ export function ThreeSolarSystem({
       const height = Math.max(1, mount.clientHeight);
       const aspect = width / height;
 
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
+      renderer.setPixelRatio(
+        Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO),
+      );
       renderer.setSize(width, height, false);
 
       if (aspect >= 1) {
@@ -663,12 +698,18 @@ export function ThreeSolarSystem({
       if (needsRender) {
         renderer.render(scene, camera);
         needsRender = false;
+
+        if (texturesLoaded && !hasRenderedFirstFrame) {
+          hasRenderedFirstFrame = true;
+          propsRef.current.onLoaded?.();
+        }
       }
     };
 
     animate();
 
     return () => {
+      clearTimeout(loadTimeout);
       cancelAnimationFrame(frame);
       resizeObserver.disconnect();
       renderer.domElement.removeEventListener("pointerup", handlePointerUp);

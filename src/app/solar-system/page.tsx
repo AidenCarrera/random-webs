@@ -231,12 +231,17 @@ export default function SolarSystem() {
   const [timeScale, setTimeScale] = useState(1);
   const [selectedPlanet, setSelectedPlanet] = useState<Planet | null>(null);
 
+  const [mounted, setMounted] = useState(false);
+  const [systemLoaded, setSystemLoaded] = useState(false);
+
   // Customization Toggles
   const [showOrbits, setShowOrbits] = useState(true);
   const [showMoons, setShowMoons] = useState(true);
   const [enableGlow, setEnableGlow] = useState(true);
-  const [bgTheme, setBgTheme] = useState<"stars" | "stars_milky_way">("stars");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [bgTheme, setBgTheme] = useState<"stars" | "stars_milky_way">(
+    "stars_milky_way",
+  );
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Export Modal state
   const [exportImage, setExportImage] = useState<string | null>(null);
@@ -270,13 +275,15 @@ export default function SolarSystem() {
   const planetRotations = useRef<{ [id: string]: number }>({});
   const planetElements = useRef<{ [id: string]: HTMLDivElement | null }>({});
   const textureAssetCacheRef = useRef<Map<string, string> | null>(null);
-  const textureAssetCachePromiseRef = useRef<Promise<Map<string, string>> | null>(
-    null,
-  );
-  const loadedImageCacheRef = useRef<Map<string, Promise<HTMLImageElement | null>>>(
+  const textureAssetCachePromiseRef = useRef<Promise<
+    Map<string, string>
+  > | null>(null);
+  const loadedImageCacheRef = useRef<
+    Map<string, Promise<HTMLImageElement | null>>
+  >(new Map());
+  const ringTextureCacheRef = useRef<Map<TextureKey, HTMLCanvasElement>>(
     new Map(),
   );
-  const ringTextureCacheRef = useRef<Map<TextureKey, HTMLCanvasElement>>(new Map());
   const requestRef = useRef<number>(0);
   const planetsRef = useRef(planets);
   const pausedRef = useRef(paused);
@@ -295,6 +302,7 @@ export default function SolarSystem() {
 
   // Handle container resizing to fit on screen
   useEffect(() => {
+    setMounted(true);
     const handleResize = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -386,10 +394,7 @@ export default function SolarSystem() {
 
     return () => {
       cancelled = true;
-      if (
-        idleCallbackId !== null &&
-        "cancelIdleCallback" in window
-      ) {
+      if (idleCallbackId !== null && "cancelIdleCallback" in window) {
         window.cancelIdleCallback(idleCallbackId);
       }
       if (timeoutId !== null) {
@@ -617,7 +622,9 @@ export default function SolarSystem() {
         return containerSize - imageSize;
       }
       if (normalized.endsWith("%")) {
-        return ((containerSize - imageSize) * Number.parseFloat(normalized)) / 100;
+        return (
+          ((containerSize - imageSize) * Number.parseFloat(normalized)) / 100
+        );
       }
       if (normalized.endsWith("px")) {
         return Number.parseFloat(normalized);
@@ -673,7 +680,14 @@ export default function SolarSystem() {
         ringTexture.height = 512;
         const ringCtx = ringTexture.getContext("2d");
         if (ringCtx) {
-          const gradient = ringCtx.createRadialGradient(256, 256, 0, 256, 256, 256);
+          const gradient = ringCtx.createRadialGradient(
+            256,
+            256,
+            0,
+            256,
+            256,
+            256,
+          );
           if (textureKey === "saturn") {
             gradient.addColorStop(0.38, "rgba(0,0,0,0)");
             gradient.addColorStop(0.39, "rgba(224,205,167,0.25)");
@@ -711,7 +725,12 @@ export default function SolarSystem() {
       if (frontHalf) {
         ctx.rect(-scaleDiameter, 0, scaleDiameter * 2, scaleDiameter);
       } else {
-        ctx.rect(-scaleDiameter, -scaleDiameter, scaleDiameter * 2, scaleDiameter);
+        ctx.rect(
+          -scaleDiameter,
+          -scaleDiameter,
+          scaleDiameter * 2,
+          scaleDiameter,
+        );
       }
       ctx.clip();
       ctx.globalAlpha = frontHalf ? 0.8 : 0.68;
@@ -789,10 +808,12 @@ export default function SolarSystem() {
 
       if (textureImage?.complete && textureImage.naturalWidth > 0) {
         const computedStyle = element ? window.getComputedStyle(element) : null;
-        const backgroundSizeParts =
-          computedStyle?.backgroundSize.split(" ") || ["200%", "140%"];
-        const backgroundPositionParts =
-          computedStyle?.backgroundPosition.split(" ") || ["0%", "50%"];
+        const backgroundSizeParts = computedStyle?.backgroundSize.split(
+          " ",
+        ) || ["200%", "140%"];
+        const backgroundPositionParts = computedStyle?.backgroundPosition.split(
+          " ",
+        ) || ["0%", "50%"];
         const renderedWidth = parseBackgroundLength(
           backgroundSizeParts[0] || "200%",
           size,
@@ -815,7 +836,10 @@ export default function SolarSystem() {
         );
 
         const patternCanvas = document.createElement("canvas");
-        patternCanvas.width = Math.max(1, Math.round(renderedWidth * renderScale));
+        patternCanvas.width = Math.max(
+          1,
+          Math.round(renderedWidth * renderScale),
+        );
         patternCanvas.height = Math.max(
           1,
           Math.round(renderedHeight * renderScale),
@@ -850,7 +874,9 @@ export default function SolarSystem() {
       ctx.restore();
     };
 
-    const backgroundImage = await loadImage(resolveTextureAssetUrl(TEXTURE_MAP[bgTheme]));
+    const backgroundImage = await loadImage(
+      resolveTextureAssetUrl(TEXTURE_MAP[bgTheme]),
+    );
     ctx.fillStyle = "#03030b";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     if (backgroundImage?.complete && backgroundImage.naturalWidth > 0) {
@@ -876,8 +902,7 @@ export default function SolarSystem() {
 
     for (let index = 0; index < planets.length; index += 1) {
       const planet = planets[index];
-      const angleDeg =
-        planetRotations.current[planet.id] ?? ((index * 45) % 360);
+      const angleDeg = planetRotations.current[planet.id] ?? (index * 45) % 360;
       const angle = (angleDeg * Math.PI) / 180;
       const orbitRadius = planet.orbitSize / 2;
       const x = 450 + Math.sin(angle) * orbitRadius;
@@ -909,8 +934,8 @@ export default function SolarSystem() {
       if (planet.hasMoon && showMoons) {
         const moonOrbitDiameter = planet.size + 22;
         const moonOrbitRadius = moonOrbitDiameter / 2;
-        const moonAngle = (((planetRotations.current[planet.id] ?? angleDeg) * 4.5) *
-          Math.PI) /
+        const moonAngle =
+          ((planetRotations.current[planet.id] ?? angleDeg) * 4.5 * Math.PI) /
           180;
 
         ctx.save();
@@ -1028,9 +1053,12 @@ export default function SolarSystem() {
     });
   }, []);
 
-  const handleThreeCanvasReady = useCallback((canvas: HTMLCanvasElement | null) => {
-    threeCanvasRef.current = canvas;
-  }, []);
+  const handleThreeCanvasReady = useCallback(
+    (canvas: HTMLCanvasElement | null) => {
+      threeCanvasRef.current = canvas;
+    },
+    [],
+  );
 
   const selectedGlow =
     selectedPlanet?.id !== "sun" && selectedPlanet
@@ -1091,8 +1119,12 @@ export default function SolarSystem() {
 
       {/* Collapsible Settings & Creator Panel */}
       <div
-        className={`order-2 relative z-40 mb-4 w-full max-w-sm self-stretch bg-black/50 backdrop-blur-xl border border-white/10 p-5 rounded-2xl flex flex-col shadow-[0_15px_40px_rgba(0,0,0,0.6)] transition-all duration-300 md:absolute md:top-1/2 md:left-6 md:mb-0 md:w-80 md:max-w-none md:-translate-y-1/2 ${
-          sidebarOpen ? "max-h-[70vh] md:max-h-[80vh]" : "max-h-13.5 overflow-hidden"
+        className={`order-2 relative z-40 mb-4 w-full max-w-sm self-stretch bg-black/50 backdrop-blur-xl border border-white/10 p-5 rounded-2xl flex flex-col shadow-[0_15px_40px_rgba(0,0,0,0.6)] ${
+          mounted ? "transition-all duration-300" : ""
+        } md:absolute md:top-1/2 md:left-6 md:mb-0 md:w-80 md:max-w-none md:-translate-y-1/2 ${
+          sidebarOpen
+            ? "max-h-[70vh] md:max-h-[80vh]"
+            : "max-h-13.5 overflow-hidden"
         }`}
       >
         {/* Clickable Header Area */}
@@ -1524,195 +1556,210 @@ export default function SolarSystem() {
             transformOrigin: isMobileViewport ? "center top" : "center center",
           }}
         >
-          <div
-            className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
-            style={{
-              backgroundImage: `url(${TEXTURE_MAP[bgTheme]})`,
-            }}
-          />
-          <div className="absolute inset-0 bg-black/40" />
+          {isGeneratingPng && (
+            <>
+              <div
+                className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+                style={{
+                  backgroundImage: `url(${TEXTURE_MAP[bgTheme]})`,
+                }}
+              />
+              <div className="absolute inset-0 bg-black/40" />
+            </>
+          )}
+          {!systemLoaded && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-40 transition-opacity duration-500 pointer-events-none">
+              <span className="text-xs font-mono tracking-[0.2em] uppercase text-white/80 animate-pulse">
+                Initializing Simulation...
+              </span>
+            </div>
+          )}
           <div
             ref={systemViewportRef}
             className="relative flex h-full w-full items-center justify-center transition-transform duration-300"
           >
-          <div className="absolute inset-0 z-30">
-            <ThreeSolarSystem
-              planets={planets}
-              paused={paused}
-              timeScale={timeScale}
-              showOrbits={showOrbits}
-              showMoons={showMoons}
-              enableGlow={enableGlow}
-              bgTheme={bgTheme}
-              onPlanetSelect={handleThreePlanetSelect}
-              onSunSelect={handleThreeSunSelect}
-              onCanvasReady={handleThreeCanvasReady}
-            />
-          </div>
-          <div className="hidden">
-          {/* Stellar Core: The Sun */}
-          <div
-            data-texture-url={TEXTURE_MAP.sun}
-            className="absolute w-24 h-24 rounded-full z-20 flex items-center justify-center planet-texture-spin-slow cursor-pointer"
-            style={{
-              backgroundImage: `url(${TEXTURE_MAP.sun})`,
-              boxShadow: enableGlow
-                ? `0 0 60px rgba(253, 184, 19, 0.40), 0 0 25px rgba(253, 184, 19, 0.25)`
-                : "none",
-              animationPlayState: paused ? "paused" : "running",
-            }}
-            onClick={() =>
-              setSelectedPlanet({
-                id: "sun",
-                name: "The Sun",
-                textureKey: "sun",
-                size: 96,
-                orbitSize: 0,
-                duration: 0,
-                type: "Yellow Dwarf Star",
-                temp: "5,778 K",
-                desc: "The yellow dwarf star at the gravitational heart of our system. It comprises roughly 99.8% of the system's total mass.",
-              })
-            }
-          >
-            {/* Subtle star atmospheric glow overlay */}
-            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.25)_0%,rgba(0,0,0,0.5)_95%)] mix-blend-overlay" />
-          </div>
-
-          {/* Dynamic Planets Render Loop */}
-          {planets.map((planet, index) => (
             <div
-              key={planet.id}
-              ref={(el) => {
-                if (el) {
-                  planetElements.current[planet.id] = el;
-                } else {
-                  delete planetElements.current[planet.id];
-                }
-              }}
-              className={`absolute rounded-full flex items-center justify-center pointer-events-none transition-colors duration-300 ${
-                showOrbits
-                  ? "border border-white/10"
-                  : "border border-transparent"
-              }`}
-              style={{
-                width: `${planet.orbitSize}px`,
-                height: `${planet.orbitSize}px`,
-                transform: `rotate(${(index * 45) % 360}deg)`,
-              }}
+              className={`absolute inset-0 z-30 transition-opacity duration-1000 ${systemLoaded ? "opacity-100" : "opacity-0"}`}
             >
-              {/* Planet Group Wrapper (positioned at the top edge of orbit circle) */}
+              <ThreeSolarSystem
+                planets={planets}
+                paused={paused}
+                timeScale={timeScale}
+                showOrbits={showOrbits}
+                showMoons={showMoons}
+                enableGlow={enableGlow}
+                bgTheme={bgTheme}
+                onPlanetSelect={handleThreePlanetSelect}
+                onSunSelect={handleThreeSunSelect}
+                onCanvasReady={handleThreeCanvasReady}
+                isExporting={isGeneratingPng}
+                onLoaded={() => setSystemLoaded(true)}
+              />
+            </div>
+            <div className="hidden">
+              {/* Stellar Core: The Sun */}
               <div
-                className="absolute left-1/2 flex flex-col items-center justify-center pointer-events-auto"
+                data-texture-url={TEXTURE_MAP.sun}
+                className="absolute w-24 h-24 rounded-full z-20 flex items-center justify-center planet-texture-spin-slow cursor-pointer"
                 style={{
-                  transform: `translate(-50%, -50%)`,
-                  top: 0,
-                  width: `${planet.size * 2 + 50}px`,
-                  height: `${planet.size * 2 + 50}px`,
+                  backgroundImage: `url(${TEXTURE_MAP.sun})`,
+                  boxShadow: enableGlow
+                    ? `0 0 60px rgba(253, 184, 19, 0.40), 0 0 25px rgba(253, 184, 19, 0.25)`
+                    : "none",
+                  animationPlayState: paused ? "paused" : "running",
                 }}
+                onClick={() =>
+                  setSelectedPlanet({
+                    id: "sun",
+                    name: "The Sun",
+                    textureKey: "sun",
+                    size: 96,
+                    orbitSize: 0,
+                    duration: 0,
+                    type: "Yellow Dwarf Star",
+                    temp: "5,778 K",
+                    desc: "The yellow dwarf star at the gravitational heart of our system. It comprises roughly 99.8% of the system's total mass.",
+                  })
+                }
               >
-                {/* 1. BACK RING (renders behind the planet sphere) */}
-                {planet.hasRings && (
-                  <div
-                    className="absolute top-1/2 left-1/2 pointer-events-none origin-center rounded-full"
-                    style={{
-                      width: `${planet.size * (planet.textureKey === "saturn" ? 2.8 : planet.textureKey === "uranus" ? 2.2 : 2.4)}px`,
-                      height: `${planet.size * (planet.textureKey === "saturn" ? 2.8 : planet.textureKey === "uranus" ? 2.2 : 2.4)}px`,
-                      background: getRingGradient(planet.textureKey),
-                      transform:
-                        "translate(-50%, -50%) rotateX(72deg) rotateY(12deg)",
-                      opacity: 0.8,
-                      zIndex: 5,
-                      clipPath: "inset(0 0 50% 0)",
-                    }}
-                  />
-                )}
+                {/* Subtle star atmospheric glow overlay */}
+                <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.25)_0%,rgba(0,0,0,0.5)_95%)] mix-blend-overlay" />
+              </div>
 
-                {/* Planet sphere */}
+              {/* Dynamic Planets Render Loop */}
+              {planets.map((planet, index) => (
                 <div
-                  data-texture-url={TEXTURE_MAP[planet.textureKey]}
-                  className={`rounded-full relative transition-transform duration-300 cursor-pointer group planet-texture-spin`}
-                  style={{
-                    width: `${planet.size}px`,
-                    height: `${planet.size}px`,
-                    backgroundImage: `url(${TEXTURE_MAP[planet.textureKey]})`,
-                    boxShadow: enableGlow
-                      ? `0 0 8px ${GLOW_COLORS[planet.textureKey] || "rgba(255,255,255,0.05)"}`
-                      : "none",
-                    animationPlayState: paused ? "paused" : "running",
-                    animationDuration:
-                      planet.textureKey === "jupiter"
-                        ? "8s"
-                        : planet.textureKey === "saturn"
-                          ? "10s"
-                          : planet.textureKey === "earth"
-                            ? "16s"
-                            : "22s",
-                    zIndex: 10,
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (planet.id !== "preview-planet") {
-                      setSelectedPlanet(planet);
+                  key={planet.id}
+                  ref={(el) => {
+                    if (el) {
+                      planetElements.current[planet.id] = el;
+                    } else {
+                      delete planetElements.current[planet.id];
                     }
                   }}
+                  className={`absolute rounded-full flex items-center justify-center pointer-events-none transition-colors duration-300 ${
+                    showOrbits
+                      ? "border border-white/10"
+                      : "border border-transparent"
+                  }`}
+                  style={{
+                    width: `${planet.orbitSize}px`,
+                    height: `${planet.orbitSize}px`,
+                    transform: `rotate(${(index * 45) % 360}deg)`,
+                  }}
                 >
-                  {/* Real-time 3D Spherical Shadow Mask Overlay */}
-                  <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.12)_0%,rgba(0,0,0,0.88)_82%)] pointer-events-none" />
-                </div>
-
-                {/* 2. FRONT RING (renders in front of the planet sphere, clipped to bottom half) */}
-                {planet.hasRings && (
+                  {/* Planet Group Wrapper (positioned at the top edge of orbit circle) */}
                   <div
-                    className="absolute top-1/2 left-1/2 pointer-events-none origin-center rounded-full"
+                    className="absolute left-1/2 flex flex-col items-center justify-center pointer-events-auto"
                     style={{
-                      width: `${planet.size * (planet.textureKey === "saturn" ? 2.8 : planet.textureKey === "uranus" ? 2.2 : 2.4)}px`,
-                      height: `${planet.size * (planet.textureKey === "saturn" ? 2.8 : planet.textureKey === "uranus" ? 2.2 : 2.4)}px`,
-                      background: getRingGradient(planet.textureKey),
-                      transform:
-                        "translate(-50%, -50%) rotateX(72deg) rotateY(12deg)",
-                      opacity: 0.8,
-                      zIndex: 15,
-                      clipPath: "inset(50% 0 0 0)",
-                    }}
-                  />
-                )}
-
-                {/* Moon element orbiting Earth inside parent group */}
-                {planet.hasMoon && showMoons && (
-                  <div
-                    className="absolute rounded-full border border-white/5 pointer-events-none"
-                    style={{
-                      width: `${planet.size + 22}px`,
-                      height: `${planet.size + 22}px`,
+                      transform: `translate(-50%, -50%)`,
+                      top: 0,
+                      width: `${planet.size * 2 + 50}px`,
+                      height: `${planet.size * 2 + 50}px`,
                     }}
                   >
-                    {/* Rotating carrying div representing Moon angular position */}
-                    <div className="absolute inset-0 moon-carrier">
-                      {/* Moon visual sphere */}
+                    {/* 1. BACK RING (renders behind the planet sphere) */}
+                    {planet.hasRings && (
                       <div
-                        data-texture-url={TEXTURE_MAP.moon}
-                        className="absolute rounded-full planet-texture-spin"
+                        className="absolute top-1/2 left-1/2 pointer-events-none origin-center rounded-full"
                         style={{
-                          width: "5px",
-                          height: "5px",
-                          top: 0,
-                          left: "50%",
-                          transform: "translate(-50%, -50%)",
-                          backgroundImage: `url(${TEXTURE_MAP.moon})`,
-                          animationPlayState: paused ? "paused" : "running",
-                          animationDuration: "5s",
+                          width: `${planet.size * (planet.textureKey === "saturn" ? 2.8 : planet.textureKey === "uranus" ? 2.2 : 2.4)}px`,
+                          height: `${planet.size * (planet.textureKey === "saturn" ? 2.8 : planet.textureKey === "uranus" ? 2.2 : 2.4)}px`,
+                          background: getRingGradient(planet.textureKey),
+                          transform:
+                            "translate(-50%, -50%) rotateX(72deg) rotateY(12deg)",
+                          opacity: 0.8,
+                          zIndex: 5,
+                          clipPath: "inset(0 0 50% 0)",
+                        }}
+                      />
+                    )}
+
+                    {/* Planet sphere */}
+                    <div
+                      data-texture-url={TEXTURE_MAP[planet.textureKey]}
+                      className={`rounded-full relative transition-transform duration-300 cursor-pointer group planet-texture-spin`}
+                      style={{
+                        width: `${planet.size}px`,
+                        height: `${planet.size}px`,
+                        backgroundImage: `url(${TEXTURE_MAP[planet.textureKey]})`,
+                        boxShadow: enableGlow
+                          ? `0 0 8px ${GLOW_COLORS[planet.textureKey] || "rgba(255,255,255,0.05)"}`
+                          : "none",
+                        animationPlayState: paused ? "paused" : "running",
+                        animationDuration:
+                          planet.textureKey === "jupiter"
+                            ? "8s"
+                            : planet.textureKey === "saturn"
+                              ? "10s"
+                              : planet.textureKey === "earth"
+                                ? "16s"
+                                : "22s",
+                        zIndex: 10,
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (planet.id !== "preview-planet") {
+                          setSelectedPlanet(planet);
+                        }
+                      }}
+                    >
+                      {/* Real-time 3D Spherical Shadow Mask Overlay */}
+                      <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.12)_0%,rgba(0,0,0,0.88)_82%)] pointer-events-none" />
+                    </div>
+
+                    {/* 2. FRONT RING (renders in front of the planet sphere, clipped to bottom half) */}
+                    {planet.hasRings && (
+                      <div
+                        className="absolute top-1/2 left-1/2 pointer-events-none origin-center rounded-full"
+                        style={{
+                          width: `${planet.size * (planet.textureKey === "saturn" ? 2.8 : planet.textureKey === "uranus" ? 2.2 : 2.4)}px`,
+                          height: `${planet.size * (planet.textureKey === "saturn" ? 2.8 : planet.textureKey === "uranus" ? 2.2 : 2.4)}px`,
+                          background: getRingGradient(planet.textureKey),
+                          transform:
+                            "translate(-50%, -50%) rotateX(72deg) rotateY(12deg)",
+                          opacity: 0.8,
+                          zIndex: 15,
+                          clipPath: "inset(50% 0 0 0)",
+                        }}
+                      />
+                    )}
+
+                    {/* Moon element orbiting Earth inside parent group */}
+                    {planet.hasMoon && showMoons && (
+                      <div
+                        className="absolute rounded-full border border-white/5 pointer-events-none"
+                        style={{
+                          width: `${planet.size + 22}px`,
+                          height: `${planet.size + 22}px`,
                         }}
                       >
-                        <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.08)_0%,rgba(0,0,0,0.92)_88%)] pointer-events-none" />
+                        {/* Rotating carrying div representing Moon angular position */}
+                        <div className="absolute inset-0 moon-carrier">
+                          {/* Moon visual sphere */}
+                          <div
+                            data-texture-url={TEXTURE_MAP.moon}
+                            className="absolute rounded-full planet-texture-spin"
+                            style={{
+                              width: "5px",
+                              height: "5px",
+                              top: 0,
+                              left: "50%",
+                              transform: "translate(-50%, -50%)",
+                              backgroundImage: `url(${TEXTURE_MAP.moon})`,
+                              animationPlayState: paused ? "paused" : "running",
+                              animationDuration: "5s",
+                            }}
+                          >
+                            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.08)_0%,rgba(0,0,0,0.92)_88%)] pointer-events-none" />
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              ))}
             </div>
-          ))}
-          </div>
           </div>
         </div>
       </div>
