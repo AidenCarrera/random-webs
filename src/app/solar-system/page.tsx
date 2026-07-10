@@ -1,24 +1,71 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  Info,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
+import {
+  Download,
   LoaderCircle,
   Pause,
   Play,
   Plus,
+  RotateCcw,
   Trash2,
   X,
-  Settings,
-  RotateCcw,
-  Download,
 } from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { canvasToBlob } from "@/lib/canvasExport";
-import { ThreeSolarSystem } from "./ThreeSolarSystem";
+import {
+  ThreeSolarSystem,
+  type ScenePlanet,
+  type SolarTextureKey,
+} from "./ThreeSolarSystem";
 
-// Asset texture mappings
-const TEXTURE_MAP = {
+type PlanetTextureKey = Exclude<
+  SolarTextureKey,
+  "sun" | "stars" | "stars_milky_way" | "saturn_ring"
+>;
+
+type BackgroundTheme = Extract<
+  SolarTextureKey,
+  "stars" | "stars_milky_way"
+>;
+
+type DisplayTextureKey = PlanetTextureKey | "sun";
+
+interface Planet extends Omit<ScenePlanet, "textureKey"> {
+  textureKey: PlanetTextureKey;
+  name: string;
+  type: string;
+  temp: string;
+  desc: string;
+}
+
+type PlanetDraft = Omit<Planet, "id">;
+
+type DisplayBody = Pick<
+  Planet,
+  | "id"
+  | "name"
+  | "size"
+  | "orbitSize"
+  | "duration"
+  | "type"
+  | "temp"
+  | "desc"
+  | "hasRings"
+  | "hasMoon"
+> & {
+  textureKey: DisplayTextureKey;
+};
+
+const TEXTURE_MAP: Record<SolarTextureKey, string> = {
   mercury: "/solar-system/2k_mercury.jpg",
   venus_atmosphere: "/solar-system/2k_venus_atmosphere.jpg",
   venus_surface: "/solar-system/2k_venus_surface.jpg",
@@ -36,34 +83,19 @@ const TEXTURE_MAP = {
   stars_milky_way: "/solar-system/2k_stars_milky_way.jpg",
 };
 
-type TextureKey = keyof typeof TEXTURE_MAP;
-
-interface Planet {
-  id: string;
-  name: string;
-  textureKey: TextureKey;
-  size: number; // in pixels (relatively to scale)
-  orbitSize: number; // orbit path diameter
-  duration: number; // seconds per orbit
-  type: string;
-  temp: string;
-  desc: string;
-  hasRings?: boolean;
-  hasMoon?: boolean;
-}
-
-const GLOW_COLORS: Record<string, string> = {
-  mercury: "rgba(139,137,137,0.1)",
-  venus_atmosphere: "rgba(229,196,146,0.12)",
-  venus_surface: "rgba(204,119,34,0.12)",
-  earth: "rgba(65,105,225,0.15)",
-  earth_night: "rgba(100,149,237,0.08)",
-  moon: "rgba(200,200,200,0.1)",
-  mars: "rgba(205,92,92,0.12)",
-  jupiter: "rgba(199,165,117,0.12)",
-  saturn: "rgba(224,205,167,0.1)",
-  uranus: "rgba(0,206,209,0.12)",
-  neptune: "rgba(30,144,255,0.15)",
+const GLOW_COLORS: Record<DisplayTextureKey, string> = {
+  mercury: "rgba(139,137,137,0.28)",
+  venus_atmosphere: "rgba(229,196,146,0.34)",
+  venus_surface: "rgba(204,119,34,0.32)",
+  earth: "rgba(65,105,225,0.38)",
+  earth_night: "rgba(100,149,237,0.3)",
+  moon: "rgba(200,200,200,0.24)",
+  mars: "rgba(205,92,92,0.32)",
+  jupiter: "rgba(199,165,117,0.32)",
+  saturn: "rgba(224,205,167,0.3)",
+  uranus: "rgba(0,206,209,0.32)",
+  neptune: "rgba(30,144,255,0.4)",
+  sun: "rgba(253,184,19,0.52)",
 };
 
 const DEFAULT_PLANETS: Planet[] = [
@@ -165,9 +197,9 @@ const PRESETS = {
   inner: DEFAULT_PLANETS.slice(0, 4),
   outer: DEFAULT_PLANETS.slice(4),
   empty: [],
-};
+} satisfies Record<string, Planet[]>;
 
-const TEXTURE_OPTIONS: { key: TextureKey; name: string }[] = [
+const TEXTURE_OPTIONS: { key: PlanetTextureKey; name: string }[] = [
   { key: "mercury", name: "Mercury" },
   { key: "venus_atmosphere", name: "Venus Atmosphere" },
   { key: "venus_surface", name: "Venus Surface" },
@@ -181,6 +213,10 @@ const TEXTURE_OPTIONS: { key: TextureKey; name: string }[] = [
   { key: "moon", name: "Moon" },
 ];
 
+const TEXTURE_LABEL = Object.fromEntries(
+  TEXTURE_OPTIONS.map(({ key, name }) => [key, name]),
+) as Record<PlanetTextureKey, string>;
+
 const TYPE_OPTIONS = [
   "Rocky",
   "Habitable",
@@ -190,130 +226,346 @@ const TYPE_OPTIONS = [
   "Exotic",
 ];
 
-const getRingGradient = (textureKey: TextureKey) => {
+const DEFAULT_DRAFT: PlanetDraft = {
+  name: "",
+  textureKey: "mars",
+  size: 16,
+  orbitSize: 400,
+  duration: 25,
+  type: "Rocky",
+  temp: "250 K",
+  desc: "A mysterious newly discovered celestial world.",
+  hasMoon: false,
+  hasRings: false,
+};
+
+const SUN_BODY: DisplayBody = {
+  id: "sun",
+  name: "The Sun",
+  textureKey: "sun",
+  size: 96,
+  orbitSize: 0,
+  duration: 0,
+  type: "Yellow Dwarf Star",
+  temp: "5,778 K",
+  desc: "The yellow dwarf star at the gravitational heart of our system. It comprises roughly 99.8% of the system's total mass.",
+};
+
+function clamp(value: number, minimum: number, maximum: number) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function clonePlanets(planets: Planet[]) {
+  return planets.map((planet) => ({ ...planet }));
+}
+
+function getNextOrbit(planets: Planet[]) {
+  const furthestOrbit = Math.max(100, ...planets.map((planet) => planet.orbitSize));
+  return Math.min(850, Math.max(140, furthestOrbit + 70));
+}
+
+function createPlanetId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return `planet_${crypto.randomUUID()}`;
+  }
+
+  return `planet_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getRingGradient(textureKey: DisplayTextureKey) {
   if (textureKey === "saturn") {
     return `radial-gradient(
       circle,
       transparent 38%,
-      rgba(224, 205, 167, 0.25) 39%,
-      rgba(224, 205, 167, 0.65) 42%,
-      rgba(168, 132, 94, 0.35) 46%,
+      rgba(224, 205, 167, 0.18) 39%,
+      rgba(224, 205, 167, 0.7) 42%,
+      rgba(168, 132, 94, 0.38) 46%,
       transparent 48%,
-      rgba(224, 205, 167, 0.55) 50%,
-      rgba(199, 165, 117, 0.45) 55%,
-      rgba(224, 205, 167, 0.25) 62%,
+      rgba(224, 205, 167, 0.62) 50%,
+      rgba(199, 165, 117, 0.5) 55%,
+      rgba(224, 205, 167, 0.24) 62%,
       transparent 65%
     )`;
-  } else if (textureKey === "uranus") {
+  }
+
+  if (textureKey === "uranus") {
     return `radial-gradient(
       circle,
-      transparent 55%,
-      rgba(173, 216, 230, 0.4) 56%,
-      rgba(173, 216, 230, 0.1) 58%,
+      transparent 54%,
+      rgba(173, 216, 230, 0.16) 55%,
+      rgba(173, 216, 230, 0.56) 56%,
+      rgba(173, 216, 230, 0.12) 58%,
       transparent 59%
     )`;
-  } else {
-    return `radial-gradient(
-      circle,
-      transparent 42%,
-      rgba(255, 255, 255, 0.2) 43%,
-      rgba(255, 255, 255, 0.45) 46%,
-      transparent 48%,
-      rgba(255, 255, 255, 0.2) 52%,
-      transparent 56%
-    )`;
   }
-};
+
+  return `radial-gradient(
+    circle,
+    transparent 42%,
+    rgba(255, 255, 255, 0.18) 43%,
+    rgba(255, 255, 255, 0.5) 46%,
+    transparent 48%,
+    rgba(255, 255, 255, 0.2) 52%,
+    transparent 56%
+  )`;
+}
+
+function previewSpinDuration(textureKey: DisplayTextureKey) {
+  if (textureKey === "sun") return 34;
+  if (textureKey === "jupiter") return 9;
+  if (textureKey === "saturn") return 12;
+  if (textureKey === "earth") return 16;
+  if (textureKey === "venus_atmosphere") return 22;
+  return 25;
+}
+
+function BodyPreview({
+  body,
+  variant,
+  paused,
+  showMoons,
+  enableGlow,
+}: {
+  body: DisplayBody;
+  variant: "list" | "panel" | "creator";
+  paused: boolean;
+  showMoons: boolean;
+  enableGlow: boolean;
+}) {
+  const isList = variant === "list";
+  const isPanel = variant === "panel";
+  const frameSize = isList ? 50 : isPanel ? 132 : 76;
+  const diameter =
+    body.textureKey === "sun"
+      ? isList
+        ? 31
+        : isPanel
+          ? 80
+          : 48
+      : isList
+        ? Math.round(clamp(21 + body.size * 0.22, 23, 35))
+        : isPanel
+          ? Math.round(clamp(49 + body.size * 0.52, 52, 82))
+          : Math.round(clamp(36 + body.size * 0.28, 39, 56));
+  const ringScale =
+    body.textureKey === "saturn"
+      ? 2.5
+      : body.textureKey === "uranus"
+        ? 2.05
+        : 2.25;
+  const ringDiameter = diameter * ringScale;
+  const moonOrbitDiameter = diameter + (isList ? 13 : isPanel ? 31 : 21);
+  const moonSize = isList ? 4 : isPanel ? 7 : 5;
+  const animationState = paused ? "paused" : "running";
+
+  return (
+    <div
+      className="relative grid shrink-0 place-items-center overflow-visible"
+      style={{ width: frameSize, height: frameSize }}
+      aria-hidden="true"
+    >
+      {isPanel && (
+        <>
+          <div className="absolute inset-1 rounded-full border border-white/6" />
+          <div className="absolute inset-[18%] rounded-full border border-white/5" />
+          <div className="absolute left-1/2 top-1/2 h-px w-[92%] -translate-x-1/2 -translate-y-1/2 bg-linear-to-r from-transparent via-white/5 to-transparent" />
+        </>
+      )}
+
+      {body.hasRings && (
+        <div
+          className="absolute left-1/2 top-1/2 rounded-full opacity-80"
+          style={{
+            width: ringDiameter,
+            height: ringDiameter,
+            background: getRingGradient(body.textureKey),
+            transform:
+              "translate(-50%, -50%) rotateX(72deg) rotateY(10deg) rotateZ(4deg)",
+            clipPath: "inset(0 0 50% 0)",
+            zIndex: 1,
+          }}
+        />
+      )}
+
+      {body.hasMoon && showMoons && (
+        <div
+          className="absolute rounded-full border border-white/8 body-preview-moon-orbit"
+          style={{
+            width: moonOrbitDiameter,
+            height: moonOrbitDiameter,
+            animationPlayState: animationState,
+            zIndex: 2,
+          }}
+        >
+          <div
+            className="absolute left-1/2 top-0 overflow-hidden rounded-full border border-white/15 bg-cover"
+            style={{
+              width: moonSize,
+              height: moonSize,
+              transform: "translate(-50%, -50%)",
+              backgroundImage: `url(${TEXTURE_MAP.moon})`,
+              boxShadow: "0 0 6px rgba(255,255,255,0.18)",
+            }}
+          >
+            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_32%_28%,rgba(255,255,255,0.25),rgba(0,0,0,0.82)_82%)]" />
+          </div>
+        </div>
+      )}
+
+      <div
+        className="body-preview-texture relative overflow-hidden rounded-full border border-white/12 bg-cover"
+        style={{
+          width: diameter,
+          height: diameter,
+          backgroundImage: `url(${TEXTURE_MAP[body.textureKey]})`,
+          backgroundSize: "200% 100%",
+          animationDuration: `${previewSpinDuration(body.textureKey)}s`,
+          animationPlayState: animationState,
+          boxShadow: enableGlow
+            ? `0 0 ${isPanel ? 24 : 11}px ${GLOW_COLORS[body.textureKey]}`
+            : "none",
+          zIndex: 3,
+        }}
+      >
+        <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_32%_27%,rgba(255,255,255,0.32)_0%,rgba(255,255,255,0.08)_24%,rgba(0,0,0,0.12)_45%,rgba(0,0,0,0.86)_100%)]" />
+        <div className="absolute inset-[5%] rounded-full border border-white/5" />
+      </div>
+
+      {body.hasRings && (
+        <div
+          className="absolute left-1/2 top-1/2 rounded-full opacity-90"
+          style={{
+            width: ringDiameter,
+            height: ringDiameter,
+            background: getRingGradient(body.textureKey),
+            transform:
+              "translate(-50%, -50%) rotateX(72deg) rotateY(10deg) rotateZ(4deg)",
+            clipPath: "inset(50% 0 0 0)",
+            zIndex: 4,
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function SectionHeading({ children }: { children: ReactNode }) {
+  return (
+    <h3 className="mb-3 border-b border-white/5 pb-1 text-xs font-bold uppercase tracking-widest text-white/60 font-mono">
+      {children}
+    </h3>
+  );
+}
+
+function TogglePill({
+  checked,
+  onChange,
+  children,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  children: ReactNode;
+}) {
+  return (
+    <label
+      className={`flex cursor-pointer items-center justify-center rounded-lg border px-2.5 py-1.5 text-[10px] font-mono transition-all duration-200 ${
+        checked
+          ? "border-white/30 bg-white/12 text-white shadow-[0_0_8px_rgba(255,255,255,0.06)]"
+          : "border-white/10 bg-black/30 text-white/55 hover:border-white/20 hover:text-white/75"
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="sr-only"
+      />
+      {children}
+    </label>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-white/[0.07] bg-black/25 px-2.5 py-2">
+      <div className="text-[8px] uppercase tracking-wider text-white/30 font-mono">
+        {label}
+      </div>
+      <div className="mt-0.5 text-[10px] text-white/75 font-mono">{value}</div>
+    </div>
+  );
+}
 
 export default function SolarSystem() {
-  const [planets, setPlanets] = useState<Planet[]>(DEFAULT_PLANETS);
+  const [planets, setPlanets] = useState<Planet[]>(() =>
+    clonePlanets(DEFAULT_PLANETS),
+  );
   const [paused, setPaused] = useState(false);
   const [timeScale, setTimeScale] = useState(1);
-  const [selectedPlanet, setSelectedPlanet] = useState<Planet | null>(null);
+  const [selectedBodyId, setSelectedBodyId] = useState<string | null>(null);
 
-  // Customization Toggles
   const [showOrbits, setShowOrbits] = useState(true);
   const [showMoons, setShowMoons] = useState(true);
   const [enableGlow, setEnableGlow] = useState(true);
-  const [bgTheme, setBgTheme] = useState<"stars" | "stars_milky_way">("stars");
+  const [bgTheme, setBgTheme] = useState<BackgroundTheme>("stars");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Export Modal state
   const [exportImage, setExportImage] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
   const [isGeneratingPng, setIsGeneratingPng] = useState(false);
 
-  // Custom Planet Form State
-  const [newPlanetName, setNewPlanetName] = useState("");
-  const [newPlanetTexture, setNewPlanetTexture] = useState<TextureKey>("mars");
-  const [newPlanetSize, setNewPlanetSize] = useState(16);
-  const [newPlanetOrbit, setNewPlanetOrbit] = useState(400);
-  const [newPlanetDuration, setNewPlanetDuration] = useState(25);
-  const [newPlanetType, setNewPlanetType] = useState("Rocky");
-  const [newPlanetTemp, setNewPlanetTemp] = useState("250 K");
-  const [newPlanetDesc, setNewPlanetDesc] = useState(
-    "A mysterious newly discovered celestial world.",
-  );
-  const [newPlanetHasMoon, setNewPlanetHasMoon] = useState(false);
-  const [newPlanetHasRings, setNewPlanetHasRings] = useState(false);
+  const [draft, setDraft] = useState<PlanetDraft>(DEFAULT_DRAFT);
   const [isAdding, setIsAdding] = useState(false);
 
-  // Scaler state for responsive fitting
   const [containerScale, setContainerScale] = useState(1);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
 
-  // Refs for animation loop updates (to prevent loop resets)
-  const exportStageRef = useRef<HTMLDivElement>(null);
-  const systemViewportRef = useRef<HTMLDivElement>(null);
   const threeCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const exportObjectUrlRef = useRef<string | null>(null);
-  const planetRotations = useRef<{ [id: string]: number }>({});
-  const planetElements = useRef<{ [id: string]: HTMLDivElement | null }>({});
-  const textureAssetCacheRef = useRef<Map<string, string> | null>(null);
-  const textureAssetCachePromiseRef = useRef<Promise<Map<string, string>> | null>(
-    null,
-  );
-  const loadedImageCacheRef = useRef<Map<string, Promise<HTMLImageElement | null>>>(
-    new Map(),
-  );
-  const ringTextureCacheRef = useRef<Map<TextureKey, HTMLCanvasElement>>(new Map());
-  const requestRef = useRef<number>(0);
   const planetsRef = useRef(planets);
-  const pausedRef = useRef(paused);
-  const timeScaleRef = useRef(timeScale);
 
-  // Sync state with refs to keep the frame loop up-to-date without restarting
-  useEffect(() => {
-    planetsRef.current = planets;
-  }, [planets]);
-  useEffect(() => {
-    pausedRef.current = paused;
-  }, [paused]);
-  useEffect(() => {
-    timeScaleRef.current = timeScale;
-  }, [timeScale]);
+  planetsRef.current = planets;
 
-  // Handle container resizing to fit on screen
+  const selectedBody = useMemo<DisplayBody | null>(() => {
+    if (selectedBodyId === "sun") return SUN_BODY;
+    if (!selectedBodyId) return null;
+    return planets.find((planet) => planet.id === selectedBodyId) ?? null;
+  }, [planets, selectedBodyId]);
+
+  const previewPlanet = useMemo<Planet | null>(() => {
+    if (!isAdding) return null;
+
+    return {
+      id: "preview-planet",
+      ...draft,
+      name: draft.name.trim() || "New Planet",
+    };
+  }, [draft, isAdding]);
+
+  const scenePlanets = useMemo<ScenePlanet[]>(
+    () => (previewPlanet ? [...planets, previewPlanet] : planets),
+    [planets, previewPlanet],
+  );
+
   useEffect(() => {
     const handleResize = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const isMobile = w < 768;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const isMobile = width < 768;
       setIsMobileViewport(isMobile);
 
       if (isMobile) {
-        const scaleX = (w - 12) / 760;
-        const scaleY = (h - 260) / 760;
-        const scale = Math.min(scaleX, scaleY);
-        setContainerScale(Math.min(0.62, Math.max(0.42, scale)));
+        const scaleX = (width - 20) / 900;
+        const scaleY = (height - 270) / 900;
+        const scale = Math.min(scaleX, Math.max(0.3, scaleY));
+        setContainerScale(clamp(scale, 0.3, 0.62));
         return;
       }
 
-      // We target fitting the 900px wide system orbits
-      const scaleX = (w - (w < 1024 ? 40 : 380)) / 920;
-      const scaleY = (h - 160) / 920;
-      let scale = Math.min(scaleX, scaleY);
-      setContainerScale(Math.min(1.2, Math.max(0.25, scale)));
+      const reservedWidth = width >= 1180 ? 390 : 80;
+      const scaleX = (width - reservedWidth) / 920;
+      const scaleY = (height - 145) / 920;
+      setContainerScale(clamp(Math.min(scaleX, scaleY), 0.32, 1.15));
     };
 
     handleResize();
@@ -326,6 +578,16 @@ export default function SolarSystem() {
   }, [isMobileViewport]);
 
   useEffect(() => {
+    if (
+      selectedBodyId &&
+      selectedBodyId !== "sun" &&
+      !planets.some((planet) => planet.id === selectedBodyId)
+    ) {
+      setSelectedBodyId(null);
+    }
+  }, [planets, selectedBodyId]);
+
+  useEffect(() => {
     return () => {
       if (exportObjectUrlRef.current) {
         URL.revokeObjectURL(exportObjectUrlRef.current);
@@ -333,617 +595,87 @@ export default function SolarSystem() {
     };
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const warmTextureExportCache = async () => {
-      if (textureAssetCacheRef.current || textureAssetCachePromiseRef.current) {
-        return;
-      }
-
-      const urlToDataUrl = async (url: string): Promise<string> => {
-        try {
-          const response = await fetch(url);
-          const blob = await response.blob();
-
-          return await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(String(reader.result));
-            reader.readAsDataURL(blob);
-          });
-        } catch {
-          return url;
-        }
-      };
-
-      textureAssetCachePromiseRef.current = Promise.all(
-        Object.values(TEXTURE_MAP).map(
-          async (url): Promise<[string[], string]> => [
-            [url, new URL(url, window.location.href).href],
-            await urlToDataUrl(url),
-          ],
-        ),
-      ).then((textureDataUrls) => {
-        const nextCache = new Map<string, string>();
-        textureDataUrls.forEach(([urls, dataUrl]) => {
-          urls.forEach((url) => nextCache.set(url, dataUrl));
-        });
-        if (!cancelled) {
-          textureAssetCacheRef.current = nextCache;
-        }
-        return nextCache;
-      });
-    };
-
-    let idleCallbackId: number | null = null;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    if ("requestIdleCallback" in window) {
-      idleCallbackId = window.requestIdleCallback(warmTextureExportCache);
-    } else {
-      timeoutId = setTimeout(warmTextureExportCache, 600);
-    }
-
-    return () => {
-      cancelled = true;
-      if (
-        idleCallbackId !== null &&
-        "cancelIdleCallback" in window
-      ) {
-        window.cancelIdleCallback(idleCallbackId);
-      }
-      if (timeoutId !== null) {
-        clearTimeout(timeoutId);
-      }
-    };
-  }, []);
-
-  // Frame animation loop
-  useEffect(() => {
-    // Seed initial rotations based on index to match inline starting styles
-    planetsRef.current.forEach((planet, index) => {
-      if (planetRotations.current[planet.id] === undefined) {
-        planetRotations.current[planet.id] = (index * 45) % 360;
-      }
-    });
-
-    let lastTime = 0;
-
-    const animate = (time: number) => {
-      if (lastTime !== 0 && !pausedRef.current) {
-        const deltaTime = (time - lastTime) / 1000;
-
-        planetsRef.current.forEach((planet) => {
-          const element = planetElements.current[planet.id];
-          if (element) {
-            const speed = 360 / planet.duration;
-            if (planetRotations.current[planet.id] === undefined) {
-              planetRotations.current[planet.id] = Math.random() * 360;
-            }
-            planetRotations.current[planet.id] +=
-              speed * timeScaleRef.current * deltaTime;
-            element.style.transform = `rotate(${planetRotations.current[planet.id]}deg)`;
-
-            // Rotate moon if present inside planet container
-            const moonCarrier = element.querySelector(
-              ".moon-carrier",
-            ) as HTMLDivElement;
-            if (moonCarrier) {
-              const moonRot = (planetRotations.current[planet.id] * 4.5) % 360;
-              moonCarrier.style.transform = `rotate(${moonRot}deg)`;
-            }
-          }
-        });
-      }
-      lastTime = time;
-      requestRef.current = requestAnimationFrame(animate);
-    };
-
-    requestRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(requestRef.current);
-  }, []);
-
-  // Synchronize temporary preview planet while form is active (isAdding = true)
-  useEffect(() => {
-    if (isAdding) {
-      const previewP: Planet = {
-        id: "preview-planet",
-        name: newPlanetName.trim() || `New Planet`,
-        textureKey: newPlanetTexture,
-        size: newPlanetSize,
-        orbitSize: newPlanetOrbit,
-        duration: newPlanetDuration,
-        type: newPlanetType,
-        temp: newPlanetTemp,
-        desc: newPlanetDesc,
-        hasMoon: newPlanetHasMoon,
-        hasRings: newPlanetHasRings,
-      };
-
-      setPlanets((prev) => {
-        const index = prev.findIndex((p: Planet) => p.id === "preview-planet");
-        if (index > -1) {
-          const updated = [...prev];
-          updated[index] = previewP;
-          return updated;
-        } else {
-          return [...prev, previewP];
-        }
-      });
-    } else {
-      setPlanets((prev) =>
-        prev.filter((p: Planet) => p.id !== "preview-planet"),
-      );
-    }
-  }, [
-    isAdding,
-    newPlanetName,
-    newPlanetTexture,
-    newPlanetSize,
-    newPlanetOrbit,
-    newPlanetDuration,
-    newPlanetType,
-    newPlanetTemp,
-    newPlanetDesc,
-    newPlanetHasMoon,
-    newPlanetHasRings,
-  ]);
-
-  // Toggle pause state
-  const togglePause = () => setPaused(!paused);
-
-  // Manage presets
   const handleLoadPreset = (key: keyof typeof PRESETS) => {
-    const selectedPreset = PRESETS[key];
-    setPlanets(selectedPreset);
-    setSelectedPlanet(null);
+    setPlanets(clonePlanets(PRESETS[key]));
+    setSelectedBodyId(null);
+    setIsAdding(false);
   };
 
-  // Capture the already-rendered DOM system into a square PNG.
-  const captureSolarSystem = async (): Promise<string> => {
-    // Three renders a complete, self-contained scene. Exporting its canvas is
-    // deterministic and avoids the fragile DOM/CSS reconstruction previously
-    // required for textures, gradients, clipping, and transforms.
-    const rendererCanvas = threeCanvasRef.current;
-    if (rendererCanvas) {
-      if (exportObjectUrlRef.current) {
-        URL.revokeObjectURL(exportObjectUrlRef.current);
-        exportObjectUrlRef.current = null;
-      }
+  const handleReset = () => {
+    setPlanets(clonePlanets(DEFAULT_PLANETS));
+    setSelectedBodyId(null);
+    setIsAdding(false);
+    setPaused(false);
+    setTimeScale(1);
+  };
 
-      const blob = await canvasToBlob(rendererCanvas);
-      const objectUrl = URL.createObjectURL(blob);
-      exportObjectUrlRef.current = objectUrl;
-      return objectUrl;
-    }
+  const openCreator = () => {
+    const nextNumber = planets.length + 1;
+    setDraft({
+      ...DEFAULT_DRAFT,
+      name: `Planet ${nextNumber}`,
+      orbitSize: getNextOrbit(planets),
+    });
+    setIsAdding(true);
+  };
 
-    // This fallback only applies before WebGL has initialized.
-    const systemViewport = systemViewportRef.current;
-    if (!systemViewport) return "";
+  const handleAddPlanet = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-    const loadImage = (url: string): Promise<HTMLImageElement | null> => {
-      const cachedPromise = loadedImageCacheRef.current.get(url);
-      if (cachedPromise) return cachedPromise;
-
-      const nextPromise = new Promise<HTMLImageElement | null>((resolve) => {
-        const image = new Image();
-        image.crossOrigin = "anonymous";
-        image.src = url;
-        image.onload = () => resolve(image);
-        image.onerror = () => resolve(null);
-      });
-      loadedImageCacheRef.current.set(url, nextPromise);
-      return nextPromise;
+    const id = createPlanetId();
+    const newPlanet: Planet = {
+      id,
+      ...draft,
+      name: draft.name.trim() || `Planet ${planets.length + 1}`,
+      size: clamp(Math.round(draft.size), 6, 65),
+      orbitSize: clamp(Math.round(draft.orbitSize), 120, 850),
+      duration: clamp(Math.round(draft.duration), 3, 120),
     };
 
-    const urlToDataUrl = async (url: string): Promise<string> => {
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        return await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(String(reader.result));
-          reader.readAsDataURL(blob);
-        });
-      } catch {
-        return url;
-      }
-    };
+    setPlanets((current) => [...current, newPlanet]);
+    setSelectedBodyId(id);
+    setIsAdding(false);
+    setDraft(DEFAULT_DRAFT);
+  };
 
-    const buildTextureAssetCache = async () => {
-      if (textureAssetCacheRef.current) return textureAssetCacheRef.current;
-      if (!textureAssetCachePromiseRef.current) {
-        textureAssetCachePromiseRef.current = Promise.all(
-          Object.values(TEXTURE_MAP).map(
-            async (url): Promise<[string[], string]> => [
-              [url, new URL(url, window.location.href).href],
-              await urlToDataUrl(url),
-            ],
-          ),
-        ).then((textureDataUrls) => {
-          const nextCache = new Map<string, string>();
-          textureDataUrls.forEach(([urls, dataUrl]) => {
-            urls.forEach((url) => nextCache.set(url, dataUrl));
-          });
-          textureAssetCacheRef.current = nextCache;
-          return nextCache;
-        });
-      }
-      return textureAssetCachePromiseRef.current;
-    };
+  const handleDeletePlanet = (id: string) => {
+    setPlanets((current) => current.filter((planet) => planet.id !== id));
+    if (selectedBodyId === id) setSelectedBodyId(null);
+  };
 
-    const textureDataUrlByUrl = await buildTextureAssetCache();
-
-    const resolveTextureAssetUrl = (url: string) => {
-      if (!url) return "";
-      if (textureDataUrlByUrl.has(url)) {
-        return textureDataUrlByUrl.get(url) || url;
-      }
-      try {
-        const absoluteUrl = new URL(url, window.location.href).href;
-        return textureDataUrlByUrl.get(absoluteUrl) || absoluteUrl;
-      } catch {
-        return url;
-      }
-    };
-
-    const parseBackgroundLength = (
-      value: string,
-      containerSize: number,
-      fallbackSize: number,
-    ) => {
-      const normalized = value.trim().toLowerCase();
-      if (!normalized || normalized === "auto") return fallbackSize;
-      if (normalized.endsWith("%")) {
-        return (containerSize * Number.parseFloat(normalized)) / 100;
-      }
-      if (normalized.endsWith("px")) {
-        return Number.parseFloat(normalized);
-      }
-      const numericValue = Number.parseFloat(normalized);
-      return Number.isFinite(numericValue) ? numericValue : fallbackSize;
-    };
-
-    const parseBackgroundPosition = (
-      value: string,
-      containerSize: number,
-      imageSize: number,
-    ) => {
-      const normalized = value.trim().toLowerCase();
-      if (!normalized) return 0;
-      if (normalized === "left" || normalized === "top") return 0;
-      if (normalized === "center") return (containerSize - imageSize) / 2;
-      if (normalized === "right" || normalized === "bottom") {
-        return containerSize - imageSize;
-      }
-      if (normalized.endsWith("%")) {
-        return ((containerSize - imageSize) * Number.parseFloat(normalized)) / 100;
-      }
-      if (normalized.endsWith("px")) {
-        return Number.parseFloat(normalized);
-      }
-      return 0;
-    };
-
-    const baseSize = 900;
-    const exportResolution = isMobileViewport ? 960 : 1200;
-    const renderScale = exportResolution / baseSize;
-    const canvas = document.createElement("canvas");
-    canvas.width = exportResolution;
-    canvas.height = exportResolution;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return "";
-
-    const drawOrbit = (diameter: number) => {
-      if (!showOrbits) return;
-      ctx.save();
-      ctx.strokeStyle = "rgba(255,255,255,0.1)";
-      ctx.lineWidth = Math.max(1, renderScale);
-      ctx.beginPath();
-      ctx.arc(
-        450 * renderScale,
-        450 * renderScale,
-        (diameter / 2) * renderScale,
-        0,
-        Math.PI * 2,
-      );
-      ctx.stroke();
-      ctx.restore();
-    };
-
-    const drawRingHalf = (
-      x: number,
-      y: number,
-      size: number,
-      textureKey: TextureKey,
-      frontHalf: boolean,
-    ) => {
-      const ringDiameter =
-        size *
-        (textureKey === "saturn" ? 2.8 : textureKey === "uranus" ? 2.2 : 2.4);
-      const scaleDiameter = ringDiameter * renderScale;
-      const cx = x * renderScale;
-      const cy = y * renderScale;
-      const rotation = 12 * (Math.PI / 180);
-      const verticalScale = textureKey === "uranus" ? 0.24 : 0.3;
-      let ringTexture = ringTextureCacheRef.current.get(textureKey);
-      if (!ringTexture) {
-        ringTexture = document.createElement("canvas");
-        ringTexture.width = 512;
-        ringTexture.height = 512;
-        const ringCtx = ringTexture.getContext("2d");
-        if (ringCtx) {
-          const gradient = ringCtx.createRadialGradient(256, 256, 0, 256, 256, 256);
-          if (textureKey === "saturn") {
-            gradient.addColorStop(0.38, "rgba(0,0,0,0)");
-            gradient.addColorStop(0.39, "rgba(224,205,167,0.25)");
-            gradient.addColorStop(0.42, "rgba(224,205,167,0.65)");
-            gradient.addColorStop(0.46, "rgba(168,132,94,0.35)");
-            gradient.addColorStop(0.48, "rgba(0,0,0,0)");
-            gradient.addColorStop(0.5, "rgba(224,205,167,0.55)");
-            gradient.addColorStop(0.55, "rgba(199,165,117,0.45)");
-            gradient.addColorStop(0.62, "rgba(224,205,167,0.25)");
-            gradient.addColorStop(0.65, "rgba(0,0,0,0)");
-          } else if (textureKey === "uranus") {
-            gradient.addColorStop(0.55, "rgba(0,0,0,0)");
-            gradient.addColorStop(0.56, "rgba(173,216,230,0.4)");
-            gradient.addColorStop(0.58, "rgba(173,216,230,0.1)");
-            gradient.addColorStop(0.59, "rgba(0,0,0,0)");
-          } else {
-            gradient.addColorStop(0.42, "rgba(0,0,0,0)");
-            gradient.addColorStop(0.43, "rgba(255,255,255,0.2)");
-            gradient.addColorStop(0.46, "rgba(255,255,255,0.45)");
-            gradient.addColorStop(0.48, "rgba(0,0,0,0)");
-            gradient.addColorStop(0.52, "rgba(255,255,255,0.2)");
-            gradient.addColorStop(0.56, "rgba(0,0,0,0)");
-          }
-          ringCtx.fillStyle = gradient;
-          ringCtx.fillRect(0, 0, 512, 512);
-        }
-        ringTextureCacheRef.current.set(textureKey, ringTexture);
-      }
-
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(rotation);
-      ctx.scale(1, verticalScale);
-      ctx.beginPath();
-      if (frontHalf) {
-        ctx.rect(-scaleDiameter, 0, scaleDiameter * 2, scaleDiameter);
-      } else {
-        ctx.rect(-scaleDiameter, -scaleDiameter, scaleDiameter * 2, scaleDiameter);
-      }
-      ctx.clip();
-      ctx.globalAlpha = frontHalf ? 0.8 : 0.68;
-      ctx.drawImage(
-        ringTexture,
-        -scaleDiameter / 2,
-        -scaleDiameter / 2,
-        scaleDiameter,
-        scaleDiameter,
-      );
-      ctx.restore();
-    };
-
-    const drawShadowOverlay = (
-      x: number,
-      y: number,
-      size: number,
-      highlightAlpha: number,
-      shadowAlpha: number,
-    ) => {
-      const cx = x * renderScale;
-      const cy = y * renderScale;
-      const radius = (size / 2) * renderScale;
-      const gradient = ctx.createRadialGradient(
-        cx - radius * 0.25,
-        cy - radius * 0.25,
-        radius * 0.1,
-        cx,
-        cy,
-        radius,
-      );
-      gradient.addColorStop(0, `rgba(255,255,255,${highlightAlpha})`);
-      gradient.addColorStop(0.45, "rgba(255,255,255,0.02)");
-      gradient.addColorStop(1, `rgba(0,0,0,${shadowAlpha})`);
-      ctx.save();
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    };
-
-    const drawTexturedSphere = async (
-      x: number,
-      y: number,
-      size: number,
-      textureUrl: string,
-      element: HTMLElement | null,
-      glowColor?: string,
-      highlightAlpha = 0.12,
-      shadowAlpha = 0.88,
-    ) => {
-      const resolvedTextureUrl = resolveTextureAssetUrl(textureUrl);
-      const textureImage = await loadImage(resolvedTextureUrl);
-      const scaledSize = size * renderScale;
-      const cx = x * renderScale;
-      const cy = y * renderScale;
-      const radius = scaledSize / 2;
-
-      if (glowColor && enableGlow) {
-        ctx.save();
-        ctx.shadowColor = glowColor;
-        ctx.shadowBlur = radius * 0.45;
-        ctx.fillStyle = "rgba(255,255,255,0.02)";
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius * 0.96, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
-
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-      ctx.clip();
-
-      if (textureImage?.complete && textureImage.naturalWidth > 0) {
-        const computedStyle = element ? window.getComputedStyle(element) : null;
-        const backgroundSizeParts =
-          computedStyle?.backgroundSize.split(" ") || ["200%", "140%"];
-        const backgroundPositionParts =
-          computedStyle?.backgroundPosition.split(" ") || ["0%", "50%"];
-        const renderedWidth = parseBackgroundLength(
-          backgroundSizeParts[0] || "200%",
-          size,
-          size * 2,
-        );
-        const renderedHeight = parseBackgroundLength(
-          backgroundSizeParts[1] || "140%",
-          size,
-          size * 1.4,
-        );
-        const offsetX = parseBackgroundPosition(
-          backgroundPositionParts[0] || "0%",
-          size,
-          renderedWidth,
-        );
-        const offsetY = parseBackgroundPosition(
-          backgroundPositionParts[1] || "50%",
-          size,
-          renderedHeight,
-        );
-
-        const patternCanvas = document.createElement("canvas");
-        patternCanvas.width = Math.max(1, Math.round(renderedWidth * renderScale));
-        patternCanvas.height = Math.max(
-          1,
-          Math.round(renderedHeight * renderScale),
-        );
-        const patternCtx = patternCanvas.getContext("2d");
-        if (patternCtx) {
-          patternCtx.drawImage(
-            textureImage,
-            0,
-            0,
-            patternCanvas.width,
-            patternCanvas.height,
-          );
-          const pattern = ctx.createPattern(patternCanvas, "repeat");
-          if (pattern) {
-            pattern.setTransform(
-              new DOMMatrix().translate(
-                (x - size / 2 + offsetX) * renderScale,
-                (y - size / 2 + offsetY) * renderScale,
-              ),
-            );
-            ctx.fillStyle = pattern;
-            ctx.fillRect(cx - radius, cy - radius, scaledSize, scaledSize);
-          }
-        }
-      } else {
-        ctx.fillStyle = "#555";
-        ctx.fillRect(cx - radius, cy - radius, scaledSize, scaledSize);
-      }
-
-      drawShadowOverlay(x, y, size, highlightAlpha, shadowAlpha);
-      ctx.restore();
-    };
-
-    const backgroundImage = await loadImage(resolveTextureAssetUrl(TEXTURE_MAP[bgTheme]));
-    ctx.fillStyle = "#03030b";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (backgroundImage?.complete && backgroundImage.naturalWidth > 0) {
-      ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-    }
-    ctx.fillStyle = "rgba(0,0,0,0.4)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    if (showOrbits) {
-      planets.forEach((planet) => drawOrbit(planet.orbitSize));
-    }
-
-    await drawTexturedSphere(
-      450,
-      450,
-      96,
-      TEXTURE_MAP.sun,
-      systemViewport.querySelector(`[data-texture-url="${TEXTURE_MAP.sun}"]`),
-      "rgba(253, 184, 19, 0.32)",
-      0.25,
-      0.5,
+  const handleUpdatePlanet = (id: string, fields: Partial<Planet>) => {
+    setPlanets((current) =>
+      current.map((planet) =>
+        planet.id === id ? { ...planet, ...fields } : planet,
+      ),
     );
+  };
 
-    for (let index = 0; index < planets.length; index += 1) {
-      const planet = planets[index];
-      const angleDeg =
-        planetRotations.current[planet.id] ?? ((index * 45) % 360);
-      const angle = (angleDeg * Math.PI) / 180;
-      const orbitRadius = planet.orbitSize / 2;
-      const x = 450 + Math.sin(angle) * orbitRadius;
-      const y = 450 - Math.cos(angle) * orbitRadius;
-      const orbitElement = planetElements.current[planet.id];
-      const sphereElement = orbitElement?.querySelector(
-        `[data-texture-url="${TEXTURE_MAP[planet.textureKey]}"]`,
-      ) as HTMLElement | null;
-
-      if (planet.hasRings) {
-        drawRingHalf(x, y, planet.size, planet.textureKey, false);
-      }
-
-      await drawTexturedSphere(
-        x,
-        y,
-        planet.size,
-        TEXTURE_MAP[planet.textureKey],
-        sphereElement,
-        undefined,
-        0.08,
-        0.9,
-      );
-
-      if (planet.hasRings) {
-        drawRingHalf(x, y, planet.size, planet.textureKey, true);
-      }
-
-      if (planet.hasMoon && showMoons) {
-        const moonOrbitDiameter = planet.size + 22;
-        const moonOrbitRadius = moonOrbitDiameter / 2;
-        const moonAngle = (((planetRotations.current[planet.id] ?? angleDeg) * 4.5) *
-          Math.PI) /
-          180;
-
-        ctx.save();
-        ctx.strokeStyle = "rgba(255,255,255,0.05)";
-        ctx.lineWidth = Math.max(1, renderScale * 0.75);
-        ctx.beginPath();
-        ctx.arc(
-          x * renderScale,
-          y * renderScale,
-          moonOrbitRadius * renderScale,
-          0,
-          Math.PI * 2,
-        );
-        ctx.stroke();
-        ctx.restore();
-
-        const moonX = x + Math.sin(moonAngle) * moonOrbitRadius;
-        const moonY = y - Math.cos(moonAngle) * moonOrbitRadius;
-        const moonElement = orbitElement?.querySelector(
-          `[data-texture-url="${TEXTURE_MAP.moon}"]`,
-        ) as HTMLElement | null;
-        await drawTexturedSphere(
-          moonX,
-          moonY,
-          5,
-          TEXTURE_MAP.moon,
-          moonElement,
-          undefined,
-          0.08,
-          0.92,
-        );
-      }
+  const handleThreePlanetSelect = useCallback((id: string) => {
+    if (id === "preview-planet") return;
+    if (planetsRef.current.some((planet) => planet.id === id)) {
+      setSelectedBodyId(id);
     }
+  }, []);
+
+  const handleThreeSunSelect = useCallback(() => {
+    setSelectedBodyId("sun");
+  }, []);
+
+  const handleThreeCanvasReady = useCallback(
+    (canvas: HTMLCanvasElement | null) => {
+      threeCanvasRef.current = canvas;
+    },
+    [],
+  );
+
+  const captureSolarSystem = async () => {
+    const canvas = threeCanvasRef.current;
+    if (!canvas) return "";
+
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
 
     if (exportObjectUrlRef.current) {
       URL.revokeObjectURL(exportObjectUrlRef.current);
@@ -956,238 +688,176 @@ export default function SolarSystem() {
     return objectUrl;
   };
 
-  // Add planet
-  const handleAddPlanet = (e: React.FormEvent) => {
-    e.preventDefault();
-    const name =
-      newPlanetName.trim() ||
-      `Planet ${planets.filter((p: Planet) => p.id !== "preview-planet").length + 1}`;
-    const id = `planet_${Date.now()}`;
-    const newP: Planet = {
-      id,
-      name,
-      textureKey: newPlanetTexture,
-      size: newPlanetSize,
-      orbitSize: newPlanetOrbit,
-      duration: newPlanetDuration,
-      type: newPlanetType,
-      temp: newPlanetTemp,
-      desc: newPlanetDesc,
-      hasMoon: newPlanetHasMoon,
-      hasRings: newPlanetHasRings,
-    };
-    setPlanets((prev) => {
-      const filtered = prev.filter((p: Planet) => p.id !== "preview-planet");
-      return [...filtered, newP];
-    });
-    setIsAdding(false);
-    // Reset Form
-    setNewPlanetName("");
-    setNewPlanetSize(16);
-    setNewPlanetHasMoon(false);
-    setNewPlanetHasRings(false);
-  };
+  const handleExport = async () => {
+    if (isGeneratingPng) return;
 
-  // Delete planet
-  const handleDeletePlanet = (id: string) => {
-    setPlanets((prev) => prev.filter((p: Planet) => p.id !== id));
-    if (selectedPlanet?.id === id) {
-      setSelectedPlanet(null);
+    setIsGeneratingPng(true);
+    try {
+      const imageUrl = await captureSolarSystem();
+      if (!imageUrl) return;
+      setExportImage(imageUrl);
+      setIsExporting(true);
+    } finally {
+      setIsGeneratingPng(false);
     }
   };
 
-  // Update specific planet properties live
-  const handleUpdatePlanet = (id: string, fields: Partial<Planet>) => {
-    setPlanets((prev) =>
-      prev.map((p: Planet) => (p.id === id ? { ...p, ...fields } : p)),
-    );
-    setSelectedPlanet((prev) => {
-      if (prev && prev.id === id) {
-        return { ...prev, ...fields };
-      }
-      return prev;
-    });
-  };
-
-  const handleThreePlanetSelect = useCallback((id: string) => {
-    const planet = planetsRef.current.find((item) => item.id === id);
-    if (planet && planet.id !== "preview-planet") setSelectedPlanet(planet);
-  }, []);
-
-  const handleThreeSunSelect = useCallback(() => {
-    setSelectedPlanet({
-      id: "sun",
-      name: "The Sun",
-      textureKey: "sun",
-      size: 96,
-      orbitSize: 0,
-      duration: 0,
-      type: "Yellow Dwarf Star",
-      temp: "5,778 K",
-      desc: "The yellow dwarf star at the gravitational heart of our system. It comprises roughly 99.8% of the system's total mass.",
-    });
-  }, []);
-
-  const handleThreeCanvasReady = useCallback((canvas: HTMLCanvasElement | null) => {
-    threeCanvasRef.current = canvas;
-  }, []);
-
-  const selectedGlow =
-    selectedPlanet?.id !== "sun" && selectedPlanet
-      ? GLOW_COLORS[selectedPlanet.textureKey]
-      : "rgba(253,184,19,0.15)";
+  const stageSize = Math.round(900 * containerScale);
 
   return (
-    <div className="min-h-screen text-white font-sans relative select-none overflow-x-hidden overflow-y-auto md:overflow-hidden flex flex-col items-center md:justify-center px-3 pt-4 pb-6 md:px-0 md:pt-0 md:pb-0">
-      {/* Texture Spin Keyframe styles */}
+    <div className="relative flex min-h-screen select-none flex-col items-center overflow-x-hidden overflow-y-auto px-3 pb-6 pt-4 font-sans text-white md:justify-center md:overflow-hidden md:px-0 md:pb-0 md:pt-0">
       <style>{`
-        @keyframes rotate-texture {
-          0% { background-position: 0% 50%; }
-          100% { background-position: -200% 50%; }
+        @keyframes body-preview-texture-spin {
+          from { background-position: 0% 50%; }
+          to { background-position: -200% 50%; }
         }
-        .planet-texture-spin {
-          background-size: 200% 140% !important;
-          background-position-y: 50% !important;
-          animation: rotate-texture 16s linear infinite;
+
+        @keyframes body-preview-moon-orbit {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
-        .planet-texture-spin-slow {
-          background-size: 200% 140% !important;
-          background-position-y: 50% !important;
-          animation: rotate-texture 32s linear infinite;
+
+        .body-preview-texture {
+          animation-name: body-preview-texture-spin;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
         }
+
+        .body-preview-moon-orbit {
+          animation: body-preview-moon-orbit 7s linear infinite;
+        }
+
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }
+
         .custom-scrollbar::-webkit-scrollbar-track {
           background: transparent;
         }
+
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
+          border-radius: 999px;
         }
+
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.25);
+          background: rgba(255, 255, 255, 0.24);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .body-preview-texture,
+          .body-preview-moon-orbit {
+            animation: none !important;
+          }
         }
       `}</style>
 
-      {/* Starfields Background */}
       <div
-        className="absolute inset-0 bg-cover bg-center -z-20 transition-all duration-1000"
-        style={{
-          backgroundImage: `url(${TEXTURE_MAP[bgTheme]})`,
-        }}
+        className="absolute inset-0 -z-20 bg-cover bg-center transition-all duration-1000"
+        style={{ backgroundImage: `url(${TEXTURE_MAP[bgTheme]})` }}
       />
-      <div className="absolute inset-0 bg-black/40 -z-10" />
+      <div className="absolute inset-0 -z-10 bg-black/45" />
 
-      {/* Header Title */}
-      <div className="relative z-40 w-full max-w-sm self-start px-1 pb-3 pointer-events-none md:absolute md:top-6 md:left-6 md:w-auto md:max-w-none md:px-0 md:pb-0">
-        <h1 className="text-3xl font-extralight tracking-[0.2em] uppercase text-white/95 leading-none">
+      <div className="relative z-40 w-full max-w-sm self-start px-1 pb-3 pointer-events-none md:absolute md:left-6 md:top-6 md:w-auto md:max-w-none md:px-0 md:pb-0">
+        <h1 className="text-3xl font-extralight uppercase leading-none tracking-[0.2em] text-white/95">
           Solar System Creator
         </h1>
-        <p className="text-[10px] font-mono tracking-widest text-white/40 uppercase mt-1">
+        <p className="mt-1 text-[10px] uppercase tracking-widest text-white/40 font-mono">
           Interactive Solar System Builder
         </p>
       </div>
 
-      {/* Collapsible Settings & Creator Panel */}
       <div
-        className={`order-2 relative z-40 mb-4 w-full max-w-sm self-stretch bg-black/50 backdrop-blur-xl border border-white/10 p-5 rounded-2xl flex flex-col shadow-[0_15px_40px_rgba(0,0,0,0.6)] transition-all duration-300 md:absolute md:top-1/2 md:left-6 md:mb-0 md:w-80 md:max-w-none md:-translate-y-1/2 ${
-          sidebarOpen ? "max-h-[70vh] md:max-h-[80vh]" : "max-h-13.5 overflow-hidden"
+        className={`order-2 relative z-40 mb-4 flex w-full max-w-sm self-stretch flex-col rounded-2xl border border-white/10 bg-black/50 p-5 shadow-[0_15px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-300 md:absolute md:left-6 md:top-1/2 md:mb-0 md:w-80 md:max-w-none md:-translate-y-1/2 ${
+          sidebarOpen
+            ? "max-h-[70vh] md:max-h-[80vh]"
+            : "max-h-13.5 overflow-hidden"
         }`}
       >
-        {/* Clickable Header Area */}
-        <div
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="cursor-pointer group flex items-center justify-between select-none pb-1"
+        <button
+          type="button"
+          onClick={() => setSidebarOpen((open) => !open)}
+          className="group flex cursor-pointer items-center justify-between pb-1 text-left"
+          aria-expanded={sidebarOpen}
         >
-          <span className="text-xs font-mono tracking-[0.15em] font-bold text-white/60 group-hover:text-white transition-colors uppercase">
+          <span className="text-xs font-bold uppercase tracking-[0.15em] text-white/60 transition-colors group-hover:text-white font-mono">
             Control Panel
           </span>
           <span
-            className={`text-white/40 group-hover:text-white/80 transition-transform duration-300 font-mono text-[9px] ${
+            className={`text-[9px] text-white/40 transition-transform duration-300 group-hover:text-white/80 font-mono ${
               sidebarOpen ? "rotate-180" : ""
             }`}
           >
             ▼
           </span>
-        </div>
+        </button>
 
         {sidebarOpen && (
-          <div className="flex flex-col gap-6 mt-5 animate-in fade-in duration-300 overflow-y-auto custom-scrollbar pr-1 max-h-[calc(70vh-80px)] md:max-h-[calc(80vh-80px)]">
-            {/* Preset Selector */}
+          <div className="custom-scrollbar mt-5 flex max-h-[calc(70vh-80px)] flex-col gap-6 overflow-y-auto pr-1 animate-in fade-in duration-300 md:max-h-[calc(80vh-80px)]">
             <div>
-              <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-white/60 mb-3 border-b border-white/5 pb-1">
-                PRESETS
-              </h3>
+              <SectionHeading>Presets</SectionHeading>
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => handleLoadPreset("full")}
-                  className="px-3 py-2 text-[10px] font-mono uppercase bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg tracking-wider text-left transition-colors cursor-pointer"
-                >
-                  Solar System
-                </button>
-                <button
-                  onClick={() => handleLoadPreset("inner")}
-                  className="px-3 py-2 text-[10px] font-mono uppercase bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg tracking-wider text-left transition-colors cursor-pointer"
-                >
-                  Rocky Planets
-                </button>
-                <button
-                  onClick={() => handleLoadPreset("outer")}
-                  className="px-3 py-2 text-[10px] font-mono uppercase bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg tracking-wider text-left transition-colors cursor-pointer"
-                >
-                  Giants
-                </button>
-                <button
-                  onClick={() => handleLoadPreset("empty")}
-                  className="px-3 py-2 text-[10px] font-mono uppercase bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg tracking-wider text-left transition-colors cursor-pointer"
-                >
-                  Empty Star
-                </button>
+                {(
+                  [
+                    ["full", "Solar System"],
+                    ["inner", "Rocky Planets"],
+                    ["outer", "Giants"],
+                    ["empty", "Empty Star"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleLoadPreset(key)}
+                    className="cursor-pointer rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-left text-[10px] uppercase tracking-wider transition-colors hover:bg-white/10 font-mono"
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Engine Settings */}
             <div>
-              <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-white/60 mb-3 border-b border-white/5 pb-1">
-                Visual Settings
-              </h3>
-              <div className="flex flex-col gap-3 font-mono text-[11px] text-white/70">
-                <label className="flex items-center gap-2.5 cursor-pointer">
+              <SectionHeading>Visual Settings</SectionHeading>
+              <div className="flex flex-col gap-3 text-[11px] text-white/70 font-mono">
+                <label className="flex cursor-pointer items-center gap-2.5">
                   <input
                     type="checkbox"
                     checked={showOrbits}
-                    onChange={(e) => setShowOrbits(e.target.checked)}
-                    className="rounded border-white/20 bg-white/5 focus:ring-0 focus:ring-offset-0 text-white w-4 h-4 cursor-pointer"
+                    onChange={(event) => setShowOrbits(event.target.checked)}
+                    className="h-4 w-4 cursor-pointer rounded border-white/20 bg-white/5 text-white focus:ring-0 focus:ring-offset-0"
                   />
                   Show Orbital Rings
                 </label>
-                <label className="flex items-center gap-2.5 cursor-pointer">
+                <label className="flex cursor-pointer items-center gap-2.5">
                   <input
                     type="checkbox"
                     checked={showMoons}
-                    onChange={(e) => setShowMoons(e.target.checked)}
-                    className="rounded border-white/20 bg-white/5 focus:ring-0 focus:ring-offset-0 text-white w-4 h-4 cursor-pointer"
+                    onChange={(event) => setShowMoons(event.target.checked)}
+                    className="h-4 w-4 cursor-pointer rounded border-white/20 bg-white/5 text-white focus:ring-0 focus:ring-offset-0"
                   />
                   Show Moons
                 </label>
-                <label className="flex items-center gap-2.5 cursor-pointer">
+                <label className="flex cursor-pointer items-center gap-2.5">
                   <input
                     type="checkbox"
                     checked={enableGlow}
-                    onChange={(e) => setEnableGlow(e.target.checked)}
-                    className="rounded border-white/20 bg-white/5 focus:ring-0 focus:ring-offset-0 text-white w-4 h-4 cursor-pointer"
+                    onChange={(event) => setEnableGlow(event.target.checked)}
+                    className="h-4 w-4 cursor-pointer rounded border-white/20 bg-white/5 text-white focus:ring-0 focus:ring-offset-0"
                   />
                   Enable Glow Effects
                 </label>
-                <div className="flex flex-col gap-1.5 mt-1">
-                  <span className="text-[10px] text-white/40 uppercase">
+
+                <div className="mt-1 flex flex-col gap-1.5">
+                  <span className="text-[10px] uppercase text-white/40">
                     Background
                   </span>
                   <select
                     value={bgTheme}
-                    onChange={(e) => setBgTheme(e.target.value as any)}
-                    className="bg-black/80 border border-white/15 px-2 py-1.5 rounded-lg text-xs font-mono w-full focus:outline-none focus:border-white/30 cursor-pointer"
+                    onChange={(event) =>
+                      setBgTheme(event.target.value as BackgroundTheme)
+                    }
+                    className="w-full cursor-pointer rounded-lg border border-white/15 bg-black/80 px-2 py-1.5 text-xs focus:border-white/30 focus:outline-none font-mono"
                   >
                     <option value="stars">Default</option>
                     <option value="stars_milky_way">Milky Way</option>
@@ -1196,115 +866,123 @@ export default function SolarSystem() {
 
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (isGeneratingPng) return;
-
-                    setIsGeneratingPng(true);
-                    try {
-                      await new Promise<void>((resolve) => {
-                        requestAnimationFrame(() => {
-                          setTimeout(resolve, 0);
-                        });
-                      });
-                      const dataUrl = await captureSolarSystem();
-                      if (!dataUrl) return;
-                      setExportImage(dataUrl);
-                      setIsExporting(true);
-                    } finally {
-                      setIsGeneratingPng(false);
-                    }
-                  }}
+                  onClick={handleExport}
                   disabled={isGeneratingPng}
-                  className="mt-4 w-full py-3.5 bg-white/10 hover:bg-white/15 disabled:hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-bold tracking-widest uppercase transition-all hover:scale-[1.01] disabled:hover:scale-100 flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-wait text-white disabled:text-white/70"
+                  className="mt-4 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/10 py-3.5 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:scale-[1.01] hover:bg-white/15 disabled:cursor-wait disabled:text-white/70 disabled:hover:scale-100 disabled:hover:bg-white/10"
                 >
                   {isGeneratingPng ? (
                     <>
-                      <LoaderCircle className="w-3.5 h-3.5 animate-spin" />
+                      <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
                       Generating PNG...
                     </>
                   ) : (
                     <>
-                      <Download className="w-3.5 h-3.5" /> Download PNG
+                      <Download className="h-3.5 w-3.5" />
+                      Download PNG
                     </>
                   )}
                 </button>
               </div>
             </div>
 
-            {/* Planet List */}
             <div>
-              <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-white/60 mb-3 border-b border-white/5 pb-1">
-                CELESTIAL BODIES
-              </h3>
-              <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
-                {planets.filter((p: Planet) => p.id !== "preview-planet")
-                  .length === 0 ? (
-                  <span className="text-[10px] text-white/30 italic">
+              <SectionHeading>Celestial Bodies</SectionHeading>
+              <div className="custom-scrollbar flex max-h-64 flex-col gap-1.5 overflow-y-auto pr-1">
+                {planets.length === 0 ? (
+                  <span className="rounded-xl border border-dashed border-white/10 px-3 py-4 text-center text-[10px] italic text-white/30">
                     No celestial bodies in orbit
                   </span>
                 ) : (
-                  planets
-                    .filter((p: Planet) => p.id !== "preview-planet")
-                    .map((planet) => {
-                      const isSelected = selectedPlanet?.id === planet.id;
-                      return (
-                        <div
-                          key={planet.id}
-                          onClick={() => setSelectedPlanet(planet)}
-                          className={`flex items-center justify-between p-2 rounded-xl border transition-all duration-200 cursor-pointer ${
-                            isSelected
-                              ? "bg-white/10 border-white/25 shadow-[0_0_4px_rgba(255,255,255,0.02)] text-white"
-                              : "bg-black/25 border-white/5 hover:border-white/15 text-white/70 hover:text-white"
-                          }`}
+                  planets.map((planet) => {
+                    const isSelected = selectedBodyId === planet.id;
+
+                    return (
+                      <div
+                        key={planet.id}
+                        className={`group flex items-center rounded-xl border transition-all duration-200 ${
+                          isSelected
+                            ? "border-white/25 bg-white/10 shadow-[0_0_12px_rgba(255,255,255,0.035)]"
+                            : "border-white/5 bg-black/25 hover:border-white/15 hover:bg-white/4.5"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBodyId(planet.id)}
+                          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 p-1.5 text-left"
                         >
-                          <div className="flex items-center gap-2.5">
-                            {/* Planet Icon */}
-                            <div
-                              className="w-6 h-6 rounded-full relative overflow-hidden bg-cover bg-center shrink-0 border border-white/10"
-                              style={{
-                                backgroundImage: `url(${TEXTURE_MAP[planet.textureKey]})`,
-                              }}
-                            >
-                              <div className="absolute inset-0 bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.1)_0%,rgba(0,0,0,0.6)_85%)]" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-[11px] font-mono leading-tight">
-                                {planet.name}
-                              </span>
-                              <span className="text-[8px] font-mono text-white/35 uppercase leading-none">
-                                {planet.type}
-                              </span>
-                            </div>
+                          <div
+                            className={`rounded-xl transition-colors ${
+                              isSelected ? "bg-white/5.5" : "bg-black/15"
+                            }`}
+                          >
+                            <BodyPreview
+                              body={planet}
+                              variant="list"
+                              paused={paused}
+                              showMoons={showMoons}
+                              enableGlow={enableGlow}
+                            />
                           </div>
 
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeletePlanet(planet.id);
-                            }}
-                            className="p-1 text-white/30 hover:text-red-400 hover:bg-white/5 rounded transition-colors cursor-pointer"
-                            title="Delete body"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      );
-                    })
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-[11px] leading-tight text-white/85 font-mono">
+                              {planet.name}
+                            </div>
+                            <div className="mt-0.5 truncate text-[8px] uppercase leading-none tracking-wider text-white/35 font-mono">
+                              {planet.type}
+                            </div>
+                            <div className="mt-1.5 flex gap-2 text-[8px] text-white/28 font-mono">
+                              <span>{planet.size}px body</span>
+                              <span>{Math.round(planet.orbitSize / 2)}px orbit</span>
+                            </div>
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePlanet(planet.id)}
+                          className="mr-1.5 cursor-pointer rounded-lg p-1.5 text-white/25 transition-colors hover:bg-red-500/10 hover:text-red-300"
+                          title={`Delete ${planet.name}`}
+                          aria-label={`Delete ${planet.name}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
 
-            {/* Creation Section */}
             <div>
-              <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-white/60 mb-3 border-b border-white/5 pb-1">
-                Planet Creator
-              </h3>
+              <SectionHeading>Planet Creator</SectionHeading>
 
-              {isAdding ? (
+              {isAdding && previewPlanet ? (
                 <form
                   onSubmit={handleAddPlanet}
-                  className="flex flex-col gap-3 font-mono text-[11px] bg-white/5 p-3.5 rounded-xl border border-white/5 animate-in slide-in-from-top-4 duration-300"
+                  className="flex flex-col gap-3 rounded-xl border border-white/5 bg-white/5 p-3.5 text-[11px] animate-in slide-in-from-top-4 duration-300 font-mono"
                 >
+                  <div className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-black/25 p-2.5">
+                    <BodyPreview
+                      body={previewPlanet}
+                      variant="creator"
+                      paused={paused}
+                      showMoons={showMoons}
+                      enableGlow={enableGlow}
+                    />
+                    <div className="min-w-0">
+                      <div className="truncate text-xs text-white/85">
+                        {previewPlanet.name}
+                      </div>
+                      <div className="mt-0.5 text-[9px] uppercase tracking-wider text-white/35">
+                        Live system preview
+                      </div>
+                      <div className="mt-2 text-[9px] text-white/45">
+                        {previewPlanet.size}px body · {Math.round(previewPlanet.orbitSize / 2)}px orbit
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] text-white/40">
                       Planet Name
@@ -1312,9 +990,14 @@ export default function SolarSystem() {
                     <input
                       type="text"
                       required
-                      value={newPlanetName}
-                      onChange={(e) => setNewPlanetName(e.target.value)}
-                      className="bg-black/60 border border-white/10 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-white/30"
+                      value={draft.name}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          name: event.target.value,
+                        }))
+                      }
+                      className="rounded border border-white/10 bg-black/60 px-2 py-1 text-xs text-white focus:border-white/30 focus:outline-none"
                     />
                   </div>
 
@@ -1324,15 +1007,18 @@ export default function SolarSystem() {
                         Texture
                       </label>
                       <select
-                        value={newPlanetTexture}
-                        onChange={(e) =>
-                          setNewPlanetTexture(e.target.value as TextureKey)
+                        value={draft.textureKey}
+                        onChange={(event) =>
+                          setDraft((current) => ({
+                            ...current,
+                            textureKey: event.target.value as PlanetTextureKey,
+                          }))
                         }
-                        className="bg-black/80 border border-white/10 rounded px-1.5 py-1 text-xs focus:outline-none cursor-pointer"
+                        className="cursor-pointer rounded border border-white/10 bg-black/80 px-1.5 py-1 text-xs focus:outline-none"
                       >
-                        {TEXTURE_OPTIONS.map((opt) => (
-                          <option key={opt.key} value={opt.key}>
-                            {opt.name}
+                        {TEXTURE_OPTIONS.map((option) => (
+                          <option key={option.key} value={option.key}>
+                            {option.name}
                           </option>
                         ))}
                       </select>
@@ -1342,9 +1028,14 @@ export default function SolarSystem() {
                         Planet Type
                       </label>
                       <select
-                        value={newPlanetType}
-                        onChange={(e) => setNewPlanetType(e.target.value)}
-                        className="bg-black/80 border border-white/10 rounded px-1.5 py-1 text-xs focus:outline-none cursor-pointer"
+                        value={draft.type}
+                        onChange={(event) =>
+                          setDraft((current) => ({
+                            ...current,
+                            type: event.target.value,
+                          }))
+                        }
+                        className="cursor-pointer rounded border border-white/10 bg-black/80 px-1.5 py-1 text-xs focus:outline-none"
                       >
                         {TYPE_OPTIONS.map((type) => (
                           <option key={type} value={type}>
@@ -1358,28 +1049,31 @@ export default function SolarSystem() {
                   <div className="flex flex-col gap-0.5">
                     <div className="flex justify-between">
                       <label className="text-[10px] text-white/40">
-                        Planet Size ({newPlanetSize}px)
+                        Planet Diameter ({draft.size}px)
                       </label>
                       <span className="text-[9px] text-white/30">
-                        Relative Scale
+                        Relative scale
                       </span>
                     </div>
                     <input
                       type="range"
                       min="6"
                       max="65"
-                      value={newPlanetSize}
-                      onChange={(e) =>
-                        setNewPlanetSize(parseInt(e.target.value))
+                      value={draft.size}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          size: Number.parseInt(event.target.value, 10),
+                        }))
                       }
-                      className="w-full h-1 bg-white/15 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
+                      className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-white/15 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
                     />
                   </div>
 
                   <div className="flex flex-col gap-0.5">
                     <div className="flex justify-between">
                       <label className="text-[10px] text-white/40">
-                        Orbit Radius ({Math.round(newPlanetOrbit / 2)}px)
+                        Orbit Radius ({Math.round(draft.orbitSize / 2)}px)
                       </label>
                       <span className="text-[9px] text-white/30">Distance</span>
                     </div>
@@ -1388,102 +1082,105 @@ export default function SolarSystem() {
                       min="120"
                       max="850"
                       step="10"
-                      value={newPlanetOrbit}
-                      onChange={(e) =>
-                        setNewPlanetOrbit(parseInt(e.target.value))
+                      value={draft.orbitSize}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          orbitSize: Number.parseInt(event.target.value, 10),
+                        }))
                       }
-                      className="w-full h-1 bg-white/15 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
+                      className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-white/15 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
                     />
                   </div>
 
                   <div className="flex flex-col gap-0.5">
                     <div className="flex justify-between">
                       <label className="text-[10px] text-white/45">
-                        Orbital Speed ({newPlanetDuration}s)
+                        Orbital Period ({draft.duration}s)
                       </label>
                       <span className="text-[9px] text-white/30">
-                        Slower &rarr; Faster
+                        Faster ← → Slower
                       </span>
                     </div>
                     <input
                       type="range"
                       min="3"
                       max="120"
-                      value={newPlanetDuration}
-                      onChange={(e) =>
-                        setNewPlanetDuration(parseInt(e.target.value))
+                      value={draft.duration}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          duration: Number.parseInt(event.target.value, 10),
+                        }))
                       }
-                      className="w-full h-1 bg-white/15 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
+                      className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-white/15 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
                     />
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 py-1.5 border-y border-white/5 my-1 text-[10px]">
-                    <label
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded border cursor-pointer text-[10px] font-mono transition-all duration-300 ${
-                        newPlanetHasMoon
-                          ? "bg-white/10 border-white/30 text-white shadow-[0_0_6px_rgba(255,255,255,0.06)]"
-                          : "bg-black/35 border-white/10 text-white/55 hover:border-white/20"
-                      }`}
+                  <div className="grid grid-cols-2 gap-2 border-y border-white/5 py-2">
+                    <TogglePill
+                      checked={Boolean(draft.hasMoon)}
+                      onChange={(hasMoon) =>
+                        setDraft((current) => ({ ...current, hasMoon }))
+                      }
                     >
-                      <input
-                        type="checkbox"
-                        checked={newPlanetHasMoon}
-                        onChange={(e) => setNewPlanetHasMoon(e.target.checked)}
-                        className="sr-only"
-                      />
                       Moon
-                    </label>
-                    <label
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded border cursor-pointer text-[10px] font-mono transition-all duration-300 ${
-                        newPlanetHasRings
-                          ? "bg-white/10 border-white/30 text-white shadow-[0_0_6px_rgba(255,255,255,0.06)]"
-                          : "bg-black/35 border-white/10 text-white/55 hover:border-white/20"
-                      }`}
+                    </TogglePill>
+                    <TogglePill
+                      checked={Boolean(draft.hasRings)}
+                      onChange={(hasRings) =>
+                        setDraft((current) => ({ ...current, hasRings }))
+                      }
                     >
-                      <input
-                        type="checkbox"
-                        checked={newPlanetHasRings}
-                        onChange={(e) => setNewPlanetHasRings(e.target.checked)}
-                        className="sr-only"
-                      />
                       Rings
-                    </label>
-                    <div className="flex items-center gap-1.5 font-mono text-[10px]">
-                      <span className="text-white/40 uppercase text-[9px] tracking-wider">
-                        Temp:
-                      </span>
-                      <input
-                        type="text"
-                        value={newPlanetTemp}
-                        onChange={(e) => setNewPlanetTemp(e.target.value)}
-                        className="w-16 bg-black/60 border border-white/10 rounded px-1.5 py-0.5 text-xs text-white focus:outline-none"
-                      />
-                    </div>
+                    </TogglePill>
                   </div>
 
-                  <div className="flex flex-col gap-1 mt-1">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] text-white/40">
+                      Global Temperature
+                    </label>
+                    <input
+                      type="text"
+                      value={draft.temp}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          temp: event.target.value,
+                        }))
+                      }
+                      className="rounded border border-white/10 bg-black/60 px-2 py-1.5 text-xs text-white focus:border-white/30 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
                     <label className="text-[9px] text-white/40">
                       Description
                     </label>
                     <textarea
-                      value={newPlanetDesc}
-                      onChange={(e) => setNewPlanetDesc(e.target.value)}
-                      rows={2}
-                      className="bg-black/60 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-white/30 resize-y w-full font-sans leading-normal custom-scrollbar"
+                      value={draft.desc}
+                      onChange={(event) =>
+                        setDraft((current) => ({
+                          ...current,
+                          desc: event.target.value,
+                        }))
+                      }
+                      rows={3}
+                      className="custom-scrollbar w-full resize-y rounded border border-white/10 bg-black/60 px-2 py-1.5 text-xs leading-normal text-white focus:border-white/30 focus:outline-none font-sans"
                     />
                   </div>
 
-                  <div className="flex gap-2 mt-2">
+                  <div className="mt-2 flex gap-2">
                     <button
                       type="button"
                       onClick={() => setIsAdding(false)}
-                      className="flex-1 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-[10px] font-bold tracking-widest uppercase transition-colors cursor-pointer text-white/70"
+                      className="flex-1 cursor-pointer rounded-lg border border-white/10 bg-white/5 py-2 text-[10px] font-bold uppercase tracking-widest text-white/70 transition-colors hover:bg-white/10"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="flex-2 py-2 bg-white/15 hover:bg-white/25 border border-white/25 rounded-lg text-[10px] font-bold tracking-widest uppercase transition-colors cursor-pointer text-white"
+                      className="flex-2 cursor-pointer rounded-lg border border-white/25 bg-white/15 py-2 text-[10px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-white/25"
                     >
                       Create Planet
                     </button>
@@ -1491,53 +1188,33 @@ export default function SolarSystem() {
                 </form>
               ) : (
                 <button
-                  onClick={() => {
-                    setIsAdding(true);
-                    setNewPlanetName(`Planet ${planets.length + 1}`);
-                    setNewPlanetOrbit(
-                      Math.min(
-                        850,
-                        Math.max(140, ...planets.map((p) => p.orbitSize), 100) +
-                          70,
-                      ),
-                    );
-                  }}
-                  className="w-full py-3.5 bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl text-[10px] font-bold tracking-widest uppercase transition-all hover:scale-[1.01] flex items-center justify-center gap-1.5 cursor-pointer text-white"
+                  type="button"
+                  onClick={openCreator}
+                  className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/10 py-3.5 text-[10px] font-bold uppercase tracking-widest text-white transition-all hover:scale-[1.01] hover:bg-white/15"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Create a new Planet
+                  <Plus className="h-3.5 w-3.5" />
+                  Create a New Planet
                 </button>
               )}
             </div>
           </div>
         )}
       </div>
-      {/* Orbit Canvas System Viewport */}
+
       <div className="order-5 relative z-10 flex w-full justify-center overflow-hidden px-1 pt-2 md:block md:w-auto md:overflow-visible md:px-0 md:pt-0">
         <div
-          ref={exportStageRef}
-          data-export-stage="true"
-          className="relative shrink-0 overflow-hidden"
-          style={{
-            width: "900px",
-            height: "900px",
-            transform: `scale(${containerScale})`,
-            transformOrigin: isMobileViewport ? "center top" : "center center",
-          }}
+          className="relative shrink-0 overflow-hidden bg-black"
+          style={{ width: stageSize, height: stageSize }}
         >
           <div
-            className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+            className="absolute left-0 top-0 h-225 w-225"
             style={{
-              backgroundImage: `url(${TEXTURE_MAP[bgTheme]})`,
+              transform: `scale(${containerScale})`,
+              transformOrigin: "top left",
             }}
-          />
-          <div className="absolute inset-0 bg-black/40" />
-          <div
-            ref={systemViewportRef}
-            className="relative flex h-full w-full items-center justify-center transition-transform duration-300"
           >
-          <div className="absolute inset-0 z-30">
             <ThreeSolarSystem
-              planets={planets}
+              planets={scenePlanets}
               paused={paused}
               timeScale={timeScale}
               showOrbits={showOrbits}
@@ -1549,215 +1226,72 @@ export default function SolarSystem() {
               onCanvasReady={handleThreeCanvasReady}
             />
           </div>
-          <div className="hidden">
-          {/* Stellar Core: The Sun */}
-          <div
-            data-texture-url={TEXTURE_MAP.sun}
-            className="absolute w-24 h-24 rounded-full z-20 flex items-center justify-center planet-texture-spin-slow cursor-pointer"
-            style={{
-              backgroundImage: `url(${TEXTURE_MAP.sun})`,
-              boxShadow: enableGlow
-                ? `0 0 60px rgba(253, 184, 19, 0.40), 0 0 25px rgba(253, 184, 19, 0.25)`
-                : "none",
-              animationPlayState: paused ? "paused" : "running",
-            }}
-            onClick={() =>
-              setSelectedPlanet({
-                id: "sun",
-                name: "The Sun",
-                textureKey: "sun",
-                size: 96,
-                orbitSize: 0,
-                duration: 0,
-                type: "Yellow Dwarf Star",
-                temp: "5,778 K",
-                desc: "The yellow dwarf star at the gravitational heart of our system. It comprises roughly 99.8% of the system's total mass.",
-              })
-            }
-          >
-            {/* Subtle star atmospheric glow overlay */}
-            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.25)_0%,rgba(0,0,0,0.5)_95%)] mix-blend-overlay" />
-          </div>
-
-          {/* Dynamic Planets Render Loop */}
-          {planets.map((planet, index) => (
-            <div
-              key={planet.id}
-              ref={(el) => {
-                if (el) {
-                  planetElements.current[planet.id] = el;
-                } else {
-                  delete planetElements.current[planet.id];
-                }
-              }}
-              className={`absolute rounded-full flex items-center justify-center pointer-events-none transition-colors duration-300 ${
-                showOrbits
-                  ? "border border-white/10"
-                  : "border border-transparent"
-              }`}
-              style={{
-                width: `${planet.orbitSize}px`,
-                height: `${planet.orbitSize}px`,
-                transform: `rotate(${(index * 45) % 360}deg)`,
-              }}
-            >
-              {/* Planet Group Wrapper (positioned at the top edge of orbit circle) */}
-              <div
-                className="absolute left-1/2 flex flex-col items-center justify-center pointer-events-auto"
-                style={{
-                  transform: `translate(-50%, -50%)`,
-                  top: 0,
-                  width: `${planet.size * 2 + 50}px`,
-                  height: `${planet.size * 2 + 50}px`,
-                }}
-              >
-                {/* 1. BACK RING (renders behind the planet sphere) */}
-                {planet.hasRings && (
-                  <div
-                    className="absolute top-1/2 left-1/2 pointer-events-none origin-center rounded-full"
-                    style={{
-                      width: `${planet.size * (planet.textureKey === "saturn" ? 2.8 : planet.textureKey === "uranus" ? 2.2 : 2.4)}px`,
-                      height: `${planet.size * (planet.textureKey === "saturn" ? 2.8 : planet.textureKey === "uranus" ? 2.2 : 2.4)}px`,
-                      background: getRingGradient(planet.textureKey),
-                      transform:
-                        "translate(-50%, -50%) rotateX(72deg) rotateY(12deg)",
-                      opacity: 0.8,
-                      zIndex: 5,
-                      clipPath: "inset(0 0 50% 0)",
-                    }}
-                  />
-                )}
-
-                {/* Planet sphere */}
-                <div
-                  data-texture-url={TEXTURE_MAP[planet.textureKey]}
-                  className={`rounded-full relative transition-transform duration-300 cursor-pointer group planet-texture-spin`}
-                  style={{
-                    width: `${planet.size}px`,
-                    height: `${planet.size}px`,
-                    backgroundImage: `url(${TEXTURE_MAP[planet.textureKey]})`,
-                    boxShadow: enableGlow
-                      ? `0 0 8px ${GLOW_COLORS[planet.textureKey] || "rgba(255,255,255,0.05)"}`
-                      : "none",
-                    animationPlayState: paused ? "paused" : "running",
-                    animationDuration:
-                      planet.textureKey === "jupiter"
-                        ? "8s"
-                        : planet.textureKey === "saturn"
-                          ? "10s"
-                          : planet.textureKey === "earth"
-                            ? "16s"
-                            : "22s",
-                    zIndex: 10,
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (planet.id !== "preview-planet") {
-                      setSelectedPlanet(planet);
-                    }
-                  }}
-                >
-                  {/* Real-time 3D Spherical Shadow Mask Overlay */}
-                  <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.12)_0%,rgba(0,0,0,0.88)_82%)] pointer-events-none" />
-                </div>
-
-                {/* 2. FRONT RING (renders in front of the planet sphere, clipped to bottom half) */}
-                {planet.hasRings && (
-                  <div
-                    className="absolute top-1/2 left-1/2 pointer-events-none origin-center rounded-full"
-                    style={{
-                      width: `${planet.size * (planet.textureKey === "saturn" ? 2.8 : planet.textureKey === "uranus" ? 2.2 : 2.4)}px`,
-                      height: `${planet.size * (planet.textureKey === "saturn" ? 2.8 : planet.textureKey === "uranus" ? 2.2 : 2.4)}px`,
-                      background: getRingGradient(planet.textureKey),
-                      transform:
-                        "translate(-50%, -50%) rotateX(72deg) rotateY(12deg)",
-                      opacity: 0.8,
-                      zIndex: 15,
-                      clipPath: "inset(50% 0 0 0)",
-                    }}
-                  />
-                )}
-
-                {/* Moon element orbiting Earth inside parent group */}
-                {planet.hasMoon && showMoons && (
-                  <div
-                    className="absolute rounded-full border border-white/5 pointer-events-none"
-                    style={{
-                      width: `${planet.size + 22}px`,
-                      height: `${planet.size + 22}px`,
-                    }}
-                  >
-                    {/* Rotating carrying div representing Moon angular position */}
-                    <div className="absolute inset-0 moon-carrier">
-                      {/* Moon visual sphere */}
-                      <div
-                        data-texture-url={TEXTURE_MAP.moon}
-                        className="absolute rounded-full planet-texture-spin"
-                        style={{
-                          width: "5px",
-                          height: "5px",
-                          top: 0,
-                          left: "50%",
-                          transform: "translate(-50%, -50%)",
-                          backgroundImage: `url(${TEXTURE_MAP.moon})`,
-                          animationPlayState: paused ? "paused" : "running",
-                          animationDuration: "5s",
-                        }}
-                      >
-                        <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.08)_0%,rgba(0,0,0,0.92)_88%)] pointer-events-none" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-          </div>
-          </div>
         </div>
       </div>
 
-      {/* Right Control & Live Planet Editor Overlay */}
-      {selectedPlanet && (
-        <div className="order-3 relative z-40 -mt-1 mb-4 w-full max-w-sm self-stretch overflow-y-auto custom-scrollbar bg-black/60 backdrop-blur-xl border border-white/10 p-6 text-left shadow-[0_15px_40px_rgba(0,0,0,0.7)] rounded-2xl animate-in fade-in duration-300 md:absolute md:top-1/2 md:right-6 md:mb-0 md:mt-0 md:w-80 md:max-w-none md:max-h-[80vh] md:-translate-y-1/2 md:slide-in-from-right-10">
-          {/* Close Panel Button */}
+      {selectedBody && (
+        <div className="custom-scrollbar order-3 relative z-40 -mt-1 mb-4 w-full max-w-sm self-stretch overflow-y-auto rounded-2xl border border-white/10 bg-black/60 p-5 text-left shadow-[0_15px_40px_rgba(0,0,0,0.7)] backdrop-blur-xl animate-in fade-in duration-300 md:absolute md:right-6 md:top-1/2 md:mb-0 md:mt-0 md:max-h-[80vh] md:w-80 md:max-w-none md:-translate-y-1/2 md:slide-in-from-right-10">
           <button
-            onClick={() => setSelectedPlanet(null)}
-            className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-full cursor-pointer"
+            type="button"
+            onClick={() => setSelectedBodyId(null)}
+            className="absolute right-3 top-3 z-10 cursor-pointer rounded-full p-1.5 text-white/40 transition-colors hover:bg-white/10 hover:text-white"
             title="Close Panel"
+            aria-label="Close properties"
           >
-            <X className="w-4 h-4" />
+            <X className="h-4 w-4" />
           </button>
 
-          {/* Spherical Preview Icon */}
-          <div
-            className="w-16 h-16 rounded-full mb-4 shadow-2xl relative planet-texture-spin"
-            style={{
-              backgroundImage: `url(${TEXTURE_MAP[selectedPlanet.textureKey]})`,
-              boxShadow: enableGlow
-                ? `0 0 8px ${selectedPlanet.id === "sun" ? "rgba(253,184,19,0.12)" : selectedGlow}`
-                : "none",
-              animationPlayState: paused ? "paused" : "running",
-            }}
-          >
-            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.15)_0%,rgba(0,0,0,0.85)_82%)] pointer-events-none" />
+          <div className="relative mb-5 overflow-hidden rounded-2xl border border-white/8 bg-[radial-gradient(circle_at_28%_18%,rgba(255,255,255,0.08),rgba(255,255,255,0.02)_38%,rgba(0,0,0,0.28)_100%)] p-3.5">
+            <div className="absolute inset-0 bg-[linear-gradient(115deg,transparent_0%,rgba(255,255,255,0.025)_48%,transparent_70%)]" />
+            <div className="relative flex items-center gap-3">
+              <BodyPreview
+                body={selectedBody}
+                variant="panel"
+                paused={paused}
+                showMoons={showMoons}
+                enableGlow={enableGlow}
+              />
+
+              <div className="min-w-0 flex-1 pr-4">
+                <div className="text-[9px] uppercase tracking-[0.18em] text-white/35 font-mono">
+                  {selectedBody.id === "sun" ? "Stellar Core" : "Selected Body"}
+                </div>
+                <h2 className="mt-1 wrap-break-word text-xl font-light uppercase leading-tight tracking-widest text-white">
+                  {selectedBody.name}
+                </h2>
+                <div className="mt-1 text-[9px] uppercase tracking-wider text-white/45 font-mono">
+                  {selectedBody.type}
+                </div>
+              </div>
+            </div>
+
+            <div className="relative mt-3 grid grid-cols-3 gap-1.5">
+              {selectedBody.id === "sun" ? (
+                <>
+                  <Metric label="Temperature" value={selectedBody.temp} />
+                  <Metric label="Class" value="G2V" />
+                  <Metric label="Age" value="4.6B yr" />
+                </>
+              ) : (
+                <>
+                  <Metric label="Diameter" value={`${selectedBody.size}px`} />
+                  <Metric
+                    label="Orbit"
+                    value={`${Math.round(selectedBody.orbitSize / 2)}px`}
+                  />
+                  <Metric label="Period" value={`${selectedBody.duration}s`} />
+                </>
+              )}
+            </div>
           </div>
 
-          <h2 className="text-2xl font-light uppercase tracking-widest text-white leading-tight">
-            {selectedPlanet.name}
-          </h2>
-          <div className="text-[10px] font-mono text-white/45 mb-4 uppercase tracking-wider">
-            {selectedPlanet.type}
-          </div>
-
-          <p className="text-[11px] leading-relaxed text-white/60 border-l-2 border-white/15 pl-3 mb-6">
-            {selectedPlanet.desc}
+          <p className="mb-5 border-l-2 border-white/15 pl-3 text-[11px] leading-relaxed text-white/60">
+            {selectedBody.desc}
           </p>
 
-          {/* Live Planet Editing Console (Only for editable planets, not the star Sun) */}
-          {selectedPlanet.id !== "sun" ? (
-            <div className="space-y-4 border-t border-white/5 pt-5 font-mono text-[11px] text-white/80">
-              <h3 className="text-[10px] text-white/45 uppercase tracking-widest font-bold mb-3">
+          {selectedBody.id !== "sun" ? (
+            <div className="space-y-4 border-t border-white/5 pt-5 text-[11px] text-white/80 font-mono">
+              <h3 className="mb-3 text-[10px] font-bold uppercase tracking-widest text-white/45">
                 Properties
               </h3>
 
@@ -1765,45 +1299,46 @@ export default function SolarSystem() {
                 <label className="text-[10px] text-white/45">Name</label>
                 <input
                   type="text"
-                  value={selectedPlanet.name}
-                  onChange={(e) =>
-                    handleUpdatePlanet(selectedPlanet.id, {
-                      name: e.target.value,
+                  value={selectedBody.name}
+                  onChange={(event) =>
+                    handleUpdatePlanet(selectedBody.id, {
+                      name: event.target.value,
                     })
                   }
-                  className="bg-black/60 border border-white/10 rounded px-2.5 py-1.5 text-white text-xs w-full focus:outline-none focus:border-white/30"
+                  className="w-full rounded border border-white/10 bg-black/60 px-2.5 py-1.5 text-xs text-white focus:border-white/30 focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] text-white/45">Type</label>
+                  <label className="text-[10px] text-white/45">Texture</label>
                   <select
-                    value={selectedPlanet.textureKey}
-                    onChange={(e) =>
-                      handleUpdatePlanet(selectedPlanet.id, {
-                        textureKey: e.target.value as TextureKey,
+                    value={selectedBody.textureKey}
+                    onChange={(event) =>
+                      handleUpdatePlanet(selectedBody.id, {
+                        textureKey: event.target.value as PlanetTextureKey,
                       })
                     }
-                    className="bg-black/80 border border-white/10 rounded px-2 py-1.5 text-xs w-full focus:outline-none cursor-pointer"
+                    className="w-full cursor-pointer rounded border border-white/10 bg-black/80 px-2 py-1.5 text-xs focus:outline-none"
                   >
-                    {TEXTURE_OPTIONS.map((opt) => (
-                      <option key={opt.key} value={opt.key}>
-                        {opt.name}
+                    {TEXTURE_OPTIONS.map((option) => (
+                      <option key={option.key} value={option.key}>
+                        {option.name}
                       </option>
                     ))}
                   </select>
                 </div>
+
                 <div className="flex flex-col gap-1">
                   <label className="text-[10px] text-white/45">Category</label>
                   <select
-                    value={selectedPlanet.type}
-                    onChange={(e) =>
-                      handleUpdatePlanet(selectedPlanet.id, {
-                        type: e.target.value,
+                    value={selectedBody.type}
+                    onChange={(event) =>
+                      handleUpdatePlanet(selectedBody.id, {
+                        type: event.target.value,
                       })
                     }
-                    className="bg-black/80 border border-white/10 rounded px-2 py-1.5 text-xs w-full focus:outline-none cursor-pointer"
+                    className="w-full cursor-pointer rounded border border-white/10 bg-black/80 px-2 py-1.5 text-xs focus:outline-none"
                   >
                     {TYPE_OPTIONS.map((type) => (
                       <option key={type} value={type}>
@@ -1814,148 +1349,147 @@ export default function SolarSystem() {
                 </div>
               </div>
 
+              <div className="rounded-lg border border-white/6 bg-black/20 px-2.5 py-2 text-[9px] text-white/35">
+                Texture preview: {TEXTURE_LABEL[selectedBody.textureKey as PlanetTextureKey]}
+              </div>
+
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between">
                   <label className="text-[10px] text-white/45">
-                    Planet Radius
+                    Planet Diameter
                   </label>
                   <span className="text-[10px] text-white/60">
-                    {selectedPlanet.size}px
+                    {selectedBody.size}px
                   </span>
                 </div>
                 <input
                   type="range"
                   min="6"
                   max="65"
-                  value={selectedPlanet.size}
-                  onChange={(e) =>
-                    handleUpdatePlanet(selectedPlanet.id, {
-                      size: parseInt(e.target.value),
+                  value={selectedBody.size}
+                  onChange={(event) =>
+                    handleUpdatePlanet(selectedBody.id, {
+                      size: Number.parseInt(event.target.value, 10),
                     })
                   }
-                  className="w-full h-1 bg-white/15 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
+                  className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-white/15 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between">
                   <label className="text-[10px] text-white/45">
-                    Orbital Diameter
+                    Orbit Radius
                   </label>
                   <span className="text-[10px] text-white/60">
-                    {selectedPlanet.orbitSize}px
+                    {Math.round(selectedBody.orbitSize / 2)}px
                   </span>
                 </div>
                 <input
                   type="range"
-                  min="110"
+                  min="120"
                   max="850"
                   step="10"
-                  value={selectedPlanet.orbitSize}
-                  onChange={(e) =>
-                    handleUpdatePlanet(selectedPlanet.id, {
-                      orbitSize: parseInt(e.target.value),
+                  value={selectedBody.orbitSize}
+                  onChange={(event) =>
+                    handleUpdatePlanet(selectedBody.id, {
+                      orbitSize: Number.parseInt(event.target.value, 10),
                     })
                   }
-                  className="w-full h-1 bg-white/15 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
+                  className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-white/15 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
                 <div className="flex justify-between">
                   <label className="text-[10px] text-white/45">
-                    Year Duration (Period)
+                    Orbital Period
                   </label>
                   <span className="text-[10px] text-white/60">
-                    {selectedPlanet.duration}s
+                    {selectedBody.duration}s
                   </span>
                 </div>
                 <input
                   type="range"
                   min="3"
                   max="120"
-                  value={selectedPlanet.duration}
-                  onChange={(e) =>
-                    handleUpdatePlanet(selectedPlanet.id, {
-                      duration: parseInt(e.target.value),
+                  value={selectedBody.duration}
+                  onChange={(event) =>
+                    handleUpdatePlanet(selectedBody.id, {
+                      duration: Number.parseInt(event.target.value, 10),
                     })
                   }
-                  className="w-full h-1 bg-white/15 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
+                  className="h-1 w-full cursor-pointer appearance-none rounded-lg bg-white/15 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-3 py-1.5 border-y border-white/5 my-2 text-[10px]">
-                <label
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border cursor-pointer text-[10px] font-mono transition-all duration-300 ${
-                    selectedPlanet.hasMoon
-                      ? "bg-white/15 border-white/35 text-white shadow-[0_0_8px_rgba(255,255,255,0.08)]"
-                      : "bg-black/30 border-white/10 text-white/55 hover:border-white/20"
-                  }`}
+              <div className="grid grid-cols-2 gap-2 border-y border-white/5 py-2">
+                <TogglePill
+                  checked={Boolean(selectedBody.hasMoon)}
+                  onChange={(hasMoon) =>
+                    handleUpdatePlanet(selectedBody.id, { hasMoon })
+                  }
                 >
-                  <input
-                    type="checkbox"
-                    checked={selectedPlanet.hasMoon || false}
-                    onChange={(e) =>
-                      handleUpdatePlanet(selectedPlanet.id, {
-                        hasMoon: e.target.checked,
-                      })
-                    }
-                    className="sr-only"
-                  />
                   Moon
-                </label>
-
-                <label
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border cursor-pointer text-[10px] font-mono transition-all duration-300 ${
-                    selectedPlanet.hasRings
-                      ? "bg-white/15 border-white/35 text-white shadow-[0_0_8px_rgba(255,255,255,0.08)]"
-                      : "bg-black/30 border-white/10 text-white/55 hover:border-white/20"
-                  }`}
+                </TogglePill>
+                <TogglePill
+                  checked={Boolean(selectedBody.hasRings)}
+                  onChange={(hasRings) =>
+                    handleUpdatePlanet(selectedBody.id, { hasRings })
+                  }
                 >
-                  <input
-                    type="checkbox"
-                    checked={selectedPlanet.hasRings || false}
-                    onChange={(e) =>
-                      handleUpdatePlanet(selectedPlanet.id, {
-                        hasRings: e.target.checked,
-                      })
-                    }
-                    className="sr-only"
-                  />
                   Rings
-                </label>
-
-                <div className="flex items-center gap-1.5 font-mono text-[10px]">
-                  <span className="text-white/40 uppercase text-[9px] tracking-wider">
-                    Temp:
-                  </span>
-                  <input
-                    type="text"
-                    value={selectedPlanet.temp}
-                    onChange={(e) =>
-                      handleUpdatePlanet(selectedPlanet.id, {
-                        temp: e.target.value,
-                      })
-                    }
-                    className="w-16 bg-black/60 border border-white/10 rounded px-1.5 py-0.5 text-xs text-white focus:outline-none focus:border-white/30"
-                  />
-                </div>
+                </TogglePill>
               </div>
 
-              <div className="flex justify-end pt-3.5 mt-2 border-t border-white/5">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-white/45">
+                  Global Temperature
+                </label>
+                <input
+                  type="text"
+                  value={selectedBody.temp}
+                  onChange={(event) =>
+                    handleUpdatePlanet(selectedBody.id, {
+                      temp: event.target.value,
+                    })
+                  }
+                  className="w-full rounded border border-white/10 bg-black/60 px-2.5 py-1.5 text-xs text-white focus:border-white/30 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] text-white/45">
+                  Description
+                </label>
+                <textarea
+                  rows={3}
+                  value={selectedBody.desc}
+                  onChange={(event) =>
+                    handleUpdatePlanet(selectedBody.id, {
+                      desc: event.target.value,
+                    })
+                  }
+                  className="custom-scrollbar w-full resize-y rounded border border-white/10 bg-black/60 px-2.5 py-1.5 text-xs leading-normal text-white focus:border-white/30 focus:outline-none font-sans"
+                />
+              </div>
+
+              <div className="mt-2 flex justify-end border-t border-white/5 pt-3.5">
                 <button
-                  onClick={() => handleDeletePlanet(selectedPlanet.id)}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 border border-red-500/30 text-red-300 hover:text-white rounded-lg text-[9px] uppercase tracking-wider transition-colors cursor-pointer"
+                  type="button"
+                  onClick={() => handleDeletePlanet(selectedBody.id)}
+                  className="flex cursor-pointer items-center gap-1 rounded-lg border border-red-500/30 bg-red-950/40 px-3 py-1.5 text-[9px] uppercase tracking-wider text-red-300 transition-colors hover:bg-red-900/60 hover:text-white"
                 >
-                  <Trash2 className="w-3 h-3" /> Delete
+                  <Trash2 className="h-3 w-3" />
+                  Delete
                 </button>
               </div>
             </div>
           ) : (
-            <div className="space-y-4 border-t border-white/5 pt-5 font-mono text-[11px] text-white/70">
+            <div className="space-y-4 border-t border-white/5 pt-5 text-[11px] text-white/70 font-mono">
               <div className="flex justify-between border-b border-white/5 pb-2">
                 <span className="text-white/40">AVG SURFACE TEMP</span>
-                <span>{selectedPlanet.temp}</span>
+                <span>{SUN_BODY.temp}</span>
               </div>
               <div className="flex justify-between border-b border-white/5 pb-2">
                 <span className="text-white/40">STELLAR CLASS</span>
@@ -1967,29 +1501,36 @@ export default function SolarSystem() {
               </div>
             </div>
           )}
-
-          {/* Label removed */}
         </div>
       )}
 
-      {/* Bottom Timeline Controls */}
-      <div className="order-4 relative z-40 -mt-1 mb-4 flex max-w-full flex-wrap items-center justify-center gap-4 rounded-[1.75rem] border border-white/10 bg-black/50 px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md md:absolute md:bottom-6 md:left-1/2 md:mb-0 md:mt-0 md:-translate-x-1/2 md:flex-nowrap md:gap-5 md:rounded-full md:px-6">
+      <div className="order-4 relative z-40 -mt-1 mb-4 flex max-w-full flex-wrap items-center justify-center gap-3 rounded-[1.75rem] border border-white/10 bg-black/50 px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md md:absolute md:bottom-6 md:left-1/2 md:mb-0 md:mt-0 md:-translate-x-1/2 md:flex-nowrap md:gap-4 md:rounded-full md:px-6">
         <button
-          onClick={togglePause}
-          className="p-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-all hover:scale-105 group cursor-pointer"
+          type="button"
+          onClick={() => setPaused((current) => !current)}
+          className="group cursor-pointer rounded-full border border-white/10 bg-white/5 p-3 transition-all hover:scale-105 hover:bg-white/10"
           title={paused ? "Resume Simulation" : "Pause Simulation"}
         >
           {paused ? (
-            <Play className="w-4 h-4 text-white/70 group-hover:text-white" />
+            <Play className="h-4 w-4 text-white/70 group-hover:text-white" />
           ) : (
-            <Pause className="w-4 h-4 text-white/70 group-hover:text-white" />
+            <Pause className="h-4 w-4 text-white/70 group-hover:text-white" />
           )}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleReset}
+          className="group cursor-pointer rounded-full border border-white/10 bg-white/5 p-3 transition-all hover:scale-105 hover:bg-white/10"
+          title="Reset Solar System"
+        >
+          <RotateCcw className="h-4 w-4 text-white/55 group-hover:text-white" />
         </button>
 
         <div className="h-4 w-px bg-white/10" />
 
-        <div className="flex flex-col items-center gap-1 group">
-          <label className="text-[9px] font-mono text-white/45 uppercase tracking-widest group-hover:text-white/80 transition-colors">
+        <div className="group flex flex-col items-center gap-1">
+          <label className="text-[9px] uppercase tracking-widest text-white/45 transition-colors group-hover:text-white/80 font-mono">
             Time Scale: {timeScale.toFixed(1)}x
           </label>
           <input
@@ -1998,20 +1539,21 @@ export default function SolarSystem() {
             max="6"
             step="0.1"
             value={timeScale}
-            onChange={(e) => setTimeScale(parseFloat(e.target.value))}
-            className="w-44 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
+            onChange={(event) =>
+              setTimeScale(Number.parseFloat(event.target.value))
+            }
+            className="h-1 w-40 cursor-pointer appearance-none rounded-lg bg-white/20 sm:w-44 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
           />
         </div>
       </div>
 
-      {/* Attribution footer */}
-      <div className="order-6 mt-4 text-center font-mono text-[9px] text-white/25 transition-colors pointer-events-auto md:absolute md:bottom-4 md:right-4 md:mt-0 md:text-left hover:text-white/50">
+      <div className="order-6 mt-4 text-center text-[9px] text-white/25 transition-colors pointer-events-auto font-mono hover:text-white/50 md:absolute md:bottom-4 md:right-4 md:mt-0 md:text-left">
         Planet texture maps by{" "}
         <a
           href="https://www.solarsystemscope.com/textures/"
           target="_blank"
           rel="noopener noreferrer"
-          className="underline hover:text-white/40 transition-colors"
+          className="underline transition-colors hover:text-white/40"
         >
           Solar System Scope
         </a>
@@ -2020,13 +1562,12 @@ export default function SolarSystem() {
           href="https://creativecommons.org/licenses/by/4.0/"
           target="_blank"
           rel="noopener noreferrer"
-          className="underline hover:text-white/40 transition-colors"
+          className="underline transition-colors hover:text-white/40"
         >
           CC BY 4.0
         </a>
       </div>
 
-      {/* Render Export Preview Modal */}
       {isExporting && exportImage && (
         <ExportPreviewModal
           imageSrc={exportImage}
@@ -2042,22 +1583,21 @@ export default function SolarSystem() {
             try {
               const response = await fetch(exportImage);
               const blob = await response.blob();
-              const pngFile = new File(
+              const file = new File(
                 [blob],
                 `helios-solar-system-${Date.now()}.png`,
-                {
-                  type: "image/png",
-                },
+                { type: "image/png" },
               );
+
               const canShareFile =
                 typeof navigator !== "undefined" &&
-                "share" in navigator &&
-                "canShare" in navigator &&
-                navigator.canShare({ files: [pngFile] });
+                typeof navigator.share === "function" &&
+                typeof navigator.canShare === "function" &&
+                navigator.canShare({ files: [file] });
 
               if (canShareFile) {
                 await navigator.share({
-                  files: [pngFile],
+                  files: [file],
                   title: "Helios Solar System",
                   text: "Save this solar system snapshot.",
                 });
@@ -2065,7 +1605,9 @@ export default function SolarSystem() {
               }
 
               window.open(exportImage, "_blank", "noopener,noreferrer");
-            } catch {}
+            } catch {
+              window.open(exportImage, "_blank", "noopener,noreferrer");
+            }
           }}
           shareUrl={typeof window !== "undefined" ? window.location.href : ""}
           onClose={() => {
