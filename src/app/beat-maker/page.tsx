@@ -184,6 +184,9 @@ const BASS_MIXER_TRACK: TrackConfig = {
 };
 
 class AudioEngine {
+  private context: Tone.Context | null = null;
+  private initTask: Promise<void> | null = null;
+  private generation = 0;
   instruments: Record<
     string,
     Tone.Player | Tone.MembraneSynth | Tone.NoiseSynth | Tone.MetalSynth
@@ -195,18 +198,50 @@ class AudioEngine {
   masterMeter: Tone.Meter | null = null;
   limit: Tone.Limiter | null = null;
   bass: Tone.Sampler | Tone.MembraneSynth | null = null;
+  bassDistortion: Tone.Distortion | null = null;
 
-  async init() {
-    await Tone.start();
-    this.limit = new Tone.Limiter(-1).toDestination();
-    this.master = new Tone.Volume({ volume: 0, mute: false }).connect(
+  mount() {
+    if (this.context) return;
+    this.context = new Tone.Context();
+    this.generation += 1;
+  }
+
+  private requireContext() {
+    if (!this.context) throw new Error("Audio engine is not mounted");
+    return this.context;
+  }
+
+  init() {
+    if (this.master) return Promise.resolve();
+    if (!this.initTask) {
+      const generation = this.generation;
+      this.initTask = this.initialize(generation).catch((error) => {
+        this.initTask = null;
+        throw error;
+      });
+    }
+    return this.initTask;
+  }
+
+  private async initialize(generation: number) {
+    const context = this.context;
+    if (!context) return;
+    await context.resume();
+    if (generation !== this.generation || context !== this.context) return;
+
+    this.limit = new Tone.Limiter({ context, threshold: -1 }).connect(
+      context.destination,
+    );
+    this.master = new Tone.Volume({ context, volume: 0, mute: false }).connect(
       this.limit,
     );
-    this.masterMeter = new Tone.Meter();
+    this.masterMeter = new Tone.Meter({ context });
     this.master.connect(this.masterMeter);
     INITIAL_TRACKS.forEach((t) => this.initTrack(t.id));
-    const bassChannel = new Tone.Channel({ volume: 0 }).connect(this.master);
-    const bassMeter = new Tone.Meter();
+    const bassChannel = new Tone.Channel({ context, volume: 0 }).connect(
+      this.master,
+    );
+    const bassMeter = new Tone.Meter({ context });
     bassChannel.connect(bassMeter);
     this.channels.bass = bassChannel;
     this.meters.bass = bassMeter;
@@ -219,8 +254,11 @@ class AudioEngine {
 
   initTrack(id: string, kit: DrumKit = "808") {
     if (!this.master) return;
-    const channel = new Tone.Channel({ volume: 0 }).connect(this.master);
-    const meter = new Tone.Meter();
+    const context = this.requireContext();
+    const channel = new Tone.Channel({ context, volume: 0 }).connect(
+      this.master,
+    );
+    const meter = new Tone.Meter({ context });
     channel.connect(meter);
     this.channels[id] = channel;
     this.meters[id] = meter;
@@ -247,7 +285,8 @@ class AudioEngine {
   }
 
   triggerBass(note: string, time: number, steps = 1) {
-    const duration = Tone.Time("16n").toSeconds() * steps;
+    const bpm = this.requireContext().transport.bpm.value;
+    const duration = (60 / bpm / 4) * steps;
     if (this.bass instanceof Tone.Sampler) {
       if (this.bass.loaded)
         this.bass.triggerAttackRelease(note, duration, time, 0.95);
@@ -260,14 +299,21 @@ class AudioEngine {
     const channel = this.channels.bass;
     if (!channel) return;
     this.bass?.dispose();
+    this.bassDistortion?.dispose();
+    this.bass = null;
+    this.bassDistortion = null;
+    const context = this.requireContext();
 
     if (kit === "synth") {
       const distortion = new Tone.Distortion({
+        context,
         distortion: 0.4,
         oversample: "4x",
       });
+      this.bassDistortion = distortion;
 
       this.bass = new Tone.MembraneSynth({
+        context,
         pitchDecay: 0.05,
         octaves: 2,
         oscillator: {
@@ -288,6 +334,7 @@ class AudioEngine {
       if (!url) return;
 
       this.bass = new Tone.Sampler({
+        context,
         urls: { C1: url },
       }).connect(channel);
       this.bass.volume.value = -4;
@@ -298,13 +345,14 @@ class AudioEngine {
     const old = this.instruments[id];
     const channel = this.channels[id];
     if (!channel) return;
+    const context = this.requireContext();
     old?.dispose();
     this.filters[id]?.dispose();
     delete this.filters[id];
     if (kit !== "synth") {
       const url = sampleUrl(kit, id);
       if (!url) return;
-      this.instruments[id] = new Tone.Player(url).connect(channel);
+      this.instruments[id] = new Tone.Player({ context, url }).connect(channel);
       return;
     }
 
@@ -312,6 +360,7 @@ class AudioEngine {
     switch (id) {
       case "kick":
         inst = new Tone.MembraneSynth({
+          context,
           pitchDecay: 0.06,
           octaves: 7,
           oscillator: { type: "sine" },
@@ -321,6 +370,7 @@ class AudioEngine {
         break;
       case "snare":
         inst = new Tone.NoiseSynth({
+          context,
           noise: { type: "white" },
           envelope: { attack: 0.001, decay: 0.2, sustain: 0.01, release: 1.2 },
         });
@@ -328,6 +378,7 @@ class AudioEngine {
         break;
       case "hihat":
         inst = new Tone.MetalSynth({
+          context,
           envelope: { attack: 0.001, decay: 0.05, release: 0.01 },
           harmonicity: 4.1,
           modulationIndex: 40,
@@ -339,17 +390,23 @@ class AudioEngine {
         break;
       case "clap":
         inst = new Tone.NoiseSynth({
+          context,
           noise: { type: "white" },
           envelope: { attack: 0.001, decay: 0.18, sustain: 0, release: 0.08 },
         });
         inst.volume.value = 2;
-        this.filters[id] = new Tone.Filter(1500, "bandpass");
+        this.filters[id] = new Tone.Filter({
+          context,
+          frequency: 1500,
+          type: "bandpass",
+        });
         inst.connect(this.filters[id]);
         this.filters[id].connect(channel);
         this.instruments[id] = inst;
         return;
       case "openhat":
         inst = new Tone.MetalSynth({
+          context,
           envelope: { attack: 0.001, decay: 0.2, release: 1 },
           harmonicity: 5.1,
           modulationIndex: 32,
@@ -361,6 +418,7 @@ class AudioEngine {
         break;
       case "ride":
         inst = new Tone.MetalSynth({
+          context,
           envelope: { attack: 0.001, decay: 1, release: 1.2 },
           harmonicity: 3.1,
           modulationIndex: 20,
@@ -371,6 +429,7 @@ class AudioEngine {
         break;
       case "cowbell":
         inst = new Tone.MetalSynth({
+          context,
           envelope: { attack: 0.001, decay: 0.1, release: 0.2 },
           harmonicity: 8,
           modulationIndex: 12,
@@ -382,6 +441,7 @@ class AudioEngine {
         break;
       default:
         inst = new Tone.MembraneSynth({
+          context,
           pitchDecay: 0.01,
           octaves: 2,
           oscillator: { type: "sine" },
@@ -403,8 +463,43 @@ class AudioEngine {
   }
 
   setSwing(amount: number) {
-    Tone.Transport.swing = amount;
-    Tone.Transport.swingSubdivision = "16n";
+    const transport = this.requireContext().transport;
+    transport.swing = amount;
+    transport.swingSubdivision = "16n";
+  }
+
+  setTempo(tempo: number) {
+    this.requireContext().transport.bpm.value = tempo;
+  }
+
+  createSequence(callback: (time: number, step: number) => void) {
+    return new Tone.Sequence({
+      context: this.requireContext(),
+      callback,
+      events: Array.from({ length: STEPS }, (_, index) => index),
+      subdivision: "16n",
+    });
+  }
+
+  scheduleDraw(callback: () => void, time: number) {
+    this.requireContext().draw.schedule(callback, time);
+  }
+
+  now() {
+    return this.requireContext().now();
+  }
+
+  async toggleTransport() {
+    const context = this.context;
+    if (!context || !this.master) return false;
+    if (context.state !== "running") await context.resume();
+    if (context !== this.context) return false;
+
+    const transport = context.transport;
+    const shouldPlay = transport.state !== "started";
+    if (shouldPlay) transport.start();
+    else transport.pause();
+    return shouldPlay;
   }
 
   getMeterValues(): Record<string, number> {
@@ -436,11 +531,43 @@ class AudioEngine {
       }
     });
   }
+
+  dispose() {
+    this.generation += 1;
+    this.initTask = null;
+
+    const context = this.context;
+    context?.transport.stop();
+    context?.draw.cancel();
+
+    Object.values(this.instruments).forEach((node) => node.dispose());
+    Object.values(this.filters).forEach((node) => node.dispose());
+    this.bass?.dispose();
+    this.bassDistortion?.dispose();
+    Object.values(this.meters).forEach((node) => node.dispose());
+    Object.values(this.channels).forEach((node) => node.dispose());
+    this.masterMeter?.dispose();
+    this.master?.dispose();
+    this.limit?.dispose();
+
+    this.instruments = {};
+    this.filters = {};
+    this.channels = {};
+    this.meters = {};
+    this.bass = null;
+    this.bassDistortion = null;
+    this.masterMeter = null;
+    this.master = null;
+    this.limit = null;
+    this.context = null;
+    void context?.close();
+  }
 }
 
-const engine = new AudioEngine();
-
 export default function BeatMaker() {
+  const engineRef = useRef<AudioEngine | null>(null);
+  engineRef.current ??= new AudioEngine();
+  const engine = engineRef.current;
   const [tracks, setTracks] = useState(INITIAL_TRACKS);
   const [grid, setGrid] = useState(() =>
     Array(INITIAL_TRACKS.length)
@@ -498,6 +625,7 @@ export default function BeatMaker() {
   const paintState = useRef(false);
   const seqRef = useRef<Tone.Sequence | null>(null);
   const meterRaf = useRef<number | null>(null);
+  const transportToggleInFlight = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -631,72 +759,62 @@ export default function BeatMaker() {
   };
 
   useEffect(() => {
-    return () => {
-      Tone.Transport.stop();
-      Tone.Draw.cancel();
-    };
-  }, []);
-
-  useEffect(() => {
-    const seq = new Tone.Sequence(
-      (time, step) => {
-        Tone.Draw.schedule(() => {
-          setCurrentStep(step);
-        }, time);
-        tracksRef.current.forEach((track, ti) => {
-          if (gridRef.current[ti] && gridRef.current[ti][step]) {
-            engine.trigger(track.id, time);
-          }
-        });
-        bassNotesRef.current.forEach((note) => {
-          if (note.start === step)
-            engine.triggerBass(BASS_NOTES[note.pitchIndex], time, note.length);
-        });
-      },
-      Array.from({ length: STEPS }, (_, i) => i),
-      "16n",
-    );
+    engine.mount();
+    const seq = engine.createSequence((time, step) => {
+      engine.scheduleDraw(() => {
+        setCurrentStep(step);
+      }, time);
+      tracksRef.current.forEach((track, ti) => {
+        if (gridRef.current[ti] && gridRef.current[ti][step]) {
+          engine.trigger(track.id, time);
+        }
+      });
+      bassNotesRef.current.forEach((note) => {
+        if (note.start === step)
+          engine.triggerBass(BASS_NOTES[note.pitchIndex], time, note.length);
+      });
+    });
     seq.start(0);
     seqRef.current = seq;
     return () => {
       seq.dispose();
-      Tone.Draw.cancel();
+      seqRef.current = null;
+      engine.dispose();
     };
-  }, []);
+  }, [engine]);
 
   useEffect(() => {
-    Tone.Transport.bpm.value = tempo;
-  }, [tempo]);
+    engine.setTempo(tempo);
+  }, [engine, tempo]);
 
   const togglePlay = useCallback(async () => {
-    if (!engine.master) {
-      await engine.init();
-      engine.setBassSample(sampleAssignments.bass ?? activeKit);
-      tracks.forEach((t) => engine.addTrack(t.id));
-      tracks.forEach((t) =>
-        engine.setKit(t.id, sampleAssignments[t.id] ?? "808"),
-      );
-      engine.syncState(volumes, mutes, solos);
+    if (transportToggleInFlight.current) return;
+    transportToggleInFlight.current = true;
+    try {
+      if (!engine.master) {
+        await engine.init();
+        engine.setBassSample(sampleAssignments.bass ?? activeKit);
+        tracks.forEach((t) => engine.addTrack(t.id));
+        tracks.forEach((t) =>
+          engine.setKit(t.id, sampleAssignments[t.id] ?? "808"),
+        );
+        engine.syncState(volumes, mutes, solos);
+      }
+      setIsPlaying(await engine.toggleTransport());
+    } finally {
+      transportToggleInFlight.current = false;
     }
-    if (Tone.getContext().state !== "running") await Tone.start();
-    if (isPlaying) {
-      Tone.Transport.pause();
-      setIsPlaying(false);
-    } else {
-      Tone.Transport.start();
-      setIsPlaying(true);
-    }
-  }, [isPlaying, volumes, mutes, solos, tracks, sampleAssignments, activeKit]);
+  }, [engine, volumes, mutes, solos, tracks, sampleAssignments, activeKit]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
-        e.preventDefault();
-        togglePlay();
-      }
+      if (e.code !== "Space") return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (!e.repeat) void togglePlay();
     };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
+    window.addEventListener("keydown", h, { capture: true });
+    return () => window.removeEventListener("keydown", h, { capture: true });
   }, [togglePlay]);
 
   const clearGrid = () => {
@@ -819,6 +937,14 @@ export default function BeatMaker() {
       });
     },
     [],
+  );
+
+  const previewBassNote = useCallback(
+    (note: string) => {
+      if (!engine.master) return;
+      engine.triggerBass(note, engine.now());
+    },
+    [engine],
   );
 
   const handleMouseDown = useCallback(
@@ -1118,6 +1244,7 @@ export default function BeatMaker() {
         <BassPianoRoll
           notes={bassNotes}
           currentStep={currentStep}
+          onPreview={previewBassNote}
           onAdd={addBassNote}
           onRemove={removeBassNote}
           onResize={resizeBassNote}
@@ -1322,6 +1449,7 @@ export default function BeatMaker() {
 interface BassPianoRollProps {
   notes: BassNote[];
   currentStep: number;
+  onPreview: (note: string) => void;
   onAdd: (pitchIndex: number, step: number) => void;
   onRemove: (id: number) => void;
   onResize: (id: number, start: number, length: number) => void;
@@ -1331,6 +1459,7 @@ interface BassPianoRollProps {
 const BassPianoRoll = memo(function BassPianoRoll({
   notes,
   currentStep,
+  onPreview,
   onAdd,
   onRemove,
   onResize,
@@ -1487,10 +1616,7 @@ const BassPianoRoll = memo(function BassPianoRoll({
             >
               <button
                 type="button"
-                onDoubleClick={() => {
-                  if (!engine.master) return;
-                  engine.triggerBass(note, Tone.now());
-                }}
+                onDoubleClick={() => onPreview(note)}
                 className="w-16 md:w-20 shrink-0 py-1 text-left px-2 md:px-3 text-[9px] md:text-[10px] font-bold tracking-widest transition-colors"
                 style={{
                   background: blackKey
