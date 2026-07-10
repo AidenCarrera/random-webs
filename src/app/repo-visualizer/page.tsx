@@ -137,7 +137,7 @@ export default function GithubHistoryVisualizerPage() {
   return (
     <main
       ref={containerRef}
-      className="relative flex h-svh min-h-[620px] w-full overflow-hidden bg-[#04060b] text-slate-100"
+      className="relative flex h-svh min-h-0 w-full overflow-hidden bg-[#04060b] text-slate-100 lg:min-h-155"
     >
       {/* Mobile Sidebar Toggle Button */}
       <button
@@ -181,7 +181,7 @@ export default function GithubHistoryVisualizerPage() {
 
         <div
           onScroll={handleSidebarScroll}
-          className={`flex-1 space-y-4 overflow-y-auto pr-1 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-slate-950/70 ${
+          className={`flex-1 space-y-4 overflow-y-auto pr-1 scrollbar-thin [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-2 [&::-webkit-scrollbar-thumb]:border-slate-950/70 ${
             isSidebarScrolling
               ? "[scrollbar-color:rgba(100,116,139,0.65)_rgba(15,23,42,0.5)] [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-900/50 [&::-webkit-scrollbar-thumb]:bg-slate-600/65"
               : "[scrollbar-color:transparent_transparent] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent"
@@ -271,7 +271,7 @@ export default function GithubHistoryVisualizerPage() {
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(3,6,14,0.28),transparent_24%,transparent_72%,rgba(3,6,14,0.48))]" />
 
         {/* Zoom & Fullscreen Controls */}
-        <div className="pointer-events-none absolute right-3 top-3 z-10 flex flex-col gap-2 sm:right-5 sm:top-5">
+        <div className="pointer-events-none absolute right-3 top-3 z-10 hidden flex-col gap-2 sm:right-5 sm:top-5 lg:flex">
           <button
             type="button"
             onClick={() => changeZoom(1.18)}
@@ -315,7 +315,7 @@ export default function GithubHistoryVisualizerPage() {
         type="button"
         onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
         className={`pointer-events-auto absolute top-1/2 z-40 hidden size-9 -translate-y-1/2 place-items-center rounded-full border border-white/10 bg-slate-950/80 text-slate-400 shadow-lg backdrop-blur-xl transition-all duration-300 hover:bg-white/10 hover:text-white lg:grid ${
-          isSidebarCollapsed ? "left-3" : "left-[calc(22rem-1.125rem)]"
+          isSidebarCollapsed ? "left-3" : "left-83.5"
         }`}
         aria-label={isSidebarCollapsed ? "Show controls sidebar" : "Hide controls sidebar"}
         title={isSidebarCollapsed ? "Show controls" : "Hide controls"}

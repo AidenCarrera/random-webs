@@ -37,7 +37,7 @@ export function Toolbar({
       className="pointer-events-none absolute inset-x-3 bottom-3 z-20 sm:inset-x-5 sm:bottom-5"
     >
       <div className="pointer-events-auto mx-auto max-w-5xl rounded-2xl border border-white/10 bg-slate-950/82 p-3 shadow-2xl shadow-black/40 backdrop-blur-2xl">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"
@@ -142,13 +142,13 @@ export function Toolbar({
             </div>
           </div>
 
-          <div className="hidden shrink-0 items-center gap-1 rounded-xl border border-white/5 bg-black/40 p-1 md:flex">
+          <div className="order-3 flex w-full shrink-0 items-center justify-center gap-0.5 rounded-xl border border-white/5 bg-black/40 p-1 md:order-0 md:w-auto md:gap-1 landscape:order-0 landscape:w-auto landscape:gap-1">
             {[1, 2, 4, 8].map((value) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setSpeed(value)}
-                className={`rounded-lg px-2.5 py-1.2 font-mono text-[10px] font-medium transition-all hover:scale-105 active:scale-95 ${
+                className={`rounded-lg px-2 py-1 font-mono text-[10px] font-medium transition-all hover:scale-105 active:scale-95 sm:px-2.5 ${
                   speed === value
                     ? "bg-blue-500/20 border border-blue-400/30 text-blue-200"
                     : "border border-transparent text-slate-400 hover:text-slate-200"

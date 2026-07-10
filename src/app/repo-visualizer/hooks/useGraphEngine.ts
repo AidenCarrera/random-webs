@@ -190,10 +190,12 @@ export function useGraphEngine(dataset: Dataset) {
     const height = Math.max(360, maxY - minY + 220);
     const availableWidth = Math.max(320, containerWidth - 80);
     const availableHeight = Math.max(320, containerHeight - 150);
-    const zoom = Math.min(
+    const baseZoom = Math.min(
       1.15,
       Math.max(0.18, Math.min(availableWidth / width, availableHeight / height))
     );
+    const isPortraitPhone = containerWidth < 768 && containerHeight > containerWidth;
+    const zoom = Math.min(1.5, baseZoom * (isPortraitPhone ? 1.28 : 1));
 
     cameraRef.current = {
       x: -(minX + maxX) / 2,

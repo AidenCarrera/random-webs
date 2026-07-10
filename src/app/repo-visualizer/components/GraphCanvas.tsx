@@ -51,6 +51,8 @@ export function GraphCanvas({
     lastY: 0,
     moved: false,
   });
+  const touchPointsRef = useRef(new Map<number, { x: number; y: number }>());
+  const pinchDistanceRef = useRef<number | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -689,6 +691,20 @@ export function GraphCanvas({
   ]);
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    touchPointsRef.current.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY,
+    });
+    if (touchPointsRef.current.size === 2) {
+      const points = Array.from(touchPointsRef.current.values());
+      pinchDistanceRef.current = Math.hypot(
+        points[1].x - points[0].x,
+        points[1].y - points[0].y,
+      );
+      pointerRef.current.isDown = false;
+      return;
+    }
+
     event.currentTarget.setPointerCapture(event.pointerId);
     pointerRef.current = {
       isDown: true,
@@ -700,6 +716,43 @@ export function GraphCanvas({
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const previousPoint = touchPointsRef.current.get(event.pointerId);
+    if (previousPoint) {
+      touchPointsRef.current.set(event.pointerId, {
+        x: event.clientX,
+        y: event.clientY,
+      });
+    }
+
+    if (touchPointsRef.current.size >= 2) {
+      const points = Array.from(touchPointsRef.current.values());
+      const nextDistance = Math.hypot(
+        points[1].x - points[0].x,
+        points[1].y - points[0].y,
+      );
+      const previousDistance = pinchDistanceRef.current ?? nextDistance;
+      if (previousDistance > 0) {
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const bounds = canvas.getBoundingClientRect();
+          const midpointX = (points[0].x + points[1].x) / 2 - bounds.left;
+          const midpointY = (points[0].y + points[1].y) / 2 - bounds.top;
+          const camera = cameraRef.current;
+          const worldX = (midpointX - bounds.width / 2) / camera.zoom - camera.x;
+          const worldY = (midpointY - bounds.height / 2) / camera.zoom - camera.y;
+          const nextZoom = Math.min(
+            2.6,
+            Math.max(0.16, camera.zoom * (nextDistance / previousDistance)),
+          );
+          camera.zoom = nextZoom;
+          camera.x = (midpointX - bounds.width / 2) / nextZoom - worldX;
+          camera.y = (midpointY - bounds.height / 2) / nextZoom - worldY;
+        }
+      }
+      pinchDistanceRef.current = nextDistance;
+      return;
+    }
+
     const pointer = pointerRef.current;
     if (!pointer.isDown || pointer.pointerId !== event.pointerId) return;
 
@@ -716,6 +769,8 @@ export function GraphCanvas({
   };
 
   const handlePointerUp = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    touchPointsRef.current.delete(event.pointerId);
+    if (touchPointsRef.current.size < 2) pinchDistanceRef.current = null;
     if (pointerRef.current.pointerId === event.pointerId) {
       pointerRef.current.isDown = false;
       pointerRef.current.pointerId = -1;
