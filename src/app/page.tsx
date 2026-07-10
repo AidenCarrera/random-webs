@@ -16,8 +16,10 @@ export default function Home() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [revealedWebsites, setRevealedWebsites] = useState<string[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const savedWebsites = window.localStorage.getItem(REVEALED_WEBSITES_KEY);
 
     if (!savedWebsites) {
@@ -79,11 +81,13 @@ export default function Home() {
           <div className="relative rounded-4xl border border-white/6 bg-white/1.5 p-4 shadow-[0_12px_28px_rgba(0,0,0,0.2)]">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {WEBSITES.map((website, index) => {
-                const isRevealed = revealedWebsites.includes(website.path);
-                const cardClassName = isRevealed
+                const isRevealed = !isMounted || revealedWebsites.includes(website.path);
+                const isRevealedClient = isMounted && revealedWebsites.includes(website.path);
+                
+                const cardClassName = isRevealedClient
                   ? "group relative overflow-hidden rounded-[1.6rem] border border-white/8 bg-zinc-950 p-4 text-left text-zinc-100 shadow-[0_8px_18px_rgba(0,0,0,0.22)] transition-colors duration-300"
                   : "relative overflow-hidden rounded-[1.6rem] border border-white/7 bg-black p-4 text-left text-white/90 shadow-[0_8px_18px_rgba(0,0,0,0.2)]";
-                const innerClassName = isRevealed
+                const innerClassName = isRevealedClient
                   ? "relative min-h-32 rounded-[1.2rem] bg-zinc-950 p-4"
                   : "relative min-h-32 rounded-[1.2rem] bg-black p-4";
 
@@ -91,7 +95,7 @@ export default function Home() {
                   <div className={innerClassName}>
                     <h2
                       className={
-                        isRevealed
+                        isRevealedClient
                           ? "text-xl font-black uppercase tracking-[0.08em] text-zinc-100"
                           : "text-xl font-black uppercase tracking-[0.22em] text-white/95"
                       }

@@ -207,3 +207,5 @@ export const WEBSITES: WebsiteEntry[] = [
 ];
 
 export const RANDOM_WEBSITE_PATHS = WEBSITES.map((website) => website.path);
+
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://random-webs.vercel.app";

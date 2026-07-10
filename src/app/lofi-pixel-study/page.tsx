@@ -3,9 +3,36 @@ import path from "path";
 import LofiPixelStudyClient from "./LofiPixelStudyClient";
 
 export const metadata = {
-  title: "Lofi Pixel Study - Cozy Retro Room & Radio",
+  title: {
+    absolute: "Lofi Pixel Study",
+  },
   description:
     "Relax, study, or work in a cozy pixel art room with dynamic lofi music tracks and customizable backgrounds.",
+  openGraph: {
+    title: "Lofi Pixel Study",
+    description:
+      "Relax, study, or work in a cozy pixel art room with dynamic lofi music tracks and customizable backgrounds.",
+    url: "/lofi-pixel-study",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Lofi Pixel Study Preview",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Lofi Pixel Study",
+    description:
+      "Relax, study, or work in a cozy pixel art room with dynamic lofi music tracks and customizable backgrounds.",
+    images: ["/og-image.png"],
+  },
+  alternates: {
+    canonical: "/lofi-pixel-study",
+  },
 };
 
 const ALLOWED_ALARMS = new Set(["Bedside Clock", "Beep Alarm"]);

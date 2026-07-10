@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Silkscreen } from "next/font/google";
 import "./globals.css";
+import { SITE_URL } from "@/lib/websites";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,7 +20,7 @@ const silkscreen = Silkscreen({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://random-webs.vercel.app"),
+  metadataBase: new URL(SITE_URL),
   manifest: "/site.webmanifest",
   icons: {
     icon: [
@@ -61,7 +62,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://random-webs.vercel.app",
+    url: SITE_URL,
     title: "Random Webs",
     description: "A creative sandbox of interactive, unique mini web applications and frontend experiments.",
     siteName: "Random Webs",
