@@ -1,7 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, Menu, X, Files, FileText, FolderTree, Keyboard, Users } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Menu,
+  X,
+  Files,
+  FileText,
+  FolderTree,
+  Keyboard,
+  Users,
+} from "lucide-react";
 
 import { useGithubLoader } from "./hooks/useGithubLoader";
 import { useGraphEngine } from "./hooks/useGraphEngine";
@@ -52,7 +65,8 @@ export default function GithubHistoryVisualizerPage() {
   const visualizationRef = useRef<HTMLDivElement>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isRepositorySwitcherOpen, setIsRepositorySwitcherOpen] = useState(false);
+  const [isRepositorySwitcherOpen, setIsRepositorySwitcherOpen] =
+    useState(false);
   const [isSidebarScrolling, setIsSidebarScrolling] = useState(false);
   const sidebarScrollTimeoutRef = useRef<number | null>(null);
 
@@ -222,8 +236,12 @@ export default function GithubHistoryVisualizerPage() {
                   Changes
                 </span>
                 <div className="flex items-center gap-1 font-mono text-xs font-bold">
-                  <span className="text-emerald-400">+{timelineStats.additions.toLocaleString()}</span>
-                  <span className="text-rose-400">−{timelineStats.deletions.toLocaleString()}</span>
+                  <span className="text-emerald-400">
+                    +{timelineStats.additions.toLocaleString()}
+                  </span>
+                  <span className="text-rose-400">
+                    -{timelineStats.deletions.toLocaleString()}
+                  </span>
                 </div>
               </div>
               <div
@@ -245,7 +263,9 @@ export default function GithubHistoryVisualizerPage() {
 
           <div className="hidden items-center gap-2 rounded-xl border border-white/5 bg-white/3 px-3 py-2 text-[10px] text-slate-500">
             <Keyboard className="size-3.5 shrink-0" />
-            <span>Space play · ←/→ step · R reset · +/− zoom · F fullscreen</span>
+            <span>
+              Space play · ←/→ step · R reset · +/- zoom · F fullscreen
+            </span>
           </div>
 
           <Legend graphRef={graphRef} />
@@ -254,7 +274,10 @@ export default function GithubHistoryVisualizerPage() {
       </div>
 
       {/* Main visualization container */}
-      <div ref={visualizationRef} className="relative h-full flex-1 overflow-hidden">
+      <div
+        ref={visualizationRef}
+        className="relative h-full flex-1 overflow-hidden"
+      >
         <GraphCanvas
           dataset={dataset}
           graphRef={graphRef}
@@ -317,10 +340,16 @@ export default function GithubHistoryVisualizerPage() {
         className={`pointer-events-auto absolute top-1/2 z-40 hidden size-9 -translate-y-1/2 place-items-center rounded-full border border-white/10 bg-slate-950/80 text-slate-400 shadow-lg backdrop-blur-xl transition-all duration-300 hover:bg-white/10 hover:text-white lg:grid ${
           isSidebarCollapsed ? "left-3" : "left-83.5"
         }`}
-        aria-label={isSidebarCollapsed ? "Show controls sidebar" : "Hide controls sidebar"}
+        aria-label={
+          isSidebarCollapsed ? "Show controls sidebar" : "Hide controls sidebar"
+        }
         title={isSidebarCollapsed ? "Show controls" : "Hide controls"}
       >
-        {isSidebarCollapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}
+        {isSidebarCollapsed ? (
+          <ChevronRight className="size-4" />
+        ) : (
+          <ChevronLeft className="size-4" />
+        )}
       </button>
     </main>
   );
