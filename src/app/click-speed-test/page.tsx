@@ -1,541 +1,525 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { MousePointer2, Trophy, Calendar, Zap, Award } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Award, Calendar, MousePointer2, Trophy, Zap } from "lucide-react";
+
+const DURATIONS = [5, 10, 30] as const;
+const STORAGE_KEY = "click-speed-test-progress";
+const RESULT_BUFFER_MS = 2500;
+const EMPTY_RECORD = { clicks: 0, cps: 0 };
+const PANEL = "rounded-xl border border-slate-700 bg-[#1e293b]";
+
+type Duration = (typeof DURATIONS)[number];
+type RecordEntry = typeof EMPTY_RECORD;
+type Records = Record<Duration, RecordEntry>;
 
 type RunResult = {
   id: string;
   clicks: number;
   cps: number;
-  duration: number;
+  duration: Duration;
   pace: number[];
   timestamp: string;
 };
 
-type RecordEntry = {
-  clicks: number;
-  cps: number;
-};
-
 type SavedProgress = {
-  duration: number;
-  records: Record<number, RecordEntry>;
+  duration: Duration;
+  records: Records;
   history: RunResult[];
 };
 
-const STORAGE_KEY = "click-speed-test-progress";
-const RESULT_BUFFER_MS = 2500;
-
-const MILESTONES_BY_DURATION: Record<number, { label: string; target: number; color: string }[]> = {
-  5: [
-    { label: "Bronze Clicker", target: 15, color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
-    { label: "Silver Clicker", target: 25, color: "text-slate-400 bg-slate-400/10 border-slate-400/30" },
-    { label: "Gold Clicker", target: 35, color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30" },
-    { label: "Platinum Clicker", target: 45, color: "text-cyan-400 bg-cyan-400/10 border-cyan-400/30" },
-    { label: "Diamond Clicker", target: 55, color: "text-indigo-400 bg-indigo-400/10 border-indigo-400/30" },
-    { label: "Click Legend", target: 65, color: "text-rose-400 bg-rose-400/10 border-rose-400/30" },
-  ],
-  10: [
-    { label: "Bronze Clicker", target: 30, color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
-    { label: "Silver Clicker", target: 50, color: "text-slate-400 bg-slate-400/10 border-slate-400/30" },
-    { label: "Gold Clicker", target: 70, color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30" },
-    { label: "Platinum Clicker", target: 90, color: "text-cyan-400 bg-cyan-400/10 border-cyan-400/30" },
-    { label: "Diamond Clicker", target: 110, color: "text-indigo-400 bg-indigo-400/10 border-indigo-400/30" },
-    { label: "Click Legend", target: 130, color: "text-rose-400 bg-rose-400/10 border-rose-400/30" },
-  ],
-  30: [
-    { label: "Bronze Clicker", target: 75, color: "text-amber-500 bg-amber-500/10 border-amber-500/30" },
-    { label: "Silver Clicker", target: 120, color: "text-slate-400 bg-slate-400/10 border-slate-400/30" },
-    { label: "Gold Clicker", target: 180, color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30" },
-    { label: "Platinum Clicker", target: 240, color: "text-cyan-400 bg-cyan-400/10 border-cyan-400/30" },
-    { label: "Diamond Clicker", target: 300, color: "text-indigo-400 bg-indigo-400/10 border-indigo-400/30" },
-    { label: "Click Legend", target: 360, color: "text-rose-400 bg-rose-400/10 border-rose-400/30" },
-  ],
+type Milestone = {
+  label: string;
+  target: number;
+  color: string;
 };
 
-export default function DarkDashboard() {
-  const [clicks, setClicks] = useState(0);
-  const [duration, setDuration] = useState(10); // Default to 10 seconds as requested
-  const [timeLeft, setTimeLeft] = useState(10);
-  const [isActive, setIsActive] = useState(false);
-  const [cps, setCps] = useState(0);
-  const [canRestart, setCanRestart] = useState(true);
-  
-  // Track high score records individually per duration
-  const [records, setRecords] = useState<Record<number, RecordEntry>>({
-    5: { clicks: 0, cps: 0 },
-    10: { clicks: 0, cps: 0 },
-    30: { clicks: 0, cps: 0 },
+const EMPTY_RECORDS: Records = {
+  5: EMPTY_RECORD,
+  10: EMPTY_RECORD,
+  30: EMPTY_RECORD,
+};
+
+const MILESTONE_STYLES = [
+  ["Bronze Clicker", "text-amber-500 bg-amber-500/10 border-amber-500/30"],
+  ["Silver Clicker", "text-slate-400 bg-slate-400/10 border-slate-400/30"],
+  ["Gold Clicker", "text-yellow-400 bg-yellow-400/10 border-yellow-400/30"],
+  ["Platinum Clicker", "text-cyan-400 bg-cyan-400/10 border-cyan-400/30"],
+  ["Diamond Clicker", "text-indigo-400 bg-indigo-400/10 border-indigo-400/30"],
+  ["Click Legend", "text-rose-400 bg-rose-400/10 border-rose-400/30"],
+] as const;
+
+const TARGETS: Record<Duration, number[]> = {
+  5: [15, 25, 35, 45, 55, 65],
+  10: [30, 50, 70, 90, 110, 130],
+  30: [75, 120, 180, 240, 300, 360],
+};
+
+const MILESTONES = Object.fromEntries(
+  DURATIONS.map((duration) => [
+    duration,
+    MILESTONE_STYLES.map(([label, color], index) => ({
+      label,
+      color,
+      target: TARGETS[duration][index],
+    })),
+  ]),
+) as Record<Duration, Milestone[]>;
+
+function isDuration(value: unknown): value is Duration {
+  return DURATIONS.includes(value as Duration);
+}
+
+function scaleValues(values: number[], minOutput: number, maxOutput: number) {
+  const min = Math.min(...values);
+  const max = Math.max(...values, 1);
+  const range = max - min;
+
+  return values.map((value) =>
+    range ? ((value - min) / range) * (maxOutput - minOutput) + minOutput : maxOutput,
+  );
+}
+
+function formatTime() {
+  return new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   });
-  
-  // Track clicking speed per second
-  const [currentRunPace, setCurrentRunPace] = useState<number[]>([]);
-  const lastClicksCountRef = useRef(0);
-  const clicksRef = useRef(0);
-  const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Session History
+}
+
+export default function ClickSpeedTest() {
+  const [duration, setDuration] = useState<Duration>(10);
+  const [timeLeft, setTimeLeft] = useState(10);
+  const [clicks, setClicks] = useState(0);
+  const [resultCps, setResultCps] = useState(0);
+  const [isActive, setIsActive] = useState(false);
+  const [canRestart, setCanRestart] = useState(true);
+  const [pace, setPace] = useState<number[]>([]);
+  const [records, setRecords] = useState<Records>(EMPTY_RECORDS);
   const [history, setHistory] = useState<RunResult[]>([]);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  const createId = () =>
+  globalThis.crypto?.randomUUID?.() ??
+  `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  const clicksRef = useRef(0);
+  const lastPaceClicksRef = useRef(0);
+  const restartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const activeRecord = records[duration];
+  const elapsed = duration - timeLeft;
+  const liveCps = isActive ? clicks / Math.max(elapsed, 0.1) : resultCps;
+  const paceHeights = useMemo(() => scaleValues(pace, 15, 100), [pace]);
 
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (!saved) {
-        return;
-      }
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<SavedProgress>;
 
-      const parsed = JSON.parse(saved) as Partial<SavedProgress>;
-      if (parsed.duration && [5, 10, 30].includes(parsed.duration)) {
-        setDuration(parsed.duration);
-        setTimeLeft(parsed.duration);
-      }
-      if (parsed.records) {
-        setRecords({
-          5: parsed.records[5] ?? { clicks: 0, cps: 0 },
-          10: parsed.records[10] ?? { clicks: 0, cps: 0 },
-          30: parsed.records[30] ?? { clicks: 0, cps: 0 },
-        });
-      }
-      if (parsed.history) {
-        setHistory(parsed.history.slice(0, 5));
+        if (isDuration(saved.duration)) {
+          setDuration(saved.duration);
+          setTimeLeft(saved.duration);
+        }
+
+        if (saved.records) {
+          setRecords({
+            5: saved.records[5] ?? EMPTY_RECORD,
+            10: saved.records[10] ?? EMPTY_RECORD,
+            30: saved.records[30] ?? EMPTY_RECORD,
+          });
+        }
+
+        if (Array.isArray(saved.history)) setHistory(saved.history.slice(0, 5));
       }
     } catch {
-      window.localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STORAGE_KEY);
+    } finally {
+      setHasLoaded(true);
     }
   }, []);
 
   useEffect(() => {
-    const progress: SavedProgress = {
-      duration,
-      records,
-      history,
-    };
+    if (!hasLoaded) return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ duration, records, history }));
+  }, [duration, hasLoaded, history, records]);
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-  }, [duration, records, history]);
-
-  const startTest = () => {
-    if (!canRestart) {
-      return;
-    }
-
-    setClicks(0);
-    setTimeLeft(duration);
-    setIsActive(true);
-    setCps(0);
-    setCurrentRunPace([]);
-    lastClicksCountRef.current = 0;
-  };
-
-  const resetCurrentTest = () => {
-    if (restartTimeoutRef.current) {
-      clearTimeout(restartTimeoutRef.current);
-      restartTimeoutRef.current = null;
-    }
-    setIsActive(false);
-    setClicks(0);
-    setTimeLeft(duration);
-    setCps(0);
-    setCurrentRunPace([]);
-    setCanRestart(true);
-    lastClicksCountRef.current = 0;
-    clicksRef.current = 0;
-  };
-
-  const handleClick = () => {
-    if (!isActive) {
-      startTest();
-      setClicks(1);
-    } else {
-      setClicks((c) => c + 1);
-    }
-  };
-
-  // Sync clicks to ref to avoid stale closures in the timer interval
   useEffect(() => {
-    clicksRef.current = clicks;
-  }, [clicks]);
+    if (!isActive) return;
 
-  // Timer interval for test countdown and pace tracking
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isActive) {
-      interval = setInterval(() => {
-        // Read clicks at the exact second tick (outside state updater)
-        const currentClicks = clicksRef.current;
-        const clicksThisSecond = currentClicks - lastClicksCountRef.current;
-        
-        setCurrentRunPace((prev) => [...prev, clicksThisSecond]);
-        lastClicksCountRef.current = currentClicks;
+    const interval = setInterval(() => {
+      const currentClicks = clicksRef.current;
+      setPace((current) => [...current, currentClicks - lastPaceClicksRef.current]);
+      lastPaceClicksRef.current = currentClicks;
+      setTimeLeft((current) => Math.max(0, current - 1));
+    }, 1000);
 
-        setTimeLeft((t) => {
-          if (t <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return t - 1;
-        });
-      }, 1000);
-    }
     return () => clearInterval(interval);
   }, [isActive]);
 
   useEffect(() => {
-    return () => {
-      if (restartTimeoutRef.current) {
-        clearTimeout(restartTimeoutRef.current);
-      }
-    };
-  }, []);
+    if (!isActive || timeLeft > 0) return;
 
-  // Test termination and score tracking
-  useEffect(() => {
-    if (timeLeft === 0 && isActive) {
-      setIsActive(false);
-      setCanRestart(false);
-      const newCps = clicks / duration;
-      setCps(newCps);
-      
-      // Update duration-specific high score
-      setRecords((prev) => {
-        const currentRecord = prev[duration] || { clicks: 0, cps: 0 };
-        if (clicks > currentRecord.clicks) {
-          return {
-            ...prev,
-            [duration]: { clicks, cps: newCps },
-          };
-        }
-        return prev;
-      });
-      
-      // Calculate final pace array (handle batching lag)
-      const totalLogged = currentRunPace.reduce((a, b) => a + b, 0);
-      const lastSegment = clicks - totalLogged;
-      const finalPace = [...currentRunPace, lastSegment].slice(0, duration);
-      setCurrentRunPace(finalPace);
+    const finalClicks = clicksRef.current;
+    const cps = finalClicks / duration;
 
-      // Add to session history
-      const newRun: RunResult = {
-        id: Math.random().toString(36).substring(2, 9),
-        clicks: clicks,
-        cps: newCps,
-        duration: duration,
-        pace: finalPace,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-      };
-      setHistory((prev) => [newRun, ...prev].slice(0, 5)); // Keep last 5 runs
+    setIsActive(false);
+    setCanRestart(false);
+    setResultCps(cps);
+    setRecords((current) =>
+      finalClicks > current[duration].clicks
+        ? { ...current, [duration]: { clicks: finalClicks, cps } }
+        : current,
+    );
 
-      if (restartTimeoutRef.current) {
-        clearTimeout(restartTimeoutRef.current);
-      }
-      restartTimeoutRef.current = setTimeout(() => {
-        setCanRestart(true);
-        restartTimeoutRef.current = null;
-      }, RESULT_BUFFER_MS);
+    setPace((current) => {
+      // React may batch the final click with the timer tick, so reconcile the unlogged remainder.
+      const loggedClicks = current.reduce((sum, value) => sum + value, 0);
+      const finalPace = [...current, finalClicks - loggedClicks].slice(0, duration);
+
+      setHistory((runs) => [
+        {
+          id: createId(),
+          clicks: finalClicks,
+          cps,
+          duration,
+          pace: finalPace,
+          timestamp: formatTime(),
+        },
+        ...runs,
+      ].slice(0, 5));
+
+      return finalPace;
+    });
+
+    restartTimeoutRef.current = setTimeout(() => {
+      setCanRestart(true);
+      restartTimeoutRef.current = null;
+    }, RESULT_BUFFER_MS);
+  }, [duration, isActive, timeLeft]);
+
+  useEffect(
+    () => () => {
+      if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
+    },
+    [],
+  );
+
+  function clearRun(nextDuration = duration) {
+    setIsActive(false);
+    setClicks(0);
+    setTimeLeft(nextDuration);
+    setResultCps(0);
+    setPace([]);
+    setCanRestart(true);
+    clicksRef.current = 0;
+    lastPaceClicksRef.current = 0;
+
+    if (restartTimeoutRef.current) {
+      clearTimeout(restartTimeoutRef.current);
+      restartTimeoutRef.current = null;
     }
-  }, [timeLeft, isActive, clicks, duration, currentRunPace]);
+  }
 
-  // Get records and milestones for the selected duration
-  const activeRecord = records[duration] || { clicks: 0, cps: 0 };
-  const currentMilestones = MILESTONES_BY_DURATION[duration] || [];
+  function startTest() {
+    if (!canRestart) return false;
+    clearRun();
+    setIsActive(true);
+    return true;
+  }
+
+  function handleMainClick() {
+    if (!isActive && !startTest()) return;
+
+    clicksRef.current += 1;
+    setClicks(clicksRef.current);
+  }
+
+  function changeDuration(nextDuration: Duration) {
+    setDuration(nextDuration);
+    clearRun(nextDuration);
+  }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-200 font-sans p-4 md:p-8 flex flex-col gap-6 md:gap-8">
-      <header className="flex justify-center items-center border-b border-slate-800 pb-4 shrink-0">
-        <h1 className="text-2xl md:text-3xl font-black text-slate-100 flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-            <MousePointer2 className="w-6 h-6" />
-          </div>
+    <main className="flex min-h-screen flex-col gap-6 bg-[#0f172a] p-4 font-sans text-slate-200 md:gap-8 md:p-8">
+      <header className="flex shrink-0 items-center justify-center border-b border-slate-800 pb-4">
+        <h1 className="flex items-center gap-3 text-2xl font-black text-slate-100 md:text-3xl">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-blue-600">
+            <MousePointer2 className="size-6" />
+          </span>
           Click Speed Test
         </h1>
       </header>
 
-      {/* Main Grid Wrapper */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        
-        {/* LEFT COLUMN: Settings & Targets */}
-        <div className="lg:col-span-3 flex flex-col gap-6 order-2 lg:order-1 h-full">
-          {/* Duration Selection */}
-          <div className="bg-[#1e293b] p-6 rounded-xl border border-slate-700 shrink-0">
-            <div className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-3">
-              Test Duration
-            </div>
+      <div className="grid flex-1 grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
+        <aside className="order-2 flex h-full flex-col gap-6 lg:order-1 lg:col-span-3">
+          <section className={`${PANEL} shrink-0 p-6`}>
+            <PanelTitle>Test Duration</PanelTitle>
             <div className="grid grid-cols-3 gap-2">
-              {[5, 10, 30].map((d) => (
+              {DURATIONS.map((value) => (
                 <button
-                  key={d}
+                  key={value}
                   disabled={isActive}
-                  onClick={() => {
-                    setDuration(d);
-                    setTimeLeft(d);
-                    setCps(0);
-                    setClicks(0);
-                  }}
-                  className={`py-2 px-3 rounded-lg text-sm font-bold border transition-all ${
-                    isActive ? "opacity-50 cursor-not-allowed" : ""
-                  } ${
-                    duration === d
-                      ? "bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-500/20"
-                      : "bg-slate-800 border-slate-700 hover:border-slate-600 text-slate-300"
+                  onClick={() => changeDuration(value)}
+                  className={`rounded-lg border px-3 py-2 text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+                    duration === value
+                      ? "border-blue-500 bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                      : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600"
                   }`}
                 >
-                  {d}s
+                  {value}s
                 </button>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* Milestones Panel */}
-          <div className="bg-[#1e293b] p-6 rounded-xl border border-slate-700 flex-1 flex flex-col justify-between">
-            <div className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-4 flex items-center gap-1.5 shrink-0">
-              <Award className="w-4 h-4 text-yellow-500" />
+          <section className={`${PANEL} flex flex-1 flex-col justify-between p-6`}>
+            <PanelTitle icon={<Award className="size-4 text-yellow-500" />}>
               Milestones ({duration}s mode)
-            </div>
-            <div className="flex-1 flex flex-col justify-between gap-2.5">
-              {currentMilestones.map((m) => {
-                const isAchieved = clicks >= m.target || activeRecord.clicks >= m.target;
+            </PanelTitle>
+            <div className="flex flex-1 flex-col justify-between gap-2.5">
+              {MILESTONES[duration].map((milestone) => {
+                const achieved = Math.max(clicks, activeRecord.clicks) >= milestone.target;
                 return (
                   <div
-                    key={m.label}
-                    className={`flex items-center justify-between p-2.5 rounded-lg border transition-all flex-1 ${
-                      isAchieved
-                        ? `${m.color} shadow-sm`
-                        : "bg-slate-900/30 border-slate-800 text-slate-500"
+                    key={milestone.label}
+                    className={`flex flex-1 items-center justify-between rounded-lg border p-2.5 transition-all ${
+                      achieved
+                        ? `${milestone.color} shadow-sm`
+                        : "border-slate-800 bg-slate-900/30 text-slate-500"
                     }`}
                   >
-                    <div className="flex flex-col justify-center">
-                      <span className="font-bold text-xs leading-snug">{m.label}</span>
-                      <span className="text-[10px] opacity-80">{m.target} clicks target</span>
+                    <div>
+                      <div className="text-xs font-bold leading-snug">{milestone.label}</div>
+                      <div className="text-[10px] opacity-80">{milestone.target} clicks target</div>
                     </div>
-                    <div className="flex items-center">
-                      {isAchieved ? (
-                        <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">
-                          Unlocked
-                        </span>
-                      ) : (
-                        <span className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-slate-800 text-slate-600 rounded">
-                          Locked
-                        </span>
-                      )}
-                    </div>
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider ${
+                        achieved
+                          ? "bg-emerald-500/20 text-emerald-400"
+                          : "bg-slate-800 text-slate-600"
+                      }`}
+                    >
+                      {achieved ? "Unlocked" : "Locked"}
+                    </span>
                   </div>
                 );
               })}
             </div>
-          </div>
-        </div>
+          </section>
+        </aside>
 
-        {/* CENTER COLUMN: Live Stats & Main Click Area */}
-        <div className="lg:col-span-6 flex flex-col gap-6 order-1 lg:order-2 h-full">
-          
-          {/* Responsive Stat Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
-            
-            {/* Stat Card 1: CPS */}
-            <div className="bg-[#1e293b] p-6 rounded-xl border border-slate-700 relative overflow-hidden">
-              <div className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">
-                Current CPS
-              </div>
-              <div className="text-4xl font-bold text-blue-400">
-                {isActive
-                  ? (clicks / (duration - timeLeft + 0.1)).toFixed(1)
-                  : cps.toFixed(1)}
-              </div>
-              <div className="absolute right-0 bottom-0 opacity-10">
-                <MousePointer2 className="w-24 h-24 -mr-4 -mb-4" />
-              </div>
-            </div>
-
-            {/* Stat Card 2: Timer */}
-            <div className="hidden md:block bg-[#1e293b] p-6 rounded-xl border border-slate-700">
-              <div className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">
-                Time Remaining
-              </div>
-              <div
-                className={`text-4xl font-bold ${
-                  timeLeft <= 2 && isActive ? "text-red-500" : "text-slate-200"
-                }`}
-              >
-                {timeLeft}s
-              </div>
-            </div>
-
-            {/* Stat Card 3: Session Record (Main Stat: Max Clicks, Sub Stat: Max CPS) */}
-            <div className="hidden md:block bg-[#1e293b] p-6 rounded-xl border border-slate-700 relative overflow-hidden">
-              <div className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                <Trophy className="w-4 h-4 text-emerald-400" />
-                Session Record ({duration}s)
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-emerald-400">
-                  {activeRecord.clicks}
-                </span>
-                <span className="text-slate-400 text-sm font-medium">clicks</span>
-                {activeRecord.clicks > 0 && (
-                  <span className="text-emerald-500/80 text-[12px] font-semibold ml-1">
-                    ({activeRecord.cps.toFixed(1)} CPS)
-                  </span>
-                )}
-              </div>
-            </div>
+        <section className="order-1 flex h-full flex-col gap-6 lg:order-2 lg:col-span-6">
+          <div className="grid shrink-0 grid-cols-1 gap-6 md:grid-cols-3">
+            <StatCard label="Current CPS" value={liveCps.toFixed(1)} valueClass="text-blue-400">
+              <MousePointer2 className="absolute -bottom-4 -right-4 size-24 opacity-10" />
+            </StatCard>
+            <StatCard
+              className="hidden md:block"
+              label="Time Remaining"
+              value={`${timeLeft}s`}
+              valueClass={timeLeft <= 2 && isActive ? "text-red-500" : "text-slate-200"}
+            />
+            <RecordCard className="hidden md:block" record={activeRecord} duration={duration} />
           </div>
 
-          <div className="md:hidden bg-[#1e293b] rounded-xl border border-slate-700 overflow-hidden shrink-0">
+          <div className={`${PANEL} shrink-0 overflow-hidden md:hidden`}>
             <div className="grid grid-cols-2 divide-x divide-slate-700">
-              <div className="p-4">
-                <div className="text-slate-400 text-[11px] font-medium uppercase tracking-wider mb-1">
-                  Time Remaining
-                </div>
-                <div
-                  className={`text-2xl font-bold ${
-                    timeLeft <= 2 && isActive ? "text-red-500" : "text-slate-200"
-                  }`}
-                >
-                  {timeLeft}s
-                </div>
-              </div>
-              <div className="p-4">
-                <div className="text-slate-400 text-[11px] font-medium uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                  <Trophy className="w-3.5 h-3.5 text-emerald-400" />
-                  Record
-                </div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-2xl font-bold text-emerald-400">{activeRecord.clicks}</span>
-                  <span className="text-slate-400 text-xs">clicks</span>
-                </div>
-                {activeRecord.clicks > 0 && (
-                  <div className="text-emerald-500/80 text-[11px] font-semibold">
-                    {activeRecord.cps.toFixed(1)} CPS
-                  </div>
-                )}
-              </div>
+              <CompactStat
+                label="Time Remaining"
+                value={`${timeLeft}s`}
+                valueClass={timeLeft <= 2 && isActive ? "text-red-500" : "text-slate-200"}
+              />
+              <CompactRecord record={activeRecord} />
             </div>
           </div>
 
-          {/* Click Button Container */}
-          <div className="bg-[#1e293b] rounded-2xl border border-slate-700 p-8 flex flex-col items-center justify-center flex-1 min-h-105 relative">
+          <div className={`${PANEL} relative flex min-h-105 flex-1 flex-col items-center justify-center rounded-2xl p-8`}>
             {isActive && (
               <button
-                onClick={resetCurrentTest}
+                onClick={() => clearRun()}
                 className="absolute right-4 top-4 rounded-lg border border-slate-600 bg-slate-900/70 px-3 py-2 text-sm font-semibold text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-800"
               >
                 Reset Test
               </button>
             )}
+
             <button
-              onClick={handleClick}
+              onClick={handleMainClick}
               disabled={!isActive && !canRestart}
-              className={`w-64 h-64 rounded-full border-8 transition-all active:scale-95 flex flex-col items-center justify-center gap-2 select-none ${
+              className={`flex size-64 select-none flex-col items-center justify-center gap-2 rounded-full border-8 transition-all active:scale-95 ${
                 isActive
-                  ? "bg-blue-600 border-blue-400 shadow-[0_0_50px_rgba(37,99,235,0.5)]"
+                  ? "border-blue-400 bg-blue-600 shadow-[0_0_50px_rgba(37,99,235,0.5)]"
                   : canRestart
-                    ? "bg-slate-800 border-slate-600 hover:border-slate-500"
-                    : "bg-slate-800/80 border-slate-700 cursor-not-allowed"
+                    ? "border-slate-600 bg-slate-800 hover:border-slate-500"
+                    : "cursor-not-allowed border-slate-700 bg-slate-800/80"
               }`}
             >
-              <span className="text-5xl font-black">
-                {isActive ? "CLICK!" : "START"}
-              </span>
+              <span className="text-5xl font-black">{isActive ? "CLICK!" : "START"}</span>
               <span className="text-sm opacity-70">
                 {isActive ? clicks : `${duration} Second Test`}
               </span>
             </button>
 
-            {!isActive && cps > 0 && (
-              <div className="mt-8 text-center animate-in slide-in-from-bottom-5 w-full">
-                <p className="text-slate-400 mb-2">Result</p>
-                <div className="text-3xl font-bold text-white mb-2">
-                  {clicks} Clicks <span className="text-slate-500 text-xl">({cps.toFixed(2)} CPS)</span>
+            {!isActive && resultCps > 0 && (
+              <div className="mt-8 w-full animate-in text-center slide-in-from-bottom-5">
+                <p className="mb-2 text-slate-400">Result</p>
+                <div className="mb-2 text-3xl font-bold text-white">
+                  {clicks} Clicks{" "}
+                  <span className="text-xl text-slate-500">({resultCps.toFixed(2)} CPS)</span>
                 </div>
-                
-                {/* SVG Pace Graph for the current run */}
-                {currentRunPace.length > 0 && (
-                  <div className="mt-4 bg-slate-900/50 p-4 rounded-lg border border-slate-800 w-full max-w-md text-left mx-auto">
-                    <div className="text-xs text-slate-400 mb-2 font-medium flex items-center gap-1">
-                      <Zap className="w-3.5 h-3.5 text-blue-400" />
-                      Click Speed Flow (clicks per second)
-                    </div>
-                    <div className="flex items-end justify-between h-20 gap-1.5 px-1 pt-2">
-                      {currentRunPace.slice(0, duration).map((val, idx) => {
-                        const minVal = Math.min(...currentRunPace);
-                        const maxVal = Math.max(...currentRunPace, 1);
-                        const range = maxVal - minVal;
-                        // Autoscale height from 15% to 100% to clearly show relative performance
-                        const pct = range > 0 ? ((val - minVal) / range) * 80 + 15 : 100;
-                        return (
-                          <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group relative">
-                            <span className="text-[9px] text-slate-350 font-bold mb-1 shrink-0">
-                              {val}
-                            </span>
-                            <div 
-                              className="w-full bg-blue-500 rounded-t-sm hover:bg-blue-400 transition-all duration-300"
-                              style={{ height: `${Math.max(8, pct)}%` }}
-                            />
-                            <span className="text-[8px] text-slate-500 mt-1">{idx + 1}s</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                <PaceChart pace={pace} heights={paceHeights} />
               </div>
             )}
           </div>
-        </div>
+        </section>
 
-        {/* RIGHT COLUMN: Session History */}
-        <div className="lg:col-span-3 flex flex-col h-full order-3">
-          <div className="bg-[#1e293b] p-6 rounded-xl border border-slate-700 flex-1 flex flex-col">
-            <div className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-4 flex items-center gap-1.5 shrink-0">
-              <Calendar className="w-4 h-4 text-blue-400" />
+        <aside className="order-3 flex h-full flex-col lg:col-span-3">
+          <section className={`${PANEL} flex flex-1 flex-col p-6`}>
+            <PanelTitle icon={<Calendar className="size-4 text-blue-400" />}>
               Session History
-            </div>
-            <div className="flex-1 overflow-y-auto pr-1 max-h-137.5 lg:max-h-none flex flex-col gap-3">
-              {history.length === 0 ? (
-                <div className="text-slate-500 text-sm text-center py-12 my-auto">
+            </PanelTitle>
+            <div className="flex max-h-137.5 flex-1 flex-col gap-3 overflow-y-auto pr-1 lg:max-h-none">
+              {history.length ? (
+                history.map((run) => <HistoryCard key={run.id} run={run} />)
+              ) : (
+                <div className="my-auto py-12 text-center text-sm text-slate-500">
                   No runs recorded yet.
                 </div>
-              ) : (
-                history.map((run) => (
-                  <div
-                    key={run.id}
-                    className="p-3 bg-slate-900/30 border border-slate-800 rounded-lg flex flex-col gap-1.5 shrink-0"
-                  >
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-slate-300">
-                        {run.clicks} clicks ({run.cps.toFixed(1)} CPS)
-                      </span>
-                      <span className="text-slate-500">{run.timestamp}</span>
-                    </div>
-                    {/* Small visual timeline for the history run */}
-                    <div className="flex items-center gap-1 h-3">
-                      {run.pace.map((pVal, pIdx) => {
-                        const minVal = Math.min(...run.pace);
-                        const maxVal = Math.max(...run.pace, 1);
-                        const range = maxVal - minVal;
-                        // Autoscale opacity/intensity from 0.15 to 1.0 to highlight pace changes
-                        const intensity = range > 0 ? ((pVal - minVal) / range) * 0.85 + 0.15 : 1.0;
-                        return (
-                          <div
-                            key={pIdx}
-                            className="flex-1 h-full rounded-sm bg-blue-500/80"
-                            style={{ opacity: intensity }}
-                            title={`Sec ${pIdx + 1}: ${pVal} clicks`}
-                          />
-                        );
-                      })}
-                    </div>
-                    <div className="text-[10px] text-slate-500 text-right">
-                      {run.duration}s duration
-                    </div>
-                  </div>
-                ))
               )}
             </div>
-          </div>
-        </div>
-
+          </section>
+        </aside>
       </div>
+    </main>
+  );
+}
+
+function PanelTitle({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
+  return (
+    <div className="mb-4 flex shrink-0 items-center gap-1.5 text-sm font-medium uppercase tracking-wider text-slate-400">
+      {icon}
+      {children}
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  valueClass,
+  className = "",
+  children,
+}: {
+  label: string;
+  value: string;
+  valueClass: string;
+  className?: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className={`${PANEL} relative overflow-hidden p-6 ${className}`}>
+      <div className="mb-1 text-sm font-medium uppercase tracking-wider text-slate-400">{label}</div>
+      <div className={`text-4xl font-bold ${valueClass}`}>{value}</div>
+      {children}
+    </div>
+  );
+}
+
+function RecordCard({ record, duration, className = "" }: { record: RecordEntry; duration: Duration; className?: string }) {
+  return (
+    <div className={`${PANEL} relative overflow-hidden p-6 ${className}`}>
+      <div className="mb-1 flex items-center gap-1.5 text-sm font-medium uppercase tracking-wider text-slate-400">
+        <Trophy className="size-4 text-emerald-400" />
+        Session Record ({duration}s)
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="text-4xl font-bold text-emerald-400">{record.clicks}</span>
+        <span className="text-sm font-medium text-slate-400">clicks</span>
+        {record.clicks > 0 && (
+          <span className="ml-1 text-xs font-semibold text-emerald-500/80">
+            ({record.cps.toFixed(1)} CPS)
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CompactStat({ label, value, valueClass }: { label: string; value: string; valueClass: string }) {
+  return (
+    <div className="p-4">
+      <div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-slate-400">{label}</div>
+      <div className={`text-2xl font-bold ${valueClass}`}>{value}</div>
+    </div>
+  );
+}
+
+function CompactRecord({ record }: { record: RecordEntry }) {
+  return (
+    <div className="p-4">
+      <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400">
+        <Trophy className="size-3.5 text-emerald-400" /> Record
+      </div>
+      <div className="flex items-baseline gap-1.5">
+        <span className="text-2xl font-bold text-emerald-400">{record.clicks}</span>
+        <span className="text-xs text-slate-400">clicks</span>
+      </div>
+      {record.clicks > 0 && (
+        <div className="text-[11px] font-semibold text-emerald-500/80">{record.cps.toFixed(1)} CPS</div>
+      )}
+    </div>
+  );
+}
+
+function PaceChart({ pace, heights }: { pace: number[]; heights: number[] }) {
+  if (!pace.length) return null;
+
+  return (
+    <div className="mx-auto mt-4 w-full max-w-md rounded-lg border border-slate-800 bg-slate-900/50 p-4 text-left">
+      <div className="mb-2 flex items-center gap-1 text-xs font-medium text-slate-400">
+        <Zap className="size-3.5 text-blue-400" /> Click Speed Flow (clicks per second)
+      </div>
+      <div className="flex h-20 items-end justify-between gap-1.5 px-1 pt-2">
+        {pace.map((value, index) => (
+          <div key={index} className="flex h-full flex-1 flex-col items-center justify-end">
+            <span className="mb-1 shrink-0 text-[9px] font-bold text-slate-300">{value}</span>
+            <div
+              className="w-full rounded-t-sm bg-blue-500 transition-all duration-300 hover:bg-blue-400"
+              style={{ height: `${Math.max(8, heights[index])}%` }}
+            />
+            <span className="mt-1 text-[8px] text-slate-500">{index + 1}s</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HistoryCard({ run }: { run: RunResult }) {
+  const intensities = scaleValues(run.pace, 0.15, 1);
+
+  return (
+    <div className="flex shrink-0 flex-col gap-1.5 rounded-lg border border-slate-800 bg-slate-900/30 p-3">
+      <div className="flex items-center justify-between text-xs">
+        <span className="font-semibold text-slate-300">
+          {run.clicks} clicks ({run.cps.toFixed(1)} CPS)
+        </span>
+        <span className="text-slate-500">{run.timestamp}</span>
+      </div>
+      <div className="flex h-3 items-center gap-1">
+        {run.pace.map((value, index) => (
+          <div
+            key={index}
+            className="h-full flex-1 rounded-sm bg-blue-500/80"
+            style={{ opacity: intensities[index] }}
+            title={`Sec ${index + 1}: ${value} clicks`}
+          />
+        ))}
+      </div>
+      <div className="text-right text-[10px] text-slate-500">{run.duration}s duration</div>
     </div>
   );
 }
