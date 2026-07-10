@@ -9,13 +9,7 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import {
-  Maximize2,
-  Minimize2,
-  Pause,
-  Play,
-  RefreshCw,
-} from "lucide-react";
+import { Maximize2, Minimize2, Pause, Play, RefreshCw } from "lucide-react";
 
 type PresetId = "ember" | "lagoon" | "orchid" | "honey";
 
@@ -195,22 +189,40 @@ function hslToHex(h: number, s: number, l: number) {
   let b = 0;
 
   if (h >= 0 && h < 60) {
-    r = c; g = x; b = 0;
+    r = c;
+    g = x;
+    b = 0;
   } else if (h >= 60 && h < 120) {
-    r = x; g = c; b = 0;
+    r = x;
+    g = c;
+    b = 0;
   } else if (h >= 120 && h < 180) {
-    r = 0; g = c; b = x;
+    r = 0;
+    g = c;
+    b = x;
   } else if (h >= 180 && h < 240) {
-    r = 0; g = x; b = c;
+    r = 0;
+    g = x;
+    b = c;
   } else if (h >= 240 && h < 300) {
-    r = x; g = 0; b = c;
+    r = x;
+    g = 0;
+    b = c;
   } else if (h >= 300 && h < 360) {
-    r = c; g = 0; b = x;
+    r = c;
+    g = 0;
+    b = x;
   }
 
-  const rHex = Math.round((r + m) * 255).toString(16).padStart(2, "0");
-  const gHex = Math.round((g + m) * 255).toString(16).padStart(2, "0");
-  const bHex = Math.round((b + m) * 255).toString(16).padStart(2, "0");
+  const rHex = Math.round((r + m) * 255)
+    .toString(16)
+    .padStart(2, "0");
+  const gHex = Math.round((g + m) * 255)
+    .toString(16)
+    .padStart(2, "0");
+  const bHex = Math.round((b + m) * 255)
+    .toString(16)
+    .padStart(2, "0");
   return `#${rHex}${gHex}${bHex}`;
 }
 
@@ -219,6 +231,30 @@ function generateLavaColors(baseColor: string): [string, string, string] {
   const lightHex = hslToHex(h, Math.min(100, s + 10), Math.min(95, l + 25));
   const darkHex = hslToHex(h, Math.min(100, s * 1.1), Math.max(10, l * 0.45));
   return [lightHex, baseColor, darkHex];
+}
+
+function rgbToHex({ r, g, b }: ReturnType<typeof hexToRgb>) {
+  return `#${[r, g, b]
+    .map((channel) =>
+      clamp(Math.round(channel), 0, 255).toString(16).padStart(2, "0"),
+    )
+    .join("")}`;
+}
+
+function generateBackgroundColors(
+  bubbleColor: string,
+  liquidColor: string,
+): [string, string] {
+  // The bubble color drives the room, with a small amount of liquid color mixed in.
+  const dominantColor = rgbToHex(
+    mixColor(hexToRgb(bubbleColor), hexToRgb(liquidColor), 0.18),
+  );
+  const { h, s, l } = hexToHsl(dominantColor);
+
+  return [
+    hslToHex(h, clamp(s * 0.72 + 10, 24, 82), clamp(l * 0.28 + 7, 10, 25)),
+    hslToHex(h, clamp(s * 0.42 + 5, 16, 58), clamp(l * 0.1 + 2, 4, 11)),
+  ];
 }
 
 function halfWidthAt(y: number) {
@@ -364,25 +400,6 @@ function drawLampHardware(
   context.fill(base);
   context.restore();
 
-  const baseGlow = context.createRadialGradient(
-    cx,
-    glassBottom + baseHeight * 0.05,
-    0,
-    cx,
-    glassBottom + baseHeight * 0.05,
-    bodyHalf * 1.2,
-  );
-  baseGlow.addColorStop(0, rgba(preset.glow, 0.34 * glowStrength));
-  baseGlow.addColorStop(0.48, rgba(preset.glow, 0.12 * glowStrength));
-  baseGlow.addColorStop(1, rgba(preset.glow, 0));
-  context.fillStyle = baseGlow;
-  context.fillRect(
-    cx - bodyHalf * 1.5,
-    glassBottom - bodyHalf * 1.5,
-    bodyHalf * 3.0,
-    bodyHalf * 3.0,
-  );
-
   context.save();
   context.globalAlpha = 0.28;
   context.strokeStyle = "rgba(255, 255, 255, 0.7)";
@@ -507,9 +524,8 @@ export default function LavaLampPage() {
   const cursorModeRef = useRef<"default" | "grab" | "grabbing">("default");
 
   const [presetId, setPresetId] = useState<PresetId>("ember");
-  const [glowColor, setGlowColor] = useState(PRESETS.ember.glow);
+  const [bubbleColor, setBubbleColor] = useState(PRESETS.ember.glow);
   const [liquidColor, setLiquidColor] = useState(PRESETS.ember.glass);
-  const isLightOn = true;
   const [isPaused, setIsPaused] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cursorMode, setCursorMode] = useState<"default" | "grab" | "grabbing">(
@@ -517,25 +533,32 @@ export default function LavaLampPage() {
   );
   const [resetKey, setResetKey] = useState(0);
 
-  const preset = useMemo(
+  const renderPreset = useMemo<Preset>(
     () => ({
       ...PRESETS[presetId],
-      glow: glowColor,
+      background: generateBackgroundColors(bubbleColor, liquidColor),
       glass: liquidColor,
-      lava: generateLavaColors(glowColor),
+      glow: bubbleColor,
+      lava: generateLavaColors(bubbleColor),
     }),
-    [glowColor, liquidColor, presetId],
+    [bubbleColor, liquidColor, presetId],
   );
-  const glowStrength = isLightOn ? 1.8 : 0.18;
+  const renderPresetRef = useRef(renderPreset);
+  const physicsPresetRef = useRef(PRESETS[presetId]);
+  const isUsingExactPreset =
+    bubbleColor === PRESETS[presetId].glow &&
+    liquidColor === PRESETS[presetId].glass;
+
+  const glowStrength = 1.8;
   const pageStyle = useMemo(
     () =>
       ({
-        "--bg-a": preset.background[0],
-        "--bg-b": preset.background[1],
-        "--accent": preset.glow,
-        "--accent-soft": rgba(preset.glow, isLightOn ? 0.28 : 0.04),
+        "--bg-a": renderPreset.background[0],
+        "--bg-b": renderPreset.background[1],
+        "--accent": renderPreset.glow,
+        "--accent-soft": rgba(renderPreset.glow, 0.28),
       }) as CSSProperties,
-    [isLightOn, preset],
+    [renderPreset],
   );
 
   const changeCursorMode = useCallback(
@@ -552,6 +575,14 @@ export default function LavaLampPage() {
   }, [isPaused]);
 
   useEffect(() => {
+    renderPresetRef.current = renderPreset;
+  }, [renderPreset]);
+
+  useEffect(() => {
+    physicsPresetRef.current = PRESETS[presetId];
+  }, [presetId]);
+
+  useEffect(() => {
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) setIsFullscreen(false);
     };
@@ -560,6 +591,22 @@ export default function LavaLampPage() {
     return () =>
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
+
+  useEffect(() => {
+    const blobs = blobsRef.current;
+    const targetCount = PRESETS[presetId].blobCount;
+    if (!blobs.length || blobs.length === targetCount) return;
+
+    if (blobs.length < targetCount) {
+      const additions = createBlobs({
+        ...PRESETS[presetId],
+        blobCount: targetCount - blobs.length,
+      });
+      blobs.push(...additions);
+    } else {
+      blobs.splice(targetCount);
+    }
+  }, [presetId]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -574,19 +621,13 @@ export default function LavaLampPage() {
     if (!bufferContext) return;
 
     let imageData = bufferContext.createImageData(1, 1);
-    let blobs = createBlobs(preset);
+    const blobs = createBlobs(physicsPresetRef.current);
     blobsRef.current = blobs;
     let animationFrame = 0;
     let previousTime = performance.now();
     let width = 1;
     let height = 1;
     let dpr = 1;
-
-    const lavaColors = preset.lava.map(hexToRgb) as [
-      ReturnType<typeof hexToRgb>,
-      ReturnType<typeof hexToRgb>,
-      ReturnType<typeof hexToRgb>,
-    ];
 
     const resize = () => {
       const rect = stage.getBoundingClientRect();
@@ -614,7 +655,8 @@ export default function LavaLampPage() {
 
       const pointer = pointerRef.current;
       const bodyToHeight = geometry.bodyHalf / geometry.glassHeight;
-      const damping = Math.pow(preset.viscosity, delta * 60);
+      const physicsPreset = physicsPresetRef.current;
+      const damping = Math.pow(physicsPreset.viscosity, delta * 60);
 
       for (const blob of blobs) {
         if (blob.y > 0.76) {
@@ -629,10 +671,10 @@ export default function LavaLampPage() {
         const currentHalf = halfWidthAt(blob.y);
         const rY = blob.r;
         const rX = blob.r / bodyToHeight;
-        const thermalLift = (0.5 - blob.temperature) * preset.buoyancy;
+        const thermalLift = (0.5 - blob.temperature) * physicsPreset.buoyancy;
         const drift =
           Math.sin(elapsed * 0.00042 + blob.phase + blob.y * 4.5) *
-          preset.drift;
+          physicsPreset.drift;
 
         blob.vy += thermalLift * delta;
         blob.vx += drift * delta;
@@ -647,11 +689,12 @@ export default function LavaLampPage() {
           const radius = pointer.down ? 0.3 : 0.2;
 
           if (distance < radius && distance > 0.0001) {
-            const force = (1 - distance / radius) * (pointer.down ? 0.9 : 0.24);
+            const force =
+              (1 - distance / radius) * (pointer.down ? 1.45 : 0.38);
             blob.vx += ((dx / distance) * force * delta) / bodyToHeight;
             blob.vy += (dy / distance) * force * delta;
-            blob.vx += (pointer.dx / bodyToHeight) * force * 0.36;
-            blob.vy += pointer.dy * force * 0.36;
+            blob.vx += (pointer.dx / bodyToHeight) * force * 0.52;
+            blob.vy += pointer.dy * force * 0.52;
             if (pointer.down)
               blob.temperature = clamp(blob.temperature + delta * 0.16, 0, 1);
           }
@@ -710,8 +753,13 @@ export default function LavaLampPage() {
       pointer.dy *= 0.72;
     };
 
-    const renderLava = (geometry: Geometry) => {
+    const renderLava = (geometry: Geometry, activePreset: Preset) => {
       const { bodyHalf, glassHeight } = geometry;
+      const lavaColors = activePreset.lava.map(hexToRgb) as [
+        ReturnType<typeof hexToRgb>,
+        ReturnType<typeof hexToRgb>,
+        ReturnType<typeof hexToRgb>,
+      ];
       const data = imageData.data;
       const bufferWidth = buffer.width;
       const bufferHeight = buffer.height;
@@ -781,7 +829,7 @@ export default function LavaLampPage() {
       context.clip(path);
       context.globalAlpha = 0.98;
       context.filter = `drop-shadow(0 0 ${Math.max(7, bodyHalf * 0.055)}px ${rgba(
-        preset.glow,
+        activePreset.glow,
         0.46 * glowStrength,
       )})`;
       context.imageSmoothingEnabled = true;
@@ -801,6 +849,7 @@ export default function LavaLampPage() {
 
       const geometry = geometryRef.current;
       if (geometry) {
+        const activePreset = renderPresetRef.current;
         if (!pausedRef.current) update(delta, time);
 
         context.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -814,17 +863,17 @@ export default function LavaLampPage() {
           geometry.glassTop + geometry.glassHeight * 0.58,
           geometry.bodyHalf * 2.3,
         );
-        halo.addColorStop(0, rgba(preset.glow, 0.22 * glowStrength));
-        halo.addColorStop(0.45, rgba(preset.glow, 0.075 * glowStrength));
-        halo.addColorStop(1, rgba(preset.glow, 0));
+        halo.addColorStop(0, rgba(activePreset.glow, 0.22 * glowStrength));
+        halo.addColorStop(0.45, rgba(activePreset.glow, 0.075 * glowStrength));
+        halo.addColorStop(1, rgba(activePreset.glow, 0));
         context.fillStyle = halo;
         context.fillRect(0, 0, width, height);
 
         const glassPath = createGlassPath(geometry);
-        drawGlass(context, geometry, preset, glassPath, glowStrength);
-        renderLava(geometry);
-        drawGlass(context, geometry, preset, glassPath, glowStrength);
-        drawLampHardware(context, geometry, preset, glowStrength);
+        drawGlass(context, geometry, activePreset, glassPath, glowStrength);
+        renderLava(geometry, activePreset);
+        drawGlass(context, geometry, activePreset, glassPath, glowStrength);
+        drawLampHardware(context, geometry, activePreset, glowStrength);
       }
 
       animationFrame = requestAnimationFrame(draw);
@@ -840,7 +889,7 @@ export default function LavaLampPage() {
       observer.disconnect();
       if (blobsRef.current === blobs) blobsRef.current = [];
     };
-  }, [glowStrength, preset, resetKey]);
+  }, [resetKey]);
 
   const updatePointer = useCallback(
     (event: ReactPointerEvent<HTMLElement>, down = pointerRef.current.down) => {
@@ -960,10 +1009,12 @@ export default function LavaLampPage() {
               <button
                 key={id}
                 type="button"
-                className={id === presetId ? "active" : ""}
+                className={
+                  id === presetId && isUsingExactPreset ? "active" : ""
+                }
                 onClick={() => {
                   setPresetId(id);
-                  setGlowColor(PRESETS[id].glow);
+                  setBubbleColor(PRESETS[id].glow);
                   setLiquidColor(PRESETS[id].glass);
                 }}
               >
@@ -982,13 +1033,13 @@ export default function LavaLampPage() {
                 aria-label="Liquid color"
               />
             </label>
-            <label className="color-picker" title="Lava glow color">
-              <span className="sr-only">Lava glow color</span>
+            <label className="color-picker" title="Bubble color">
+              <span className="sr-only">Bubble color</span>
               <input
                 type="color"
-                value={glowColor}
-                onChange={(event) => setGlowColor(event.target.value)}
-                aria-label="Lava glow color"
+                value={bubbleColor}
+                onChange={(event) => setBubbleColor(event.target.value)}
+                aria-label="Bubble color"
               />
             </label>
 
