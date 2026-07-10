@@ -276,8 +276,12 @@ function createGlassPath(geometry: Geometry) {
 }
 
 function makeGeometry(width: number, height: number): Geometry {
-  // Ensure the lamp leaves 125px at the bottom for the UI and 35px at the top (to prevent top cap shadow clipping)
-  const maxAvailableHeight = height - 160;
+  const isLandscapeMobile = width > height && height < 500;
+  const topPadding = isLandscapeMobile ? 12 : 35;
+  const bottomPadding = isLandscapeMobile ? 54 : 125;
+
+  // Ensure the lamp leaves enough space at the bottom for the UI and top cap shadow
+  const maxAvailableHeight = height - (topPadding + bottomPadding);
 
   // totalDrawnHeight = topCapHeight (0.16) + glassHeight (0.60) + baseHeight (0.44) = 1.20 * lampHeight
   const lampHeight = Math.min(Math.max(maxAvailableHeight / 1.2, 200), 850);
@@ -287,8 +291,11 @@ function makeGeometry(width: number, height: number): Geometry {
   const baseHeight = lampHeight * 0.44;
 
   const totalDrawnHeight = topCapHeight + glassHeight + baseHeight;
-  // Leave 125px at the bottom of the canvas for the UI controls and at least 35px at the top
-  const lampTop = Math.max(height - totalDrawnHeight - 125, 35);
+  // Leave controls space at the bottom of the canvas and at least topPadding at the top
+  const lampTop = Math.max(
+    height - totalDrawnHeight - bottomPadding,
+    topPadding,
+  );
 
   const glassTop = lampTop + topCapHeight;
   // Adjust width percentage to look perfectly proportioned on mobile
@@ -550,16 +557,30 @@ export default function LavaLampPage() {
     liquidColor === PRESETS[presetId].glass;
 
   const glowStrength = 1.8;
-  const pageStyle = useMemo(
-    () =>
-      ({
-        "--bg-a": renderPreset.background[0],
-        "--bg-b": renderPreset.background[1],
-        "--accent": renderPreset.glow,
-        "--accent-soft": rgba(renderPreset.glow, 0.28),
-      }) as CSSProperties,
-    [renderPreset],
-  );
+  const pageStyle = useMemo(() => {
+    const rgb = hexToRgb(renderPreset.glow);
+    const bgA = renderPreset.background[0];
+    const bgB = renderPreset.background[1];
+    return {
+      "--bg-a": bgA,
+      "--bg-b": bgB,
+      "--accent": renderPreset.glow,
+      "--accent-soft": `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.28)`,
+      background: `
+          radial-gradient(
+            circle at 50% 28%,
+            rgba(255, 255, 255, 0.07),
+            transparent 38%
+          ),
+          radial-gradient(
+            circle at 50% 25%,
+            rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.28),
+            transparent 48%
+          ),
+          linear-gradient(145deg, ${bgA}, ${bgB} 70%)
+        `.replace(/\s+/g, " "),
+    } as CSSProperties;
+  }, [renderPreset]);
 
   const changeCursorMode = useCallback(
     (next: "default" | "grab" | "grabbing") => {
@@ -637,8 +658,6 @@ export default function LavaLampPage() {
 
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       const geometry = makeGeometry(width, height);
@@ -981,12 +1000,12 @@ export default function LavaLampPage() {
 
   return (
     <main
-      className={`lava-page ${isFullscreen ? "is-fullscreen" : ""}`}
+      className={`flex h-svh min-h-svh flex-col overflow-hidden p-6 sm:p-8 md:p-12 pb-3 max-[700px]:p-0 lava-page ${isFullscreen ? "is-fullscreen" : ""}`}
       style={pageStyle}
     >
       <section
         ref={stageRef}
-        className={`lamp-stage cursor-${cursorMode}`}
+        className={`relative w-full max-w-[1080px] flex-1 min-h-0 mx-auto overflow-visible select-none touch-none lamp-stage cursor-${cursorMode}`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -1001,17 +1020,22 @@ export default function LavaLampPage() {
         />
 
         <div
-          className="controls"
+          className="absolute z-10 left-1/2 bottom-3.5 max-[700px]:bottom-5 max-[700px]:landscape:bottom-[6px] -translate-x-1/2 flex items-center gap-[10px] max-[700px]:gap-[7px] w-max max-w-[calc(100%-28px)] max-[700px]:w-[calc(100%-24px)] max-[700px]:justify-between p-1.5 border border-white/10 rounded-2xl bg-[#08090c]/58 shadow-[0_12px_38px_rgba(0,0,0,0.3)] backdrop-blur-lg cursor-default controls"
           onPointerDown={(event) => event.stopPropagation()}
         >
-          <div className="preset-list" aria-label="Fluid presets">
+          <div
+            className="flex items-center gap-0.5 overflow-x-auto no-scrollbar preset-list"
+            aria-label="Fluid presets"
+          >
             {PRESET_IDS.map((id) => (
               <button
                 key={id}
                 type="button"
-                className={
-                  id === presetId && isUsingExactPreset ? "active" : ""
-                }
+                className={`flex-none px-[11px] max-[700px]:px-[9px] max-[410px]:px-2 py-2 border-0 rounded-[9px] text-[0.76rem] max-[410px]:text-[0.7rem] font-[610] tracking-[0.015em] cursor-pointer transition-all duration-150 active:scale-95 ${
+                  id === presetId && isUsingExactPreset
+                    ? "text-white bg-white/11 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.045)] active"
+                    : "text-white/58 bg-transparent hover:text-white/92 hover:bg-white/[0.075]"
+                }`}
                 onClick={() => {
                   setPresetId(id);
                   setBubbleColor(PRESETS[id].glow);
@@ -1023,20 +1047,28 @@ export default function LavaLampPage() {
             ))}
           </div>
 
-          <div className="icon-actions">
-            <label className="color-picker" title="Liquid color">
+          <div className="flex items-center gap-1 pl-1.5 border-l border-white/8 icon-actions">
+            <label
+              className="grid w-[34px] h-[34px] place-items-center border border-white/11 rounded-[9px] bg-white/[0.045] cursor-pointer color-picker"
+              title="Liquid color"
+            >
               <span className="sr-only">Liquid color</span>
               <input
                 type="color"
+                className="w-5 h-5 p-0 border-0 rounded-full bg-transparent cursor-pointer"
                 value={liquidColor}
                 onChange={(event) => setLiquidColor(event.target.value)}
                 aria-label="Liquid color"
               />
             </label>
-            <label className="color-picker" title="Bubble color">
+            <label
+              className="grid w-[34px] h-[34px] place-items-center border border-white/11 rounded-[9px] bg-white/[0.045] cursor-pointer color-picker"
+              title="Bubble color"
+            >
               <span className="sr-only">Bubble color</span>
               <input
                 type="color"
+                className="w-5 h-5 p-0 border-0 rounded-full bg-transparent cursor-pointer"
                 value={bubbleColor}
                 onChange={(event) => setBubbleColor(event.target.value)}
                 aria-label="Bubble color"
@@ -1045,7 +1077,7 @@ export default function LavaLampPage() {
 
             <button
               type="button"
-              className="icon-button"
+              className="grid w-[34px] h-[34px] place-items-center border-0 rounded-[9px] cursor-pointer transition-all duration-150 active:scale-95 text-white/58 bg-transparent hover:text-white/92 hover:bg-white/[0.075] icon-button"
               onClick={() => setIsPaused((value) => !value)}
               aria-label={isPaused ? "Resume animation" : "Pause animation"}
               title={isPaused ? "Resume" : "Pause"}
@@ -1054,7 +1086,7 @@ export default function LavaLampPage() {
             </button>
             <button
               type="button"
-              className="icon-button"
+              className="grid w-[34px] h-[34px] place-items-center border-0 rounded-[9px] cursor-pointer transition-all duration-150 active:scale-95 text-white/58 bg-transparent hover:text-white/92 hover:bg-white/[0.075] icon-button"
               onClick={() => setResetKey((value) => value + 1)}
               aria-label="Reset fluid"
               title="Reset"
@@ -1063,7 +1095,7 @@ export default function LavaLampPage() {
             </button>
             <button
               type="button"
-              className="icon-button"
+              className="hidden sm:grid w-[34px] h-[34px] place-items-center border-0 rounded-[9px] cursor-pointer transition-all duration-150 active:scale-95 text-white/58 bg-transparent hover:text-white/92 hover:bg-white/[0.075] icon-button"
               onClick={toggleFullscreen}
               aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
               title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
@@ -1105,53 +1137,8 @@ export default function LavaLampPage() {
         }
 
         .lava-page {
-          display: flex;
-          height: 100svh;
-          min-height: 100svh;
-          flex-direction: column;
-          padding: clamp(24px, 4vw, 54px) clamp(24px, 4vw, 54px) 12px;
           color: rgba(255, 255, 255, 0.92);
-          background:
-            radial-gradient(
-              circle at 50% 28%,
-              rgba(255, 255, 255, 0.07),
-              transparent 38%
-            ),
-            radial-gradient(
-              circle at 50% 25%,
-              var(--accent-soft),
-              transparent 48%
-            ),
-            linear-gradient(145deg, var(--bg-a), var(--bg-b) 70%);
-          overflow: hidden;
           transition: background 450ms ease;
-        }
-
-        .page-header {
-          width: min(1080px, 100%);
-          margin: 0 auto 22px;
-        }
-
-        h1 {
-          margin: 0;
-          font-size: clamp(2rem, 4.2vw, 4.25rem);
-          font-weight: 560;
-          letter-spacing: -0.055em;
-          line-height: 0.95;
-        }
-
-        .lamp-stage {
-          position: relative;
-          width: min(1080px, 100%);
-          height: auto;
-          min-height: 0;
-          flex: 1;
-          margin: 0 auto;
-          overflow: visible;
-          cursor: default;
-          touch-action: none;
-          user-select: none;
-          -webkit-user-select: none;
         }
 
         .lamp-stage.cursor-grab {
@@ -1173,114 +1160,12 @@ export default function LavaLampPage() {
           -webkit-user-drag: none;
         }
 
-        .controls {
-          position: absolute;
-          z-index: 2;
-          left: 50%;
-          bottom: 14px;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          width: max-content;
-          max-width: calc(100% - 28px);
-          padding: 7px;
-          border: 1px solid rgba(255, 255, 255, 0.09);
-          border-radius: 15px;
-          background: rgba(8, 9, 12, 0.58);
-          box-shadow: 0 12px 38px rgba(0, 0, 0, 0.3);
-          backdrop-filter: blur(18px);
-          transform: translateX(-50%);
-          cursor: default;
-        }
-
-        .preset-list,
-        .icon-actions {
-          display: flex;
-          align-items: center;
-          gap: 3px;
-        }
-
         .preset-list {
-          overflow-x: auto;
           scrollbar-width: none;
         }
 
         .preset-list::-webkit-scrollbar {
           display: none;
-        }
-
-        .preset-list button,
-        .icon-button {
-          border: 0;
-          color: rgba(255, 255, 255, 0.58);
-          background: transparent;
-          cursor: pointer;
-          transition:
-            color 160ms ease,
-            background 160ms ease,
-            transform 160ms ease;
-        }
-
-        .preset-list button {
-          flex: 0 0 auto;
-          padding: 8px 11px;
-          border-radius: 9px;
-          font-size: 0.76rem;
-          font-weight: 610;
-          letter-spacing: 0.015em;
-        }
-
-        .preset-list button:hover,
-        .icon-button:hover {
-          color: rgba(255, 255, 255, 0.92);
-          background: rgba(255, 255, 255, 0.075);
-        }
-
-        .preset-list button.active {
-          color: white;
-          background: rgba(255, 255, 255, 0.11);
-          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.045);
-        }
-
-        .icon-actions {
-          padding-left: 7px;
-          border-left: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .icon-button {
-          display: grid;
-          width: 34px;
-          height: 34px;
-          place-items: center;
-          border-radius: 9px;
-        }
-
-        .icon-button.active {
-          color: white;
-          background: color-mix(in srgb, var(--accent) 28%, transparent);
-          box-shadow: 0 0 18px
-            color-mix(in srgb, var(--accent) 38%, transparent);
-        }
-
-        .color-picker {
-          display: grid;
-          width: 34px;
-          height: 34px;
-          place-items: center;
-          border: 1px solid rgba(255, 255, 255, 0.11);
-          border-radius: 9px;
-          background: rgba(255, 255, 255, 0.045);
-          cursor: pointer;
-        }
-
-        .color-picker input {
-          width: 20px;
-          height: 20px;
-          padding: 0;
-          border: 0;
-          border-radius: 50%;
-          background: transparent;
-          cursor: pointer;
         }
 
         .color-picker input::-webkit-color-swatch-wrapper {
@@ -1290,11 +1175,6 @@ export default function LavaLampPage() {
         .color-picker input::-webkit-color-swatch {
           border: 2px solid rgba(255, 255, 255, 0.8);
           border-radius: 50%;
-        }
-
-        .icon-button:active,
-        .preset-list button:active {
-          transform: scale(0.96);
         }
 
         .is-fullscreen {
@@ -1319,62 +1199,18 @@ export default function LavaLampPage() {
           box-shadow: none;
         }
 
+        @media (max-width: 900px) and (orientation: landscape) {
+          .controls {
+            bottom: 6px !important;
+          }
+        }
+
         .lamp-stage:fullscreen {
           width: 100vw;
           height: 100vh;
           min-height: 0;
           border: 0;
           border-radius: 0;
-        }
-
-        @media (max-width: 700px) {
-          .lava-page {
-            display: block;
-            height: auto;
-            min-height: 100svh;
-            padding: 20px 14px 14px;
-          }
-
-          .page-header {
-            margin-bottom: 14px;
-          }
-
-          .lamp-stage {
-            height: calc(100svh - 112px);
-            min-height: 560px;
-            flex: none;
-          }
-
-          .controls {
-            bottom: 12px;
-            gap: 7px;
-            width: calc(100% - 20px);
-            justify-content: space-between;
-          }
-
-          .preset-list {
-            min-width: 0;
-          }
-
-          .preset-list button {
-            padding-inline: 9px;
-          }
-
-          .icon-actions {
-            flex: 0 0 auto;
-          }
-        }
-
-        @media (max-width: 410px) {
-          .preset-list button {
-            padding-inline: 8px;
-            font-size: 0.7rem;
-          }
-
-          .icon-button {
-            width: 32px;
-            height: 32px;
-          }
         }
 
         @media (prefers-reduced-motion: reduce) {
