@@ -1,0 +1,1567 @@
+﻿commit f483c1528faae3c3c842fd83af581d16f6f875d5
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-11T00:39:32-06:00
+
+    Initial commit from Create Next App
+
+41	0	.gitignore
+36	0	README.md
+-	-	app/favicon.ico
+26	0	app/globals.css
+34	0	app/layout.tsx
+65	0	app/page.tsx
+18	0	eslint.config.mjs
+7	0	next.config.ts
+6538	0	package-lock.json
+26	0	package.json
+7	0	postcss.config.mjs
+1	0	public/file.svg
+1	0	public/globe.svg
+1	0	public/next.svg
+1	0	public/vercel.svg
+1	0	public/window.svg
+34	0	tsconfig.json
+ create mode 100644 .gitignore
+ create mode 100644 README.md
+ create mode 100644 app/favicon.ico
+ create mode 100644 app/globals.css
+ create mode 100644 app/layout.tsx
+ create mode 100644 app/page.tsx
+ create mode 100644 eslint.config.mjs
+ create mode 100644 next.config.ts
+ create mode 100644 package-lock.json
+ create mode 100644 package.json
+ create mode 100644 postcss.config.mjs
+ create mode 100644 public/file.svg
+ create mode 100644 public/globe.svg
+ create mode 100644 public/next.svg
+ create mode 100644 public/vercel.svg
+ create mode 100644 public/window.svg
+ create mode 100644 tsconfig.json
+
+commit c6d132f6ff46216f0711b5294389ad1421677a3a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-11T02:41:53-06:00
+
+    Add themed interactive demo pages and update home
+    
+    Introduces multiple new interactive pages under the app directory, each showcasing a unique style and feature. Updates the home page to allow navigation to these demos via a randomizer. Removes unused SVG assets and updates .gitignore to exclude .vscode. Also updates package.json dependencies.
+
+1	0	.gitignore
+115	0	app/ascii-cam/page.tsx
+182	0	app/beat-maker/page.tsx
+36	0	app/brutalist/page.tsx
+71	0	app/confetti-cannon/page.tsx
+141	0	app/dark-dashboard/page.tsx
+101	0	app/emoji-rain/page.tsx
+73	0	app/glass-morphism/page.tsx
+53	0	app/glitch-chaos/page.tsx
+107	0	app/gravity-box/page.tsx
+82	0	app/hypno-spiral/page.tsx
+60	2	app/layout.tsx
+60	0	app/minimal-mono/page.tsx
+69	0	app/nature-zen/page.tsx
+56	0	app/neo-brutalism/page.tsx
+85	0	app/neon-cyber/page.tsx
+64	58	app/page.tsx
+72	0	app/paper-editorial/page.tsx
+60	0	app/pastel-dream/page.tsx
+102	0	app/pixel-art/page.tsx
+93	0	app/retro-terminal/page.tsx
+125	0	app/sticky-notes/page.tsx
+80	0	app/text-scramble/page.tsx
+0	6538	package-lock.json
+16	9	package.json
+4103	0	pnpm-lock.yaml
+0	1	public/file.svg
+0	1	public/globe.svg
+0	1	public/next.svg
+0	1	public/vercel.svg
+0	1	public/window.svg
+ create mode 100644 app/ascii-cam/page.tsx
+ create mode 100644 app/beat-maker/page.tsx
+ create mode 100644 app/brutalist/page.tsx
+ create mode 100644 app/confetti-cannon/page.tsx
+ create mode 100644 app/dark-dashboard/page.tsx
+ create mode 100644 app/emoji-rain/page.tsx
+ create mode 100644 app/glass-morphism/page.tsx
+ create mode 100644 app/glitch-chaos/page.tsx
+ create mode 100644 app/gravity-box/page.tsx
+ create mode 100644 app/hypno-spiral/page.tsx
+ create mode 100644 app/minimal-mono/page.tsx
+ create mode 100644 app/nature-zen/page.tsx
+ create mode 100644 app/neo-brutalism/page.tsx
+ create mode 100644 app/neon-cyber/page.tsx
+ create mode 100644 app/paper-editorial/page.tsx
+ create mode 100644 app/pastel-dream/page.tsx
+ create mode 100644 app/pixel-art/page.tsx
+ create mode 100644 app/retro-terminal/page.tsx
+ create mode 100644 app/sticky-notes/page.tsx
+ create mode 100644 app/text-scramble/page.tsx
+ delete mode 100644 package-lock.json
+ create mode 100644 pnpm-lock.yaml
+ delete mode 100644 public/file.svg
+ delete mode 100644 public/globe.svg
+ delete mode 100644 public/next.svg
+ delete mode 100644 public/vercel.svg
+ delete mode 100644 public/window.svg
+
+commit d82b71b170b276bce961c8a4b22a027b1a86041a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-11T14:33:12-06:00
+
+    Refine UI text and spiral controls for effects pages
+    
+    Updated the confetti-cannon prompt to 'Click for a party!'. Improved hypno-spiral controls: top half of Y-axis now controls distortion, bottom half controls line thickness, and updated the on-screen instruction to encourage users to try the corners.
+
+1	1	app/confetti-cannon/page.tsx
+14	6	app/hypno-spiral/page.tsx
+
+commit b7f454455010f4316cc92b75057dd5f057c0cb9c
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-11T14:46:57-06:00
+
+    Add editable duration and smooth animation to timer
+    
+    Refactors the timer to allow editing the duration by clicking the time display when inactive. Implements a smooth conic-gradient animation using requestAnimationFrame for the background, and updates the timer logic to support custom durations and improved UI feedback.
+
+154	36	app/minimal-mono/page.tsx
+
+commit a03ea9882041739499d6c3ffddf0c20c52d980d2
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-11T15:18:15-06:00
+
+    Replace retro-terminal with olo-shell terminal app
+    
+    Removed the old retro-terminal and introduced a new, feature-rich olo-shell terminal app with enhanced commands, Matrix mode, and a simulated file system. Updated navigation to use /olo-shell and adjusted site metadata.
+
+1	1	app/layout.tsx
+430	0	app/olo-shell/page.tsx
+69	0	app/olo-shell/utils.ts
+1	1	app/page.tsx
+0	93	app/retro-terminal/page.tsx
+ create mode 100644 app/olo-shell/page.tsx
+ create mode 100644 app/olo-shell/utils.ts
+ delete mode 100644 app/retro-terminal/page.tsx
+
+commit 3ed13a079e54418c4c1d45e48c66c898f50e9600
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-11T16:13:32-06:00
+
+    Add configurable encryption modules to NeonCyber UI
+    
+    Introduces interactive configuration controls for binary, hex, Caesar, base64, Atbash, and ROT13/ROT47 transformations. Each output stream now reflects user-selected options, and the UI is enhanced with modular, color-coded panels and improved styling for a more immersive cyberpunk experience.
+
+402	35	app/neon-cyber/page.tsx
+
+commit 662d9e8bb10d50b3914f48c1490c898d906cd85a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-11T16:17:29-06:00
+
+    Add delete confirmation for sticky notes
+    
+    Introduces a confirmation overlay when deleting notes that contain text, preventing accidental deletion. Notes without text are deleted immediately. Also adds a delete button to each note and improves UI feedback.
+
+46	5	app/sticky-notes/page.tsx
+
+commit 404133f1084c39028215b13cda6fdaf900bbffca
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-11T16:38:40-06:00
+
+    Update ascii-cam to matrix system
+    
+    Makes animation slower and fixes the freeze button.
+
+39	25	app/{ascii-cam => matrix-system}/page.tsx
+ rename app/{ascii-cam => matrix-system}/page.tsx (75%)
+
+commit 4fa477ded147f2aca120704b7f32712cb134ae8a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-11T16:49:02-06:00
+
+    Add more emoji rains
+    
+    Added over 20 emoji rains to the page.
+
+23	7	app/emoji-rain/page.tsx
+
+commit 4fe3c5c0c971928013f484e1a72a2fc5f29c3877
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-11T17:04:07-06:00
+
+    Add quotes to paper-editorial
+    
+    Added over 100 quotes to paper-editorial.
+
+100	3	app/paper-editorial/page.tsx
+
+commit 73a45fe28aaf01f1ffbf69333b23450e28375e30
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-11T17:08:20-06:00
+
+    Add new text to decrypt
+    
+    Made the animation faster for decrypting. Made it so hover over text to decrpyt. Added large text block to decrypt.
+
+46	16	app/text-scramble/page.tsx
+
+commit 469441b23f37a324202ba4ec65193e1ad82b3dbe
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-11T22:25:16-06:00
+
+    Update glass-morphism
+    
+    Made glass morphism look better and display a css preview.
+
+184	55	app/glass-morphism/page.tsx
+
+commit b631683c6f46f60aab3ee12f605a865d665fd80f
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-11T22:49:44-06:00
+
+    Update pixel-art
+    
+    Add higher grid size and more colors. Also add more tools such as fill, grid, undo and redo.
+
+325	62	app/pixel-art/page.tsx
+
+commit be4bf86c1ed62498b15562d67e711eb3223379bf
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-12T02:57:19-06:00
+
+    Update submit to nothing
+    
+    Updated name of neo-brutalism to submit to nothing. Also made the interface more readable and clear.
+
+0	56	app/neo-brutalism/page.tsx
+2	2	app/page.tsx
+94	0	app/submit-to-nothing/page.tsx
+ delete mode 100644 app/neo-brutalism/page.tsx
+ create mode 100644 app/submit-to-nothing/page.tsx
+
+commit bd03e2bd8e0506776bf68d5db7b16b3e9b29d992
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-12T03:23:31-06:00
+
+    Update olo-shell and rename pages
+    
+    Rename olo-shell to olo-terminal and add more jokes. Renamed various pages to better reflect their purpose and features. Updated git ignore.
+
+1	0	.gitignore
+0	0	app/{dark-dashboard => click-speed-test}/page.tsx
+0	0	app/{paper-editorial => daily-oracle}/page.tsx
+0	0	app/{minimal-mono => focus-timer}/page.tsx
+0	0	app/{matrix-system => matrix-rain}/page.tsx
+0	0	app/{pastel-dream => mindful-breathe}/page.tsx
+3	35	app/{olo-shell => olo-terminal}/page.tsx
+5	1	app/{olo-shell => olo-terminal}/utils.ts
+7	7	app/page.tsx
+0	0	app/{brutalist => shout-box}/page.tsx
+ rename app/{dark-dashboard => click-speed-test}/page.tsx (100%)
+ rename app/{paper-editorial => daily-oracle}/page.tsx (100%)
+ rename app/{minimal-mono => focus-timer}/page.tsx (100%)
+ rename app/{matrix-system => matrix-rain}/page.tsx (100%)
+ rename app/{pastel-dream => mindful-breathe}/page.tsx (100%)
+ rename app/{olo-shell => olo-terminal}/page.tsx (87%)
+ rename app/{olo-shell => olo-terminal}/utils.ts (84%)
+ rename app/{brutalist => shout-box}/page.tsx (100%)
+
+commit 90ac8191b8f2f96f0efabc6e921da7598c552723
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-12T04:08:07-06:00
+
+    Updat beat maker to use tone.js
+    
+    Update beat maker to use synthesized drums and tone.js playback.
+
+337	137	app/beat-maker/page.tsx
+2	1	package.json
+35	0	pnpm-lock.yaml
+
+commit 1d01ba181b9c993e678352b6ab2800ee2b171377
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-12T12:46:07-06:00
+
+    Overhaul beat-maker
+    
+    Changed color scheme and added a mixer at the bottom of the page for individual faders for each track.
+
+308	106	app/beat-maker/page.tsx
+
+commit b1da7059020eb408856f05d626c0b267b010ba7b
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-12T13:23:45-06:00
+
+    Add beat-maker features
+    
+    Added a new swing slider, integrated preset loading, and introduced per-fader mute/solo buttons for improved control.
+
+152	4	app/beat-maker/page.tsx
+42	0	app/beat-maker/presets.ts
+ create mode 100644 app/beat-maker/presets.ts
+
+commit 86bba812951426a547eeb7a2ece13354d9cea225
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-12T14:17:00-06:00
+
+    Add more tracks to beat-maker
+    
+    Improved beat maker with additional tracks, updated drum sounds, and full preset support including tempo changes and a new default preset.
+
+169	34	app/beat-maker/page.tsx
+49	3	app/beat-maker/presets.ts
+
+commit 3a15e6bab6360e17113a2f89e54c5d772cc72643
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-12T14:25:52-06:00
+
+    Update favico and remove comments
+
+1	8	app/beat-maker/page.tsx
+-	-	app/favicon.ico
+0	11	app/pixel-art/page.tsx
+
+commit 65f5052675d667f8dfea65ce81358968014f09bf
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-12T14:33:34-06:00
+
+    Update README.md
+
+42	23	README.md
+
+commit 458b010def9941aa46517ef819306e07659e5079
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-15T21:30:16-06:00
+
+    Update meta data and thumbnail
+
+9	12	app/layout.tsx
+-	-	public/thumbnail.jpg
+ create mode 100644 public/thumbnail.jpg
+
+commit bde8f3790c97c850db6e60979bb7595a1126a933
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-16T00:53:59-06:00
+
+    Update mobile view for pixel-art
+    
+    Made the mobile view more responsive for pixel-art. Also fixed typo in description.
+
+1	1	app/layout.tsx
+55	11	app/pixel-art/page.tsx
+
+commit f1dfa36ae52907f40c1b2adaca32e558a80f75bb
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-16T01:01:38-06:00
+
+    Update mobile controls for hypno-spiral
+
+16	1	app/hypno-spiral/page.tsx
+
+commit 252aa63051bfe8189cdb310978d73c81f04dd941
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-16T15:21:43-06:00
+
+    Update mobile responsiveness
+    
+    Improved mobile responsiveness across gravity-box and beat maker. Added new gravity-box controls, close buttons for sticky notes, and improved mobile note spawning. Fixed beat maker glitches. Added animated dancing text to Party Mode on the confetti page.
+
+277	132	app/beat-maker/page.tsx
+1	1	app/beat-maker/presets.ts
+1	1	app/click-speed-test/page.tsx
+18	4	app/confetti-cannon/page.tsx
+14	0	app/globals.css
+174	10	app/gravity-box/page.tsx
+1	0	app/layout.tsx
+1	1	app/matrix-rain/page.tsx
+1	1	app/shout-box/page.tsx
+117	72	app/sticky-notes/page.tsx
+
+commit 9c90e0973b3b23a46015d66d62198ee64e18b3b0
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-16T16:00:11-06:00
+
+    Update comments
+
+3	22	app/beat-maker/page.tsx
+1	1	app/confetti-cannon/page.tsx
+0	3	app/emoji-rain/page.tsx
+1	4	app/focus-timer/page.tsx
+0	7	app/glass-morphism/page.tsx
+6	18	app/gravity-box/page.tsx
+1	7	app/matrix-rain/page.tsx
+0	21	app/neon-cyber/page.tsx
+0	6	app/olo-terminal/page.tsx
+0	1	app/page.tsx
+2	8	app/pixel-art/page.tsx
+
+commit 8cbfb07f7e93e4878b1c939056b24e17836ac9f8
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-17T15:00:25-06:00
+
+    Fix comments
+
+1	0	app/focus-timer/page.tsx
+1	0	app/gravity-box/page.tsx
+1	0	app/matrix-rain/page.tsx
+13	0	app/neon-cyber/page.tsx
+4	0	app/olo-terminal/page.tsx
+
+commit f74d293bb3fdac1c1d8cf5fde4f4da5a61ac5087
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2025-12-17T18:22:39-06:00
+
+    Add new websites
+    
+    Added new mini-websites, including typing, sorting, particle, solar system, synth, visual, and game-style pages. Integrated each as its own routed page and updated the main app structure to support the expanded collection.
+
+200	0	app/arcana-tarot/page.tsx
+248	0	app/ascii-vision/page.tsx
+222	0	app/mandala-maker/page.tsx
+334	0	app/morse-telegraph/page.tsx
+455	0	app/pad-synth/page.tsx
+11	0	app/page.tsx
+250	0	app/particle-collider/page.tsx
+293	0	app/solar-system/page.tsx
+518	0	app/sorting-race/page.tsx
+236	0	app/style-pet/page.tsx
+781	0	app/typing-racer/page.tsx
+ create mode 100644 app/arcana-tarot/page.tsx
+ create mode 100644 app/ascii-vision/page.tsx
+ create mode 100644 app/mandala-maker/page.tsx
+ create mode 100644 app/morse-telegraph/page.tsx
+ create mode 100644 app/pad-synth/page.tsx
+ create mode 100644 app/particle-collider/page.tsx
+ create mode 100644 app/solar-system/page.tsx
+ create mode 100644 app/sorting-race/page.tsx
+ create mode 100644 app/style-pet/page.tsx
+ create mode 100644 app/typing-racer/page.tsx
+
+commit 04fc742f39f2e366e3b95c873c1c459fa3961e3d
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-05-08T00:26:18-05:00
+
+    Update mandala-maker
+    
+    Mandala maker now has UI toggle button
+
+16	2	app/mandala-maker/page.tsx
+
+commit 38fc631a4f692f83e44ea3f0962f34ce489f0f16
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-05-08T00:34:04-05:00
+
+    Upgrade dependencies and add pnpm workspace
+
+12	12	package.json
+809	911	pnpm-lock.yaml
+9	0	pnpm-workspace.yaml
+ create mode 100644 pnpm-workspace.yaml
+
+commit a4c3a19f5a3fd043c49065215275853988a7c36f
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-05-24T13:56:16-05:00
+
+    Add Node 24 version and enable pnpm allowBuilds
+    
+    Add a .node-version file pinning Node to 24. Update pnpm-workspace.yaml to enable allowBuilds for the sharp and unrs-resolver packages.
+
+1	0	.node-version
+3	0	pnpm-workspace.yaml
+ create mode 100644 .node-version
+
+commit 963ca23d8caabb484308f22ec8648665185c1525
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-03T19:21:13-05:00
+
+    Tone down neon UI glow
+    
+    Softens glow, shadow, and highlight intensity across several interactive pages. Also normalizes a few header labels and removes redundant status/footer copy from the Matrix Rain and Solar System views.
+
+1	1	app/gravity-box/page.tsx
+1	7	app/matrix-rain/page.tsx
+52	58	app/neon-cyber/page.tsx
+6	6	app/particle-collider/page.tsx
+1	9	app/solar-system/page.tsx
+1	1	app/sorting-race/page.tsx
+
+commit 0932163200f2fef9d02bab1f7d12a4a0fdcff5a0
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-03T19:25:39-05:00
+
+    Simplify dev script and bump dependencies
+
+9	9	package.json
+702	597	pnpm-lock.yaml
+
+commit acff2503a4e5625f62e11f15259b77e221868769
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-03T19:27:55-05:00
+
+    Add Prettier and run formatter
+
+1	1	app/arcana-tarot/page.tsx
+8	6	app/ascii-vision/page.tsx
+15	15	app/beat-maker/page.tsx
+4	1	app/beat-maker/presets.ts
+1	1	app/matrix-rain/page.tsx
+1	1	app/morse-telegraph/page.tsx
+5	5	app/neon-cyber/page.tsx
+26	14	app/olo-terminal/utils.ts
+16	16	app/pad-synth/page.tsx
+1	1	app/particle-collider/page.tsx
+3	3	app/pixel-art/page.tsx
+10	10	app/sorting-race/page.tsx
+4	4	app/style-pet/page.tsx
+2	2	app/text-scramble/page.tsx
+6	5	app/typing-racer/page.tsx
+1	3	next.config.ts
+1	0	package.json
+2620	1335	pnpm-lock.yaml
+8	8	pnpm-workspace.yaml
+
+commit 782777b7ded308970d56dea71508a28d2255531f
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-03T19:32:14-05:00
+
+    Move app into src and fix alias
+    
+    Relocate the Next.js app routes and shared files into `src/app`, move `favicon.ico` to `public`, and update the `@/*` path alias to point at `src`. This aligns the project with a `src`-based layout without changing app behavior.
+
+-	-	{app => public}/favicon.ico
+0	0	{app => src/app}/arcana-tarot/page.tsx
+0	0	{app => src/app}/ascii-vision/page.tsx
+0	0	{app => src/app}/beat-maker/page.tsx
+0	0	{app => src/app}/beat-maker/presets.ts
+0	0	{app => src/app}/click-speed-test/page.tsx
+0	0	{app => src/app}/confetti-cannon/page.tsx
+0	0	{app => src/app}/daily-oracle/page.tsx
+0	0	{app => src/app}/emoji-rain/page.tsx
+0	0	{app => src/app}/focus-timer/page.tsx
+0	0	{app => src/app}/glass-morphism/page.tsx
+0	0	{app => src/app}/glitch-chaos/page.tsx
+0	0	{app => src/app}/globals.css
+0	0	{app => src/app}/gravity-box/page.tsx
+0	0	{app => src/app}/hypno-spiral/page.tsx
+0	0	{app => src/app}/layout.tsx
+0	0	{app => src/app}/mandala-maker/page.tsx
+0	0	{app => src/app}/matrix-rain/page.tsx
+0	0	{app => src/app}/mindful-breathe/page.tsx
+0	0	{app => src/app}/morse-telegraph/page.tsx
+0	0	{app => src/app}/nature-zen/page.tsx
+0	0	{app => src/app}/neon-cyber/page.tsx
+0	0	{app => src/app}/olo-terminal/page.tsx
+0	0	{app => src/app}/olo-terminal/utils.ts
+0	0	{app => src/app}/pad-synth/page.tsx
+0	0	{app => src/app}/page.tsx
+0	0	{app => src/app}/particle-collider/page.tsx
+0	0	{app => src/app}/pixel-art/page.tsx
+0	0	{app => src/app}/shout-box/page.tsx
+0	0	{app => src/app}/solar-system/page.tsx
+0	0	{app => src/app}/sorting-race/page.tsx
+0	0	{app => src/app}/sticky-notes/page.tsx
+0	0	{app => src/app}/style-pet/page.tsx
+0	0	{app => src/app}/submit-to-nothing/page.tsx
+0	0	{app => src/app}/text-scramble/page.tsx
+0	0	{app => src/app}/typing-racer/page.tsx
+1	1	tsconfig.json
+ rename {app => public}/favicon.ico (100%)
+ rename {app => src/app}/arcana-tarot/page.tsx (100%)
+ rename {app => src/app}/ascii-vision/page.tsx (100%)
+ rename {app => src/app}/beat-maker/page.tsx (100%)
+ rename {app => src/app}/beat-maker/presets.ts (100%)
+ rename {app => src/app}/click-speed-test/page.tsx (100%)
+ rename {app => src/app}/confetti-cannon/page.tsx (100%)
+ rename {app => src/app}/daily-oracle/page.tsx (100%)
+ rename {app => src/app}/emoji-rain/page.tsx (100%)
+ rename {app => src/app}/focus-timer/page.tsx (100%)
+ rename {app => src/app}/glass-morphism/page.tsx (100%)
+ rename {app => src/app}/glitch-chaos/page.tsx (100%)
+ rename {app => src/app}/globals.css (100%)
+ rename {app => src/app}/gravity-box/page.tsx (100%)
+ rename {app => src/app}/hypno-spiral/page.tsx (100%)
+ rename {app => src/app}/layout.tsx (100%)
+ rename {app => src/app}/mandala-maker/page.tsx (100%)
+ rename {app => src/app}/matrix-rain/page.tsx (100%)
+ rename {app => src/app}/mindful-breathe/page.tsx (100%)
+ rename {app => src/app}/morse-telegraph/page.tsx (100%)
+ rename {app => src/app}/nature-zen/page.tsx (100%)
+ rename {app => src/app}/neon-cyber/page.tsx (100%)
+ rename {app => src/app}/olo-terminal/page.tsx (100%)
+ rename {app => src/app}/olo-terminal/utils.ts (100%)
+ rename {app => src/app}/pad-synth/page.tsx (100%)
+ rename {app => src/app}/page.tsx (100%)
+ rename {app => src/app}/particle-collider/page.tsx (100%)
+ rename {app => src/app}/pixel-art/page.tsx (100%)
+ rename {app => src/app}/shout-box/page.tsx (100%)
+ rename {app => src/app}/solar-system/page.tsx (100%)
+ rename {app => src/app}/sorting-race/page.tsx (100%)
+ rename {app => src/app}/sticky-notes/page.tsx (100%)
+ rename {app => src/app}/style-pet/page.tsx (100%)
+ rename {app => src/app}/submit-to-nothing/page.tsx (100%)
+ rename {app => src/app}/text-scramble/page.tsx (100%)
+ rename {app => src/app}/typing-racer/page.tsx (100%)
+
+commit 56cd3d1ad1a6c1562853ca911e1b4120f32ea983
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-03T19:38:14-05:00
+
+    Refine ASCII vision theming
+    
+    Switch the ASCII vision page to a customizable color theme with preset swatches and a color picker, and adjust the layout and text sizing so the output fills the screen more consistently.
+
+62	74	src/app/ascii-vision/page.tsx
+
+commit 8af48d1df0de588bb9230059d5e964b0af51c775
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T03:08:41-05:00
+
+    Refactor beat-maker, UI polish & minor fixes
+    
+    Refactor the Beat Maker with a streamlined audio engine, improved sequencing, enhanced track management, and a redesigned responsive interface. Optimize playback performance, interaction handling, and state management while adding support for configurable tracks and a more polished mixer experience. Also apply minor styling improvements to ASCII Vision and fix Text Scramble state initialization when the displayed text changes.
+
+26	19	src/app/ascii-vision/page.tsx
+645	544	src/app/beat-maker/page.tsx
+13	7	src/app/text-scramble/page.tsx
+
+commit b717c418d0b383a76917e4eb60f991206e748764
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T03:17:23-05:00
+
+    Tighten beat maker spacing and colors
+    
+    Refines the beat maker layout with slightly denser spacing across the header, mixer, and sequencer grid, and softens the OPEN HAT accent color for better visual balance.
+
+12	12	src/app/beat-maker/page.tsx
+
+commit bdf645ece8a60df611b3a66283daa03d59edcc31
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T03:33:06-05:00
+
+    Refine UI styling and redesign slider control
+    
+    Update glass-morphism component with corrected typography and improved styling. Enhance mindful-breathe component with lighter color palette, added header section, and custom-styled range slider for better UX.
+
+3	3	src/app/glass-morphism/page.tsx
+52	25	src/app/mindful-breathe/page.tsx
+
+commit 70bbb0a878416b817041024051975a952140af40
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T04:01:09-05:00
+
+    Tweak dont click me page and mindful page
+    
+    Replace the simple framer-motion moving button with a DOM-driven evasive button (proximity detection, escape jumps, yielding state, click counter) and add a lightweight TV static canvas + scanlines to src/app/glitch-chaos/page.tsx. Introduces refs, hooks, and constants for performance and smoother behavior. Also applied small formatting and class adjustments in src/app/mindful-breathe/page.tsx (whitespace cleanup and gradient class name changes).
+
+213	0	src/app/dont-click-me/page.tsx
+0	53	src/app/glitch-chaos/page.tsx
+9	8	src/app/mindful-breathe/page.tsx
+1	1	src/app/page.tsx
+ create mode 100644 src/app/dont-click-me/page.tsx
+ delete mode 100644 src/app/glitch-chaos/page.tsx
+
+commit 9780b845e9de7db2f14cbf13fc6f64a1f8c19d28
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T04:11:32-05:00
+
+    Add animated Style-Pet console
+    
+    Rebuilds the Style-Pet page into a richer virtual pet console with animated moods, stats, customization controls, sound effects, sleep/death states, and a revive flow.
+
+894	187	src/app/style-pet/page.tsx
+
+commit 6e66f21ad181f27f21941ae670d3cb77df2c23da
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T04:32:31-05:00
+
+    Redesign form with animated singularity theme
+    
+    Transform the complaint form into an interactive void experience with an animated star field, multi-stage submission sequence, particle effects, and a dynamic black hole visualization. Add terminal-style status logging, gravity-driven background animation, and a dark space-inspired theme to create an immersive experience that visually consumes each submission.
+
+0	1	src/app/page.tsx
+0	36	src/app/shout-box/page.tsx
+539	71	src/app/submit-to-nothing/page.tsx
+ delete mode 100644 src/app/shout-box/page.tsx
+
+commit 03582ecd4234c76be687fb088d524630e4541346
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T04:53:10-05:00
+
+    Rebuild typing racer as passage-based AI racing game
+    
+    Completely redesigned the typing racer game from word-by-word typing to passage-based racing format. Added AI competitor vehicles that race on parallel tracks with dynamic progress tracking. Redesigned UI from Windows 95 vaporwave aesthetic to modern cyberpunk neon grid style. Added countdown state with audio feedback via Web Audio API. Changed scoring system from combo multipliers to real-time WPM and accuracy tracking. Also enhanced the submit button styling in submit-to-nothing page with improved hover effects and glow shadows.
+
+1	1	src/app/submit-to-nothing/page.tsx
+686	668	src/app/typing-racer/page.tsx
+
+commit 42d978467c3c7c11a468389c2cbbbb0b5b404568
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T14:58:04-05:00
+
+    Enhance beat maker and click speed test features
+    
+    Beat Maker: Fix pause/resume behavior by using pause instead of stop, remove unnecessary step reset, and add Tone.Draw.cancel() to prevent memory leaks.
+    
+    Click Speed Test: Complete redesign with multi-duration modes (5s, 10s, 30s), tiered achievement milestones, session history tracking, per-second pace visualization, and per-duration high score records.
+
+4	3	src/app/beat-maker/page.tsx
+372	88	src/app/click-speed-test/page.tsx
+
+commit 783e6e2020d6b3cda7343aab80c61c22f0e621ec
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T15:03:20-05:00
+
+    Enhance confetti cannon animation
+    
+    Keep the party state active across repeat clicks, add floating emoji effects, and improve the headline and background animations for a more lively confetti experience.
+
+43	8	src/app/confetti-cannon/page.tsx
+49	3	src/app/globals.css
+
+commit 1b370b1c561214ed07d11adde0027172d9e32ed0
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T15:21:38-05:00
+
+    Add Magic 8 Ball page
+    
+    Replace the Daily Oracle fortune page with an interactive Magic Eight Ball. Adds the shake animation, answer reveal flow, and reset control, along with the supporting global CSS animation.
+
+0	169	src/app/daily-oracle/page.tsx
+17	0	src/app/globals.css
+200	0	src/app/magic-8-ball/page.tsx
+ delete mode 100644 src/app/daily-oracle/page.tsx
+ create mode 100644 src/app/magic-8-ball/page.tsx
+
+commit 13bea4a82bffa243cbf11001879b1ddc6cb7cd2d
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T15:30:25-05:00
+
+    Add intensity slider to emoji rain
+    
+    Make the emoji rain page more interactive with a configurable spawn intensity slider, mode-based background gradients, and dynamic header styling. Also adds resize handling for the canvas and custom range slider styles.
+
+112	21	src/app/emoji-rain/page.tsx
+45	0	src/app/globals.css
+
+commit 014d779639fbde6ead0264d48ff444544afdc5d0
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T15:42:15-05:00
+
+    Expand tarot cards with detailed reveal modal
+    
+    Replaces the simplified tarot dataset with full card interpretations and adds per-card metadata (element, astrology, symbols) to support deeper readings. The card UI now includes a Details action that opens a styled modal overlay showing each cardΓÇÖs short meaning, full mystical interpretation, and symbolic breakdown, along with spacing and layout refinements for the page header/cards and cleanup of unused icon usage.
+
+339	37	src/app/arcana-tarot/page.tsx
+
+commit 03437ee7a9eabae7482b75da732e4b6fda6f6c0a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T15:49:58-05:00
+
+    Add adjustable gravity box controls
+    
+    Make the gravity sandbox configurable with live width and height sliders, dynamic wall rebuilding, and hold-to-repeat add/remove buttons. Also adds dedicated slider styling and updates the scene copy to match the new box-focused layout.
+
+48	0	src/app/globals.css
+173	44	src/app/gravity-box/page.tsx
+
+commit db5ab04a908592c94c3206d7f176f2055b83f47a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T15:56:13-05:00
+
+    Add mandala undo and layout toggle
+    
+    Adds undo/redo history and a square/fullscreen layout toggle to Mandala Maker, with updated canvas resizing and control styling. Also refines slider/color picker styles and updates the Hypno Spiral prompt copy.
+
+78	0	src/app/globals.css
+1	1	src/app/hypno-spiral/page.tsx
+200	30	src/app/mandala-maker/page.tsx
+
+commit a6e558b9e0a201e1f36fc829a697fe7ae99763da
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T16:00:42-05:00
+
+    Add interactive hacker terminal
+    
+    Turn the matrix rain page into an input-driven terminal scene with typed source reveal, tap-accelerated rain, and an access-granted reset overlay.
+
+218	42	src/app/matrix-rain/page.tsx
+
+commit fb9a12b22c6abca8bded7a276ffff82e7d65c8d0
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T16:02:57-05:00
+
+    Refine mindful breathe layout
+    
+    Reworks the breathing page into a more responsive, centered layout with dynamic spacing, a resized breathing animation, and a cleaner controls card that fits better on smaller screens.
+
+76	61	src/app/mindful-breathe/page.tsx
+
+commit af2a09d1431c27204d8698e249f5b59300725df6
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T16:09:14-05:00
+
+    Polish morse telegraph UI
+    
+    Rename the page to `morse-code`, add a Morse reference sheet modal, and tighten manual tap handling to avoid duplicate end events. Also update the main heading and spacing to match the refreshed UI.
+
+68	4	src/app/{morse-telegraph => morse-code}/page.tsx
+ rename src/app/{morse-telegraph => morse-code}/page.tsx (77%)
+
+commit c0d8a594cb8bd5d2012be87b9ae65da6b2ea55d1
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-04T22:39:11-05:00
+
+    Expand nature zen garden UI
+    
+    Rebuild the Nature Zen page into a full interactive garden experience with canvas raking, planting tools, themed sand backgrounds, undo/redo history, audio ambience, import/export, and mobile touch support.
+
+1742	39	src/app/nature-zen/page.tsx
+
+commit 168289c31eec4368a318a081e3ed5cdbb9ea4234
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-05T00:31:43-05:00
+
+    Enhance Olo terminal: shell features & UI
+    
+    Large refactor that turns the terminal into a full-featured in-browser shell: adds ShellContext types, command registry and many built-in handlers (ls, cd, cat, mkdir, touch, rm, sudo, piping, redirection, etc.), robust argument/token parsing, env var expansion, history expansion, tab-completion, sudo/password flow, command execution pipeline, and filesystem mutation helpers. Implements boot sequence, kernel-panic recovery, Matrix canvas animation, improved prompt with git detection, uptime/browser info, and refined UI/styles. Also augments FILESYSTEM metadata (permissions, owner, group, size, modifiedDate) and updates sample file contents.
+
+1714	272	src/app/olo-terminal/page.tsx
+36	1	src/app/olo-terminal/utils.ts
+
+commit 136648a33cf5a3c5d9e6d5f2e0cadca0e5c3a6c9
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-05T00:35:46-05:00
+
+    Make Pad Synth responsive
+    
+    Tightens spacing and sizing on smaller screens, and adds custom range slider styling so the Pad Synth layout stays usable and consistent across breakpoints.
+
+94	33	src/app/pad-synth/page.tsx
+
+commit 6e7cbd092c0c8b9ab83701a4e036a63e66c1d44a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-05T00:43:48-05:00
+
+    Tighten sorting race layout
+    
+    Compact the sorting race page to better fit smaller viewports by reducing spacing, shrinking controls, and constraining the visualizer cards. Move the N/delay status into the header and remove the separate footer stats line.
+
+23	27	src/app/sorting-race/page.tsx
+
+commit 7779318032bacc06f566079727bb12fdd7528b31
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-05T00:50:06-05:00
+
+    Add resizable grid and PNG export
+    
+    Introduce resizable canvas and PNG export. Replace static GRID_SIZE with DEFAULT_SIZE and add gridSize state; initialize grid and history dynamically and reset history/index on size change. Update floodFill, grid indexing, clear action and grid CSS to use gridSize. Add exportToPNG (exports non-default pixels as PNG with transparent white treated as transparent) and Download button (imported Download icon). Add grid-size selector buttons (16/32/64) and display size in header. Minor cleanups: import React and remove stale comments/paragraph.
+
+79	22	src/app/pixel-art/page.tsx
+
+commit f1b1b88ea33b638bf5b8b5999160366df7eb7e50
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-05T00:52:03-05:00
+
+    Add 8px pixel art grid option
+    
+    Adds an 8px grid size to the pixel art selector and adjusts the layout to fit the extra option.
+
+2	2	src/app/pixel-art/page.tsx
+
+commit 66b2451287ddc6603bb6ba0bde24096a5f328df4
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-05T16:01:49-05:00
+
+    Enhance emoji rain customization
+    
+    Adds multi-category emoji selection, a falling-speed control, and broader emoji sets and gradients. The page now supports mixed emoji pools, animated all-selected styling, and render/animation optimizations for smoother updates.
+
+682	122	src/app/emoji-rain/page.tsx
+
+commit 7531d97874be95550e14d20a5ae5281c71512d36
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-05T16:03:23-05:00
+
+    Update header and emphasize startup message
+    
+    Rename top banner title from `matrix_core` to `matrix_rain` to match the page branding. Wrap the startup log text `[INFO] BEGIN KEYBOARD INPUT OR SCREEN TAPS TO DECOMPILE...` in a styled `<span>` to increase emphasis and apply the green-bold styling. Changes made in src/app/matrix-rain/page.tsx.
+
+2	2	src/app/matrix-rain/page.tsx
+
+commit 0e682c8f6942674d73f665d44a070228d278b9b6
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-05T16:32:26-05:00
+
+    Add water brush and UI polish
+    
+    Adds a new water brush to Nature Zen with its own stroke rendering, sound, and controls. Also refines Neon Cyber with copy buttons and flatter panels, warns before wiping Pixel Art grids, enables double-click note placement in Sticky Notes, and improves Text Scramble pacing and space handling.
+
+275	80	src/app/nature-zen/page.tsx
+136	73	src/app/neon-cyber/page.tsx
+10	0	src/app/pixel-art/page.tsx
+38	10	src/app/sticky-notes/page.tsx
+18	7	src/app/text-scramble/page.tsx
+
+commit 5682052812cb78c0b39d89a6a14eae4d2506c5a7
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-05T17:08:44-05:00
+
+    Rename experiment routes
+    
+    Rename several app routes to their new slugs, update the homepage page list to match, and remove the deleted glass morphism entry from metadata and navigation.
+
+0	195	src/app/glass-morphism/page.tsx
+3	3	src/app/layout.tsx
+7	8	src/app/page.tsx
+1	1	src/app/{confetti-cannon => party-mode}/page.tsx
+1	1	src/app/{submit-to-nothing => submit-to-void}/page.tsx
+1	1	src/app/{text-scramble => text-decrypt}/page.tsx
+1	1	src/app/{neon-cyber => text-encrypt}/page.tsx
+1	1	src/app/{nature-zen => zen-garden}/page.tsx
+ delete mode 100644 src/app/glass-morphism/page.tsx
+ rename src/app/{confetti-cannon => party-mode}/page.tsx (98%)
+ rename src/app/{submit-to-nothing => submit-to-void}/page.tsx (99%)
+ rename src/app/{text-scramble => text-decrypt}/page.tsx (99%)
+ rename src/app/{neon-cyber => text-encrypt}/page.tsx (99%)
+ rename src/app/{nature-zen => zen-garden}/page.tsx (99%)
+
+commit bb8b690a99813d2657f43c5a4a943b4b6e0fed9f
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-06T18:57:43-05:00
+
+    Add Fractal Explorer page and route
+    
+    Introduce a new interactive Fractal Explorer at src/app/fractal-explorer/page.tsx. Implements a progressive CPU renderer (fast preview ΓåÆ striped full-res), Mandelbrot/Julia modes, mini Julia preview, palettes, landmarks fly-to, zoom/pan interactions, settings UI, export PNG, and an optional Tone.js-based audio sonification engine (loaded dynamically to avoid SSR issues). Also updates src/app/page.tsx to expose the new "/fractal-explorer" route.
+
+1654	0	src/app/fractal-explorer/page.tsx
+3	0	src/app/page.tsx
+ create mode 100644 src/app/fractal-explorer/page.tsx
+
+commit 4fab3510ee83e249f49d68b25aee95349ae00e24
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-06T19:36:17-05:00
+
+    Add Lofi Pixel Study page and assets
+    
+    Introduce a new Lofi Pixel Study feature: adds public/lofi-pixel-study audio (mp3) and background image assets, a client UI component (LofiPixelStudyClient.tsx) with a pixel-art styled audio player, scene selector, countdown timer, and retro CRT filter, and a server page (page.tsx) that auto-discovers audio files in public/lofi-pixel-study and passes them as tracks to the client. Provides playback controls, volume/loop, hover preview for scenes, and integer-scaling pixel rendering for backgrounds.
+
+-	-	public/lofi-pixel-study/Apalon Beats - Lofi Music.mp3
+-	-	public/lofi-pixel-study/Fassounds - Good Night Lofi.mp3
+-	-	public/lofi-pixel-study/Fassounds - Lofi Study Calm Peaceful Chill Hop.mp3
+-	-	public/lofi-pixel-study/Leberch - Lofi Hip Hop.mp3
+-	-	public/lofi-pixel-study/MondaMusic - Lofi Chill.mp3
+-	-	public/lofi-pixel-study/PrettyJohn1 - Lofi Music.mp3
+-	-	public/lofi-pixel-study/Watermello - Lofi Chill.mp3
+-	-	public/lofi-pixel-study/Watermello - Lofi Girl.mp3
+-	-	public/lofi-pixel-study/lofi-cafe-day-1.png
+-	-	public/lofi-pixel-study/lofi-cafe-day-2.png
+-	-	public/lofi-pixel-study/lofi-cafe-day-3.png
+-	-	public/lofi-pixel-study/lofi-cafe-night-1.png
+-	-	public/lofi-pixel-study/lofi-cafe-night-2.png
+-	-	public/lofi-pixel-study/lofi-cafe-rain-1.png
+-	-	public/lofi-pixel-study/lofi-cafe-rain-2.png
+-	-	public/lofi-pixel-study/lofi-cafe-rain-3.png
+746	0	src/app/lofi-pixel-study/LofiPixelStudyClient.tsx
+39	0	src/app/lofi-pixel-study/page.tsx
+ create mode 100644 public/lofi-pixel-study/Apalon Beats - Lofi Music.mp3
+ create mode 100644 public/lofi-pixel-study/Fassounds - Good Night Lofi.mp3
+ create mode 100644 public/lofi-pixel-study/Fassounds - Lofi Study Calm Peaceful Chill Hop.mp3
+ create mode 100644 public/lofi-pixel-study/Leberch - Lofi Hip Hop.mp3
+ create mode 100644 public/lofi-pixel-study/MondaMusic - Lofi Chill.mp3
+ create mode 100644 public/lofi-pixel-study/PrettyJohn1 - Lofi Music.mp3
+ create mode 100644 public/lofi-pixel-study/Watermello - Lofi Chill.mp3
+ create mode 100644 public/lofi-pixel-study/Watermello - Lofi Girl.mp3
+ create mode 100644 public/lofi-pixel-study/lofi-cafe-day-1.png
+ create mode 100644 public/lofi-pixel-study/lofi-cafe-day-2.png
+ create mode 100644 public/lofi-pixel-study/lofi-cafe-day-3.png
+ create mode 100644 public/lofi-pixel-study/lofi-cafe-night-1.png
+ create mode 100644 public/lofi-pixel-study/lofi-cafe-night-2.png
+ create mode 100644 public/lofi-pixel-study/lofi-cafe-rain-1.png
+ create mode 100644 public/lofi-pixel-study/lofi-cafe-rain-2.png
+ create mode 100644 public/lofi-pixel-study/lofi-cafe-rain-3.png
+ create mode 100644 src/app/lofi-pixel-study/LofiPixelStudyClient.tsx
+ create mode 100644 src/app/lofi-pixel-study/page.tsx
+
+commit 06e012e7b054740a97ad3e52018c158f3c68168a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-06T21:00:27-05:00
+
+    Normalize lofi tracks and polish playback
+    
+    Add a PowerShell ffmpeg normalization script and switch the lofi study page to use the normalized audio set. Also default playback to a specific track when available and fade background image changes for smoother transitions.
+
+2	1	package.json
+-	-	public/lofi-pixel-study/Apalon Beats - Lofi Music.mp3
+-	-	public/lofi-pixel-study/Fassounds - Good Night Lofi.mp3
+-	-	public/lofi-pixel-study/Fassounds - Lofi Study Calm Peaceful Chill Hop.mp3
+-	-	public/lofi-pixel-study/Leberch - Lofi Hip Hop.mp3
+-	-	public/lofi-pixel-study/MondaMusic - Lofi Chill.mp3
+-	-	public/lofi-pixel-study/PrettyJohn1 - Lofi Music.mp3
+-	-	public/lofi-pixel-study/Watermello - Lofi Chill.mp3
+-	-	public/lofi-pixel-study/Watermello - Lofi Girl.mp3
+-	-	public/lofi-pixel-study/normalized/Apalon Beats - Lofi Music.mp3
+-	-	public/lofi-pixel-study/normalized/Fassounds - Good Night Lofi.mp3
+-	-	public/lofi-pixel-study/normalized/Fassounds - Lofi Study.mp3
+-	-	public/lofi-pixel-study/normalized/Leberch - Lofi Hip Hop.mp3
+-	-	public/lofi-pixel-study/normalized/MondaMusic - Lofi Chill.mp3
+-	-	public/lofi-pixel-study/normalized/PrettyJohn1 - Lofi Music.mp3
+-	-	public/lofi-pixel-study/normalized/Watermello - Lofi Chill.mp3
+-	-	public/lofi-pixel-study/normalized/Watermello - Lofi Girl.mp3
+152	0	scripts/Normalize-AudioLufs.ps1
+38	16	src/app/lofi-pixel-study/LofiPixelStudyClient.tsx
+8	2	src/app/lofi-pixel-study/page.tsx
+ delete mode 100644 public/lofi-pixel-study/Apalon Beats - Lofi Music.mp3
+ delete mode 100644 public/lofi-pixel-study/Fassounds - Good Night Lofi.mp3
+ delete mode 100644 public/lofi-pixel-study/Fassounds - Lofi Study Calm Peaceful Chill Hop.mp3
+ delete mode 100644 public/lofi-pixel-study/Leberch - Lofi Hip Hop.mp3
+ delete mode 100644 public/lofi-pixel-study/MondaMusic - Lofi Chill.mp3
+ delete mode 100644 public/lofi-pixel-study/PrettyJohn1 - Lofi Music.mp3
+ delete mode 100644 public/lofi-pixel-study/Watermello - Lofi Chill.mp3
+ delete mode 100644 public/lofi-pixel-study/Watermello - Lofi Girl.mp3
+ create mode 100644 public/lofi-pixel-study/normalized/Apalon Beats - Lofi Music.mp3
+ create mode 100644 public/lofi-pixel-study/normalized/Fassounds - Good Night Lofi.mp3
+ create mode 100644 public/lofi-pixel-study/normalized/Fassounds - Lofi Study.mp3
+ create mode 100644 public/lofi-pixel-study/normalized/Leberch - Lofi Hip Hop.mp3
+ create mode 100644 public/lofi-pixel-study/normalized/MondaMusic - Lofi Chill.mp3
+ create mode 100644 public/lofi-pixel-study/normalized/PrettyJohn1 - Lofi Music.mp3
+ create mode 100644 public/lofi-pixel-study/normalized/Watermello - Lofi Chill.mp3
+ create mode 100644 public/lofi-pixel-study/normalized/Watermello - Lofi Girl.mp3
+ create mode 100644 scripts/Normalize-AudioLufs.ps1
+
+commit 95304700fe43e60540b9bf9e0a6fc02f0529044a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-06T21:37:53-05:00
+
+    Add GPU WebGL2 renderer with CPU fallback
+    
+    Introduce a WebGL2 fractal renderer (vertex + high-precision fragment shader using double-double emulation) and try GPU rendering first. Add CPU fallback canvas for deep zooms or when GPU is unavailable, plus splitDouble helper, shader compilation/linking, uniform setup and resource cleanup. Add constants for iteration/zoom caps (MAX_SHADER_ITERATIONS, CPU_DEEP_ZOOM_THRESHOLD, CPU_MAX_ITERATIONS, MAX_RENDER_ITERATIONS, MAX_ZOOM) and map palettes for GPU. Modify render pipeline to prefer GPU, sync/size CPU canvas when used, cap iterations, clamp zoom, update download flow, and show UI hint when CPU precision mode is active.
+
+488	14	src/app/fractal-explorer/page.tsx
+
+commit ed18d60884359c02f16f1dfe369320fffa2e38ca
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-06T21:46:46-05:00
+
+    Refine Lofi UI layout and sizing
+    
+    Adjust responsive sizing and spacing in LofiPixelStudyClient: update pixel-box min-widths, make bottom dock relative, center audio controls, increase icon/button sizes, and tighten text/truncation. Also refine thumbnail grid max-heights and dialog max-width for better visual balance across breakpoints. These changes improve layout stability and touch targets on small/medium screens.
+
+15	15	src/app/lofi-pixel-study/LofiPixelStudyClient.tsx
+
+commit 6f6f0d594a7abd300abe62d3fe03d50a4e763e5c
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-06T22:35:15-05:00
+
+    Add polyrhythm visualizer page
+    
+    Add new polyrhythm visualizer page with circular and timeline visualization modes. Features audio playback with Web Audio API, BPM control (40-220), selectable rhythms (1-12), and keyboard shortcuts (space to play, M to mute, R to reset).
+
+1	0	src/app/page.tsx
+841	0	src/app/polyrhythm-visualizer/page.tsx
+ create mode 100644 src/app/polyrhythm-visualizer/page.tsx
+
+commit 7af753083f77d0c963acc074fe7315d4010a5fa7
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T00:14:06-05:00
+
+    Allow configurable dev origins
+    
+    Read `ALLOWED_DEV_ORIGINS` from the environment and pass it to Next.js `allowedDevOrigins` so local development can be configured without code changes.
+
+3	1	next.config.ts
+
+commit 4a2a699a08967503b67342cc8b401692d7c6981a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T00:15:09-05:00
+
+    Add touch/pointer support and Julia seed controls
+    
+    Replace mouse handlers with Pointer Events (down/move/up/cancel/leave) including pointer capture/release, drag-threshold and hasDragged logic to avoid accidental seed locks. Add recentTouchInteraction timer to ignore touch-triggered double-clicks. Support visualViewport for canvas sizing and listen to its resize/scroll. Add juliaCLocked state, JULIA_SEED_ADJUST_RANGE/JULIA_SEED_STEP constants, Reset Seed action, and constrained high-precision sliders for fine-tuning around the locked seed. Minor UI/CSS tweaks and cleanup (touch-related timer cleared on unmount).
+
+145	42	src/app/fractal-explorer/page.tsx
+
+commit 1469e5f2b919b0b69e149cced6b6ce38a6162f50
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T00:26:34-05:00
+
+    Add 3D and bloom visualizers (three.js)
+    
+    Add two new visualization modes: a SVG-based BloomVisualizer and a WebGL Orbit3DVisualizer (uses three.js). Update UI to include Bloom and 3D mode buttons and extend ViewMode union. Implement Orbit3D scene, nodes, rings, animation loop and proper disposal, plus a helper disposeThreeObject. Add three and @types/three to dependencies and update pnpm lockfile to include the new packages and lock changes.
+    
+    Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+
+2	0	package.json
+1390	2612	pnpm-lock.yaml
+356	2	src/app/polyrhythm-visualizer/page.tsx
+
+commit 7b56118024ecdf455948883a39f1bf4d4fe847ae
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T00:45:34-05:00
+
+    Refine app layouts with theme spacing
+    
+    Replaced several hard-coded pixel sizes and arbitrary values with consistent Tailwind spacing and sizing utilities across multiple interactive pages. This keeps the layouts aligned with the design system and makes future tuning easier.
+
+2	2	src/app/click-speed-test/page.tsx
+1	1	src/app/matrix-rain/page.tsx
+1	1	src/app/mindful-breathe/page.tsx
+3	3	src/app/morse-code/page.tsx
+2	2	src/app/pad-synth/page.tsx
+10	10	src/app/polyrhythm-visualizer/page.tsx
+1	1	src/app/solar-system/page.tsx
+2	2	src/app/sorting-race/page.tsx
+2	2	src/app/submit-to-void/page.tsx
+2	2	src/app/typing-racer/page.tsx
+
+commit 614a3102ae81ddd05b90cdcc0bb3a1bbfbaad560
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T03:42:47-05:00
+
+    Rebrand as Random Webs, refactor sites, add dev page
+    
+    Rename project from 'Random Web' to 'Random Webs' across all files and metadata. Refactor website list into a centralized data structure (websites.ts) with title, path, blurb, and accent color. Add password-protected developer page at /dev for alphabetical website index navigation. Update branding with new favicon set (SVG, ICO, PNG variants), web manifest, and OG image. Add reveal/masking mechanics to home page to show website cards progressively as they're visited, using localStorage to persist revealed websites.
+
+3	3	README.md
+1	1	package.json
+-	-	public/apple-touch-icon.png
+-	-	public/favicon-96x96.png
+-	-	public/favicon.ico
+1	0	public/favicon.svg
+-	-	public/og-image.png
+21	0	public/site.webmanifest
+-	-	public/thumbnail.jpg
+-	-	public/web-app-manifest-192x192.png
+-	-	public/web-app-manifest-512x512.png
+99	0	src/app/dev/DeveloperGate.tsx
+19	0	src/app/dev/page.tsx
+28	10	src/app/layout.tsx
+130	66	src/app/page.tsx
+197	0	src/lib/websites.ts
+ create mode 100644 public/apple-touch-icon.png
+ create mode 100644 public/favicon-96x96.png
+ create mode 100644 public/favicon.svg
+ create mode 100644 public/og-image.png
+ create mode 100644 public/site.webmanifest
+ delete mode 100644 public/thumbnail.jpg
+ create mode 100644 public/web-app-manifest-192x192.png
+ create mode 100644 public/web-app-manifest-512x512.png
+ create mode 100644 src/app/dev/DeveloperGate.tsx
+ create mode 100644 src/app/dev/page.tsx
+ create mode 100644 src/lib/websites.ts
+
+commit 769952f6951d855ae2aa4e341bd911e8a013d189
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T04:33:33-05:00
+
+    Enhance hypno spiral controls and color modes
+    
+    Revamps the hypno spiral page with a settings panel, including adjustable ring count, multiple color palettes, and PNG export with a countdown overlay. The animation input handling was modernized to pointer events with improved canvas scaling for high-DPI displays, and UI messaging now adapts for touch devices. Slider styling in global CSS was updated for better visibility and hover feedback, and the OG image asset was refreshed.
+
+-	-	public/og-image.png
+5	0	src/app/globals.css
+357	63	src/app/hypno-spiral/page.tsx
+
+commit 0268c721d0886a89c80f6ba159495b095cc1fefe
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T05:05:57-05:00
+
+    Add export preview and social sharing
+    
+    Adds ExportPreviewModal component that displays a preview of the exported spiral image before download, with integrated social sharing buttons (X, Reddit, Bluesky, WhatsApp, Telegram, Facebook, Email) and copy link functionality. Introduces canvasExport utility library for canvas-to-blob conversion and PNG downloads. Adds react-share dependency for social sharing integration. Improves UI with responsive settings panel and Escape key support to cancel download countdown.
+
+1	0	package.json
+47	0	pnpm-lock.yaml
+93	16	src/app/hypno-spiral/page.tsx
+187	0	src/components/ExportPreviewModal.tsx
+27	0	src/lib/canvasExport.ts
+ create mode 100644 src/components/ExportPreviewModal.tsx
+ create mode 100644 src/lib/canvasExport.ts
+
+commit 7e116134c5d47bedab3a325f0e16a70de5141e05
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T14:19:34-05:00
+
+    Add timer alarms, settings, and UI updates
+    
+    Move caf├⌐ backgrounds into backgrounds/ and add two alarm MP3s. Load music and alarm files in page.tsx and pass initialAlarms to the client. LofiPixelStudyClient now supports alarm selection, preview, and plays the chosen alarm when the timer finishes. Persist user preferences (background, volume, toggles, selected alarm, timer) to localStorage. Add a Settings panel (retro filter, vignette, scene preview, timer chime, minimized timer display) plus responsive and layout tweaks (portrait scaling, UI rearrangements) and minor refactors (remove unused useRouter).
+
+-	-	public/lofi-pixel-study/alarms/Bedside Clock.mp3
+-	-	public/lofi-pixel-study/alarms/Beep Alarm.mp3
+-	-	public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-day-1.png
+-	-	public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-day-2.png
+-	-	public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-day-3.png
+-	-	public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-night-1.png
+-	-	public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-night-2.png
+-	-	public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-rain-1.png
+-	-	public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-rain-2.png
+-	-	public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-rain-3.png
+405	79	src/app/lofi-pixel-study/LofiPixelStudyClient.tsx
+34	10	src/app/lofi-pixel-study/page.tsx
+ create mode 100644 public/lofi-pixel-study/alarms/Bedside Clock.mp3
+ create mode 100644 public/lofi-pixel-study/alarms/Beep Alarm.mp3
+ rename public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-day-1.png (100%)
+ rename public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-day-2.png (100%)
+ rename public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-day-3.png (100%)
+ rename public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-night-1.png (100%)
+ rename public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-night-2.png (100%)
+ rename public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-rain-1.png (100%)
+ rename public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-rain-2.png (100%)
+ rename public/lofi-pixel-study/{ => backgrounds}/lofi-cafe-rain-3.png (100%)
+
+commit 5d972ec2096a5cf26e43d62094d569463cc85633
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T14:57:14-05:00
+
+    Tighten lofi panel min widths
+    
+    Replaces hard-coded pixel min-width utilities with responsive Tailwind spacing values so the panel sizing stays consistent with the design system.
+
+1	1	src/app/lofi-pixel-study/LofiPixelStudyClient.tsx
+
+commit 83d5221c8a11b80054248093933a40ec8f10bb06
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T15:06:34-05:00
+
+    Add progress persistence and restart cooldown
+    
+    Add localStorage persistence to save progress (duration, records, history), implement a 2.5s cooldown after test completion to prevent rapid restarts, and improve mobile responsiveness. Includes a reset button during active tests and better state management for the restart workflow.
+
+132	16	src/app/click-speed-test/page.tsx
+
+commit 19b085f408dabf328a1d0ac21ff95f18045e8507
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T15:25:15-05:00
+
+    matrix-rain: UI polish, mock source & chars
+    
+    Extracts the embedded hacker source into MATRIX_SOURCE_LINES and composes HACKER_CODE from it. Generates RAIN_CHARACTERS from the source and uses it for the canvas rain (replacing the generic charset). Applies UI and layout polish: responsive header/banner, terminal panel sizing, control button styles, console formatting fixes, and access-granted overlay tweaks. Minor behavior changes: ignores Tab key during input and adds a few console warnings/notes. Improves readability and responsiveness of src/app/matrix-rain/page.tsx.
+
+91	65	src/app/matrix-rain/page.tsx
+
+commit 494ef91b2c897a47794c1c4b3a93731f1050c4d0
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T15:37:17-05:00
+
+    Replace sorting-race with algo-race page
+    
+    Add a new interactive Algo Race page at src/app/algo-race/page.tsx and remove the old src/app/sorting-race/page.tsx. The new page visualizes Bubble, Selection, Insertion, Quick, Merge and Heap sorts with start/pause/resume/reset controls, per-algorithm visualizers, race timing, rankings and post-race stats. Update src/lib/websites.ts to point the site entry to /algo-race with updated title/blurb. Minor newline/whitespace cleanup in websites.ts.
+
+666	0	src/app/algo-race/page.tsx
+0	514	src/app/sorting-race/page.tsx
+4	4	src/lib/websites.ts
+ create mode 100644 src/app/algo-race/page.tsx
+ delete mode 100644 src/app/sorting-race/page.tsx
+
+commit b40b5c07e14f9432d813818d1402d58ec083473a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T23:21:47-05:00
+
+    Make GravityBox responsive and add mobile shake
+    
+    Refactor GravityBox to be responsive and mobile-friendly: add MIN_BOX_* constants, MOBILE_BREAKPOINT, SHAKE_* constants, and new helpers getBoxCenter/getBoxLimits. Track toolbarHeight and windowSize with refs and ResizeObserver, compute responsive default/max box dimensions, and sync Matter render canvas on resize/orientation. Add device motion (shake) support with permission request and cooldown to trigger throwShapes, plus enableShake UI on mobile. Improve toolbar layout/styles, update slider min/max to use computed limits, and minor refactors (intervalRef typing, initial shape placement and wall centering).
+
+209	36	src/app/gravity-box/page.tsx
+
+commit 70c17ba9bf9ef1a626dd2c853fcab245db7b0e2b
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T23:34:25-05:00
+
+    Refresh pixel art editor UX
+    
+    Adds a retro pixel-styled layout, expands palette and export preview options, and improves drawing on touch devices with pointer-based input. Also updates PNG export handling and modal copy so the pixel art flow works across mobile and desktop.
+
+81	0	src/app/globals.css
+8	2	src/app/layout.tsx
+668	331	src/app/pixel-art/page.tsx
+20	5	src/components/ExportPreviewModal.tsx
+4	0	src/lib/canvasExport.ts
+
+commit 44153647387070160f0a8fd054c105b578fc39f8
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T23:43:16-05:00
+
+    Add ambient music, palettes & controls
+    
+    Add ambient-music.mp3 and enhance mindful-breathe page. Refactors page.tsx (renamed component), adds color palettes, audio playback with a welcome overlay to enable autoplay, music On/Off toggle, and speed slider for breath duration. Uses an audio ref, safer window.setInterval/clearInterval, and updates UI/styling for palette-driven gradients and controls.
+
+-	-	public/mindful-breathe/ambient-music.mp3
+152	23	src/app/mindful-breathe/page.tsx
+ create mode 100644 public/mindful-breathe/ambient-music.mp3
+
+commit e14c66fd391b3a55d0099619423e7ed928a913d2
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T23:45:49-05:00
+
+    Refine text decrypt scramble behavior
+    
+    Make the scramble animation deterministic and more robust across input changes, pointer interactions, and completion. The main text now drives a live status label from untouched to in-progress to complete.
+
+88	18	src/app/text-decrypt/page.tsx
+
+commit 9a85f99b3f114c057d195f881461f70d94e35e78
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T23:52:59-05:00
+
+    Add persistence and settings to sticky notes
+    
+    Implement localStorage persistence to save notes between sessions. Add a settings panel with options to export notes as markdown, reset to defaults, and toggle note ID visibility. Improve mobile responsiveness with adaptive note sizing and button positioning. Enhance drag behavior with proper position clamping and persistence.
+
+222	62	src/app/sticky-notes/page.tsx
+
+commit 96cd241817dc5f4121e2681691a0a44a0cf04039
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-07T23:57:10-05:00
+
+    Add export preview & responsive canvas scaling
+    
+    Add an export preview modal and high-DPI/responsive canvas handling. Introduces canvasExport helpers, previewImage, isSaving, isTouchDevice, shareUrl and canvasCssSize state. Uses shouldUseSquareCanvas and devicePixelRatio to size the internal canvas, scales pointer coordinates and stroke width for accurate drawing, and fixes resize/touch detection. Adds exportToPNG to show preview and auto-download on non-touch devices, with Web Share API support. Also refactors UI for better responsiveness and smaller controls on mobile.
+
+147	49	src/app/mandala-maker/page.tsx
+
+commit d009250e96ad472d2068249228520eea9f0b13c7
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-08T01:20:53-05:00
+
+    Tweak party mode animation timing
+    
+    Adjust the party mode experience by starting float-up elements closer to the viewport, showing them sooner, increasing emoji density, and speeding up their cadence. Also enlarges the main heading for a more celebratory look.
+
+2	2	src/app/globals.css
+12	10	src/app/party-mode/page.tsx
+
+commit 4fce9658cd1e1241b1c9eb5aad347a2e82907967
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-08T01:32:42-05:00
+
+    Add book icon and update header background styling
+    
+    Import BookOpenText from lucide-react and add an inline icon to the Details button. Replace the old purple blur blob with a pointer-events-none radial-gradient background element and adjust header layering (isolate/z-index). Minor button layout tweaks (inline-flex, gap, icon wrapper) to accommodate the icon and preserve visual styling.
+
+7	4	src/app/arcana-tarot/page.tsx
+
+commit 77760232cb072f8c864b6ea0dce9f4d6e92325ce
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-08T01:55:40-05:00
+
+    Refine emoji rain controls
+    
+    Adds a collapsible control panel, switches intensity to a percent-based slider, and supports press-and-hold category mixing on mobile and desktop. Also tightens the control layout and updates the rain opacity scaling to match the new intensity range.
+
+148	66	src/app/emoji-rain/page.tsx
+
+commit 48a9150f5720bfdc621b07221061fa820a14f88d
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-08T02:06:01-05:00
+
+    Enhance focus timer controls
+    
+    Add preset duration buttons, keyboard shortcuts, and live document title updates to the focus timer. The timer now resets and edits against the dark background consistently, with refined active-state behavior and cleaner time formatting.
+
+192	61	src/app/focus-timer/page.tsx
+
+commit 698d92461dd305029e3f199fb66cbf4a7e761a1d
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-08T02:13:24-05:00
+
+    Refactor Magic 8 Ball UI and cleanup
+    
+    Remove unused imports and stray comments, tidy JSX spacing, and adjust visual styling for the Magic Eight Ball component. Changes include: removed useEffect import, cleaned up inline comments, refined gradients and gloss/shadow handling, minor layout/whitespace adjustments, and small markup reformatting (button/label line breaks). No functional behavior changes to logic or timings.
+
+11	29	src/app/magic-8-ball/page.tsx
+
+commit a1be90e9771e6f9258591c108d3177ffbbe65516
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-08T02:23:01-05:00
+
+    Pad synth: init, touch, defaults, and UI polish
+    
+    Improve PadSynth initialization, touch handling, defaults and UI. Adds DEFAULT_REVERB_AMT and DEFAULT_DELAY_AMT, sets initial reverb/delay values, and makes playNote async to ensure audio is initialized (resumes Tone context if needed and avoids re-initializing). Adds stylesReady state with opacity transition to avoid FOUC, preventsDefault on touch events, and refines touch/mouse drag behavior. Tweaks range input styles (appearance, thumb radius), minor refactors/formatting, and small safety checks for existing audio nodes to avoid duplicate setup.
+
+76	38	src/app/pad-synth/page.tsx
+
+commit d37c9a1b8d842624a1cfaeace0aab8739ea03b0d
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-08T14:31:07-05:00
+
+    Add ASCII export preview and download
+    
+    Adds PNG export support to the ASCII Vision page with a preview modal, download/share actions, and touch-device-aware save handling. Also tightens responsive layout styling for the main view and export modal on small and landscape screens.
+
+441	103	src/app/ascii-vision/page.tsx
+193	110	src/components/ExportPreviewModal.tsx
+
+commit f904323a176b8a9f228fcaa83509b832b9fbcfee
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-08T17:18:45-05:00
+
+    Add terminal themes, settings, and new commands
+    
+    Introduce terminal theming and a settings UI + color overrides, add ADVICE/FORTUNES and advice/fortune commands, and improve responsive help text. Add TerminalTheme type, TERMINAL_THEMES and MATRIX_THEME, plus getVirtualCPU helper. Refactor input submission into submitCurrentInput, simplify sudo password flow, and remove executeCommand from the shared ShellContext usage in favour of local execution. Update fetch/uname outputs, kernel/branding strings, and various UI styling to use the active theme. Misc: expand JOKES, update ASCII/kernel text, and add mobile-aware behaviour for help/fetch output.
+
+287	170	src/app/olo-terminal/page.tsx
+135	3	src/app/olo-terminal/utils.ts
+
+commit 4a69fa1975dcb1bb31dbc5ae88c8aa88874fd530
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T01:34:42-05:00
+
+    Add GIF export for black hole
+    
+    Add gifenc dependency and types; implement GIF export in submit-to-void. Generates an animated black hole GIF (SVG frames, starfield, and phrase rendering) using gifenc, with a new UI prompt to save the GIF after shredding. Update particle model (add purple state and animation tweaks), compute text-origin positions for particles, and adjust UI text/icons and button states. Changed files: package.json, pnpm-lock.yaml, src/app/submit-to-void/page.tsx, added src/types/gifenc.d.ts.
+
+1	0	package.json
+8	0	pnpm-lock.yaml
+563	49	src/app/submit-to-void/page.tsx
+36	0	src/types/gifenc.d.ts
+ create mode 100644 src/types/gifenc.d.ts
+
+commit 17043deea84d275fdd8a3af4a351ad778c1b2bdd
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T02:15:11-05:00
+
+    Refactor particle collider: inputs, UI, animation
+    
+    Consolidate input handling and optimize the particle collider page. Use refs for mouse, mode, and forcePower to avoid renders during the animation loop; add pointer capture and wheel support to adjust force; initialize and resize particles more efficiently; add particle count slider and redesigned responsive UI; conditional shadow blur for performance and ensure requestAnimationFrame is cancelled on unmount.
+    
+    Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+
+143	103	src/app/particle-collider/page.tsx
+
+commit 9ab05705e4f69466aca673e7bbdfbc2e5ba5bc39
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T02:32:12-05:00
+
+    Add image export preview and mobile UI polish
+    
+    Introduces Zen Garden image export with a preview modal, touch-friendly save/share behavior, and quick toolbar access. Layout export/import now supports downloadable `.txt` files plus file-based import, while interaction and responsiveness were improved across controls (button sizing, dock/sidebar layout, emoji picker behavior, and mouse-drag safety checks).
+
+278	73	src/app/zen-garden/page.tsx
+
+commit 4ff02ddf73c8b758fc0c438090dfa79b8da06e4c
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T03:06:52-05:00
+
+    Improve Zen Garden mobile landscape UX
+    
+    Refines Zen Garden for small/mobile landscape screens by shrinking emoji render size, adding targeted responsive classes, simplifying top/footer controls, and moving key actions (sound/undo/redo) into the sidebar quick actions area. It also adjusts category switching behavior in random mode to avoid forcing immediate random selection. The export preview modal is now fixed with a higher z-index so it reliably overlays the full interface.
+
+3	1	src/app/dev/DeveloperGate.tsx
+5	3	src/app/dev/page.tsx
+141	29	src/app/zen-garden/page.tsx
+3	1	src/components/ExportPreviewModal.tsx
+
+commit 594165d568b36bad61e2cb06472721dca4df38d3
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T17:04:02-05:00
+
+    Enhance solar system builder UI
+    
+    Adds a textured solar system creator with presets, planet add/edit/delete controls, rings and moon support, background/theme toggles, and updated animation/layout behavior.
+
+-	-	public/solar-system/2k_earth_clouds.jpg
+-	-	public/solar-system/2k_earth_daymap.jpg
+-	-	public/solar-system/2k_earth_nightmap.jpg
+-	-	public/solar-system/2k_jupiter.jpg
+-	-	public/solar-system/2k_mars.jpg
+-	-	public/solar-system/2k_mercury.jpg
+-	-	public/solar-system/2k_moon.jpg
+-	-	public/solar-system/2k_neptune.jpg
+-	-	public/solar-system/2k_saturn.jpg
+-	-	public/solar-system/2k_saturn_ring_alpha.png
+-	-	public/solar-system/2k_stars.jpg
+-	-	public/solar-system/2k_stars_milky_way.jpg
+-	-	public/solar-system/2k_sun.jpg
+-	-	public/solar-system/2k_uranus.jpg
+-	-	public/solar-system/2k_venus_atmosphere.jpg
+-	-	public/solar-system/2k_venus_surface.jpg
+1263	183	src/app/solar-system/page.tsx
+8	3	src/components/ExportPreviewModal.tsx
+ create mode 100644 public/solar-system/2k_earth_clouds.jpg
+ create mode 100644 public/solar-system/2k_earth_daymap.jpg
+ create mode 100644 public/solar-system/2k_earth_nightmap.jpg
+ create mode 100644 public/solar-system/2k_jupiter.jpg
+ create mode 100644 public/solar-system/2k_mars.jpg
+ create mode 100644 public/solar-system/2k_mercury.jpg
+ create mode 100644 public/solar-system/2k_moon.jpg
+ create mode 100644 public/solar-system/2k_neptune.jpg
+ create mode 100644 public/solar-system/2k_saturn.jpg
+ create mode 100644 public/solar-system/2k_saturn_ring_alpha.png
+ create mode 100644 public/solar-system/2k_stars.jpg
+ create mode 100644 public/solar-system/2k_stars_milky_way.jpg
+ create mode 100644 public/solar-system/2k_sun.jpg
+ create mode 100644 public/solar-system/2k_uranus.jpg
+ create mode 100644 public/solar-system/2k_venus_atmosphere.jpg
+ create mode 100644 public/solar-system/2k_venus_surface.jpg
+
+commit c315c9dd428d33ae2bf4ba180934ee5cb3dbea94
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T17:33:09-05:00
+
+    Add PNG export + preview modal
+    
+    Add functionality to capture the rendered solar system as a 900x900 PNG and preview/share it. Introduces Download icon and ExportPreviewModal, export state (exportImage, isExporting) and a systemViewportRef. Implements captureSolarSystem which inlines computed styles and textures, converts textures to data URLs, renders background and textured bodies to a canvas, and returns a PNG data URL. Adds a Download button to trigger capture and opens ExportPreviewModal to save/share. Also includes minor UI/rotation tweaks: deterministic initial rotations, per-planet rotate transform, added data-texture-url attributes, and adjusted sun glow and button styling.
+
+251	9	src/app/solar-system/page.tsx
+
+commit dec0b66bf997470970e76f1e74e0429366e5056e
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T18:03:02-05:00
+
+    Improve solar system PNG export
+    
+    Refactors the solar system capture flow to render a cleaner, higher-resolution PNG from a dedicated export stage. It also adds a loading state for export generation and keeps the UI responsive while the image is being built.
+
+446	233	src/app/solar-system/page.tsx
+
+commit 355a6ceef4fa44e8e2c93d5d4e40839e9a7e6c95
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T18:36:45-05:00
+
+    Add backlog CSV and Solar System mobile polish
+    
+    Adds `import.csv` with a structured task backlog across apps for issue import. Updates the Solar System page to behave better on mobile by detecting viewport size, tuning stage scaling/origin, defaulting the sidebar closed on small screens, and restructuring panel/control/footer positioning with responsive Tailwind classes so the UI fits and scrolls cleanly on phones.
+
+45	30	src/app/solar-system/page.tsx
+
+commit 323350ee5da974535e8fa9753625ad649fb9e032
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T19:07:51-05:00
+
+    Switch solar system export to canvas-based rendering
+    
+    Replace DOM cloning and SVG rendering with direct canvas drawing for better performance. Adds texture caching (pre-warmed and on-demand), refactors capture logic into composable canvas drawing functions (drawOrbit, drawRingHalf, drawShadowOverlay, drawTexturedSphere), and improves resource management with object URL cleanup. Uses canvasToBlob utility for blob export.
+
+433	243	src/app/solar-system/page.tsx
+
+commit 6c2e7d42f802577f4e28070e7a0ab65305c88c5d
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T20:26:50-05:00
+
+    Add ThreeSolarSystem component and integrate view
+    
+    Introduce ThreeSolarSystem: a client-side Three.js React component that renders an interactive 3D solar system with textured planets, rings, glow, orbit visuals, pointer selection, and resource caching/cleanup. Wire it into the solar-system page: import the component, add a threeCanvasRef, update captureSolarSystem to export the WebGL canvas when available, and add selection callbacks (planet/sun) and onCanvasReady handler. Also embed the ThreeSolarSystem in the page layout (hidden legacy DOM kept as fallback). Improves export reliability and adds a performant, self-contained renderer for the scene.
+
+715	0	src/app/solar-system/ThreeSolarSystem.tsx
+59	1	src/app/solar-system/page.tsx
+ create mode 100644 src/app/solar-system/ThreeSolarSystem.tsx
+
+commit bb3f26bdd103d2bfb73763ea4bb294c8879c111c
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T20:41:30-05:00
+
+    Add tasks directory to gitignore
+    
+    Exclude the /tasks/ directory from version control to prevent local task files from being committed.
+
+1	0	.gitignore
+
+commit b91dc616e7870650e8b5c985f45e7e5df30e261b
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T20:56:25-05:00
+
+    Improve solar system load and export rendering
+    
+    Adds explicit loading lifecycle support in `ThreeSolarSystem` with `onLoaded` and export-aware rendering flags, including delayed texture-load fallback and first-frame signaling. Updates the page to show an initialization overlay/fade-in until the scene is ready, only render background overlays during PNG export, and tweak initial UI defaults (Milky Way background and open sidebar) while avoiding mount-time transition flicker.
+
+51	10	src/app/solar-system/ThreeSolarSystem.tsx
+239	192	src/app/solar-system/page.tsx

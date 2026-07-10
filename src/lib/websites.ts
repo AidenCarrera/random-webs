@@ -139,6 +139,12 @@ export const WEBSITES: WebsiteEntry[] = [
     accent: "from-purple-200/80 via-indigo-300/70 to-cyan-500/70",
   },
   {
+    path: "/repo-visualizer",
+    title: "Repo Visualizer",
+    blurb: "Visualize repository structure.",
+    accent: "from-zinc-300/80 via-slate-400/70 to-neutral-500/70",
+  },
+  {
     path: "/solar-system",
     title: "Solar System",
     blurb: "Orbital mechanics.",

@@ -29,18 +29,12 @@ export function DeveloperGate({ websites }: DeveloperGateProps) {
 
   if (!unlocked) {
     return (
-      <main className="min-h-screen bg-slate-950 px-6 py-12 text-slate-100 sm:px-8">
-        <div className="mx-auto max-w-xl">
+      <main className="flex min-h-screen items-center bg-neutral-950 px-6 py-12 text-slate-100 sm:px-8">
+        <div className="mx-auto w-full max-w-xl">
           <div className="rounded-4xl border border-white/10 bg-white/5 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">
-              Hidden Developer Page
-            </p>
-            <h1 className="mt-4 text-3xl font-black uppercase tracking-[0.08em] text-white">
+            <h1 className="text-3xl font-black uppercase tracking-[0.08em] text-white">
               Enter Password
             </h1>
-            <p className="mt-4 text-sm leading-7 text-slate-300">
-              Direct-link access only.
-            </p>
 
             <form className="mt-8 space-y-4" onSubmit={handleSubmit} suppressHydrationWarning>
               <input
@@ -67,19 +61,15 @@ export function DeveloperGate({ websites }: DeveloperGateProps) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-12 text-slate-100 sm:px-8">
+    <main className="min-h-screen bg-neutral-950 px-6 py-12 text-slate-100 sm:px-8">
       <div className="mx-auto max-w-5xl">
         <div className="rounded-4xl border border-white/10 bg-white/5 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">
-            Hidden Developer Page
-          </p>
-          <h1 className="mt-4 text-4xl font-black uppercase tracking-[0.08em] text-white">
+          <h1 className="text-4xl font-black uppercase tracking-[0.08em] text-white">
             Website Index
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-            Alphabetical quick navigation for every public website in the
-            collection. This route is intentionally unlinked and excluded from the
-            random rotation.
+            Alphabetical quick navigation for every website in the
+            collection.
           </p>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -87,10 +77,16 @@ export function DeveloperGate({ websites }: DeveloperGateProps) {
               <Link
                 key={website.path}
                 href={website.path}
-                className="rounded-[1.4rem] border border-white/10 bg-white/6 px-5 py-4 transition-colors duration-200 hover:border-cyan-300/40 hover:bg-cyan-300/10"
+                className="group relative overflow-hidden rounded-[1.4rem] border border-white/10 bg-white/5 px-5 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/25"
               >
-                <p className="text-lg font-semibold text-white">{website.title}</p>
-                <p className="mt-2 text-sm text-slate-300">{website.path}</p>
+                <div
+                  className={`absolute inset-0 bg-linear-to-br opacity-30 transition-opacity duration-200 group-hover:opacity-40 ${website.accent}`}
+                />
+                <div
+                  className={`absolute inset-x-0 top-0 h-px bg-linear-to-r opacity-75 ${website.accent}`}
+                />
+                <p className="relative text-lg font-semibold text-white">{website.title}</p>
+                <p className="relative mt-2 text-sm text-slate-300">{website.path}</p>
               </Link>
             ))}
           </div>
