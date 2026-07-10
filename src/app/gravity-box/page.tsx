@@ -433,7 +433,7 @@ export default function GravityBox() {
           onMouseLeave={stopAction}
           onTouchStart={(e) => { e.preventDefault(); startAction(addShape); }}
           onTouchEnd={stopAction}
-          className="group relative flex h-[3.25rem] w-[3.25rem] flex-col items-center justify-center overflow-hidden rounded-full bg-white/5 p-3.5 transition-all duration-200 active:scale-90 hover:bg-white/10 select-none touch-manipulation md:h-16 md:w-16 md:hover:w-40 md:hover:rounded-2xl"
+          className="group relative flex h-13 w-13 flex-col items-center justify-center overflow-hidden rounded-full bg-white/5 p-3.5 transition-all duration-200 active:scale-90 hover:bg-white/10 select-none touch-manipulation md:h-16 md:w-16 md:hover:w-40 md:hover:rounded-2xl"
           title="Add Shape (Hold)"
         >
           <span className="absolute md:group-hover:opacity-0 transition-opacity duration-200">
@@ -464,7 +464,7 @@ export default function GravityBox() {
           onMouseLeave={stopAction}
           onTouchStart={(e) => { e.preventDefault(); startAction(removeShape); }}
           onTouchEnd={stopAction}
-          className="group relative flex h-[3.25rem] w-[3.25rem] flex-col items-center justify-center overflow-hidden rounded-full bg-white/5 p-3.5 transition-all duration-200 active:scale-90 hover:bg-rose-500/20 hover:text-rose-400 select-none touch-manipulation md:h-16 md:w-16 md:hover:w-40 md:hover:rounded-2xl"
+          className="group relative flex h-13 w-13 flex-col items-center justify-center overflow-hidden rounded-full bg-white/5 p-3.5 transition-all duration-200 active:scale-90 hover:bg-rose-500/20 hover:text-rose-400 select-none touch-manipulation md:h-16 md:w-16 md:hover:w-40 md:hover:rounded-2xl"
           title="Remove Shape (Hold)"
         >
           <span className="absolute md:group-hover:opacity-0 transition-opacity duration-200">
@@ -492,7 +492,7 @@ export default function GravityBox() {
 
         <button
           onClick={throwShapes}
-          className="group relative flex h-[3.25rem] w-[3.25rem] flex-col items-center justify-center overflow-hidden rounded-full bg-blue-500/20 p-3.5 text-blue-400 transition-all duration-200 active:scale-95 hover:bg-blue-500 hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] select-none touch-manipulation md:h-16 md:w-16 md:hover:w-36 md:hover:rounded-2xl"
+          className="group relative flex h-13 w-13 flex-col items-center justify-center overflow-hidden rounded-full bg-blue-500/20 p-3.5 text-blue-400 transition-all duration-200 active:scale-95 hover:bg-blue-500 hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] select-none touch-manipulation md:h-16 md:w-16 md:hover:w-36 md:hover:rounded-2xl"
           title="Chaos Mode"
         >
           <span className="absolute md:group-hover:opacity-0 transition-opacity duration-200">
@@ -518,7 +518,7 @@ export default function GravityBox() {
         {isMobile && canUseShake ? (
           <button
             onClick={enableShake}
-            className={`flex h-[3.25rem] min-w-24 items-center justify-center rounded-full px-[1.125rem] text-xs font-black uppercase tracking-[0.18em] transition-colors ${
+            className={`flex h-13 min-w-24 items-center justify-center rounded-full px-4.5 text-xs font-black uppercase tracking-[0.18em] transition-colors ${
               shakeEnabled
                 ? "bg-emerald-500/20 text-emerald-300"
                 : "bg-white/5 text-slate-200 hover:bg-white/10"
