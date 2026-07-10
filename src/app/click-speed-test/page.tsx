@@ -70,7 +70,8 @@ function isDuration(value: unknown): value is Duration {
   return DURATIONS.includes(value as Duration);
 }
 
-function scaleValues(values: number[], minOutput: number, maxOutput: number) {
+function scaleValues(values: number[] | undefined | null, minOutput: number, maxOutput: number): number[] {
+  if (!values || values.length === 0) return [];
   const min = Math.min(...values);
   const max = Math.max(...values, 1);
   const range = max - min;
@@ -101,11 +102,11 @@ export default function ClickSpeedTest() {
   const [hasLoaded, setHasLoaded] = useState(false);
 
   const createId = () =>
-  globalThis.crypto?.randomUUID?.() ??
-  `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    globalThis.crypto?.randomUUID?.() ??
+    `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-  const clicksRef = useRef(0);
-  const lastPaceClicksRef = useRef(0);
+  const startTimeRef = useRef<number | null>(null);
+  const clickTimestampsRef = useRef<number[]>([]);
   const restartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const activeRecord = records[duration];
@@ -150,9 +151,6 @@ export default function ClickSpeedTest() {
     if (!isActive) return;
 
     const interval = setInterval(() => {
-      const currentClicks = clicksRef.current;
-      setPace((current) => [...current, currentClicks - lastPaceClicksRef.current]);
-      lastPaceClicksRef.current = currentClicks;
       setTimeLeft((current) => Math.max(0, current - 1));
     }, 1000);
 
@@ -162,37 +160,41 @@ export default function ClickSpeedTest() {
   useEffect(() => {
     if (!isActive || timeLeft > 0) return;
 
-    const finalClicks = clicksRef.current;
+    const finalClicks = clickTimestampsRef.current.length;
     const cps = finalClicks / duration;
+
+    const startTime = startTimeRef.current ?? Date.now();
+    const clickTimes = clickTimestampsRef.current;
+    const paceData: number[] = [];
+    for (let i = 0; i < duration; i++) {
+      const startRange = startTime + i * 1000;
+      const endRange = startTime + (i + 1) * 1000;
+      const count = clickTimes.filter((t) => t >= startRange && t < endRange).length;
+      paceData.push(count);
+    }
 
     setIsActive(false);
     setCanRestart(false);
     setResultCps(cps);
+    setPace(paceData);
+
     setRecords((current) =>
       finalClicks > current[duration].clicks
         ? { ...current, [duration]: { clicks: finalClicks, cps } }
         : current,
     );
 
-    setPace((current) => {
-      // React may batch the final click with the timer tick, so reconcile the unlogged remainder.
-      const loggedClicks = current.reduce((sum, value) => sum + value, 0);
-      const finalPace = [...current, finalClicks - loggedClicks].slice(0, duration);
-
-      setHistory((runs) => [
-        {
-          id: createId(),
-          clicks: finalClicks,
-          cps,
-          duration,
-          pace: finalPace,
-          timestamp: formatTime(),
-        },
-        ...runs,
-      ].slice(0, 5));
-
-      return finalPace;
-    });
+    setHistory((runs) => [
+      {
+        id: createId(),
+        clicks: finalClicks,
+        cps,
+        duration,
+        pace: paceData,
+        timestamp: formatTime(),
+      },
+      ...runs,
+    ].slice(0, 5));
 
     restartTimeoutRef.current = setTimeout(() => {
       setCanRestart(true);
@@ -214,8 +216,8 @@ export default function ClickSpeedTest() {
     setResultCps(0);
     setPace([]);
     setCanRestart(true);
-    clicksRef.current = 0;
-    lastPaceClicksRef.current = 0;
+    clickTimestampsRef.current = [];
+    startTimeRef.current = null;
 
     if (restartTimeoutRef.current) {
       clearTimeout(restartTimeoutRef.current);
@@ -226,6 +228,7 @@ export default function ClickSpeedTest() {
   function startTest() {
     if (!canRestart) return false;
     clearRun();
+    startTimeRef.current = Date.now();
     setIsActive(true);
     return true;
   }
@@ -233,8 +236,8 @@ export default function ClickSpeedTest() {
   function handleMainClick() {
     if (!isActive && !startTest()) return;
 
-    clicksRef.current += 1;
-    setClicks(clicksRef.current);
+    clickTimestampsRef.current.push(Date.now());
+    setClicks(clickTimestampsRef.current.length);
   }
 
   function changeDuration(nextDuration: Duration) {
@@ -349,7 +352,7 @@ export default function ClickSpeedTest() {
             <button
               onClick={handleMainClick}
               disabled={!isActive && !canRestart}
-              className={`flex size-64 select-none flex-col items-center justify-center gap-2 rounded-full border-8 transition-all active:scale-95 ${
+              className={`flex size-64 select-none flex-col items-center justify-center gap-2 rounded-full border-8 transition-all active:scale-95 shrink-0 ${
                 isActive
                   ? "border-blue-400 bg-blue-600 shadow-[0_0_50px_rgba(37,99,235,0.5)]"
                   : canRestart
@@ -363,14 +366,21 @@ export default function ClickSpeedTest() {
               </span>
             </button>
 
-            {!isActive && resultCps > 0 && (
-              <div className="mt-8 w-full animate-in text-center slide-in-from-bottom-5">
-                <p className="mb-2 text-slate-400">Result</p>
+            {history.length > 0 && (
+              <div className={`mt-8 w-full text-center transition-all duration-300 ${isActive ? "opacity-20 pointer-events-none" : "opacity-100 animate-in slide-in-from-bottom-5"}`}>
+                <p className="mb-2 text-slate-400">
+                  {isActive ? "Previous Result" : "Result"}
+                </p>
                 <div className="mb-2 text-3xl font-bold text-white">
-                  {clicks} Clicks{" "}
-                  <span className="text-xl text-slate-500">({resultCps.toFixed(2)} CPS)</span>
+                  {isActive ? history[0].clicks : clicks} Clicks{" "}
+                  <span className="text-xl text-slate-500">
+                    ({(isActive ? history[0].cps : resultCps).toFixed(2)} CPS)
+                  </span>
                 </div>
-                <PaceChart pace={pace} heights={paceHeights} />
+                <PaceChart 
+                  pace={isActive ? history[0].pace : pace} 
+                  heights={isActive ? scaleValues(history[0].pace, 15, 100) : paceHeights} 
+                />
               </div>
             )}
           </div>
