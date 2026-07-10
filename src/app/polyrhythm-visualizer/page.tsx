@@ -1,153 +1,178 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import * as Tone from "tone";
 import * as THREE from "three";
 import {
   CircleDot,
   Clock3,
   Gauge,
+  Orbit,
   Pause,
   Play,
-  Sparkles,
   RotateCcw,
   Rows3,
-  Orbit,
+  Sparkles,
   Volume2,
   VolumeX,
 } from "lucide-react";
 
 type ViewMode = "circle" | "timeline" | "bloom" | "orbit3d";
 type PulseKey = `${number}-${number}`;
-
 type Rhythm = {
   count: number;
   color: string;
   glow: string;
   tone: string;
 };
+type VisualizerProps = {
+  rhythms: Rhythm[];
+  progress: number;
+  activePulses: Set<PulseKey>;
+};
 
 const RHYTHMS: Rhythm[] = [
-  { count: 1, color: "#ffffff", glow: "rgba(255,255,255,0.45)", tone: "B4" },
-  { count: 2, color: "#ef4444", glow: "rgba(239,68,68,0.45)", tone: "C5" },
-  { count: 3, color: "#f97316", glow: "rgba(249,115,22,0.45)", tone: "D5" },
-  { count: 4, color: "#facc15", glow: "rgba(250,204,21,0.45)", tone: "E5" },
-  { count: 5, color: "#84cc16", glow: "rgba(132,204,22,0.45)", tone: "F5" },
-  { count: 6, color: "#22c55e", glow: "rgba(34,197,94,0.45)", tone: "G5" },
-  { count: 7, color: "#14b8a6", glow: "rgba(20,184,166,0.45)", tone: "A5" },
-  { count: 8, color: "#06b6d4", glow: "rgba(6,182,212,0.45)", tone: "B5" },
-  { count: 9, color: "#3b82f6", glow: "rgba(59,130,246,0.45)", tone: "C6" },
-  { count: 10, color: "#6366f1", glow: "rgba(99,102,241,0.45)", tone: "D6" },
-  { count: 11, color: "#a855f7", glow: "rgba(168,85,247,0.45)", tone: "E6" },
-  { count: 12, color: "#581c87", glow: "rgba(88,28,135,0.55)", tone: "F6" },
-];
+  [1, "#faf9f6", "rgba(250,249,246,0.34)", "B4"],
+  [2, "#fc8c74", "rgba(252,140,116,0.34)", "C5"],
+  [3, "#f59851", "rgba(245,152,81,0.34)", "D5"],
+  [4, "#e6cb53", "rgba(230,203,83,0.34)", "E5"],
+  [5, "#90cb67", "rgba(144,203,103,0.34)", "F5"],
+  [6, "#55c991", "rgba(85,201,145,0.34)", "G5"],
+  [7, "#40c4bb", "rgba(64,196,187,0.34)", "A5"],
+  [8, "#4bbdd9", "rgba(75,189,217,0.34)", "B5"],
+  [9, "#5c9fe6", "rgba(92,159,230,0.34)", "C6"],
+  [10, "#7e7aeb", "rgba(126,122,235,0.34)", "D6"],
+  [11, "#c270de", "rgba(194,112,222,0.34)", "E6"],
+  [12, "#e66e9c", "rgba(230,110,156,0.34)", "F6"],
+].map(([count, color, glow, tone]) => ({
+  count: Number(count),
+  color: String(color),
+  glow: String(glow),
+  tone: String(tone),
+}));
 
+const RHYTHM_BY_COUNT = new Map(
+  RHYTHMS.map((rhythm) => [rhythm.count, rhythm]),
+);
 const DEFAULT_RHYTHMS = [3, 4];
 const CYCLE_BEATS = 4;
+const BPM_MIN = 40;
+const BPM_MAX = 220;
+const MASTER_GAIN = 0.34;
+const TAU = Math.PI * 2;
 
-const clampBpm = (value: number) => Math.min(220, Math.max(40, value));
-const getCycleSeconds = (bpm: number) => (60 / bpm) * CYCLE_BEATS;
-const getPulseKey = (rhythm: number, pulse: number): PulseKey =>
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
+const cycleSeconds = (bpm: number) => (60 / bpm) * CYCLE_BEATS;
+const pulseKey = (rhythm: number, pulse: number): PulseKey =>
   `${rhythm}-${pulse}`;
+const range = (length: number) => Array.from({ length }, (_, index) => index);
+
+function useLatest<T>(value: T) {
+  const ref = useRef(value);
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+  return ref;
+}
 
 class ClickEngine {
-  private audioContext: AudioContext | null = null;
-  private masterGain: GainNode | null = null;
-  private activeNodes = new Set<AudioScheduledSourceNode | GainNode>();
+  private context: AudioContext | null = null;
+  private master: GainNode | null = null;
+  private sources = new Set<OscillatorNode>();
+  private gains = new Set<GainNode>();
 
   async init() {
     await Tone.start();
-    if (this.audioContext && this.masterGain) return;
+    if (this.context && this.master) return;
 
-    this.audioContext = Tone.getContext().rawContext as AudioContext;
-    this.masterGain = this.audioContext.createGain();
-    this.masterGain.gain.value = 0.34;
-    this.masterGain.connect(this.audioContext.destination);
+    this.context = Tone.getContext().rawContext as AudioContext;
+    this.master = this.context.createGain();
+    this.master.gain.value = MASTER_GAIN;
+    this.master.connect(this.context.destination);
   }
 
-  playClick(rhythm: Rhythm, isDownbeat: boolean) {
-    if (!this.audioContext || !this.masterGain) return;
+  play(rhythm: Rhythm, downbeat: boolean) {
+    if (!this.context || !this.master) return;
 
-    const start = this.audioContext.currentTime;
-    const duration = isDownbeat ? 0.055 : 0.035;
-    const oscillator = this.audioContext.createOscillator();
-    const gain = this.audioContext.createGain();
-    const baseFrequency = Tone.Frequency(rhythm.tone).toFrequency();
+    const now = this.context.currentTime;
+    const duration = downbeat ? 0.055 : 0.035;
+    const oscillator = this.context.createOscillator();
+    const gain = this.context.createGain();
+    const frequency = Tone.Frequency(rhythm.tone).toFrequency();
 
-    oscillator.type = isDownbeat ? "triangle" : "sine";
+    oscillator.type = downbeat ? "triangle" : "sine";
     oscillator.frequency.setValueAtTime(
-      isDownbeat ? baseFrequency * 0.72 : baseFrequency,
-      start,
+      downbeat ? frequency * 0.72 : frequency,
+      now,
     );
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(isDownbeat ? 0.5 : 0.26, start + 0.004);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(downbeat ? 0.5 : 0.26, now + 0.004);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
 
-    oscillator.connect(gain);
-    gain.connect(this.masterGain);
-    this.activeNodes.add(oscillator);
-    this.activeNodes.add(gain);
-    oscillator.start(start);
-    oscillator.stop(start + duration + 0.01);
+    oscillator.connect(gain).connect(this.master);
+    this.sources.add(oscillator);
+    this.gains.add(gain);
+    oscillator.start(now);
+    oscillator.stop(now + duration + 0.01);
     oscillator.onended = () => {
       oscillator.disconnect();
       gain.disconnect();
-      this.activeNodes.delete(oscillator);
-      this.activeNodes.delete(gain);
+      this.sources.delete(oscillator);
+      this.gains.delete(gain);
     };
   }
 
-  getCurrentTime() {
-    return this.audioContext?.currentTime ?? 0;
+  get time() {
+    return this.context?.currentTime ?? 0;
   }
 
-  getOutputLatencySeconds() {
-    if (!this.audioContext) return 0;
-
-    return Math.min(
+  get latency() {
+    if (!this.context) return 0;
+    return clamp(
+      this.context.baseLatency + (this.context.outputLatency ?? 0),
+      0,
       0.12,
-      Math.max(
-        0,
-        this.audioContext.baseLatency +
-          (this.audioContext.outputLatency ?? 0),
-      ),
     );
   }
 
-  setMuted(isMuted: boolean) {
-    if (this.masterGain) {
-      this.masterGain.gain.setTargetAtTime(
-        isMuted ? 0 : 0.34,
-        this.audioContext?.currentTime ?? 0,
-        0.01,
-      );
-    }
+  setMuted(muted: boolean) {
+    this.master?.gain.setTargetAtTime(
+      muted ? 0 : MASTER_GAIN,
+      this.context?.currentTime ?? 0,
+      0.01,
+    );
   }
 
   silence() {
-    const now = this.audioContext?.currentTime ?? 0;
-
-    this.activeNodes.forEach((node) => {
-      if (node instanceof GainNode) {
-        node.gain.cancelScheduledValues(now);
-        node.gain.setTargetAtTime(0.0001, now, 0.005);
-        return;
-      }
-
+    const now = this.time;
+    this.gains.forEach((gain) => {
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setTargetAtTime(0.0001, now, 0.005);
+    });
+    this.sources.forEach((source) => {
       try {
-        node.stop(now + 0.01);
+        source.stop(now + 0.01);
       } catch {
-        // Some nodes may already have ended naturally.
+        // A source may already have stopped naturally.
       }
     });
   }
 
   dispose() {
     this.silence();
-    this.masterGain?.disconnect();
-    this.masterGain = null;
-    this.audioContext = null;
-    this.activeNodes.clear();
+    this.master?.disconnect();
+    this.master = null;
+    this.context = null;
+    this.sources.clear();
+    this.gains.clear();
   }
 }
 
@@ -162,345 +187,348 @@ export default function PolyrhythmVisualizer() {
   const [activePulses, setActivePulses] = useState<Set<PulseKey>>(new Set());
 
   const engineRef = useRef<ClickEngine | null>(null);
-  const activeRhythmsRef = useRef(activeRhythms);
-  const bpmRef = useRef(bpm);
-  const isMutedRef = useRef(isMuted);
-  const isPlayingRef = useRef(isPlaying);
   const rafRef = useRef<number | null>(null);
-  const audioStartTimeRef = useRef(0);
+  const timersRef = useRef<number[]>([]);
+  const startTimeRef = useRef(0);
   const cyclePositionRef = useRef(0);
-  const currentProgressRef = useRef(0);
+  const progressRef = useRef(0);
   const lastElapsedRef = useRef(0);
-  const pulseTimersRef = useRef<number[]>([]);
+
+  const rhythmsRef = useLatest(activeRhythms);
+  const bpmRef = useLatest(bpm);
+  const mutedRef = useLatest(isMuted);
+  const playingRef = useLatest(isPlaying);
 
   const activeRhythmData = useMemo(
     () =>
-      RHYTHMS.filter((rhythm) => activeRhythms.includes(rhythm.count)).sort(
-        (a, b) => a.count - b.count,
-      ),
+      activeRhythms.map((count) => RHYTHM_BY_COUNT.get(count)!).filter(Boolean),
     [activeRhythms],
   );
 
-  useEffect(() => {
-    activeRhythmsRef.current = activeRhythms;
-  }, [activeRhythms]);
-
-  useEffect(() => {
-    bpmRef.current = bpm;
-    setBpmInput(bpm.toString());
-
-    const cycleSeconds = getCycleSeconds(bpm);
-    const nextCyclePosition = currentProgressRef.current * cycleSeconds;
-    cyclePositionRef.current = nextCyclePosition;
-    lastElapsedRef.current = nextCyclePosition;
-
-    if (isPlayingRef.current && engineRef.current) {
-      audioStartTimeRef.current =
-        engineRef.current.getCurrentTime() - nextCyclePosition;
-    }
-  }, [bpm]);
-
-  useEffect(() => {
-    isMutedRef.current = isMuted;
-    engineRef.current?.setMuted(isMuted);
-  }, [isMuted]);
-
-  useEffect(() => {
-    isPlayingRef.current = isPlaying;
-  }, [isPlaying]);
-
-  const flashPulse = useCallback(
-    (rhythm: number, pulse: number, isDownbeat: boolean) => {
-      const key = getPulseKey(rhythm, pulse);
-      setActivePulses((prev) => new Set(prev).add(key));
-
-      if (isDownbeat) {
-        activeRhythmsRef.current.forEach((count) => {
-          setActivePulses((prev) => new Set(prev).add(getPulseKey(count, 0)));
-        });
-      }
-
-      const timer = window.setTimeout(
-        () => {
-          setActivePulses((prev) => {
-            const next = new Set(prev);
-            next.delete(key);
-            if (isDownbeat) {
-              activeRhythmsRef.current.forEach((count) =>
-                next.delete(getPulseKey(count, 0)),
-              );
-            }
-            return next;
-          });
-        },
-        isDownbeat ? 170 : 130,
-      );
-      pulseTimersRef.current.push(timer);
-    },
-    [],
-  );
-
-  const stopVisualLoop = useCallback(() => {
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
+  const stopLoop = useCallback(() => {
+    if (rafRef.current === null) return;
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
   }, []);
 
-  const triggerPulsesBetween = useCallback(
-    (fromElapsed: number, toElapsed: number) => {
+  const clearPulseState = useCallback(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+    setActivePulses(new Set());
+  }, []);
+
+  const flash = useCallback(
+    (count: number, pulse: number, downbeat: boolean) => {
+      const keys = downbeat
+        ? rhythmsRef.current.map((rhythm) => pulseKey(rhythm, 0))
+        : [pulseKey(count, pulse)];
+
+      setActivePulses((current) => new Set([...current, ...keys]));
+      timersRef.current.push(
+        window.setTimeout(
+          () => {
+            setActivePulses((current) => {
+              const next = new Set(current);
+              keys.forEach((key) => next.delete(key));
+              return next;
+            });
+          },
+          downbeat ? 170 : 130,
+        ),
+      );
+    },
+    [rhythmsRef],
+  );
+
+  const triggerPulses = useCallback(
+    (from: number, to: number) => {
       const engine = engineRef.current;
-      if (!engine || toElapsed < fromElapsed) return;
+      if (!engine || to < from) return;
 
-      const cycleSeconds = getCycleSeconds(bpmRef.current);
-
-      activeRhythmsRef.current.forEach((count) => {
-        const rhythm = RHYTHMS.find((item) => item.count === count);
+      const duration = cycleSeconds(bpmRef.current);
+      rhythmsRef.current.forEach((count) => {
+        const rhythm = RHYTHM_BY_COUNT.get(count);
         if (!rhythm) return;
 
-        const pulseInterval = cycleSeconds / count;
-        const firstPulseIndex = Math.floor(fromElapsed / pulseInterval) + 1;
-        const lastPulseIndex = Math.floor(toElapsed / pulseInterval);
+        const interval = duration / count;
+        const first = Math.floor(from / interval) + 1;
+        const last = Math.floor(to / interval);
 
-        for (
-          let pulseIndex = firstPulseIndex;
-          pulseIndex <= lastPulseIndex;
-          pulseIndex += 1
-        ) {
-          const pulse = ((pulseIndex % count) + count) % count;
-          const isDownbeat = pulse === 0;
-
-          if (!isMutedRef.current) {
-            engine.playClick(rhythm, isDownbeat);
-          }
-
-          flashPulse(count, pulse, isDownbeat);
+        for (let index = first; index <= last; index++) {
+          const pulse = ((index % count) + count) % count;
+          const downbeat = pulse === 0;
+          if (!mutedRef.current) engine.play(rhythm, downbeat);
+          flash(count, pulse, downbeat);
         }
       });
     },
-    [flashPulse],
+    [bpmRef, flash, mutedRef, rhythmsRef],
   );
 
-  const startVisualLoop = useCallback(() => {
-    stopVisualLoop();
+  const startLoop = useCallback(() => {
+    stopLoop();
 
     const tick = () => {
+      if (document.hidden) {
+        rafRef.current = null;
+        return;
+      }
+
       const engine = engineRef.current;
       if (!engine) return;
 
-      const cycleSeconds = getCycleSeconds(bpmRef.current);
-      const rawElapsed = Math.max(
-        0,
-        engine.getCurrentTime() - audioStartTimeRef.current,
-      );
-      const visualElapsed = Math.max(
-        0,
-        rawElapsed - engine.getOutputLatencySeconds(),
-      );
-      const seconds = ((visualElapsed % cycleSeconds) + cycleSeconds) % cycleSeconds;
-      const nextProgress = seconds / cycleSeconds;
+      const duration = cycleSeconds(bpmRef.current);
+      const elapsed = Math.max(0, engine.time - startTimeRef.current);
+      const visualElapsed = Math.max(0, elapsed - engine.latency);
+      const nextProgress = (visualElapsed % duration) / duration;
 
-      triggerPulsesBetween(lastElapsedRef.current, rawElapsed);
-      lastElapsedRef.current = rawElapsed;
-      currentProgressRef.current = nextProgress;
+      triggerPulses(lastElapsedRef.current, elapsed);
+      lastElapsedRef.current = elapsed;
+      progressRef.current = nextProgress;
       setProgress(nextProgress);
       rafRef.current = requestAnimationFrame(tick);
     };
 
     rafRef.current = requestAnimationFrame(tick);
-  }, [stopVisualLoop, triggerPulsesBetween]);
-
-  const clearPulseTimers = useCallback(() => {
-    pulseTimersRef.current.forEach((timer) => window.clearTimeout(timer));
-    pulseTimersRef.current = [];
-  }, []);
+  }, [bpmRef, stopLoop, triggerPulses]);
 
   const togglePlay = useCallback(async () => {
-    if (!engineRef.current) {
-      engineRef.current = new ClickEngine();
-    }
+    const engine = (engineRef.current ??= new ClickEngine());
+    await engine.init();
+    engine.setMuted(mutedRef.current);
 
-    await engineRef.current.init();
-    engineRef.current.setMuted(isMutedRef.current);
-
-    if (isPlaying) {
-      const cycleSeconds = getCycleSeconds(bpmRef.current);
-      cyclePositionRef.current = currentProgressRef.current * cycleSeconds;
+    if (playingRef.current) {
+      cyclePositionRef.current =
+        progressRef.current * cycleSeconds(bpmRef.current);
       lastElapsedRef.current = cyclePositionRef.current;
-      engineRef.current.silence();
-      clearPulseTimers();
-      setActivePulses(new Set());
-      stopVisualLoop();
+      engine.silence();
+      clearPulseState();
+      stopLoop();
       setIsPlaying(false);
       return;
     }
 
-    audioStartTimeRef.current =
-      engineRef.current.getCurrentTime() - cyclePositionRef.current;
-    lastElapsedRef.current =
-      cyclePositionRef.current === 0
-        ? -0.001
-        : cyclePositionRef.current;
-    startVisualLoop();
+    startTimeRef.current = engine.time - cyclePositionRef.current;
+    lastElapsedRef.current = cyclePositionRef.current || -0.001;
     setIsPlaying(true);
-  }, [clearPulseTimers, isPlaying, startVisualLoop, stopVisualLoop]);
+    startLoop();
+  }, [bpmRef, clearPulseState, mutedRef, playingRef, startLoop, stopLoop]);
 
   const reset = useCallback(() => {
     const engine = engineRef.current;
     cyclePositionRef.current = 0;
-    lastElapsedRef.current = isPlaying ? -0.001 : 0;
-    currentProgressRef.current = 0;
+    lastElapsedRef.current = playingRef.current ? -0.001 : 0;
+    progressRef.current = 0;
     setProgress(0);
-    clearPulseTimers();
-    setActivePulses(new Set());
+    clearPulseState();
     engine?.silence();
-    if (isPlaying) {
-      audioStartTimeRef.current = engine?.getCurrentTime() ?? 0;
-      startVisualLoop();
+
+    if (playingRef.current) {
+      startTimeRef.current = engine?.time ?? 0;
+      startLoop();
     }
-  }, [clearPulseTimers, isPlaying, startVisualLoop]);
+  }, [clearPulseState, playingRef, startLoop]);
 
   const toggleRhythm = (count: number) => {
-    setActiveRhythms((prev) => {
-      if (prev.includes(count)) {
-        return prev.length === 1 ? prev : prev.filter((item) => item !== count);
-      }
-      return [...prev, count].sort((a, b) => a - b);
-    });
+    setActiveRhythms((current) =>
+      current.includes(count)
+        ? current.length === 1
+          ? current
+          : current.filter((value) => value !== count)
+        : [...current, count].sort((a, b) => a - b),
+    );
   };
 
   const commitBpm = () => {
-    const parsed = parseInt(bpmInput, 10);
-    const nextBpm = clampBpm(Number.isNaN(parsed) ? 90 : parsed);
-    setBpm(nextBpm);
-    setBpmInput(nextBpm.toString());
+    const parsed = Number.parseInt(bpmInput, 10);
+    const next = clamp(Number.isNaN(parsed) ? 90 : parsed, BPM_MIN, BPM_MAX);
+    setBpm(next);
+    setBpmInput(String(next));
   };
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
+    setBpmInput(String(bpm));
+    const position = progressRef.current * cycleSeconds(bpm);
+    cyclePositionRef.current = position;
+    lastElapsedRef.current = position;
+    if (playingRef.current && engineRef.current) {
+      startTimeRef.current = engineRef.current.time - position;
+    }
+  }, [bpm, playingRef]);
+
+  useEffect(() => {
+    engineRef.current?.setMuted(isMuted);
+  }, [isMuted]);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      const engine = engineRef.current;
+
+      if (document.hidden) {
+        if (playingRef.current) {
+          // Keep the musical position, but discard pulses that occur while the
+          // browser throttles this tab. Playing those pulses together on return
+          // creates an audible pop.
+          cyclePositionRef.current =
+            progressRef.current * cycleSeconds(bpmRef.current);
+          lastElapsedRef.current = cyclePositionRef.current;
+          engine?.silence();
+          clearPulseState();
+          stopLoop();
+        }
+        return;
+      }
+
+      if (playingRef.current && engine) {
+        startTimeRef.current = engine.time - cyclePositionRef.current;
+        lastElapsedRef.current = cyclePositionRef.current;
+        startLoop();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [bpmRef, clearPulseState, playingRef, startLoop, stopLoop]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      const isTypingTarget =
+      if (
         target instanceof HTMLInputElement ||
         target instanceof HTMLTextAreaElement ||
-        target?.isContentEditable;
+        target?.isContentEditable
+      )
+        return;
 
-      if (isTypingTarget) return;
-
+      const key = event.key.toLowerCase();
       if (event.code === "Space") {
         event.preventDefault();
         void togglePlay();
-        return;
-      }
-
-      if (event.key === "m" || event.key === "M") {
+      } else if (key === "m") {
         event.preventDefault();
-        setIsMuted((prev) => !prev);
-        return;
-      }
-
-      if (event.key === "r" || event.key === "R") {
+        setIsMuted((value) => !value);
+      } else if (key === "r") {
         event.preventDefault();
         reset();
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [reset, togglePlay]);
 
-  useEffect(() => {
-    return () => {
-      stopVisualLoop();
-      clearPulseTimers();
+  useEffect(
+    () => () => {
+      stopLoop();
+      clearPulseState();
       engineRef.current?.dispose();
-    };
-  }, [clearPulseTimers, stopVisualLoop]);
+    },
+    [clearPulseState, stopLoop],
+  );
+
+  const visualizerProps = { rhythms: activeRhythmData, progress, activePulses };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#08090d] text-white font-sans">
-      <div className="fixed inset-0 pointer-events-none opacity-60">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_32%),radial-gradient(circle_at_80%_20%,rgba(249,115,22,0.13),transparent_30%),linear-gradient(135deg,rgba(8,9,13,1),rgba(18,20,28,1))]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[42px_42px]" />
+    <div className="min-h-screen overflow-hidden bg-[#0d0c12] font-sans text-[#fafaf9]">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(145deg,#17121b_0%,#0d1317_48%,#171018_100%)]" />
+        <div className="absolute -left-64 -top-80 h-[56rem] w-[56rem] rounded-full bg-[radial-gradient(circle,rgba(252,140,116,0.12)_0%,rgba(252,140,116,0.04)_38%,transparent_70%)] blur-2xl" />
+        <div className="absolute -bottom-80 -right-56 h-[54rem] w-[54rem] rounded-full bg-[radial-gradient(circle,rgba(64,196,187,0.1)_0%,rgba(64,196,187,0.03)_40%,transparent_70%)] blur-2xl" />
+        <div className="absolute left-1/2 top-1/2 h-[76rem] w-[76rem] -translate-x-1/2 -translate-y-1/2 -rotate-12 rounded-[42%] bg-[repeating-radial-gradient(ellipse_at_center,transparent_0_42px,rgba(250,249,246,0.035)_43px_44px)] opacity-70" />
+        <svg
+          className="absolute inset-x-0 top-[8%] h-[76%] w-full opacity-35"
+          viewBox="0 0 1600 900"
+          fill="none"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M-120 530C170 260 390 690 690 390S1220 210 1720 500"
+            stroke="#fc8c74"
+            strokeWidth="2"
+          />
+          <path
+            d="M-140 590C180 320 420 740 735 440S1260 270 1740 560"
+            stroke="#f59851"
+            strokeOpacity="0.55"
+          />
+          <path
+            d="M-160 650C210 390 455 790 780 500S1300 340 1760 620"
+            stroke="#40c4bb"
+            strokeOpacity="0.48"
+          />
+          <path
+            d="M-180 710C240 470 500 840 830 560S1350 420 1780 680"
+            stroke="#7e7aeb"
+            strokeOpacity="0.42"
+          />
+        </svg>
+        <div
+          className="absolute inset-0 opacity-[0.055] mix-blend-soft-light"
+          style={{
+            backgroundImage:
+              "url('data:image/svg+xml,%3Csvg%20viewBox%3D%270%200%20180%20180%27%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%27.9%27%20numOctaves%3D%274%27%20stitchTiles%3D%27stitch%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%20opacity%3D%27.9%27%2F%3E%3C%2Fsvg%3E')",
+          }}
+        />
       </div>
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-3 rounded-lg border border-white/10 bg-black/35 p-4 shadow-2xl shadow-black/35 backdrop-blur md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="mt-1 text-3xl font-black uppercase tracking-[0.12em] sm:text-4xl">
-              Polyrhythm Visualizer
-            </h1>
-          </div>
-
+        <header className="flex flex-col gap-3 rounded-2xl border border-[#faf9f6]/12 bg-[#17141d]/75 p-4 shadow-2xl shadow-black/35 backdrop-blur-xl md:flex-row md:items-center md:justify-between">
+          <h1 className="mt-1 text-3xl font-black uppercase tracking-[0.12em] text-[#faf9f6] sm:text-4xl">
+            Polyrhythm Visualizer
+          </h1>
           <div className="flex flex-wrap items-center gap-2">
             <IconButton
               label={isPlaying ? "Pause" : "Play"}
-              isActive={isPlaying}
               onClick={togglePlay}
             >
-              {isPlaying ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
+              {isPlaying ? <Pause /> : <Play />}
             </IconButton>
             <IconButton label="Reset" onClick={reset}>
-              <RotateCcw className="h-4 w-4" />
+              <RotateCcw />
             </IconButton>
             <IconButton
               label={isMuted ? "Unmute" : "Mute"}
-              isActive={isMuted}
-              onClick={() => setIsMuted((prev) => !prev)}
+              onClick={() => setIsMuted((value) => !value)}
             >
-              {isMuted ? (
-                <VolumeX className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
-              )}
+              {isMuted ? <VolumeX /> : <Volume2 />}
             </IconButton>
           </div>
         </header>
 
         <section className="grid flex-1 gap-4 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="flex flex-col gap-4">
-            <div className="rounded-lg border border-white/10 bg-white/5.5 p-4 backdrop-blur">
-              <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.24em] text-white/55">
-                <Gauge className="h-4 w-4 text-white" />
-                BPM
-              </div>
+            <Panel title="BPM" icon={<Gauge />}>
               <div className="flex items-center gap-3">
                 <input
                   type="range"
-                  min="40"
-                  max="220"
+                  min={BPM_MIN}
+                  max={BPM_MAX}
                   value={bpm}
                   onChange={(event) => setBpm(Number(event.target.value))}
                   className="poly-slider w-full"
                   aria-label="BPM"
                 />
-                <div className="flex h-11 w-24 items-center rounded-lg border border-white/10 bg-black/35 px-2">
+                <div className="flex h-11 w-24 items-center rounded-xl border border-[#faf9f6]/12 bg-[#0e0d13]/55 px-2">
                   <input
                     value={bpmInput}
                     onChange={(event) => setBpmInput(event.target.value)}
                     onBlur={commitBpm}
                     onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        commitBpm();
-                        event.currentTarget.blur();
-                      }
+                      if (event.key !== "Enter") return;
+                      commitBpm();
+                      event.currentTarget.blur();
                     }}
-                    className="w-full bg-transparent text-center text-lg font-black tabular-nums text-white outline-none"
+                    className="w-full bg-transparent text-center text-lg font-black tabular-nums text-[#faf9f6] outline-none"
                     inputMode="numeric"
                     aria-label="BPM value"
                   />
                 </div>
               </div>
-            </div>
+            </Panel>
 
-            <div className="rounded-lg border border-white/10 bg-white/5.5 p-4 backdrop-blur">
-              <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.24em] text-white/55">
-                <Clock3 className="h-4 w-4 text-white" />
-                Rhythms
-              </div>
+            <Panel title="Rhythms" icon={<Clock3 />}>
               <div className="grid grid-cols-3 gap-2">
                 {RHYTHMS.map((rhythm) => {
                   const selected = activeRhythms.includes(rhythm.count);
@@ -508,14 +536,18 @@ export default function PolyrhythmVisualizer() {
                     <button
                       key={rhythm.count}
                       onClick={() => toggleRhythm(rhythm.count)}
-                      className="relative h-12 rounded-lg border text-base font-black tabular-nums transition-all"
+                      className="relative h-12 rounded-xl border text-base font-black tabular-nums transition-all duration-200 hover:-translate-y-0.5"
                       style={{
-                        color: selected ? "#050608" : rhythm.color,
-                        background: selected ? rhythm.color : "rgba(0,0,0,0.28)",
+                        color: selected ? "#17131a" : rhythm.color,
+                        background: selected
+                          ? rhythm.color
+                          : "rgba(15,13,19,0.54)",
                         borderColor: selected
                           ? rhythm.color
-                          : "rgba(255,255,255,0.1)",
-                        boxShadow: selected ? `0 0 18px ${rhythm.glow}` : "none",
+                          : "rgba(250,249,246,0.11)",
+                        boxShadow: selected
+                          ? `0 0 22px ${rhythm.glow}`
+                          : "none",
                       }}
                       title={`${rhythm.count} pulses`}
                     >
@@ -524,78 +556,42 @@ export default function PolyrhythmVisualizer() {
                   );
                 })}
               </div>
-            </div>
+            </Panel>
 
-            <div className="rounded-lg border border-white/10 bg-white/5.5 p-4 backdrop-blur">
-              <div className="mb-3 text-xs font-bold uppercase tracking-[0.24em] text-white/55">
-                View
-              </div>
+            <Panel title="View">
               <div className="grid grid-cols-2 gap-2">
-                <ModeButton
-                  label="Circle"
-                  active={mode === "circle"}
-                  onClick={() => setMode("circle")}
-                >
-                  <CircleDot className="h-4 w-4" />
-                </ModeButton>
-                <ModeButton
-                  label="Timeline"
-                  active={mode === "timeline"}
-                  onClick={() => setMode("timeline")}
-                >
-                  <Rows3 className="h-4 w-4" />
-                </ModeButton>
-                <ModeButton
-                  label="Bloom"
-                  active={mode === "bloom"}
-                  onClick={() => setMode("bloom")}
-                >
-                  <Sparkles className="h-4 w-4" />
-                </ModeButton>
-                <ModeButton
-                  label="3D"
-                  active={mode === "orbit3d"}
-                  onClick={() => setMode("orbit3d")}
-                >
-                  <Orbit className="h-4 w-4" />
-                </ModeButton>
+                {(
+                  [
+                    ["circle", "Circle", <CircleDot key="circle" />],
+                    ["timeline", "Timeline", <Rows3 key="timeline" />],
+                    ["bloom", "Bloom", <Sparkles key="bloom" />],
+                    ["orbit3d", "3D", <Orbit key="orbit3d" />],
+                  ] as const
+                ).map(([value, label, icon]) => (
+                  <ModeButton
+                    key={value}
+                    label={label}
+                    active={mode === value}
+                    onClick={() => setMode(value)}
+                  >
+                    {icon}
+                  </ModeButton>
+                ))}
               </div>
-            </div>
+            </Panel>
           </aside>
 
-          <section className="flex min-h-175 flex-col rounded-lg border border-white/10 bg-white/4.5 p-4 shadow-2xl shadow-black/40 backdrop-blur sm:p-6">
-            <div className="mb-2 flex justify-end">
-              <div className="text-xs font-mono text-white/45">
-                Cycle {(progress * 100).toFixed(1)}%
-              </div>
+          <section className="flex min-h-175 flex-col rounded-2xl border border-[#faf9f6]/12 bg-[#14131a]/70 p-4 shadow-2xl shadow-black/40 backdrop-blur-xl sm:p-6">
+            <div className="mb-2 flex justify-end font-mono text-xs text-[#d8cabc]/55">
+              Cycle {(progress * 100).toFixed(1)}%
             </div>
-
-            <div className="flex flex-1 items-center justify-center rounded-lg border border-white/6 bg-black/20 px-2 py-4 sm:px-4">
-              {mode === "circle" ? (
-                <CircularVisualizer
-                  rhythms={activeRhythmData}
-                  progress={progress}
-                  activePulses={activePulses}
-                />
-              ) : mode === "timeline" ? (
-                <TimelineVisualizer
-                  rhythms={activeRhythmData}
-                  progress={progress}
-                  activePulses={activePulses}
-                />
-              ) : mode === "bloom" ? (
-                <BloomVisualizer
-                  rhythms={activeRhythmData}
-                  progress={progress}
-                  activePulses={activePulses}
-                />
-              ) : (
-                <Orbit3DVisualizer
-                  rhythms={activeRhythmData}
-                  progress={progress}
-                  activePulses={activePulses}
-                />
+            <div className="flex flex-1 items-center justify-center rounded-xl border border-[#faf9f6]/8 bg-[#0d0d13]/52 px-2 py-4 shadow-inner shadow-black/30 sm:px-4">
+              {mode === "circle" && <CircularVisualizer {...visualizerProps} />}
+              {mode === "timeline" && (
+                <TimelineVisualizer {...visualizerProps} />
               )}
+              {mode === "bloom" && <BloomVisualizer {...visualizerProps} />}
+              {mode === "orbit3d" && <Orbit3DVisualizer {...visualizerProps} />}
             </div>
           </section>
         </section>
@@ -606,29 +602,21 @@ export default function PolyrhythmVisualizer() {
           appearance: none;
           height: 6px;
           border-radius: 999px;
-          background: rgba(255, 255, 255, 0.16);
+          background: rgba(250, 249, 246, 0.24);
           outline: none;
         }
-
-        .poly-slider::-webkit-slider-thumb {
-          appearance: none;
-          width: 18px;
-          height: 18px;
-          border-radius: 999px;
-          border: 2px solid rgba(0, 0, 0, 0.8);
-          background: #ffffff;
-          box-shadow: 0 0 16px rgba(255, 255, 255, 0.45);
-          cursor: pointer;
-        }
-
+        .poly-slider::-webkit-slider-thumb,
         .poly-slider::-moz-range-thumb {
           width: 18px;
           height: 18px;
-          border: 2px solid rgba(0, 0, 0, 0.8);
+          border: 2px solid rgba(23, 19, 26, 0.9);
           border-radius: 999px;
-          background: #ffffff;
-          box-shadow: 0 0 16px rgba(255, 255, 255, 0.45);
+          background: #faf9f6;
+          box-shadow: 0 0 18px rgba(250, 249, 246, 0.38);
           cursor: pointer;
+        }
+        .poly-slider::-webkit-slider-thumb {
+          appearance: none;
         }
       `}</style>
     </div>
@@ -639,26 +627,24 @@ function CircularVisualizer({
   rhythms,
   progress,
   activePulses,
-}: {
-  rhythms: Rhythm[];
-  progress: number;
-  activePulses: Set<PulseKey>;
-}) {
+}: VisualizerProps) {
   const size = 760;
   const center = size / 2;
   const maxRadius = 300;
   const minRadius = 96;
-  const ringGap =
+  const gap =
     rhythms.length > 1 ? (maxRadius - minRadius) / (rhythms.length - 1) : 0;
-  const playheadAngle = progress * Math.PI * 2 - Math.PI / 2;
-  const playheadX = center + Math.cos(playheadAngle) * (maxRadius + 26);
-  const playheadY = center + Math.sin(playheadAngle) * (maxRadius + 26);
+  const angle = progress * TAU - Math.PI / 2;
+  const playhead = {
+    x: center + Math.cos(angle) * (maxRadius + 26),
+    y: center + Math.sin(angle) * (maxRadius + 26),
+  };
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center">
       <div className="mb-4 text-center">
         <div className="text-2xl font-black tracking-[0.16em] text-white sm:text-3xl">
-          {rhythms.map((rhythm) => rhythm.count).join(":")}
+          {rhythms.map(({ count }) => count).join(":")}
         </div>
         <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.28em] text-white/45">
           cycle
@@ -680,16 +666,16 @@ function CircularVisualizer({
         <line
           x1={center}
           y1={center}
-          x2={playheadX}
-          y2={playheadY}
+          x2={playhead.x}
+          y2={playhead.y}
           stroke="rgba(255,255,255,0.82)"
           strokeWidth="2"
           strokeLinecap="round"
         />
-        <circle cx={playheadX} cy={playheadY} r="8" fill="#ffffff" />
+        <circle cx={playhead.x} cy={playhead.y} r="8" fill="#faf9f6" />
 
         {rhythms.map((rhythm, rhythmIndex) => {
-          const radius = maxRadius - rhythmIndex * ringGap;
+          const radius = maxRadius - rhythmIndex * gap;
           return (
             <g key={rhythm.count}>
               <circle
@@ -701,36 +687,32 @@ function CircularVisualizer({
                 strokeOpacity="0.26"
                 strokeWidth="2"
               />
-              {Array.from({ length: rhythm.count }, (_, pulse) => {
-                const angle =
-                  (pulse / rhythm.count) * Math.PI * 2 - Math.PI / 2;
-                const x = center + Math.cos(angle) * radius;
-                const y = center + Math.sin(angle) * radius;
-                const isDownbeat = pulse === 0;
-                const isActive = activePulses.has(
-                  getPulseKey(rhythm.count, pulse),
-                );
-
+              {range(rhythm.count).map((pulse) => {
+                const pulseAngle = (pulse / rhythm.count) * TAU - Math.PI / 2;
+                const x = center + Math.cos(pulseAngle) * radius;
+                const y = center + Math.sin(pulseAngle) * radius;
+                const downbeat = pulse === 0;
+                const active = activePulses.has(pulseKey(rhythm.count, pulse));
                 return (
                   <g key={pulse}>
                     <circle
                       cx={x}
                       cy={y}
-                      r={isActive ? 18 : isDownbeat ? 12 : 9}
-                      fill={isDownbeat ? "#ffffff" : rhythm.color}
-                      fillOpacity={isActive ? 0.95 : isDownbeat ? 0.85 : 0.74}
-                      stroke={isDownbeat ? rhythm.color : "rgba(255,255,255,0.5)"}
-                      strokeWidth={isDownbeat ? 3 : 1}
+                      r={active ? 18 : downbeat ? 12 : 9}
+                      fill={downbeat ? "#faf9f6" : rhythm.color}
+                      fillOpacity={active ? 0.95 : downbeat ? 0.85 : 0.74}
+                      stroke={downbeat ? rhythm.color : "rgba(255,255,255,0.5)"}
+                      strokeWidth={downbeat ? 3 : 1}
                       style={{
-                        filter: isActive
+                        filter: active
                           ? `drop-shadow(0 0 18px ${rhythm.color})`
-                          : isDownbeat
+                          : downbeat
                             ? "drop-shadow(0 0 14px rgba(255,255,255,0.6))"
                             : "none",
                         transition: "r 90ms ease, fill-opacity 90ms ease",
                       }}
                     />
-                    {isDownbeat && (
+                    {downbeat && (
                       <text
                         x={x}
                         y={y - 22}
@@ -755,21 +737,14 @@ function TimelineVisualizer({
   rhythms,
   progress,
   activePulses,
-}: {
-  rhythms: Rhythm[];
-  progress: number;
-  activePulses: Set<PulseKey>;
-}) {
+}: VisualizerProps) {
   return (
     <div className="relative flex min-h-140 w-full max-w-245 flex-col justify-center gap-5 overflow-hidden rounded-lg border border-white/8 bg-white/2.5 p-5 sm:p-8">
       <div
         className="absolute bottom-8 top-8 w-px bg-white shadow-[0_0_18px_rgba(255,255,255,0.75)]"
         style={{ left: `calc(96px + (100% - 128px) * ${progress})` }}
       />
-      <div
-        className="absolute bottom-8 top-8 w-px bg-white/30"
-        style={{ left: "96px" }}
-      />
+      <div className="absolute bottom-8 top-8 left-24 w-px bg-white/30" />
 
       {rhythms.map((rhythm) => (
         <div key={rhythm.count} className="grid grid-cols-[80px_1fr] gap-6">
@@ -787,26 +762,22 @@ function TimelineVisualizer({
           </div>
           <div className="relative h-16 rounded-lg border border-white/8 bg-black/24">
             <div className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-white/12" />
-            {Array.from({ length: rhythm.count }, (_, pulse) => {
-              const left = rhythm.count === 1 ? 0 : (pulse / rhythm.count) * 100;
-              const isDownbeat = pulse === 0;
-              const isActive = activePulses.has(
-                getPulseKey(rhythm.count, pulse),
-              );
-
+            {range(rhythm.count).map((pulse) => {
+              const downbeat = pulse === 0;
+              const active = activePulses.has(pulseKey(rhythm.count, pulse));
               return (
                 <div
                   key={pulse}
                   className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-all"
                   style={{
-                    left: `${left}%`,
-                    width: isActive ? 26 : isDownbeat ? 20 : 14,
-                    height: isActive ? 26 : isDownbeat ? 20 : 14,
-                    background: isDownbeat ? "#ffffff" : rhythm.color,
-                    border: `2px solid ${isDownbeat ? rhythm.color : "rgba(255,255,255,0.42)"}`,
-                    boxShadow: isActive
+                    left: `${(pulse / rhythm.count) * 100}%`,
+                    width: active ? 26 : downbeat ? 20 : 14,
+                    height: active ? 26 : downbeat ? 20 : 14,
+                    background: downbeat ? "#faf9f6" : rhythm.color,
+                    border: `2px solid ${downbeat ? rhythm.color : "rgba(255,255,255,0.42)"}`,
+                    boxShadow: active
                       ? `0 0 20px ${rhythm.color}`
-                      : isDownbeat
+                      : downbeat
                         ? "0 0 14px rgba(255,255,255,0.55)"
                         : "none",
                   }}
@@ -820,21 +791,12 @@ function TimelineVisualizer({
   );
 }
 
-function BloomVisualizer({
-  rhythms,
-  progress,
-  activePulses,
-}: {
-  rhythms: Rhythm[];
-  progress: number;
-  activePulses: Set<PulseKey>;
-}) {
+function BloomVisualizer({ rhythms, progress, activePulses }: VisualizerProps) {
   const width = 960;
   const height = 680;
   const centerX = width / 2;
   const centerY = height / 2;
-  const maxRadius = 286;
-  const phase = progress * Math.PI * 2;
+  const phase = progress * TAU;
 
   return (
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
@@ -858,61 +820,56 @@ function BloomVisualizer({
             </feMerge>
           </filter>
         </defs>
-
-        <rect width={width} height={height} fill="transparent" />
         <circle cx={centerX} cy={centerY} r="230" fill="url(#bloom-core)" />
 
-        {rhythms.map((rhythm, rhythmIndex) => {
-          const radius =
-            92 + (rhythmIndex / Math.max(1, rhythms.length - 1)) * maxRadius;
-          const spin = phase * (rhythmIndex % 2 === 0 ? 1 : -1) * 0.12;
-          const points = Array.from({ length: rhythm.count }, (_, pulse) => {
-            const angle = (pulse / rhythm.count) * Math.PI * 2 - Math.PI / 2 + spin;
+        {rhythms.map((rhythm, index) => {
+          const radius = 92 + (index / Math.max(1, rhythms.length - 1)) * 286;
+          const spin = phase * (index % 2 ? -0.12 : 0.12);
+          const points = range(rhythm.count).map((pulse) => {
+            const angle = (pulse / rhythm.count) * TAU - Math.PI / 2 + spin;
             return {
               pulse,
               x: centerX + Math.cos(angle) * radius,
               y: centerY + Math.sin(angle) * radius,
             };
           });
+          const path = `${points.map(({ x, y }, pointIndex) => `${pointIndex ? "L" : "M"} ${x} ${y}`).join(" ")} Z`;
 
           return (
             <g key={rhythm.count}>
               <path
-                d={points
-                  .map((point, index) =>
-                    `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`,
-                  )
-                  .join(" ") + " Z"}
+                d={path}
                 fill="none"
                 stroke={rhythm.color}
                 strokeOpacity="0.16"
                 strokeWidth="1.5"
               />
-              {points.map((point) => {
-                const isDownbeat = point.pulse === 0;
-                const isActive = activePulses.has(
-                  getPulseKey(rhythm.count, point.pulse),
-                );
+              {points.map(({ pulse, x, y }) => {
+                const downbeat = pulse === 0;
+                const active = activePulses.has(pulseKey(rhythm.count, pulse));
                 return (
-                  <g key={point.pulse} filter={isActive ? "url(#soft-glow)" : undefined}>
+                  <g
+                    key={pulse}
+                    filter={active ? "url(#soft-glow)" : undefined}
+                  >
                     <line
                       x1={centerX}
                       y1={centerY}
-                      x2={point.x}
-                      y2={point.y}
+                      x2={x}
+                      y2={y}
                       stroke={rhythm.color}
-                      strokeOpacity={isActive ? 0.42 : 0.08}
-                      strokeWidth={isActive ? 2.5 : 1}
+                      strokeOpacity={active ? 0.42 : 0.08}
+                      strokeWidth={active ? 2.5 : 1}
                     />
                     <circle
-                      cx={point.x}
-                      cy={point.y}
-                      r={isActive ? 24 : isDownbeat ? 14 : 10}
-                      fill={isDownbeat ? "#ffffff" : rhythm.color}
-                      fillOpacity={isActive ? 0.95 : 0.72}
+                      cx={x}
+                      cy={y}
+                      r={active ? 24 : downbeat ? 14 : 10}
+                      fill={downbeat ? "#faf9f6" : rhythm.color}
+                      fillOpacity={active ? 0.95 : 0.72}
                       stroke={rhythm.color}
                       strokeOpacity="0.8"
-                      strokeWidth={isDownbeat ? 3 : 1}
+                      strokeWidth={downbeat ? 3 : 1}
                       style={{
                         transition:
                           "r 90ms ease, fill-opacity 90ms ease, stroke-width 90ms ease",
@@ -936,161 +893,146 @@ function BloomVisualizer({
           cx={centerX + Math.cos(phase - Math.PI / 2) * 52}
           cy={centerY + Math.sin(phase - Math.PI / 2) * 52}
           r="8"
-          fill="#ffffff"
+          fill="#faf9f6"
         />
       </svg>
     </div>
   );
 }
 
-function disposeThreeObject(object: THREE.Object3D) {
+function disposeObject(object: THREE.Object3D) {
   object.traverse((child) => {
     const mesh = child as THREE.Mesh;
     mesh.geometry?.dispose();
-    const material = mesh.material;
-    if (Array.isArray(material)) {
-      material.forEach((item) => item.dispose());
-    } else {
-      material?.dispose();
-    }
+    const materials = Array.isArray(mesh.material)
+      ? mesh.material
+      : [mesh.material];
+    materials.forEach((material) => material?.dispose());
   });
 }
 
-function Orbit3DVisualizer({
-  rhythms,
-  progress,
-  activePulses,
-}: {
-  rhythms: Rhythm[];
-  progress: number;
-  activePulses: Set<PulseKey>;
-}) {
+function Orbit3DVisualizer({ rhythms, activePulses }: VisualizerProps) {
   const mountRef = useRef<HTMLDivElement>(null);
+  const pulsesRef = useLatest(activePulses);
   const sceneRef = useRef<{
-    camera: THREE.PerspectiveCamera;
-    renderer: THREE.WebGLRenderer;
     group: THREE.Group;
-    nodes: Map<PulseKey, THREE.Mesh>;
-    rings: THREE.LineLoop[];
-    raf: number | null;
+    nodes: Map<
+      PulseKey,
+      THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial>
+    >;
   } | null>(null);
-  const progressRef = useRef(progress);
-  const activePulsesRef = useRef(activePulses);
-
-  useEffect(() => {
-    progressRef.current = progress;
-  }, [progress]);
-
-  useEffect(() => {
-    activePulsesRef.current = activePulses;
-  }, [activePulses]);
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog(0x05060a, 9, 22);
+    scene.fog = new THREE.Fog(0x0d0c12, 9, 22);
 
-    const camera = new THREE.PerspectiveCamera(44, 1, 0.1, 100);
-    camera.position.set(0, 3.8, 10.5);
-    camera.lookAt(0, 0, 0);
+    // A raised three-quarter view makes the stacked rhythm rings read as
+    // concentric orbits instead of collapsing into an edge-on line.
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    camera.position.set(7.4, 6.1, 9.6);
+    camera.lookAt(0, 0.15, 0);
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.setClearColor(0x000000, 0);
     mount.appendChild(renderer.domElement);
 
     const group = new THREE.Group();
-    scene.add(group);
-
-    const ambient = new THREE.AmbientLight(0xffffff, 1.15);
-    const key = new THREE.PointLight(0xffffff, 26, 24);
-    key.position.set(0, 5, 6);
-    scene.add(ambient, key);
+    scene.add(group, new THREE.AmbientLight(0xfaf9f6, 1.05));
+    const warmLight = new THREE.PointLight(0xfc8c74, 24, 24);
+    warmLight.position.set(1, 5, 6);
+    const coolLight = new THREE.PointLight(0x40c4bb, 16, 20);
+    coolLight.position.set(-5, 1, -3);
+    scene.add(warmLight, coolLight);
 
     const state = {
-      camera,
-      renderer,
       group,
-      nodes: new Map<PulseKey, THREE.Mesh>(),
-      rings: [] as THREE.LineLoop[],
-      raf: null as number | null,
+      nodes: new Map<
+        PulseKey,
+        THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial>
+      >(),
     };
     sceneRef.current = state;
 
     const resize = () => {
-      const width = mount.clientWidth || 720;
-      const height = mount.clientHeight || 560;
-      camera.aspect = width / height;
+      const { width, height } = mount.getBoundingClientRect();
+      camera.aspect = width / Math.max(height, 1);
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
     };
+    const observer = new ResizeObserver(resize);
+    observer.observe(mount);
+    resize();
 
+    const clock = new THREE.Clock();
+    const orbitRadius = 12.1;
+    const initialOrbitAngle = Math.atan2(7.4, 9.6);
+    let frame = 0;
     const animate = () => {
-      const phase = progressRef.current * Math.PI * 2;
-      group.rotation.y = phase * 0.22;
-      group.rotation.x = -0.42 + Math.sin(phase) * 0.06;
+      const elapsed = clock.getElapsedTime();
+      const orbitAngle = initialOrbitAngle + elapsed * 0.13;
 
-      state.nodes.forEach((mesh, keyValue) => {
-        const material = mesh.material as THREE.MeshStandardMaterial;
-        const isActive = activePulsesRef.current.has(keyValue as PulseKey);
-        const baseScale = Number(mesh.userData.baseScale ?? 1);
-        const targetScale = isActive ? baseScale * 2.25 : baseScale;
-        mesh.scale.lerp(
-          new THREE.Vector3(targetScale, targetScale, targetScale),
-          0.22,
-        );
-        material.emissiveIntensity = THREE.MathUtils.lerp(
-          material.emissiveIntensity,
-          isActive ? 2.8 : 0.55,
+      // Use wall-clock time rather than musical progress so this orbit never
+      // snaps back when a polyrhythm cycle wraps around.
+      camera.position.set(
+        Math.sin(orbitAngle) * orbitRadius,
+        6.1 + Math.sin(elapsed * 0.24) * 0.45,
+        Math.cos(orbitAngle) * orbitRadius,
+      );
+      camera.lookAt(0, 0.15, 0);
+      group.rotation.set(
+        -0.42 + Math.sin(elapsed * 0.18) * 0.06,
+        elapsed * 0.075,
+        0,
+      );
+
+      state.nodes.forEach((mesh, key) => {
+        const active = pulsesRef.current.has(key);
+        const base = Number(mesh.userData.baseScale ?? 1);
+        const target = active ? base * 2.25 : base;
+        mesh.scale.setScalar(THREE.MathUtils.lerp(mesh.scale.x, target, 0.22));
+        mesh.material.emissiveIntensity = THREE.MathUtils.lerp(
+          mesh.material.emissiveIntensity,
+          active ? 2.8 : 0.55,
           0.18,
         );
       });
 
       renderer.render(scene, camera);
-      state.raf = requestAnimationFrame(animate);
+      frame = requestAnimationFrame(animate);
     };
-
-    resize();
-    window.addEventListener("resize", resize);
     animate();
 
     return () => {
-      window.removeEventListener("resize", resize);
-      if (state.raf !== null) cancelAnimationFrame(state.raf);
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      disposeObject(scene);
       renderer.dispose();
-      mount.removeChild(renderer.domElement);
-      disposeThreeObject(scene);
+      renderer.domElement.remove();
       sceneRef.current = null;
     };
-  }, []);
+  }, [pulsesRef]);
 
   useEffect(() => {
     const state = sceneRef.current;
     if (!state) return;
 
+    disposeObject(state.group);
     state.group.clear();
     state.nodes.clear();
-    state.rings = [];
 
-    const nodeGeometry = new THREE.SphereGeometry(0.11, 24, 16);
-    const ringMaterial = new THREE.LineBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.18,
-    });
-
-    rhythms.forEach((rhythm, rhythmIndex) => {
+    const geometry = new THREE.SphereGeometry(0.11, 24, 16);
+    rhythms.forEach((rhythm, index) => {
       const color = new THREE.Color(rhythm.color);
-      const radius = 1.45 + rhythmIndex * 0.34;
-      const y = (rhythmIndex - (rhythms.length - 1) / 2) * 0.18;
-      const zTilt = (rhythmIndex - (rhythms.length - 1) / 2) * 0.045;
-      const ringPoints = Array.from({ length: 144 }, (_, index) => {
-        const angle = (index / 144) * Math.PI * 2;
+      const radius = 1.45 + index * 0.34;
+      const offset = index - (rhythms.length - 1) / 2;
+      const y = offset * 0.18;
+      const zTilt = offset * 0.045;
+      const ringPoints = range(144).map((point) => {
+        const angle = (point / 144) * TAU;
         return new THREE.Vector3(
           Math.cos(angle) * radius,
           y + Math.sin(angle) * zTilt,
@@ -1099,48 +1041,68 @@ function Orbit3DVisualizer({
       });
       const ring = new THREE.LineLoop(
         new THREE.BufferGeometry().setFromPoints(ringPoints),
-        ringMaterial.clone(),
+        new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.2 }),
       );
-      (ring.material as THREE.LineBasicMaterial).color = color;
-      (ring.material as THREE.LineBasicMaterial).opacity = 0.2;
       state.group.add(ring);
-      state.rings.push(ring);
 
-      Array.from({ length: rhythm.count }, (_, pulse) => {
-        const angle = (pulse / rhythm.count) * Math.PI * 2 - Math.PI / 2;
-        const isDownbeat = pulse === 0;
-        const material = new THREE.MeshStandardMaterial({
-          color: isDownbeat ? 0xffffff : color,
-          emissive: color,
-          emissiveIntensity: isDownbeat ? 1.15 : 0.55,
-          roughness: 0.28,
-          metalness: 0.35,
-        });
-        const node = new THREE.Mesh(nodeGeometry, material);
+      range(rhythm.count).forEach((pulse) => {
+        const angle = (pulse / rhythm.count) * TAU - Math.PI / 2;
+        const downbeat = pulse === 0;
+        const node = new THREE.Mesh(
+          geometry,
+          new THREE.MeshStandardMaterial({
+            color: downbeat ? 0xfaf9f6 : color,
+            emissive: color,
+            emissiveIntensity: downbeat ? 1.15 : 0.55,
+            roughness: 0.28,
+            metalness: 0.35,
+          }),
+        );
         node.position.set(
           Math.cos(angle) * radius,
           y + Math.sin(angle) * zTilt,
           Math.sin(angle) * radius,
         );
-        node.userData.baseScale = isDownbeat ? 1.35 : 1;
+        node.userData.baseScale = downbeat ? 1.35 : 1;
         node.scale.setScalar(node.userData.baseScale);
-        state.nodes.set(getPulseKey(rhythm.count, pulse), node);
+        state.nodes.set(pulseKey(rhythm.count, pulse), node);
         state.group.add(node);
       });
     });
 
     return () => {
-      disposeThreeObject(state.group);
+      disposeObject(state.group);
       state.group.clear();
-      nodeGeometry.dispose();
-      ringMaterial.dispose();
+      state.nodes.clear();
     };
   }, [rhythms]);
 
   return (
     <div className="relative h-full min-h-140 w-full overflow-hidden rounded-lg">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.12),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.05),transparent)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(232,160,145,0.12),transparent_38%),radial-gradient(circle_at_70%_70%,rgba(98,174,168,0.1),transparent_42%),linear-gradient(180deg,rgba(243,232,216,0.035),transparent)]" />
       <div ref={mountRef} className="absolute inset-0" />
+    </div>
+  );
+}
+
+function Panel({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-[#faf9f6]/11 bg-[#17141d]/70 p-4 shadow-lg shadow-black/10 backdrop-blur-xl">
+      <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.24em] text-[#d8cabc]/60">
+        {icon && (
+          <span className="text-[#faf9f6] [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+        )}
+        {title}
+      </div>
+      {children}
     </div>
   );
 }
@@ -1150,17 +1112,16 @@ function IconButton({
   label,
   onClick,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   label: string;
-  isActive?: boolean;
-  onClick: () => void;
+  onClick: () => void | Promise<void>;
 }) {
   return (
     <button
-      onClick={onClick}
+      onClick={() => void onClick()}
       title={label}
       aria-label={label}
-      className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/5.5 text-white transition-all hover:border-white/25 hover:bg-white/10"
+      className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#faf9f6]/12 bg-[#211b24]/72 text-[#faf9f6] transition-all hover:-translate-y-0.5 hover:border-[#fc8c74]/45 hover:bg-[#2a2029]/85 [&>svg]:h-4 [&>svg]:w-4"
     >
       {children}
     </button>
@@ -1173,7 +1134,7 @@ function ModeButton({
   active,
   onClick,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   label: string;
   active: boolean;
   onClick: () => void;
@@ -1181,11 +1142,12 @@ function ModeButton({
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-center gap-2 rounded-lg border px-3 py-3 text-xs font-black uppercase tracking-[0.18em] transition-all"
+      className="flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-xs font-black uppercase tracking-[0.18em] transition-all hover:-translate-y-0.5 [&>svg]:h-4 [&>svg]:w-4"
       style={{
-        background: active ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.26)",
-        borderColor: active ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.1)",
-        color: active ? "#08090d" : "rgba(255,255,255,0.68)",
+        background: active ? "#faf9f6" : "rgba(15,13,19,0.5)",
+        borderColor: active ? "#faf9f6" : "rgba(250,249,246,0.11)",
+        color: active ? "#17131a" : "rgba(250,249,246,0.68)",
+        boxShadow: active ? "0 10px 28px rgba(252,140,116,0.13)" : "none",
       }}
     >
       {children}
