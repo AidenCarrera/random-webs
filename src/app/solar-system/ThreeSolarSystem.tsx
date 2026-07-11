@@ -5,12 +5,14 @@ import * as THREE from "three";
 
 export type SolarTextureKey =
   | "mercury"
-  | "venus_atmosphere"
   | "venus_surface"
   | "earth"
-  | "earth_night"
   | "moon"
   | "mars"
+  | "ceres"
+  | "eris"
+  | "haumea"
+  | "makemake"
   | "jupiter"
   | "saturn"
   | "uranus"
@@ -65,15 +67,18 @@ type PlanetNode = {
 const WORLD_HALF_SIZE = 450;
 const MAX_PIXEL_RATIO = 1.75;
 const TWO_PI = Math.PI * 2;
+const BASE_SIMULATION_RATE = 0.25;
 
 const textureUrls: Record<SolarTextureKey, string> = {
   mercury: "/solar-system/2k_mercury.jpg",
-  venus_atmosphere: "/solar-system/2k_venus_atmosphere.jpg",
   venus_surface: "/solar-system/2k_venus_surface.jpg",
   earth: "/solar-system/2k_earth_daymap.jpg",
-  earth_night: "/solar-system/2k_earth_nightmap.jpg",
   moon: "/solar-system/2k_moon.jpg",
   mars: "/solar-system/2k_mars.jpg",
+  ceres: "/solar-system/2k_ceres_fictional.jpg",
+  eris: "/solar-system/2k_eris_fictional.jpg",
+  haumea: "/solar-system/2k_haumea_fictional.jpg",
+  makemake: "/solar-system/2k_makemake_fictional.jpg",
   jupiter: "/solar-system/2k_jupiter.jpg",
   saturn: "/solar-system/2k_saturn.jpg",
   uranus: "/solar-system/2k_uranus.jpg",
@@ -91,7 +96,6 @@ function finiteOr(value: number, fallback: number) {
 function planetSpin(textureKey: SolarTextureKey) {
   if (textureKey === "jupiter") return 0.78;
   if (textureKey === "saturn") return 0.62;
-  if (textureKey === "venus_atmosphere") return -0.22;
   if (textureKey === "venus_surface") return -0.12;
   if (textureKey === "uranus") return -0.3;
   return 0.38;
@@ -678,7 +682,7 @@ export function ThreeSolarSystem({
           -100,
           100,
         );
-        const scaledDelta = delta * safeTimeScale;
+        const scaledDelta = delta * safeTimeScale * BASE_SIMULATION_RATE;
 
         sun.rotation.y += scaledDelta * 0.12;
 

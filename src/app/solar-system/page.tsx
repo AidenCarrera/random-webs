@@ -20,12 +20,14 @@ import { ThreeSolarSystem } from "./ThreeSolarSystem";
 // Asset texture mappings
 const TEXTURE_MAP = {
   mercury: "/solar-system/2k_mercury.jpg",
-  venus_atmosphere: "/solar-system/2k_venus_atmosphere.jpg",
   venus_surface: "/solar-system/2k_venus_surface.jpg",
   earth: "/solar-system/2k_earth_daymap.jpg",
-  earth_night: "/solar-system/2k_earth_nightmap.jpg",
   moon: "/solar-system/2k_moon.jpg",
   mars: "/solar-system/2k_mars.jpg",
+  ceres: "/solar-system/2k_ceres_fictional.jpg",
+  eris: "/solar-system/2k_eris_fictional.jpg",
+  haumea: "/solar-system/2k_haumea_fictional.jpg",
+  makemake: "/solar-system/2k_makemake_fictional.jpg",
   jupiter: "/solar-system/2k_jupiter.jpg",
   saturn: "/solar-system/2k_saturn.jpg",
   saturn_ring: "/solar-system/2k_saturn_ring_alpha.png",
@@ -54,12 +56,14 @@ interface Planet {
 
 const GLOW_COLORS: Record<string, string> = {
   mercury: "rgba(139,137,137,0.1)",
-  venus_atmosphere: "rgba(229,196,146,0.12)",
   venus_surface: "rgba(204,119,34,0.12)",
   earth: "rgba(65,105,225,0.15)",
-  earth_night: "rgba(100,149,237,0.08)",
   moon: "rgba(200,200,200,0.1)",
   mars: "rgba(205,92,92,0.12)",
+  ceres: "rgba(184,156,122,0.1)",
+  eris: "rgba(217,232,245,0.12)",
+  haumea: "rgba(181,220,236,0.12)",
+  makemake: "rgba(190,118,82,0.12)",
   jupiter: "rgba(199,165,117,0.12)",
   saturn: "rgba(224,205,167,0.1)",
   uranus: "rgba(0,206,209,0.12)",
@@ -81,7 +85,7 @@ const DEFAULT_PLANETS: Planet[] = [
   {
     id: "venus",
     name: "Venus",
-    textureKey: "venus_atmosphere",
+    textureKey: "venus_surface",
     size: 18,
     orbitSize: 200,
     duration: 10,
@@ -169,16 +173,18 @@ const PRESETS = {
 
 const TEXTURE_OPTIONS: { key: TextureKey; name: string }[] = [
   { key: "mercury", name: "Mercury" },
-  { key: "venus_atmosphere", name: "Venus Atmosphere" },
-  { key: "venus_surface", name: "Venus Surface" },
-  { key: "earth", name: "Earth Day" },
-  { key: "earth_night", name: "Earth Night" },
+  { key: "venus_surface", name: "Venus" },
+  { key: "earth", name: "Earth" },
   { key: "mars", name: "Mars" },
   { key: "jupiter", name: "Jupiter" },
   { key: "saturn", name: "Saturn" },
   { key: "uranus", name: "Uranus" },
   { key: "neptune", name: "Neptune" },
   { key: "moon", name: "Moon" },
+  { key: "ceres", name: "Ceres" },
+  { key: "eris", name: "Eris" },
+  { key: "haumea", name: "Haumea" },
+  { key: "makemake", name: "Makemake" },
 ];
 
 const TYPE_OPTIONS = [
@@ -186,12 +192,33 @@ const TYPE_OPTIONS = [
   "Habitable",
   "Gas Giant",
   "Ice Giant",
+  "Dwarf Planet",
   "Lava",
   "Exotic",
 ];
 
 const AMBIENT_AUDIO_URL = "/solar-system/space-ambient.mp3";
 const DEFAULT_AMBIENT_VOLUME = 0.20;
+
+const getSuggestedPlanetType = (textureKey: TextureKey) => {
+  switch (textureKey) {
+    case "earth":
+      return "Habitable";
+    case "jupiter":
+    case "saturn":
+      return "Gas Giant";
+    case "uranus":
+    case "neptune":
+      return "Ice Giant";
+    case "ceres":
+    case "eris":
+    case "haumea":
+    case "makemake":
+      return "Dwarf Planet";
+    default:
+      return "Rocky";
+  }
+};
 
 const getRingGradient = (textureKey: TextureKey) => {
   if (textureKey === "saturn") {
@@ -254,11 +281,13 @@ export default function SolarSystem() {
 
   // Custom Planet Form State
   const [newPlanetName, setNewPlanetName] = useState("");
-  const [newPlanetTexture, setNewPlanetTexture] = useState<TextureKey>("mars");
+  const [newPlanetTexture, setNewPlanetTexture] = useState<TextureKey>("ceres");
   const [newPlanetSize, setNewPlanetSize] = useState(16);
   const [newPlanetOrbit, setNewPlanetOrbit] = useState(400);
   const [newPlanetDuration, setNewPlanetDuration] = useState(25);
-  const [newPlanetType, setNewPlanetType] = useState("Rocky");
+  const [newPlanetType, setNewPlanetType] = useState(
+    getSuggestedPlanetType("ceres"),
+  );
   const [newPlanetTemp, setNewPlanetTemp] = useState("250 K");
   const [newPlanetDesc, setNewPlanetDesc] = useState(
     "A mysterious newly discovered celestial world.",
@@ -1416,9 +1445,11 @@ export default function SolarSystem() {
                       </label>
                       <select
                         value={newPlanetTexture}
-                        onChange={(e) =>
-                          setNewPlanetTexture(e.target.value as TextureKey)
-                        }
+                        onChange={(e) => {
+                          const textureKey = e.target.value as TextureKey;
+                          setNewPlanetTexture(textureKey);
+                          setNewPlanetType(getSuggestedPlanetType(textureKey));
+                        }}
                         className="bg-black/80 border border-white/10 rounded px-1.5 py-1 text-xs focus:outline-none cursor-pointer"
                       >
                         {TEXTURE_OPTIONS.map((opt) => (
