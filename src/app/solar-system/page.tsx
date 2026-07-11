@@ -190,6 +190,9 @@ const TYPE_OPTIONS = [
   "Exotic",
 ];
 
+const AMBIENT_AUDIO_URL = "/solar-system/space-ambient.mp3";
+const DEFAULT_AMBIENT_VOLUME = 0.20;
+
 const getRingGradient = (textureKey: TextureKey) => {
   if (textureKey === "saturn") {
     return `radial-gradient(
@@ -229,6 +232,7 @@ export default function SolarSystem() {
   const [planets, setPlanets] = useState<Planet[]>(DEFAULT_PLANETS);
   const [paused, setPaused] = useState(false);
   const [timeScale, setTimeScale] = useState(1);
+  const [ambientVolume, setAmbientVolume] = useState(DEFAULT_AMBIENT_VOLUME);
   const [selectedPlanet, setSelectedPlanet] = useState<Planet | null>(null);
 
   const [mounted, setMounted] = useState(false);
@@ -271,6 +275,7 @@ export default function SolarSystem() {
   const exportStageRef = useRef<HTMLDivElement>(null);
   const systemViewportRef = useRef<HTMLDivElement>(null);
   const threeCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
   const exportObjectUrlRef = useRef<string | null>(null);
   const planetRotations = useRef<{ [id: string]: number }>({});
   const planetElements = useRef<{ [id: string]: HTMLDivElement | null }>({});
@@ -299,6 +304,43 @@ export default function SolarSystem() {
   useEffect(() => {
     timeScaleRef.current = timeScale;
   }, [timeScale]);
+
+  useEffect(() => {
+    const audio = new Audio(AMBIENT_AUDIO_URL);
+    audio.loop = true;
+    audio.preload = "auto";
+    audio.volume = DEFAULT_AMBIENT_VOLUME;
+    ambientAudioRef.current = audio;
+
+    const tryStartAmbientAudio = () => {
+      audio.play().then(
+        () => {
+          window.removeEventListener("pointerdown", tryStartAmbientAudio);
+          window.removeEventListener("keydown", tryStartAmbientAudio);
+        },
+        () => {},
+      );
+    };
+
+    window.addEventListener("pointerdown", tryStartAmbientAudio);
+    window.addEventListener("keydown", tryStartAmbientAudio);
+    tryStartAmbientAudio();
+
+    return () => {
+      window.removeEventListener("pointerdown", tryStartAmbientAudio);
+      window.removeEventListener("keydown", tryStartAmbientAudio);
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+      ambientAudioRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (ambientAudioRef.current) {
+      ambientAudioRef.current.volume = ambientVolume;
+    }
+  }, [ambientVolume]);
 
   // Handle container resizing to fit on screen
   useEffect(() => {
@@ -1224,6 +1266,23 @@ export default function SolarSystem() {
                     <option value="stars">Default</option>
                     <option value="stars_milky_way">Milky Way</option>
                   </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5 mt-1">
+                  <div className="flex items-center justify-between text-[10px] text-white/40 uppercase">
+                    <label htmlFor="ambient-volume">Ambient Volume</label>
+                    <span>{Math.round(ambientVolume * 100)}%</span>
+                  </div>
+                  <input
+                    id="ambient-volume"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={ambientVolume}
+                    onChange={(e) => setAmbientVolume(Number(e.target.value))}
+                    className="w-full h-1 bg-white/15 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
+                  />
                 </div>
 
                 <button

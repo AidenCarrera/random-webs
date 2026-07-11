@@ -650,20 +650,21 @@ export function ThreeSolarSystem({
 
     renderer.domElement.addEventListener("pointerup", handlePointerUp);
 
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
+    timer.connect(document);
     let frame = 0;
     let lastSceneRevision = -1;
 
-    const animate = () => {
+    const animate = (timestamp: number) => {
       frame = requestAnimationFrame(animate);
+      timer.update(timestamp);
 
       if (document.hidden) {
-        clock.getDelta();
         return;
       }
 
       const current = propsRef.current;
-      const delta = Math.min(clock.getDelta(), 0.05);
+      const delta = Math.min(timer.getDelta(), 0.05);
 
       if (lastSceneRevision !== sceneRevisionRef.current) {
         lastSceneRevision = sceneRevisionRef.current;
@@ -706,11 +707,12 @@ export function ThreeSolarSystem({
       }
     };
 
-    animate();
+    animate(performance.now());
 
     return () => {
       clearTimeout(loadTimeout);
       cancelAnimationFrame(frame);
+      timer.dispose();
       resizeObserver.disconnect();
       renderer.domElement.removeEventListener("pointerup", handlePointerUp);
       propsRef.current.onCanvasReady(null);
