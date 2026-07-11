@@ -1,5 +1,6 @@
 "use client";
 
+import "./styles.css";
 import { useRef, useEffect, useState } from "react";
 import { Download, Trash2, Palette, Eye, EyeOff, Undo, Redo, Square, Maximize } from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";

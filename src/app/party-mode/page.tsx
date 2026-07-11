@@ -1,5 +1,6 @@
 "use client";
 
+import "./styles.css";
 import { useState, useRef } from "react";
 import confetti from "canvas-confetti";
 import { Sparkles } from "lucide-react";

@@ -1,5 +1,6 @@
 "use client";
 
+import "./styles.css";
 import { useEffect, useRef, useState } from "react";
 import Matter from "matter-js";
 

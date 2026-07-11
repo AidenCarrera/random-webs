@@ -1,0 +1,77 @@
+/* Mandala range slider styling */
+.mandala-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.15);
+  outline: none;
+  transition: background 0.2s ease;
+}
+
+.mandala-slider:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.mandala-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #00ffea;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  transition: transform 0.1s ease-in-out;
+}
+
+.mandala-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.mandala-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #00ffea;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  transition: transform 0.1s ease-in-out;
+}
+
+.mandala-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+/* Custom Color Picker input styling to ensure a perfect square across all browsers */
+.color-picker-input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: inline-block;
+  vertical-align: middle;
+  box-sizing: border-box;
+}
+
+.color-picker-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker-input::-webkit-color-swatch {
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}
+
+.color-picker-input::-moz-color-swatch {
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}

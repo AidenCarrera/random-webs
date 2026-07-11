@@ -1,5 +1,6 @@
 "use client";
 
+import "./styles.css";
 import { useState, useRef } from "react";
 import { RefreshCw } from "lucide-react";
 

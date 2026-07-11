@@ -1,0 +1,59 @@
+@keyframes dance {
+  0%,
+  100% {
+    transform: rotate(-2deg) translateY(0);
+    text-shadow: 0 0 10px rgba(255,255,255,0.4), 0 4px 8px rgba(0,0,0,0.15);
+  }
+  25% {
+    transform: rotate(2deg) translateY(-6px);
+    text-shadow: 0 0 20px rgba(255,255,255,0.7), 0 8px 16px rgba(0,0,0,0.1);
+  }
+  50% {
+    transform: rotate(-1.5deg) translateY(-10px);
+    text-shadow: 0 0 15px rgba(255,255,255,0.6), 0 12px 20px rgba(0,0,0,0.1);
+  }
+  75% {
+    transform: rotate(1.5deg) translateY(-6px);
+    text-shadow: 0 0 20px rgba(255,255,255,0.7), 0 8px 16px rgba(0,0,0,0.1);
+  }
+}
+
+.animate-dance {
+  animation: dance 1.5s ease-in-out infinite;
+}
+
+@keyframes party-bg {
+  0%, 100% {
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    filter: hue-rotate(60deg);
+  }
+}
+
+.animate-party-bg {
+  animation: party-bg 6s linear infinite;
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(96vh) rotate(0deg) scale(0.7);
+    opacity: 0;
+  }
+  2% {
+    opacity: 0.95;
+  }
+  95% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateY(-25vh) rotate(720deg) scale(1.4);
+    opacity: 0;
+  }
+}
+
+.animate-float-up {
+  animation: float-up 6.5s linear infinite;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2));
+  will-change: transform, opacity;
+}
