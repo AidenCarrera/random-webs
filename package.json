@@ -13,6 +13,7 @@
   "dependencies": {
     "@types/canvas-confetti": "^1.9.0",
     "@types/matter-js": "^0.20.2",
+    "@vercel/analytics": "^2.0.1",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.42.2",
     "gifenc": "^1.0.3",
