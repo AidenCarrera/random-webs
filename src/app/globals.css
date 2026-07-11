@@ -358,3 +358,32 @@ body {
   background: #29adff;
   color: #fff7dd;
 }
+
+/* Fractal explorer: low-profile glass scrollbar */
+.fractal-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(196, 181, 253, 0.34) transparent;
+  scrollbar-gutter: stable;
+}
+
+.fractal-scrollbar::-webkit-scrollbar {
+  width: 7px;
+}
+
+.fractal-scrollbar::-webkit-scrollbar-track {
+  margin: 10px 0;
+  background: transparent;
+}
+
+.fractal-scrollbar::-webkit-scrollbar-thumb {
+  min-height: 36px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(196, 181, 253, 0.3);
+  background-clip: padding-box;
+}
+
+.fractal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(221, 214, 254, 0.48);
+  background-clip: padding-box;
+}

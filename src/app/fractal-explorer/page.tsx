@@ -8,12 +8,9 @@ import {
   VolumeX,
   Download,
   RefreshCw,
-  Settings,
   Sliders,
   Maximize2,
-  Info,
   ChevronRight,
-  ChevronLeft,
   Volume1,
   X,
 } from "lucide-react";
@@ -330,6 +327,15 @@ const GPU_PALETTE_INDEX: Record<PaletteName, number> = {
   Ocean: 3,
   Spectrum: 4,
   Monochrome: 5,
+};
+
+const PALETTE_GRADIENTS: Record<PaletteName, string> = {
+  Neon: "linear-gradient(90deg, #1e1244 0%, #c026d3 48%, #22d3ee 100%)",
+  Solar: "linear-gradient(90deg, #7f1d1d 0%, #f97316 52%, #fde68a 100%)",
+  Forest: "linear-gradient(90deg, #123c2a 0%, #839735 48%, #e9d5ff 100%)",
+  Ocean: "linear-gradient(90deg, #0c3a68 0%, #0891b2 52%, #a7f3d0 100%)",
+  Spectrum: "linear-gradient(90deg, #ef4444, #facc15, #22c55e, #06b6d4, #8b5cf6)",
+  Monochrome: "linear-gradient(90deg, #3f3f46 0%, #a1a1aa 52%, #fafafa 100%)",
 };
 
 type GpuFractalRenderer = {
@@ -678,7 +684,7 @@ export default function FractalExplorer() {
   const centerXRef = useRef<number>(-0.7);
   const centerYRef = useRef<number>(0.0);
   const zoomRef = useRef<number>(1.0);
-  const iterationsRef = useRef<number>(120);
+  const iterationsRef = useRef<number>(200);
   const paletteRef = useRef<PaletteName>("Neon");
   const modeRef = useRef<FractalMode>("mandelbrot");
 
@@ -695,7 +701,7 @@ export default function FractalExplorer() {
 
   // React State for Control Panels and Indicators
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
-  const [currentIterations, setCurrentIterations] = useState<number>(120);
+  const [currentIterations, setCurrentIterations] = useState<number>(200);
   const [currentPalette, setCurrentPalette] = useState<PaletteName>("Neon");
   const [currentMode, setCurrentMode] = useState<FractalMode>("mandelbrot");
   const [isCpuRenderActive, setIsCpuRenderActive] = useState<boolean>(false);
@@ -729,6 +735,15 @@ export default function FractalExplorer() {
   const hasDraggedRef = useRef<boolean>(false);
   const mouseDownStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const startDragMouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const activeTouchPointersRef = useRef<
+    Map<number, { x: number; y: number }>
+  >(new Map());
+  const pinchRef = useRef<{
+    distance: number;
+    zoom: number;
+    focusX: number;
+    focusY: number;
+  } | null>(null);
   const DRAG_THRESHOLD_PX = 5;
   const isAnimatingRef = useRef<boolean>(false);
   const recentTouchInteractionRef = useRef<boolean>(false);
@@ -1313,11 +1328,94 @@ export default function FractalExplorer() {
     };
   };
 
+  const beginPinchGesture = () => {
+    const [firstTouch, secondTouch] = Array.from(
+      activeTouchPointersRef.current.values(),
+    );
+    if (!firstTouch || !secondTouch) return;
+
+    const midpointX = (firstTouch.x + secondTouch.x) / 2;
+    const midpointY = (firstTouch.y + secondTouch.y) / 2;
+    const pointer = getCanvasPointerPosition(midpointX, midpointY);
+    if (!pointer) return;
+
+    const { canvas, px, py, widthInComplex, heightInComplex } = pointer;
+    pinchRef.current = {
+      distance: Math.hypot(
+        secondTouch.x - firstTouch.x,
+        secondTouch.y - firstTouch.y,
+      ),
+      zoom: zoomRef.current,
+      focusX:
+        centerXRef.current +
+        (px - canvas.width / 2) * (widthInComplex / canvas.width),
+      focusY:
+        centerYRef.current +
+        (py - canvas.height / 2) * (heightInComplex / canvas.height),
+    };
+    isDraggingRef.current = false;
+    hasDraggedRef.current = true;
+  };
+
+  const updatePinchGesture = () => {
+    const pinch = pinchRef.current;
+    const [firstTouch, secondTouch] = Array.from(
+      activeTouchPointersRef.current.values(),
+    );
+    if (!pinch || !firstTouch || !secondTouch || pinch.distance === 0) {
+      return false;
+    }
+
+    const midpointX = (firstTouch.x + secondTouch.x) / 2;
+    const midpointY = (firstTouch.y + secondTouch.y) / 2;
+    const pointer = getCanvasPointerPosition(midpointX, midpointY);
+    if (!pointer) return false;
+
+    const distance = Math.hypot(
+      secondTouch.x - firstTouch.x,
+      secondTouch.y - firstTouch.y,
+    );
+    const newZoom = Math.max(
+      0.1,
+      Math.min(MAX_ZOOM, pinch.zoom * (distance / pinch.distance)),
+    );
+    const newWidthInComplex = 3.0 / newZoom;
+    const newHeightInComplex =
+      newWidthInComplex * (pointer.canvas.height / pointer.canvas.width);
+
+    centerXRef.current =
+      pinch.focusX -
+      (pointer.px - pointer.canvas.width / 2) *
+        (newWidthInComplex / pointer.canvas.width);
+    centerYRef.current =
+      pinch.focusY -
+      (pointer.py - pointer.canvas.height / 2) *
+        (newHeightInComplex / pointer.canvas.height);
+    zoomRef.current = newZoom;
+
+    setZoomLevel(newZoom);
+    setUiCoords({ r: centerXRef.current, i: centerYRef.current });
+    drawFastPreview();
+    return true;
+  };
+
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (isAnimatingRef.current || !e.isPrimary) return;
+    if (isAnimatingRef.current) return;
 
     if (e.pointerType === "touch") {
       markRecentTouchInteraction();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      activeTouchPointersRef.current.set(e.pointerId, {
+        x: e.clientX,
+        y: e.clientY,
+      });
+
+      if (activeTouchPointersRef.current.size >= 2) {
+        beginPinchGesture();
+        return;
+      }
+    } else if (!e.isPrimary) {
+      return;
     }
 
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -1328,7 +1426,20 @@ export default function FractalExplorer() {
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!e.isPrimary) return;
+    if (e.pointerType === "touch") {
+      activeTouchPointersRef.current.set(e.pointerId, {
+        x: e.clientX,
+        y: e.clientY,
+      });
+
+      if (activeTouchPointersRef.current.size >= 2) {
+        e.preventDefault();
+        updatePinchGesture();
+        return;
+      }
+    } else if (!e.isPrimary) {
+      return;
+    }
 
     const pointer = getCanvasPointerPosition(e.clientX, e.clientY);
     if (!pointer) return;
@@ -1405,11 +1516,31 @@ export default function FractalExplorer() {
   };
 
   const handlePointerUpOrCancel = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!e.isPrimary) return;
-
     if (e.pointerType === "touch") {
       markRecentTouchInteraction();
+      activeTouchPointersRef.current.delete(e.pointerId);
+      pinchRef.current = null;
+
+      const remainingTouch = Array.from(
+        activeTouchPointersRef.current.values(),
+      )[0];
+      if (remainingTouch) {
+        isDraggingRef.current = true;
+        hasDraggedRef.current = true;
+        mouseDownStartRef.current = remainingTouch;
+        startDragMouseRef.current = remainingTouch;
+      } else if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        triggerProgressiveRender();
+      }
+
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+      return;
     }
+
+    if (!e.isPrimary) return;
 
     if (isDraggingRef.current) {
       isDraggingRef.current = false;
@@ -1752,7 +1883,7 @@ export default function FractalExplorer() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black font-sans select-none overscroll-none">
+    <div className="relative w-screen h-screen overflow-hidden bg-[#050611] font-sans select-none overscroll-none">
       {/* Dynamic Background Shader / Main Rendering Canvas */}
       <canvas
         ref={canvasRef}
@@ -1772,9 +1903,18 @@ export default function FractalExplorer() {
         className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-0 block"
       />
 
-      {/* Modern Neon Glow Overlays (Borders) */}
-      <div className="absolute inset-0 border border-zinc-900 pointer-events-none z-10" />
-
+      {/* Atmospheric interface layers */}
+      <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_18%_18%,rgba(89,76,183,0.08),transparent_31%),radial-gradient(circle_at_87%_90%,rgba(34,211,238,0.04),transparent_26%)]" />
+      <div
+        className="absolute inset-0 pointer-events-none z-10 opacity-[0.09]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.10) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+          maskImage:
+            "linear-gradient(to bottom, rgba(0,0,0,0.65), transparent 74%)",
+        }}
+      />
       {/* -------------------------------------------------------------
           Coordinates Overlay & Stats Panel (Bottom-Left)
           ------------------------------------------------------------- */}
@@ -1785,31 +1925,37 @@ export default function FractalExplorer() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.2 }}
-            className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 pointer-events-none z-30 flex flex-col gap-2 max-w-[calc(100vw-5.5rem)] sm:max-w-70"
+            className="absolute bottom-3 left-3 sm:bottom-6 sm:left-6 pointer-events-none z-30 flex flex-col gap-2 max-w-[calc(100vw-6.5rem)] sm:max-w-75"
           >
-            <div className="px-3 py-2.5 sm:px-4 sm:py-3 bg-zinc-950/85 border border-zinc-800/70 text-zinc-400 rounded-xl backdrop-blur-md shadow-xl text-[9px] sm:text-[10px] font-mono leading-relaxed">
-              <div className="text-zinc-500 uppercase font-black tracking-widest text-[9px] mb-1.5 border-b border-zinc-800/50 pb-1">
-                <span>Coordinates</span>
+            <div className="min-w-57 rounded-2xl border border-white/13 bg-[#0a0b1a]/72 p-3 sm:p-3.5 text-zinc-400 shadow-[0_16px_40px_rgba(0,0,0,0.34)] backdrop-blur-xl text-[9px] sm:text-[10px] font-mono leading-relaxed">
+              <div className="mb-2 flex items-center justify-between border-b border-white/8 pb-2">
+                <span className="uppercase font-semibold tracking-[0.18em] text-zinc-500">
+                  Coordinates
+                </span>
               </div>
-              <div>
-                <span className="text-zinc-500">Real:</span>{" "}
-                {uiCoords.r.toFixed(10)}
+              <div className="grid grid-cols-[2.25rem_1fr] gap-y-0.5">
+                <span className="text-zinc-600">RE</span>
+                <span className="text-zinc-300">{uiCoords.r.toFixed(10)}</span>
+                <span className="text-zinc-600">IM</span>
+                <span className="text-zinc-300">{uiCoords.i.toFixed(10)}</span>
               </div>
-              <div>
-                <span className="text-zinc-500">Imag:</span>{" "}
-                {uiCoords.i.toFixed(10)}
-              </div>
-              <div className="flex gap-4 mt-1 border-t border-zinc-900 pt-1">
-                <div>
-                  <span className="text-zinc-500 font-sans">Zoom:</span>{" "}
+              <div className="mt-2 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-white/[0.07] bg-white/[0.07]">
+                <div className="bg-[#090a18]/75 px-2 py-1.5">
+                  <span className="block text-[8px] font-sans font-semibold uppercase tracking-wider text-zinc-600">
+                    Zoom
+                  </span>
+                  <span className="text-zinc-200">
                   {zoomLevel < 1000
                     ? zoomLevel.toFixed(1)
                     : zoomLevel.toExponential(2)}
-                  x
+                    ×
+                  </span>
                 </div>
-                <div>
-                  <span className="text-zinc-500 font-sans">Iter:</span>{" "}
-                  {currentIterations}
+                <div className="bg-[#090a18]/75 px-2 py-1.5">
+                  <span className="block text-[8px] font-sans font-semibold uppercase tracking-wider text-zinc-600">
+                    Iter
+                  </span>
+                  <span className="text-zinc-200">{currentIterations}</span>
                 </div>
               </div>
             </div>
@@ -1820,7 +1966,7 @@ export default function FractalExplorer() {
       {/* -------------------------------------------------------------
           Interactive Sidebar Control Panel (Right Side)
           ------------------------------------------------------------- */}
-      <div className="absolute right-2 top-2 bottom-2 sm:right-4 sm:top-4 sm:bottom-4 w-[min(20rem,calc(100vw-1rem))] sm:w-80 pointer-events-none z-30 flex flex-col justify-start items-end gap-3">
+      <div className="absolute right-3 top-3 bottom-3 sm:right-6 sm:top-6 sm:bottom-6 w-[min(21.5rem,calc(100vw-1.5rem))] sm:w-86 pointer-events-none z-30 flex flex-col justify-start items-end gap-3">
         {/* Floating Settings Trigger (only shown when closed) */}
         <AnimatePresence>
           {!isSettingsOpen && (
@@ -1829,10 +1975,11 @@ export default function FractalExplorer() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               onClick={() => setIsSettingsOpen(true)}
-              className="pointer-events-auto flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2.5 bg-zinc-950/80 hover:bg-zinc-900 border border-zinc-800/80 text-zinc-300 rounded-xl shadow-2xl backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 text-[10px] sm:text-xs font-bold uppercase tracking-wider cursor-pointer"
+              className="group pointer-events-auto flex items-center gap-2.5 rounded-full border border-white/[0.14] bg-[#0a0b1c]/76 px-3.5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-200 shadow-[0_16px_38px_rgba(0,0,0,0.34)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-300/35 hover:bg-[#11122a]/88 active:scale-95 sm:px-4 sm:text-xs cursor-pointer"
             >
-              <Settings className="w-4 h-4 text-purple-400" />
+              <Sliders className="size-4 text-violet-300 transition-transform duration-300 group-hover:rotate-90" />
               <span>Settings</span>
+              <ChevronRight className="size-3.5 text-zinc-500" />
             </motion.button>
           )}
         </AnimatePresence>
@@ -1845,25 +1992,31 @@ export default function FractalExplorer() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="w-full flex-1 pointer-events-auto flex flex-col bg-zinc-950/85 border border-zinc-800/80 rounded-2xl backdrop-blur-md shadow-2xl overflow-y-auto max-h-[72vh] sm:max-h-[85vh] p-4 sm:p-5 text-zinc-200 touch-pan-y"
+              className="fractal-scrollbar w-full flex-1 pointer-events-auto flex flex-col overflow-y-auto max-h-[74vh] sm:max-h-[86vh] rounded-[1.45rem] border border-white/13 bg-[#0a0b1b]/82 p-4 text-zinc-200 shadow-[0_24px_70px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.07)] backdrop-blur-2xl sm:p-5 touch-pan-y"
             >
-              <div className="flex justify-between items-center border-b border-zinc-800/60 pb-3 mb-4">
-                <h2 className="text-sm font-black uppercase tracking-widest text-zinc-100 flex items-center gap-1.5">
-                  <Settings className="w-4 h-4 text-purple-400" />
-                  Settings
-                </h2>
+              <div className="mb-4 flex items-start justify-between border-b border-white/9 pb-3.5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex size-7 items-center justify-center rounded-lg border border-violet-300/20 bg-violet-400/10 text-violet-200 shadow-[0_0_14px_rgba(167,139,250,0.08)]">
+                      <Sliders className="size-3.5" />
+                    </span>
+                    <h2 className="text-sm font-semibold tracking-tight text-zinc-50">
+                      Settings
+                    </h2>
+                  </div>
+                </div>
                 <div className="flex gap-1.5">
                   <button
                     onClick={downloadFractalImage}
                     title="Export Fractal PNG"
-                    className="p-1.5 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/40 rounded-md text-purple-300 hover:text-purple-100 transition-all cursor-pointer shadow-[0_0_10px_rgba(168,85,247,0.15)]"
+                    className="rounded-lg border border-violet-300/25 bg-violet-400/10 p-2 text-violet-200 transition-all hover:border-violet-200/45 hover:bg-violet-400/20 hover:text-white cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => setIsSettingsOpen(false)}
                     title="Close Settings"
-                    className="p-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-md text-zinc-400 hover:text-zinc-100 transition-colors cursor-pointer"
+                    className="rounded-lg border border-white/9 bg-white/4 p-2 text-zinc-500 transition-colors hover:bg-white/9 hover:text-zinc-100 cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -1871,27 +2024,27 @@ export default function FractalExplorer() {
               </div>
 
               {/* SECTION: FRACTAL SELECTION */}
-              <div className="mb-4">
-                <label className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block mb-2">
-                  Fractal Type
+              <div className="mb-3.5 rounded-xl border border-white/8 bg-white/2.5 p-3">
+                <label className="mb-2.5 flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                  <span>Fractal Type</span>
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-black/20 p-1">
                   <button
                     onClick={enterMandelbrotMode}
-                    className={`py-1.5 text-xs font-bold uppercase rounded-lg border transition-all cursor-pointer ${
+                    className={`py-2 text-[10px] font-semibold uppercase tracking-[0.08em] rounded-md border transition-all cursor-pointer ${
                       currentMode === "mandelbrot"
-                        ? "bg-purple-950/40 border-purple-500/50 text-purple-300"
-                        : "bg-zinc-900/40 border-zinc-800/60 text-zinc-400 hover:bg-zinc-900"
+                        ? "border-violet-300/30 bg-violet-400/15 text-violet-100 shadow-[0_4px_12px_rgba(124,58,237,0.14)]"
+                        : "border-transparent text-zinc-500 hover:bg-white/6 hover:text-zinc-300"
                     }`}
                   >
                     Mandelbrot
                   </button>
                   <button
                     onClick={enterJuliaModeWithSeed}
-                    className={`py-1.5 text-xs font-bold uppercase rounded-lg border transition-all cursor-pointer ${
+                    className={`py-2 text-[10px] font-semibold uppercase tracking-[0.08em] rounded-md border transition-all cursor-pointer ${
                       currentMode === "julia"
-                        ? "bg-purple-950/40 border-purple-500/50 text-purple-300"
-                        : "bg-zinc-900/40 border-zinc-800/60 text-zinc-400 hover:bg-zinc-900"
+                        ? "border-violet-300/30 bg-violet-400/15 text-violet-100 shadow-[0_4px_12px_rgba(124,58,237,0.14)]"
+                        : "border-transparent text-zinc-500 hover:bg-white/6 hover:text-zinc-300"
                     }`}
                   >
                     Julia Set
@@ -1900,12 +2053,12 @@ export default function FractalExplorer() {
               </div>
 
               {/* SECTION: RENDER QUALITY (ITERATIONS) */}
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-1">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
+              <div className="mb-3.5 rounded-xl border border-white/8 bg-white/2.5 p-3">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[9px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                     Depth Complexity
                   </label>
-                  <span className="text-xs font-mono font-bold text-zinc-300">
+                  <span className="rounded-md border border-white/8 bg-black/20 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-zinc-200">
                     {currentIterations}
                   </span>
                 </div>
@@ -1918,30 +2071,36 @@ export default function FractalExplorer() {
                   onChange={(e) =>
                     handleIterationChange(Number(e.target.value))
                   }
-                  className="w-full h-1.5 bg-zinc-900 border border-zinc-800 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-purple-500 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white hover:[&::-webkit-slider-thumb]:bg-purple-400 [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.7)] [&::-webkit-slider-thumb]:transition-all active:[&::-webkit-slider-thumb]:scale-90 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-purple-500 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white hover:[&::-moz-range-thumb]:bg-purple-400 [&::-moz-range-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.7)] [&::-moz-range-thumb]:transition-all active:[&::-moz-range-thumb]:scale-90"
+                  className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-zinc-800/80 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-violet-300 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#17172b] hover:[&::-webkit-slider-thumb]:bg-violet-200 [&::-webkit-slider-thumb]:transition-all active:[&::-webkit-slider-thumb]:scale-90 [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-violet-300 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#17172b]"
                 />
                 {isCpuRenderActive && (
-                  <p className="text-[9px] text-amber-300/90 mt-1 font-semibold">
+                  <p className="mt-1.5 text-[9px] font-medium text-amber-200/85">
                     CPU precision mode active. Depth is capped at{" "}
                     {CPU_MAX_ITERATIONS}.
                   </p>
                 )}
-                <p className="text-[9px] text-zinc-500 mt-1">
+                <p className="mt-1.5 text-[9px] leading-relaxed text-zinc-500">
                   Higher complexity increases detail but slows rendering.
                 </p>
               </div>
 
               {/* SECTION: COLOR SCHEME */}
-              <div className="mb-4">
-                <label className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block mb-1.5">
-                  Color Palette
-                </label>
+              <div className="mb-3.5 rounded-xl border border-white/8 bg-white/2.5 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-[9px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                    Color Preview
+                  </label>
+                </div>
+                <div
+                  className="mb-2 h-1.5 w-full rounded-full opacity-80 shadow-[0_0_10px_rgba(167,139,250,0.08)]"
+                  style={{ backgroundImage: PALETTE_GRADIENTS[currentPalette] }}
+                />
                 <select
                   value={currentPalette}
                   onChange={(e) =>
                     handlePaletteChange(e.target.value as PaletteName)
                   }
-                  className="w-full bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-purple-500 cursor-pointer"
+                  className="w-full rounded-lg border border-white/9 bg-black/25 px-2.5 py-2 text-xs font-medium text-zinc-300 outline-none transition-colors focus:border-violet-300/45 cursor-pointer"
                 >
                   <option value="Neon">Neon</option>
                   <option value="Solar">Solar</option>
@@ -1953,22 +2112,27 @@ export default function FractalExplorer() {
               </div>
 
               {/* SECTION: PREFERENCES */}
-              <div className="mb-4">
-                <label className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block mb-2">
+              <div className="mb-3.5 rounded-xl border border-white/8 bg-white/2.5 p-3">
+                <label className="mb-2.5 block text-[9px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
                   Preferences
                 </label>
-                <div className="flex flex-col gap-3 pointer-events-auto">
+                <div className="flex flex-col gap-1.5 pointer-events-auto">
                   {/* Audio Sonification */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-zinc-300">
+                  <div className="flex flex-col gap-1.5 rounded-lg bg-black/20 px-2.5 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="flex items-center gap-2 text-xs font-medium text-zinc-300">
+                        {isAudioEnabled ? (
+                          <Volume1 className="size-3.5 text-violet-300" />
+                        ) : (
+                          <VolumeX className="size-3.5 text-zinc-600" />
+                        )}
                         Audio
                       </span>
                       <button
                         onClick={toggleAudio}
                         disabled={isAudioLoading}
                         className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${
-                          isAudioEnabled ? "bg-purple-600" : "bg-zinc-800"
+                          isAudioEnabled ? "bg-violet-500" : "bg-zinc-800/90"
                         } ${isAudioLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
                         {isAudioLoading ? (
@@ -1987,9 +2151,9 @@ export default function FractalExplorer() {
                       </button>
                     </div>
                     {isAudioLoading && (
-                      <div className="w-full bg-zinc-900 border border-zinc-800/80 rounded-full h-1.5 overflow-hidden relative">
+                      <div className="w-full bg-zinc-900/80 border border-white/6 rounded-full h-1.5 overflow-hidden relative">
                         <div
-                          className="bg-purple-500 h-full rounded-full transition-all duration-150 ease-out shadow-[0_0_8px_rgba(168,85,247,0.5)]"
+                          className="bg-violet-400 h-full rounded-full transition-all duration-150 ease-out shadow-[0_0_6px_rgba(196,181,253,0.28)]"
                           style={{ width: `${audioLoadingProgress}%` }}
                         />
                       </div>
@@ -1997,14 +2161,15 @@ export default function FractalExplorer() {
                   </div>
 
                   {/* Show Coordinates */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-zinc-300">
+                  <div className="flex items-center justify-between rounded-lg bg-black/20 px-2.5 py-2">
+                    <span className="flex items-center gap-2 text-xs font-medium text-zinc-300">
+                      <Maximize2 className="size-3.5 text-cyan-200/80" />
                       Show Coordinates
                     </span>
                     <button
                       onClick={() => setShowCoordinates(!showCoordinates)}
                       className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${
-                        showCoordinates ? "bg-purple-600" : "bg-zinc-800"
+                        showCoordinates ? "bg-violet-500" : "bg-zinc-800/90"
                       }`}
                     >
                       <span
@@ -2020,35 +2185,37 @@ export default function FractalExplorer() {
               {/* SECTION: FRACTAL SPECIFIC CONTROLS */}
               {currentMode === "mandelbrot" ? (
                 // Mandelbrot: Show interactive Julia seed generator
-                <div className="border-t border-zinc-900 pt-4 mb-4">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block mb-1">
-                    Julia Seed Finder
-                  </label>
-                  <p className="text-[9px] text-zinc-500 leading-relaxed mb-2">
+                <div className="mb-3.5 rounded-xl border border-violet-300/13 bg-[linear-gradient(135deg,rgba(124,58,237,0.10),rgba(255,255,255,0.025)_50%)] p-3">
+                  <div className="mb-1 flex items-center justify-between">
+                    <label className="text-[9px] font-semibold uppercase tracking-[0.16em] text-violet-200/75">
+                      Julia Seed Finder
+                    </label>
+                  </div>
+                  <p className="mb-2.5 text-[9px] leading-relaxed text-zinc-500">
                     Click or tap the canvas to lock the seed. Drag to pan
                     without locking.
                   </p>
-                  <div className="relative flex justify-center bg-black/40 border border-zinc-900 rounded-xl p-3 mb-2.5 overflow-hidden">
+                  <div className="relative mb-2.5 flex justify-center overflow-hidden rounded-xl border border-white/8 bg-black/35 p-3 shadow-inner">
                     <canvas
                       ref={miniCanvasRef}
                       width={130}
                       height={130}
-                      className="rounded-lg shadow-lg border border-zinc-800"
+                      className="rounded-lg border border-white/11 shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
                     />
 
                     <button
                       onClick={() => setIsJuliaFrozen(!isJuliaFrozen)}
-                      className={`absolute bottom-2.5 right-2.5 p-1 rounded text-[9px] font-bold uppercase transition-all cursor-pointer ${
+                      className={`absolute bottom-2.5 right-2.5 rounded-md px-1.5 py-1 text-[8px] font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                         isJuliaFrozen
-                          ? "bg-purple-600 border border-purple-500 text-white"
-                          : "bg-zinc-900/90 border border-zinc-800 text-zinc-400 hover:text-zinc-200"
+                          ? "border border-violet-300/45 bg-violet-500 text-white"
+                          : "border border-white/10 bg-[#101124]/90 text-zinc-400 hover:text-zinc-200"
                       }`}
                     >
                       {isJuliaFrozen ? "Seed Locked" : "Lock Seed"}
                     </button>
                   </div>
 
-                  <div className="text-[9.5px] font-mono leading-relaxed text-zinc-400 bg-zinc-900/40 p-2 border border-zinc-900 rounded-lg">
+                  <div className="rounded-lg border border-white/[0.07] bg-black/20 p-2 text-[9.5px] font-mono leading-relaxed text-zinc-400">
                     <div className="flex justify-between">
                       <span className="text-zinc-500">Seed c_r:</span>
                       <span>{juliaCDisplay[0].toFixed(5)}</span>
@@ -2061,21 +2228,22 @@ export default function FractalExplorer() {
 
                   <button
                     onClick={enterJuliaModeWithSeed}
-                    className="w-full mt-3 py-2 bg-purple-600 hover:bg-purple-500 active:scale-95 text-white font-bold uppercase tracking-wider text-[10px] rounded-lg transition-all shadow-[0_4px_12px_rgba(168,85,247,0.3)] cursor-pointer"
+                    className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-violet-300/35 bg-violet-500 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-white shadow-[0_8px_20px_rgba(124,58,237,0.28)] transition-all hover:bg-violet-400 active:scale-[0.98] cursor-pointer"
                   >
                     Render Selected Julia Set
+                    <ChevronRight className="size-3.5" />
                   </button>
                 </div>
               ) : (
                 // Julia Mode controls: Sliders to adjust seed values manually
-                <div className="border-t border-zinc-900 pt-4 mb-4">
+                <div className="mb-3.5 rounded-xl border border-violet-300/13 bg-[linear-gradient(135deg,rgba(124,58,237,0.10),rgba(255,255,255,0.025)_50%)] p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
+                    <label className="text-[9px] font-semibold uppercase tracking-[0.16em] text-violet-200/75">
                       Seed Constants
                     </label>
                     <button
                       onClick={resetJuliaSeedToLocked}
-                      className="flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer"
+                      className="flex items-center gap-1 rounded-md border border-white/9 bg-black/20 px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-zinc-400 transition-all hover:bg-white/[0.07] hover:text-zinc-200 cursor-pointer"
                       title={`Reset to c = ${juliaCLocked[0].toFixed(6)} + ${juliaCLocked[1].toFixed(6)}i`}
                     >
                       <RefreshCw size={10} />
@@ -2105,7 +2273,7 @@ export default function FractalExplorer() {
                     onChange={(e) =>
                       handleJuliaCSlider(Number(e.target.value), false)
                     }
-                    className="w-full h-1.5 bg-zinc-900 border border-zinc-800 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-purple-500 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white hover:[&::-webkit-slider-thumb]:bg-purple-400 [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.7)] [&::-webkit-slider-thumb]:transition-all active:[&::-webkit-slider-thumb]:scale-90 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-purple-500 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white hover:[&::-moz-range-thumb]:bg-purple-400 [&::-moz-range-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.7)] [&::-moz-range-thumb]:transition-all active:[&::-moz-range-thumb]:scale-90"
+                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-zinc-800/80 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-violet-300 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#17172b] hover:[&::-webkit-slider-thumb]:bg-violet-200 [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-violet-300 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#17172b]"
                   />
 
                   <div className="flex justify-between items-center mt-3 mb-1">
@@ -2125,12 +2293,12 @@ export default function FractalExplorer() {
                     onChange={(e) =>
                       handleJuliaCSlider(Number(e.target.value), true)
                     }
-                    className="w-full h-1.5 bg-zinc-900 border border-zinc-800 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-purple-500 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white hover:[&::-webkit-slider-thumb]:bg-purple-400 [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.7)] [&::-webkit-slider-thumb]:transition-all active:[&::-webkit-slider-thumb]:scale-90 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-purple-500 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white hover:[&::-moz-range-thumb]:bg-purple-400 [&::-moz-range-thumb]:shadow-[0_0_8px_rgba(168,85,247,0.7)] [&::-moz-range-thumb]:transition-all active:[&::-moz-range-thumb]:scale-90"
+                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-zinc-800/80 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-violet-300 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#17172b] hover:[&::-webkit-slider-thumb]:bg-violet-200 [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-violet-300 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#17172b]"
                   />
 
                   <button
                     onClick={enterMandelbrotMode}
-                    className="w-full mt-4 py-2 border border-zinc-800 hover:border-zinc-700 bg-zinc-900 hover:bg-zinc-850 active:scale-95 text-zinc-200 font-bold uppercase tracking-wider text-[10px] rounded-lg transition-all cursor-pointer"
+                    className="mt-4 w-full rounded-lg border border-white/10 bg-black/25 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-300 transition-all hover:border-white/18 hover:bg-white/[0.07] active:scale-[0.98] cursor-pointer"
                   >
                     Back to Mandelbrot Overview
                   </button>
@@ -2138,11 +2306,13 @@ export default function FractalExplorer() {
               )}
 
               {/* LANDMARKS GALLERY */}
-              <div className="border-t border-zinc-900 pt-4 flex-1">
-                <label className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block mb-2.5">
-                  Coordinate Landmarks
-                </label>
-                <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[22vh] pr-1">
+              <div className="mt-auto rounded-xl border border-white/8 bg-white/2.5 p-3">
+                <div className="mb-2.5 flex items-center justify-between">
+                  <label className="text-[9px] font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                    Coordinate Landmarks
+                  </label>
+                </div>
+                <div className="fractal-scrollbar flex max-h-[22vh] flex-col gap-1.5 overflow-y-auto pr-1">
                   {LANDMARKS.filter(
                     (lm) =>
                       currentMode === "mandelbrot" ||
@@ -2151,16 +2321,16 @@ export default function FractalExplorer() {
                     <button
                       key={landmark.name}
                       onClick={() => flyToLandmark(landmark, idx)}
-                      className={`flex flex-col items-start p-2 rounded-lg border text-left transition-all cursor-pointer ${
+                      className={`group flex flex-col items-start rounded-lg border p-2.5 text-left transition-all cursor-pointer ${
                         activeLandmarkIndex === idx
-                          ? "bg-purple-950/30 border-purple-500/40"
-                          : "bg-zinc-900/30 border-zinc-900/60 hover:bg-zinc-900/70"
+                          ? "border-violet-300/30 bg-violet-400/12 shadow-[inset_2px_0_0_rgba(196,181,253,0.9)]"
+                          : "border-white/6 bg-black/15 hover:border-white/13 hover:bg-white/5.5"
                       }`}
                     >
-                      <span className="text-[11px] font-black uppercase text-zinc-200">
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-200">
                         {landmark.name}
                       </span>
-                      <span className="text-[9px] text-zinc-500 leading-normal line-clamp-1 mt-0.5">
+                      <span className="mt-0.5 line-clamp-1 text-[9px] leading-normal text-zinc-500 group-hover:text-zinc-400">
                         {landmark.description}
                       </span>
                     </button>
@@ -2179,24 +2349,24 @@ export default function FractalExplorer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4 pointer-events-auto"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#03040c]/70 p-4 backdrop-blur-xl pointer-events-auto"
           >
             <motion.div
               initial={{ scale: 0.9, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 15 }}
               transition={{ type: "spring", damping: 25, stiffness: 180 }}
-              className="max-w-md w-full bg-zinc-950/95 border border-zinc-800/80 rounded-2xl p-6 shadow-2xl text-center text-zinc-200"
+              className="w-full max-w-md rounded-3xl border border-white/[0.14] bg-[#0b0c1d]/92 p-6 text-center text-zinc-200 shadow-[0_28px_90px_rgba(0,0,0,0.58),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl"
             >
-              <div className="flex justify-center mb-4">
-                <div className="p-3 bg-purple-950/50 border border-purple-500/30 rounded-full text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.2)] animate-pulse">
+              <div className="mb-4 flex justify-center">
+                <div className="rounded-2xl border border-violet-300/25 bg-violet-400/10 p-3 text-violet-200 shadow-[0_0_16px_rgba(167,139,250,0.10)] animate-pulse">
                   <Volume2 className="w-6 h-6" />
                 </div>
               </div>
-              <h1 className="text-sm font-black uppercase tracking-widest text-zinc-100 mb-2">
+              <h1 className="mb-2 text-lg font-semibold tracking-[-0.035em] text-zinc-50">
                 Fractal Audio
               </h1>
-              <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+              <p className="mb-6 text-xs leading-relaxed text-zinc-400">
                 This fractal explorer generates real-time audio based on its
                 coordinates. Changing the color palette changes the tone of the
                 synth. Would you like to enable audio?
@@ -2208,7 +2378,7 @@ export default function FractalExplorer() {
                     setIsAudioEnabled(true);
                     setShowWelcomePrompt(false);
                   }}
-                  className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase tracking-wider text-[10px] rounded-xl shadow-[0_4px_12px_rgba(168,85,247,0.3)] transition-all duration-300 hover:scale-[1.02] active:scale-95 cursor-pointer"
+                  className="flex-1 rounded-xl border border-violet-300/35 bg-violet-500 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-white shadow-[0_8px_20px_rgba(124,58,237,0.28)] transition-all duration-300 hover:bg-violet-400 hover:scale-[1.02] active:scale-95 cursor-pointer"
                 >
                   Enable Audio
                 </button>
@@ -2217,7 +2387,7 @@ export default function FractalExplorer() {
                     setIsAudioEnabled(false);
                     setShowWelcomePrompt(false);
                   }}
-                  className="flex-1 py-2.5 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-400 hover:text-zinc-200 font-bold uppercase tracking-wider text-[10px] rounded-xl transition-all duration-300 active:scale-95 cursor-pointer"
+                  className="flex-1 rounded-xl border border-white/10 bg-white/4 py-2.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-400 transition-all duration-300 hover:bg-white/8 hover:text-zinc-200 active:scale-95 cursor-pointer"
                 >
                   Explore Silently
                 </button>
