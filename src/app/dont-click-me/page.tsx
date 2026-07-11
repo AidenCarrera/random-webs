@@ -131,6 +131,7 @@ export default function DontClickMe() {
   const handlePointerDown = (
     event: React.PointerEvent<HTMLButtonElement>,
   ) => {
+    if (clickCount < 10) return;
     if (phaseRef.current !== "avoiding") return;
 
     event.preventDefault();
@@ -138,6 +139,18 @@ export default function DontClickMe() {
   };
 
   const handleClick = () => {
+    if (clickCount < 10) {
+      setClickCount((count) => count + 1);
+      const bounds = getMovementBounds();
+      if (bounds) {
+        moveButton({
+          x: (Math.random() - 0.5) * bounds.width * 0.55,
+          y: (Math.random() - 0.5) * bounds.height * 0.35,
+        });
+      }
+      return;
+    }
+
     if (phaseRef.current !== "yielding") return;
 
     setClickCount((count) => count + 1);
@@ -147,6 +160,7 @@ export default function DontClickMe() {
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
       if (
+        clickCount < 10 ||
         event.pointerType === "touch" ||
         phaseRef.current !== "avoiding"
       ) {
@@ -183,7 +197,7 @@ export default function DontClickMe() {
 
     return () =>
       window.removeEventListener("pointermove", handlePointerMove);
-  }, [escape]);
+  }, [escape, clickCount]);
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -317,7 +331,7 @@ export default function DontClickMe() {
                 : "none",
             }}
           >
-            Click Me
+            Don't Click Me
           </button>
         </div>
       </div>

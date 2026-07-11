@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Lava Lamp",
+    absolute: "Lava Lamp - Interactive Lava Simulation",
   },
-  description: "Relax with a gorgeous, interactive virtual lava lamp. Customize fluid density, heat, color presets, and particle physics for a cozy vibe.",
+  description: "Relax with a virtual lava lamp. Customize the colors of the bubbles and liquid to create your own calming combinations.",
   openGraph: {
-    title: "Lava Lamp",
-    description: "Relax with a gorgeous, interactive virtual lava lamp. Customize fluid density, heat, color presets, and particle physics for a cozy vibe.",
+    title: "Lava Lamp - Interactive Lava Simulation",
+    description: "Relax with a virtual lava lamp. Customize the colors of the bubbles and liquid to create your own calming combinations.",
     url: "/lava-lamp",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Lava Lamp Preview",
+        alt: "Lava Lamp - Interactive Lava Simulation Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Lava Lamp",
-    description: "Relax with a gorgeous, interactive virtual lava lamp. Customize fluid density, heat, color presets, and particle physics for a cozy vibe.",
+    title: "Lava Lamp - Interactive Lava Simulation",
+    description: "Relax with a virtual lava lamp. Customize the colors of the bubbles and liquid to create your own calming combinations.",
     images: ["/og-image.png"],
   },
   alternates: {

@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Emoji Rain",
+    absolute: "Emoji Rain - Falling Emoji Animation",
   },
-  description: "Create a beautiful downpour of customized emoji particles. Adjust gravity, speed, size, and emoji types in this interactive canvas toy.",
+  description: "Fill your screen with falling emojis. Mix categories, adjust the look and behavior, and create colorful animated emoji showers.",
   openGraph: {
-    title: "Emoji Rain",
-    description: "Create a beautiful downpour of customized emoji particles. Adjust gravity, speed, size, and emoji types in this interactive canvas toy.",
+    title: "Emoji Rain - Falling Emoji Animation",
+    description: "Fill your screen with falling emojis. Mix categories, adjust the look and behavior, and create colorful animated emoji showers.",
     url: "/emoji-rain",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Emoji Rain Preview",
+        alt: "Emoji Rain - Falling Emoji Animation Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Emoji Rain",
-    description: "Create a beautiful downpour of customized emoji particles. Adjust gravity, speed, size, and emoji types in this interactive canvas toy.",
+    title: "Emoji Rain - Falling Emoji Animation",
+    description: "Fill your screen with falling emojis. Mix categories, adjust the look and behavior, and create colorful animated emoji showers.",
     images: ["/og-image.png"],
   },
   alternates: {

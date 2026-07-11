@@ -344,8 +344,8 @@ export default function HypnoSpiral() {
       <div className="pointer-events-none absolute inset-x-0 bottom-5 flex justify-center px-4 sm:bottom-8">
         <div className="max-w-sm rounded-full border border-white/15 bg-black/40 px-4 py-2 text-center font-mono text-xs uppercase tracking-[0.24em] text-white/85 backdrop-blur-sm sm:text-sm">
           {isTouchDevice
-            ? "Drag your finger to warp reality."
-            : "Move the mouse to warp reality."}
+            ? "Drag your finger to warp the spiral."
+            : "Move the mouse to warp the spiral."}
         </div>
       </div>
 

@@ -3,149 +3,183 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { WEBSITES } from "../src/lib/websites";
 
-// Handle __dirname in ES Modules (though we compile with tsx)
+// Handle __dirname in ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // We exclude pages that already handle metadata properly
 const EXCLUDED_PATHS = new Set(["/lofi-pixel-study", "/dev"]);
 
-// High-quality titles and meta descriptions tailored for search queries
+// Titles and meta descriptions tailored for search queries
 const RICH_METADATA: Record<string, { title: string; description: string }> = {
+  "/algo-race": {
+    title: "Algo Race - Sorting Algorithm Visualizer",
+    description:
+      "Watch sorting algorithms compete side by side while comparing speed and overall efficiency.",
+  },
   "/arcana-tarot": {
-    title: "Arcana Tarot - Interactive Tarot Card Reading Simulator",
-    description: "Draw the cards and uncover your destiny. An interactive virtual tarot reading experience featuring beautiful animations, card details, and spreads.",
+    title: "Arcana Tarot - Virtual Tarot Readings",
+    description:
+      "Shuffle the deck, draw tarot cards, and explore detailed meanings with a modern interactive tarot experience.",
   },
   "/ascii-vision": {
-    title: "ASCII Vision - Live Video-to-ASCII Text Converter",
-    description: "Transform your camera feed or video into real-time ASCII text art. Adjust characters, colors, and density with this unique creative coding tool.",
+    title: "ASCII Vision - Image to ASCII Art",
+    description:
+      "Upload any image and instantly transform it into detailed ASCII art. Adjust characters, colors, contrast, and resolution to create your own text-based artwork.",
   },
   "/beat-maker": {
-    title: "Beat Maker - Interactive Web Rhythm Sequencer & Drum Machine",
-    description: "Create, customize, and loop your own beats in your browser. An intuitive web-based audio sequencer and drum pad for aspiring beatmakers.",
+    title: "Beat Maker - Browser Beat Sequencer",
+    description:
+      "Build beats with an intuitive step sequencer, swappable drum sounds, an 808 bass editor, and mixer controls. No download required.",
   },
   "/click-speed-test": {
-    title: "Click Speed Test - Measure Your CPS (Clicks Per Second)",
-    description: "How fast can you click? Test your CPS (clicks per second) with different time limits, track your scores, and improve your clicking speed.",
+    title: "Click Speed Test - Measure CPS",
+    description:
+      "How fast can you click? Test your CPS (clicks per second) with different time limits, track your scores, and improve your clicking speed.",
   },
   "/dont-click-me": {
-    title: "Don't Click Me - The Ultimate Interactive Button Challenge",
-    description: "A hilarious and interactive game where you are told not to click the button. Can you resist the temptation? See what happens if you click!",
+    title: "Don't Click Me - Interactive Button Game",
+    description:
+      "An interactive game where you are told not to click the button. Can you resist the temptation? See what happens if you click!",
   },
   "/emoji-rain": {
-    title: "Emoji Rain - Fun Falling Emoji Particles & Visualizer",
-    description: "Create a beautiful downpour of customized emoji particles. Adjust gravity, speed, size, and emoji types in this interactive canvas toy.",
+    title: "Emoji Rain - Falling Emoji Animation",
+    description:
+      "Fill your screen with falling emojis. Mix categories, adjust the look and behavior, and create colorful animated emoji showers.",
+  },
+  "/encoded-message": {
+    title: "Encoded Message - Decrypt the Story",
+    description:
+      "Hover over the encrypted transmission to decrypt the message and unveil the secret story.",
   },
   "/focus-timer": {
-    title: "Focus Timer - Clean Pomodoro Countdown for Deep Work",
-    description: "Boost your productivity with a clean, customizable Pomodoro focus timer. Designed to help you stay on task and manage your study/work sessions.",
+    title: "Focus Timer - Pomodoro Timer",
+    description:
+      "Boost your productivity with a clean, customizable Pomodoro focus timer. Designed to help you stay on task and manage your study/work sessions.",
   },
   "/fractal-explorer": {
-    title: "Fractal Explorer - Interactive Infinite Mandelbrot Patterns",
-    description: "Explore the infinite beauty of fractals in real-time. Zoom into the Mandelbrot set, customize color schemes, and export gorgeous geometric patterns.",
+    title: "Fractal Explorer - Mandelbrot Viewer",
+    description:
+      "Explore the Mandelbrot set with smooth zooming, customizable colors, and an optional audio-reactive mode that brings fractals to life.",
   },
   "/gravity-box": {
-    title: "Gravity Box - 2D Physics Sandbox & Particle Simulator",
-    description: "Play with gravity, collision physics, and customizable objects in this interactive 2D physics sandbox. Adjust mass, friction, and bounce.",
+    title: "Gravity Box - Physics Sandbox",
+    description:
+      "Experiment with gravity, collisions, and object physics in a playful sandbox where every setting changes the simulation.",
   },
   "/hypno-spiral": {
-    title: "Hypno Spiral - Interactive Optical Illusion Generator",
-    description: "Hypnotize yourself with stunning, customizable rotating optical illusion spirals. Adjust speed, patterns, color schemes, and styles.",
+    title: "Hypno Spiral - Interactive Hypnotic Spiral",
+    description:
+      "Move your mouse to shape a mesmerizing hypnotic spiral as it shifts and evolves in real time, creating endlessly unique visual patterns.",
   },
   "/lava-lamp": {
-    title: "Lava Lamp - Simulated Interactive Physics & Glow",
-    description: "Relax with a gorgeous, interactive virtual lava lamp. Customize fluid density, heat, color presets, and particle physics for a cozy vibe.",
+    title: "Lava Lamp - Interactive Lava Simulation",
+    description:
+      "Relax with a virtual lava lamp. Customize the colors of the bubbles and liquid to create your own calming combinations.",
   },
   "/magic-8-ball": {
-    title: "Magic 8 Ball - Virtual Fortune Teller & Decision Maker",
-    description: "Ask a question and let the Magic 8 Ball decide. A fun, retro decision-making tool with customized answers and classic fluid motion.",
+    title: "Magic 8 Ball - Decision Maker",
+    description:
+      "Ask a question, shake the Magic 8 Ball, and reveal a random answer. A simple browser version of the fortune-telling toy.",
   },
   "/mandala-maker": {
-    title: "Mandala Maker - Symmetrical Drawing & Generative Art Tool",
-    description: "Create beautiful, intricate symmetrical drawings. Customize mirror points, line thickness, brush colors, and export your digital mandala art.",
+    title: "Mandala Maker - Symmetrical Drawing Tool",
+    description:
+      "Draw beautiful radial artwork with brushes and colors, then export your finished mandalas as images.",
   },
   "/matrix-rain": {
-    title: "Matrix Rain - Classic Digital Code Rain Terminal Simulator",
-    description: "Transform your screen into the iconic digital green rain from The Matrix. Adjust rain speed, font sizes, colors, and characters.",
+    title: "Matrix Rain - Hacker Terminal",
+    description:
+      "Type like you're in a hacker movie as code appears across the screen with a Matrix-inspired digital rain effect in the background.",
   },
   "/mindful-breathe": {
-    title: "Mindful Breathe - Interactive Breathing Guide & Meditation Tool",
-    description: "Find your calm with a guided breathing visualizer. Practice box breathing, deep breaths, and customized patterns to reduce anxiety and stress.",
+    title: "Mindful Breathe - Breathing Visualizer",
+    description:
+      "Follow a calming breathing cycle with a gently pulsing orb, relaxing ambient music, and customizable timing to help you slow down and unwind.",
   },
   "/morse-code": {
-    title: "Morse Code - Translate, Encode & Listen to Morse Messages",
-    description: "Translate text to Morse code and vice versa in real time. Listen to the audio telegraph tones, flash the screen, and practice typing Morse code.",
+    title: "Morse Code - Translate and Encode",
+    description:
+      "Translate text to Morse code or tap your own messages with an interactive key. Practice, listen to the tones, and learn with a built-in Morse code cheat sheet.",
   },
   "/olo-terminal": {
-    title: "Olo Terminal - Interactive Command Line Interface",
-    description: "A vintage retro-styled command line terminal in your browser. Run commands, discover hidden easter eggs, and play retro terminal games.",
+    title: "Olo Terminal - Web Command Line",
+    description:
+      "Explore a Linux-inspired browser terminal filled with playful interactions, hidden surprises, and entertaining utilities waiting to be discovered.",
   },
   "/pad-synth": {
-    title: "Pad Synth - Atmospheric Ambient Synthesizer & Soundboard",
-    description: "Play and layer rich, atmospheric synthesizer pad chords. A creative web audio tool for designing ambient soundscapes and relaxation music.",
+    title: "Pad Synth - Browser Synth",
+    description:
+      "Play notes across major, minor, pentatonic, and blues scales with selectable waveforms, volume, reverb, and echo controls in a soft tactile interface.",
   },
   "/particle-collider": {
-    title: "Particle Collider - 2D Physics Particle Collision Simulator",
-    description: "Simulate and visualize atomic collisions. Control velocity, particle size, charge, and collision types in an interactive physics dashboard.",
+    title: "Particle Collider - Attract & Repel Particles",
+    description:
+      "Shape a glowing particle field with your mouse. Switch between attraction and repulsion, then tune force strength and particle count in real time.",
   },
   "/party-mode": {
-    title: "Party Mode - Flashing Lights, Beats & Color Visualizer",
-    description: "Turn your browser into a dynamic club party. Features flashing neon lights, color loops, interactive beats, and audio visualizer aesthetics.",
+    title: "Party Mode - Celebration Button",
+    description:
+      "Trigger a colorful confetti celebration with, floating party emojis, a dancing headline, and a colorful animated backdrop.",
   },
   "/pixel-art": {
-    title: "Pixel Art - Easy Online Drawing Canvas & Sprite Editor",
-    description: "Draw beautiful retro pixel art on a grid canvas. Choose custom palettes, resize grids, export sprites, and animate your pixel creations.",
+    title: "Pixel Art - Simple Sprite Maker",
+    description:
+      "Draw pixel art on a resizable grid with a 32-color palette, pencil, eraser, fill, and eyedropper tools, undo/redo, and PNG export.",
   },
   "/polyrhythm-visualizer": {
-    title: "Polyrhythm Visualizer - Overlapping Time Signatures & Melodies",
-    description: "Visualize and hear the complex math of polyrhythms. Customize beats, instruments, tempo, and watch the satisfying mechanical rhythms collide.",
+    title: "Polyrhythm Visualizer - Layered Rhythms",
+    description:
+      "Hear layered rhythms at adjustable tempo while switching between circle, timeline, bloom, and 3D visualizations with playback controls.",
   },
   "/repo-visualizer": {
-    title: "Repo Visualizer - Interactive GitHub Repository Structure Maps",
-    description: "Generate interactive visual representations of code repository structures. Explore directories, file hierarchies, and branch histories.",
+    title: "Repo Visualizer - GitHub History Visualizer",
+    description:
+      "Load a GitHub repository, local git log, or demo history and watch commits animate through a file-tree graph with authors, change statuses, stats, and playback controls.",
   },
   "/solar-system": {
-    title: "Solar System - Interactive Orbit & Gravitation Simulator",
-    description: "Explore orbital mechanics and gravity. Build your own solar system, adjust planet masses, speeds, orbits, and watch gravity in action.",
-  },
-  "/algo-race": {
-    title: "Algo Race - Visualizing Sorting Algorithms in Real-Time",
-    description: "Watch bubble, quick, merge, and selection sort race to complete! An educational, interactive tool to visualize algorithm efficiency.",
+    title: "Solar System - Custom Planet Sandbox",
+    description:
+      "Build a custom solar system with textured planets and adjustable sizes, orbits, speeds, moons, rings, and starfield themes, then export a PNG snapshot.",
   },
   "/sticky-notes": {
-    title: "Sticky Notes - Interactive Virtual Pinboard & Note Organizer",
-    description: "Organize your ideas, reminders, and tasks on a virtual corkboard. Drag, color-code, resize, and store notes directly in your browser.",
+    title: "Sticky Notes - Draggable Note Board",
+    description:
+      "Create and arrange colorful sticky notes on a paper-like board with double-click or quick add, autosave, delete/reset controls, and Markdown export.",
   },
   "/style-pet": {
-    title: "Style Pet - Cute Digital Pet Dress Up & Customizer",
-    description: "Adopt and dress up a virtual digital pet! Choose from various outfits, accessories, and backgrounds to make your pet look fabulous.",
+    title: "Style Pet - Virtual Pet Simulator",
+    description:
+      "Care for a handheld-style virtual pet by feeding, petting, cleaning, and managing sleep, then customize its skin, hats, and accessories as it grows.",
   },
   "/submit-to-void": {
-    title: "Submit to Void - Release Your Thoughts to the Digital Void",
-    description: "Need to vent? Write your thoughts, secrets, or frustrations and watch them dissolve into the beautiful, dark, infinite digital void.",
-  },
-  "/text-decrypt": {
-    title: "Text Decrypt - Decode Cyphers & Reveal Hidden Messages",
-    description: "Crack codes and decrypt ciphered messages. An interactive puzzle tool supporting Caesar ciphers, Vigenere, base64, and custom algorithms.",
+    title: "Submit to Void - Black Hole Message Shredder",
+    description:
+      "Type a short message and watch every character shred into a black hole, surrounded by stars, and optional GIF export.",
   },
   "/text-encrypt": {
-    title: "Text Encrypt - Secure Your Messages with Simple Encryptors",
-    description: "Encode your private texts using various secure algorithms. Generate base64, custom ciphers, and share encrypted secret links with friends.",
+    title: "Text Encrypt - Convert Text to Secret Codes",
+    description:
+      "Transform text into binary, hexadecimal, Caesar-shifted, Base64, Atbash, and ROT13 or ROT47 output with adjustable settings and one-click copying.",
   },
   "/typing-racer": {
-    title: "Typing Racer - Test and Improve Your WPM Typing Speed",
-    description: "Race against the clock to test your typing speed! Track your WPM (Words Per Minute), accuracy, and compare stats to level up your typing skills.",
+    title: "Typing Racer - Typing WPM Race",
+    description:
+      "Race CPU opponents through neon typing passages in Rookie, Pro, or Cyber mode while tracking live WPM, accuracy, time, rank, and your high score.",
   },
   "/zen-garden": {
-    title: "Zen Garden - Grow Flowers & Practice Digital Mindfulness",
-    description: "Nurture a relaxing virtual garden. Rake sand, plant flowers, play calming ambient sounds, and escape into a peaceful, mindful space.",
+    title: "Zen Garden - Landscape Sandbox",
+    description:
+      "Design a calming digital sandscape with plants and decorations, water, multiple sand themes, and image or layout export.",
   },
 };
 
 function main() {
   console.log("Generating layout.tsx files for subpages...");
 
-  for (const site of WEBSITES) {
+  const websites = [...WEBSITES].sort((a, b) => a.path.localeCompare(b.path));
+
+  for (const site of websites) {
     if (EXCLUDED_PATHS.has(site.path)) {
       console.log(`Skipping excluded path: ${site.path}`);
       continue;
@@ -160,7 +194,7 @@ function main() {
     }
 
     const meta = {
-      title: site.title,
+      title: RICH_METADATA[site.path]?.title || site.title,
       description: RICH_METADATA[site.path]?.description || site.blurb,
     };
 

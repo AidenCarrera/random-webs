@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Typing Racer",
+    absolute: "Typing Racer - Typing WPM Race",
   },
-  description: "Race against the clock to test your typing speed! Track your WPM (Words Per Minute), accuracy, and compare stats to level up your typing skills.",
+  description: "Race CPU opponents through neon typing passages in Rookie, Pro, or Cyber mode while tracking live WPM, accuracy, time, rank, and your high score.",
   openGraph: {
-    title: "Typing Racer",
-    description: "Race against the clock to test your typing speed! Track your WPM (Words Per Minute), accuracy, and compare stats to level up your typing skills.",
+    title: "Typing Racer - Typing WPM Race",
+    description: "Race CPU opponents through neon typing passages in Rookie, Pro, or Cyber mode while tracking live WPM, accuracy, time, rank, and your high score.",
     url: "/typing-racer",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Typing Racer Preview",
+        alt: "Typing Racer - Typing WPM Race Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Typing Racer",
-    description: "Race against the clock to test your typing speed! Track your WPM (Words Per Minute), accuracy, and compare stats to level up your typing skills.",
+    title: "Typing Racer - Typing WPM Race",
+    description: "Race CPU opponents through neon typing passages in Rookie, Pro, or Cyber mode while tracking live WPM, accuracy, time, rank, and your high score.",
     images: ["/og-image.png"],
   },
   alternates: {

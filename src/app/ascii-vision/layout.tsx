@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "ASCII Vision",
+    absolute: "ASCII Vision - Image to ASCII Art",
   },
-  description: "Transform your camera feed or video into real-time ASCII text art. Adjust characters, colors, and density with this unique creative coding tool.",
+  description: "Upload any image and instantly transform it into detailed ASCII art. Adjust characters, colors, contrast, and resolution to create your own text-based artwork.",
   openGraph: {
-    title: "ASCII Vision",
-    description: "Transform your camera feed or video into real-time ASCII text art. Adjust characters, colors, and density with this unique creative coding tool.",
+    title: "ASCII Vision - Image to ASCII Art",
+    description: "Upload any image and instantly transform it into detailed ASCII art. Adjust characters, colors, contrast, and resolution to create your own text-based artwork.",
     url: "/ascii-vision",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "ASCII Vision Preview",
+        alt: "ASCII Vision - Image to ASCII Art Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ASCII Vision",
-    description: "Transform your camera feed or video into real-time ASCII text art. Adjust characters, colors, and density with this unique creative coding tool.",
+    title: "ASCII Vision - Image to ASCII Art",
+    description: "Upload any image and instantly transform it into detailed ASCII art. Adjust characters, colors, contrast, and resolution to create your own text-based artwork.",
     images: ["/og-image.png"],
   },
   alternates: {

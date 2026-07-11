@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Sticky Notes",
+    absolute: "Sticky Notes - Draggable Note Board",
   },
-  description: "Organize your ideas, reminders, and tasks on a virtual corkboard. Drag, color-code, resize, and store notes directly in your browser.",
+  description: "Create and arrange colorful sticky notes on a paper-like board with double-click or quick add, autosave, delete/reset controls, and Markdown export.",
   openGraph: {
-    title: "Sticky Notes",
-    description: "Organize your ideas, reminders, and tasks on a virtual corkboard. Drag, color-code, resize, and store notes directly in your browser.",
+    title: "Sticky Notes - Draggable Note Board",
+    description: "Create and arrange colorful sticky notes on a paper-like board with double-click or quick add, autosave, delete/reset controls, and Markdown export.",
     url: "/sticky-notes",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Sticky Notes Preview",
+        alt: "Sticky Notes - Draggable Note Board Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sticky Notes",
-    description: "Organize your ideas, reminders, and tasks on a virtual corkboard. Drag, color-code, resize, and store notes directly in your browser.",
+    title: "Sticky Notes - Draggable Note Board",
+    description: "Create and arrange colorful sticky notes on a paper-like board with double-click or quick add, autosave, delete/reset controls, and Markdown export.",
     images: ["/og-image.png"],
   },
   alternates: {

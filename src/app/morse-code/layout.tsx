@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Morse Code",
+    absolute: "Morse Code - Translate and Encode",
   },
-  description: "Translate text to Morse code and vice versa in real time. Listen to the audio telegraph tones, flash the screen, and practice typing Morse code.",
+  description: "Translate text to Morse code or tap your own messages with an interactive key. Practice, listen to the tones, and learn with a built-in Morse code cheat sheet.",
   openGraph: {
-    title: "Morse Code",
-    description: "Translate text to Morse code and vice versa in real time. Listen to the audio telegraph tones, flash the screen, and practice typing Morse code.",
+    title: "Morse Code - Translate and Encode",
+    description: "Translate text to Morse code or tap your own messages with an interactive key. Practice, listen to the tones, and learn with a built-in Morse code cheat sheet.",
     url: "/morse-code",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Morse Code Preview",
+        alt: "Morse Code - Translate and Encode Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Morse Code",
-    description: "Translate text to Morse code and vice versa in real time. Listen to the audio telegraph tones, flash the screen, and practice typing Morse code.",
+    title: "Morse Code - Translate and Encode",
+    description: "Translate text to Morse code or tap your own messages with an interactive key. Practice, listen to the tones, and learn with a built-in Morse code cheat sheet.",
     images: ["/og-image.png"],
   },
   alternates: {

@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Style Pet",
+    absolute: "Style Pet - Virtual Pet Simulator",
   },
-  description: "Adopt and dress up a virtual digital pet! Choose from various outfits, accessories, and backgrounds to make your pet look fabulous.",
+  description: "Care for a handheld-style virtual pet by feeding, petting, cleaning, and managing sleep, then customize its skin, hats, and accessories as it grows.",
   openGraph: {
-    title: "Style Pet",
-    description: "Adopt and dress up a virtual digital pet! Choose from various outfits, accessories, and backgrounds to make your pet look fabulous.",
+    title: "Style Pet - Virtual Pet Simulator",
+    description: "Care for a handheld-style virtual pet by feeding, petting, cleaning, and managing sleep, then customize its skin, hats, and accessories as it grows.",
     url: "/style-pet",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Style Pet Preview",
+        alt: "Style Pet - Virtual Pet Simulator Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Style Pet",
-    description: "Adopt and dress up a virtual digital pet! Choose from various outfits, accessories, and backgrounds to make your pet look fabulous.",
+    title: "Style Pet - Virtual Pet Simulator",
+    description: "Care for a handheld-style virtual pet by feeding, petting, cleaning, and managing sleep, then customize its skin, hats, and accessories as it grows.",
     images: ["/og-image.png"],
   },
   alternates: {

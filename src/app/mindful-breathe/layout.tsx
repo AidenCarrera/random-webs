@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Mindful Breathe",
+    absolute: "Mindful Breathe - Breathing Visualizer",
   },
-  description: "Find your calm with a guided breathing visualizer. Practice box breathing, deep breaths, and customized patterns to reduce anxiety and stress.",
+  description: "Follow a calming breathing cycle with a gently pulsing orb, relaxing ambient music, and customizable timing to help you slow down and unwind.",
   openGraph: {
-    title: "Mindful Breathe",
-    description: "Find your calm with a guided breathing visualizer. Practice box breathing, deep breaths, and customized patterns to reduce anxiety and stress.",
+    title: "Mindful Breathe - Breathing Visualizer",
+    description: "Follow a calming breathing cycle with a gently pulsing orb, relaxing ambient music, and customizable timing to help you slow down and unwind.",
     url: "/mindful-breathe",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Mindful Breathe Preview",
+        alt: "Mindful Breathe - Breathing Visualizer Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Mindful Breathe",
-    description: "Find your calm with a guided breathing visualizer. Practice box breathing, deep breaths, and customized patterns to reduce anxiety and stress.",
+    title: "Mindful Breathe - Breathing Visualizer",
+    description: "Follow a calming breathing cycle with a gently pulsing orb, relaxing ambient music, and customizable timing to help you slow down and unwind.",
     images: ["/og-image.png"],
   },
   alternates: {

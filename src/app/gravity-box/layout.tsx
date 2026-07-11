@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Gravity Box",
+    absolute: "Gravity Box - Physics Sandbox",
   },
-  description: "Play with gravity, collision physics, and customizable objects in this interactive 2D physics sandbox. Adjust mass, friction, and bounce.",
+  description: "Experiment with gravity, collisions, and object physics in a playful sandbox where every setting changes the simulation.",
   openGraph: {
-    title: "Gravity Box",
-    description: "Play with gravity, collision physics, and customizable objects in this interactive 2D physics sandbox. Adjust mass, friction, and bounce.",
+    title: "Gravity Box - Physics Sandbox",
+    description: "Experiment with gravity, collisions, and object physics in a playful sandbox where every setting changes the simulation.",
     url: "/gravity-box",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Gravity Box Preview",
+        alt: "Gravity Box - Physics Sandbox Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Gravity Box",
-    description: "Play with gravity, collision physics, and customizable objects in this interactive 2D physics sandbox. Adjust mass, friction, and bounce.",
+    title: "Gravity Box - Physics Sandbox",
+    description: "Experiment with gravity, collisions, and object physics in a playful sandbox where every setting changes the simulation.",
     images: ["/og-image.png"],
   },
   alternates: {

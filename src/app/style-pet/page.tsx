@@ -288,7 +288,7 @@ export default function StylePet() {
       {/* Main Console Container */}
       <div className="relative flex flex-col items-center">
         {/* Device Outer Frame */}
-        <div className="relative bg-zinc-800 rounded-[50px] p-8 pb-14 w-[420px] md:w-[500px] shadow-[0_30px_70px_rgba(0,0,0,0.85),inset_0_4px_10px_rgba(255,255,255,0.1),inset_0_-8px_16px_rgba(0,0,0,0.6)] border-4 border-zinc-700/80 flex flex-col items-center animate-fade-in">
+        <div className="relative bg-zinc-800 rounded-[50px] p-8 pb-14 w-105 md:w-125 shadow-[0_30px_70px_rgba(0,0,0,0.85),inset_0_4px_10px_rgba(255,255,255,0.1),inset_0_-8px_16px_rgba(0,0,0,0.6)] border-4 border-zinc-700/80 flex flex-col items-center animate-fade-in">
           {/* Status LEDs & Brand top edge */}
           <div className="w-full flex items-center justify-between px-6 mb-4">
             {/* Status lights */}
@@ -866,7 +866,7 @@ export default function StylePet() {
             </div>
 
             {/* Menu Labels */}
-            <div className="flex flex-col items-center gap-1 text-[9px] text-zinc-500 font-bold uppercase tracking-wider min-w-[100px] text-center">
+            <div className="flex flex-col items-center gap-1 text-[9px] text-zinc-500 font-bold uppercase tracking-wider min-w-25 text-center">
               {currentMenu === "STYLE" ? (
                 <>
                   <span className="text-cyan-500 animate-pulse">▲▼ - SELECT</span>
@@ -893,7 +893,7 @@ export default function StylePet() {
                       prev === "STYLE" ? "NONE" : "STYLE",
                     );
                   }}
-                  className="w-12 h-12 rounded-full bg-cyan-600 hover:bg-cyan-500 shadow-[0_4px_0_#0891b2,inset_0_2px_4px_rgba(255,255,255,0.2)] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center text-sm font-bold text-cyan-950"
+                  className="w-12 h-12 rounded-full bg-cyan-600 hover:bg-cyan-500 shadow-[0_4px_0_#0891b2,inset_0_2px_4px_rgba(255,255,255,0.2)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center text-sm font-bold text-cyan-950"
                 >
                   Y
                 </button>
@@ -904,7 +904,7 @@ export default function StylePet() {
               <div className="flex flex-col items-center gap-1">
                 <button
                   onClick={() => cycleSkin()}
-                  className="w-12 h-12 rounded-full bg-pink-600 hover:bg-pink-500 shadow-[0_4px_0_#db2777,inset_0_2px_4px_rgba(255,255,255,0.2)] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center text-sm font-bold text-pink-950"
+                  className="w-12 h-12 rounded-full bg-pink-600 hover:bg-pink-500 shadow-[0_4px_0_#db2777,inset_0_2px_4px_rgba(255,255,255,0.2)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center text-sm font-bold text-pink-950"
                 >
                   X
                 </button>

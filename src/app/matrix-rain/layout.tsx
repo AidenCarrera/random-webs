@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Matrix Rain",
+    absolute: "Matrix Rain - Hacker Terminal",
   },
-  description: "Transform your screen into the iconic digital green rain from The Matrix. Adjust rain speed, font sizes, colors, and characters.",
+  description: "Type like you're in a hacker movie as code appears across the screen with a Matrix-inspired digital rain effect in the background.",
   openGraph: {
-    title: "Matrix Rain",
-    description: "Transform your screen into the iconic digital green rain from The Matrix. Adjust rain speed, font sizes, colors, and characters.",
+    title: "Matrix Rain - Hacker Terminal",
+    description: "Type like you're in a hacker movie as code appears across the screen with a Matrix-inspired digital rain effect in the background.",
     url: "/matrix-rain",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Matrix Rain Preview",
+        alt: "Matrix Rain - Hacker Terminal Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Matrix Rain",
-    description: "Transform your screen into the iconic digital green rain from The Matrix. Adjust rain speed, font sizes, colors, and characters.",
+    title: "Matrix Rain - Hacker Terminal",
+    description: "Type like you're in a hacker movie as code appears across the screen with a Matrix-inspired digital rain effect in the background.",
     images: ["/og-image.png"],
   },
   alternates: {

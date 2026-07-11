@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Particle Collider",
+    absolute: "Particle Collider - Attract & Repel Particles",
   },
-  description: "Simulate and visualize atomic collisions. Control velocity, particle size, charge, and collision types in an interactive physics dashboard.",
+  description: "Shape a glowing particle field with your mouse. Switch between attraction and repulsion, then tune force strength and particle count in real time.",
   openGraph: {
-    title: "Particle Collider",
-    description: "Simulate and visualize atomic collisions. Control velocity, particle size, charge, and collision types in an interactive physics dashboard.",
+    title: "Particle Collider - Attract & Repel Particles",
+    description: "Shape a glowing particle field with your mouse. Switch between attraction and repulsion, then tune force strength and particle count in real time.",
     url: "/particle-collider",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Particle Collider Preview",
+        alt: "Particle Collider - Attract & Repel Particles Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Particle Collider",
-    description: "Simulate and visualize atomic collisions. Control velocity, particle size, charge, and collision types in an interactive physics dashboard.",
+    title: "Particle Collider - Attract & Repel Particles",
+    description: "Shape a glowing particle field with your mouse. Switch between attraction and repulsion, then tune force strength and particle count in real time.",
     images: ["/og-image.png"],
   },
   alternates: {

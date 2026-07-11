@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Repo Visualizer",
+    absolute: "Repo Visualizer - GitHub History Visualizer",
   },
-  description: "Generate interactive visual representations of code repository structures. Explore directories, file hierarchies, and branch histories.",
+  description: "Load a GitHub repository, local git log, or demo history and watch commits animate through a file-tree graph with authors, change statuses, stats, and playback controls.",
   openGraph: {
-    title: "Repo Visualizer",
-    description: "Generate interactive visual representations of code repository structures. Explore directories, file hierarchies, and branch histories.",
+    title: "Repo Visualizer - GitHub History Visualizer",
+    description: "Load a GitHub repository, local git log, or demo history and watch commits animate through a file-tree graph with authors, change statuses, stats, and playback controls.",
     url: "/repo-visualizer",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Repo Visualizer Preview",
+        alt: "Repo Visualizer - GitHub History Visualizer Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Repo Visualizer",
-    description: "Generate interactive visual representations of code repository structures. Explore directories, file hierarchies, and branch histories.",
+    title: "Repo Visualizer - GitHub History Visualizer",
+    description: "Load a GitHub repository, local git log, or demo history and watch commits animate through a file-tree graph with authors, change statuses, stats, and playback controls.",
     images: ["/og-image.png"],
   },
   alternates: {

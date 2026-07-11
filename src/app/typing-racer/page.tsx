@@ -105,7 +105,9 @@ export default function TypeRacer() {
 
   // Load high score
   useEffect(() => {
-    const saved = localStorage.getItem("neon_racer_high_score");
+    const saved =
+      localStorage.getItem("typing_racer_high_score") ||
+      localStorage.getItem("neon_racer_high_score");
     if (saved) {
       setHighScore(parseInt(saved, 10));
     }
@@ -115,7 +117,7 @@ export default function TypeRacer() {
   const saveHighScore = (finalWpm: number) => {
     if (finalWpm > highScore) {
       setHighScore(finalWpm);
-      localStorage.setItem("neon_racer_high_score", finalWpm.toString());
+      localStorage.setItem("typing_racer_high_score", finalWpm.toString());
     }
   };
 
@@ -392,7 +394,7 @@ export default function TypeRacer() {
         <header className="flex justify-between items-center bg-[#150d2a]/80 border border-purple-900/60 rounded-3xl p-5 backdrop-blur-xl shadow-lg">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black tracking-widest text-transparent bg-clip-text bg-linear-to-r from-purple-400 via-pink-400 to-cyan-400">
-              NEON RACER
+              TYPING RACER
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -407,15 +409,12 @@ export default function TypeRacer() {
         {gameState === "menu" && (
           <div className="bg-[#120b24]/75 border border-purple-900/40 rounded-3xl p-10 backdrop-blur-xl shadow-2xl flex flex-col items-center text-center gap-8 animate-in fade-in zoom-in duration-300">
             <div className="flex flex-col gap-2">
-              <span className="text-xs text-purple-400 font-bold uppercase tracking-[0.25em]">
-                SYNTH TYPING SIMULATION
-              </span>
               <h2 className="text-5xl font-black tracking-tighter uppercase text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-500">
-                N E O N   R A C E R
+                T Y P I N G R A C E R
               </h2>
               <p className="text-zinc-500 text-sm max-w-lg mx-auto">
                 Type the passage as fast as possible to race against CPU
-                opponents down the cyber highway grid.
+                opponents down the highway.
               </p>
             </div>
 
@@ -678,7 +677,7 @@ export default function TypeRacer() {
                     RACE COMPLETE
                   </h2>
                   <p className="text-zinc-500 text-xs uppercase tracking-widest">
-                    Telemetry data compiled. Rank:{" "}
+                    Good job! Rank:{" "}
                     {currentRank === 1
                       ? "🥇 1ST PLACE"
                       : currentRank === 2
@@ -782,15 +781,26 @@ export default function TypeRacer() {
             background-position: 0 40px;
           }
         }
-          @keyframes gradientCycle {
-          from { background-position: 0% 0%; }
-          to { background-position: -300% 0%; }
+        @keyframes gradientCycle {
+          from {
+            background-position: 0% 0%;
+          }
+          to {
+            background-position: -300% 0%;
+          }
         }
         .rolling-grid {
           background-position: 0 0;
         }
         .liquid-gradient-btn {
-          background: linear-gradient(90deg, #9333ea, #ec4899, #06b6d4, #ec4899, #9333ea);
+          background: linear-gradient(
+            90deg,
+            #9333ea,
+            #ec4899,
+            #06b6d4,
+            #ec4899,
+            #9333ea
+          );
           background-size: 300% 100%;
           animation: gradientCycle 10s linear infinite;
         }

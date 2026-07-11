@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Polyrhythm Visualizer",
+    absolute: "Polyrhythm Visualizer - Layered Rhythms",
   },
-  description: "Visualize and hear the complex math of polyrhythms. Customize beats, instruments, tempo, and watch the satisfying mechanical rhythms collide.",
+  description: "Hear layered rhythms at adjustable tempo while switching between circle, timeline, bloom, and 3D visualizations with playback controls.",
   openGraph: {
-    title: "Polyrhythm Visualizer",
-    description: "Visualize and hear the complex math of polyrhythms. Customize beats, instruments, tempo, and watch the satisfying mechanical rhythms collide.",
+    title: "Polyrhythm Visualizer - Layered Rhythms",
+    description: "Hear layered rhythms at adjustable tempo while switching between circle, timeline, bloom, and 3D visualizations with playback controls.",
     url: "/polyrhythm-visualizer",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Polyrhythm Visualizer Preview",
+        alt: "Polyrhythm Visualizer - Layered Rhythms Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Polyrhythm Visualizer",
-    description: "Visualize and hear the complex math of polyrhythms. Customize beats, instruments, tempo, and watch the satisfying mechanical rhythms collide.",
+    title: "Polyrhythm Visualizer - Layered Rhythms",
+    description: "Hear layered rhythms at adjustable tempo while switching between circle, timeline, bloom, and 3D visualizations with playback controls.",
     images: ["/og-image.png"],
   },
   alternates: {

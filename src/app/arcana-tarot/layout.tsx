@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Arcana Tarot",
+    absolute: "Arcana Tarot - Virtual Tarot Readings",
   },
-  description: "Draw the cards and uncover your destiny. An interactive virtual tarot reading experience featuring beautiful animations, card details, and spreads.",
+  description: "Shuffle the deck, draw tarot cards, and explore detailed meanings with a modern interactive tarot experience.",
   openGraph: {
-    title: "Arcana Tarot",
-    description: "Draw the cards and uncover your destiny. An interactive virtual tarot reading experience featuring beautiful animations, card details, and spreads.",
+    title: "Arcana Tarot - Virtual Tarot Readings",
+    description: "Shuffle the deck, draw tarot cards, and explore detailed meanings with a modern interactive tarot experience.",
     url: "/arcana-tarot",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Arcana Tarot Preview",
+        alt: "Arcana Tarot - Virtual Tarot Readings Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Arcana Tarot",
-    description: "Draw the cards and uncover your destiny. An interactive virtual tarot reading experience featuring beautiful animations, card details, and spreads.",
+    title: "Arcana Tarot - Virtual Tarot Readings",
+    description: "Shuffle the deck, draw tarot cards, and explore detailed meanings with a modern interactive tarot experience.",
     images: ["/og-image.png"],
   },
   alternates: {

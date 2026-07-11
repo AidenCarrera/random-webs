@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Mandala Maker",
+    absolute: "Mandala Maker - Symmetrical Drawing Tool",
   },
-  description: "Create beautiful, intricate symmetrical drawings. Customize mirror points, line thickness, brush colors, and export your digital mandala art.",
+  description: "Draw beautiful radial artwork with brushes and colors, then export your finished mandalas as images.",
   openGraph: {
-    title: "Mandala Maker",
-    description: "Create beautiful, intricate symmetrical drawings. Customize mirror points, line thickness, brush colors, and export your digital mandala art.",
+    title: "Mandala Maker - Symmetrical Drawing Tool",
+    description: "Draw beautiful radial artwork with brushes and colors, then export your finished mandalas as images.",
     url: "/mandala-maker",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Mandala Maker Preview",
+        alt: "Mandala Maker - Symmetrical Drawing Tool Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Mandala Maker",
-    description: "Create beautiful, intricate symmetrical drawings. Customize mirror points, line thickness, brush colors, and export your digital mandala art.",
+    title: "Mandala Maker - Symmetrical Drawing Tool",
+    description: "Draw beautiful radial artwork with brushes and colors, then export your finished mandalas as images.",
     images: ["/og-image.png"],
   },
   alternates: {

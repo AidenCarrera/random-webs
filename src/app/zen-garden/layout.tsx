@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Zen Garden",
+    absolute: "Zen Garden - Landscape Sandbox",
   },
-  description: "Nurture a relaxing virtual garden. Rake sand, plant flowers, play calming ambient sounds, and escape into a peaceful, mindful space.",
+  description: "Design a calming digital sandscape with plants and decorations, water, multiple sand themes, and image or layout export.",
   openGraph: {
-    title: "Zen Garden",
-    description: "Nurture a relaxing virtual garden. Rake sand, plant flowers, play calming ambient sounds, and escape into a peaceful, mindful space.",
+    title: "Zen Garden - Landscape Sandbox",
+    description: "Design a calming digital sandscape with plants and decorations, water, multiple sand themes, and image or layout export.",
     url: "/zen-garden",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Zen Garden Preview",
+        alt: "Zen Garden - Landscape Sandbox Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Zen Garden",
-    description: "Nurture a relaxing virtual garden. Rake sand, plant flowers, play calming ambient sounds, and escape into a peaceful, mindful space.",
+    title: "Zen Garden - Landscape Sandbox",
+    description: "Design a calming digital sandscape with plants and decorations, water, multiple sand themes, and image or layout export.",
     images: ["/og-image.png"],
   },
   alternates: {

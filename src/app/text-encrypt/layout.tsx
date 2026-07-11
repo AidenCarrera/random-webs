@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Text Encrypt",
+    absolute: "Text Encrypt - Convert Text to Secret Codes",
   },
-  description: "Encode your private texts using various secure algorithms. Generate base64, custom ciphers, and share encrypted secret links with friends.",
+  description: "Transform text into binary, hexadecimal, Caesar-shifted, Base64, Atbash, and ROT13 or ROT47 output with adjustable settings and one-click copying.",
   openGraph: {
-    title: "Text Encrypt",
-    description: "Encode your private texts using various secure algorithms. Generate base64, custom ciphers, and share encrypted secret links with friends.",
+    title: "Text Encrypt - Convert Text to Secret Codes",
+    description: "Transform text into binary, hexadecimal, Caesar-shifted, Base64, Atbash, and ROT13 or ROT47 output with adjustable settings and one-click copying.",
     url: "/text-encrypt",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Text Encrypt Preview",
+        alt: "Text Encrypt - Convert Text to Secret Codes Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Text Encrypt",
-    description: "Encode your private texts using various secure algorithms. Generate base64, custom ciphers, and share encrypted secret links with friends.",
+    title: "Text Encrypt - Convert Text to Secret Codes",
+    description: "Transform text into binary, hexadecimal, Caesar-shifted, Base64, Atbash, and ROT13 or ROT47 output with adjustable settings and one-click copying.",
     images: ["/og-image.png"],
   },
   alternates: {

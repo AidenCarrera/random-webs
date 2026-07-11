@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Click Speed Test",
+    absolute: "Click Speed Test - Measure CPS",
   },
   description: "How fast can you click? Test your CPS (clicks per second) with different time limits, track your scores, and improve your clicking speed.",
   openGraph: {
-    title: "Click Speed Test",
+    title: "Click Speed Test - Measure CPS",
     description: "How fast can you click? Test your CPS (clicks per second) with different time limits, track your scores, and improve your clicking speed.",
     url: "/click-speed-test",
     type: "website",
@@ -15,13 +15,13 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Click Speed Test Preview",
+        alt: "Click Speed Test - Measure CPS Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Click Speed Test",
+    title: "Click Speed Test - Measure CPS",
     description: "How fast can you click? Test your CPS (clicks per second) with different time limits, track your scores, and improve your clicking speed.",
     images: ["/og-image.png"],
   },

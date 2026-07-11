@@ -7,6 +7,12 @@ export type WebsiteEntry = {
 
 export const WEBSITES: WebsiteEntry[] = [
   {
+    path: "/algo-race",
+    title: "Algo Race",
+    blurb: "Algorithms race to the finish.",
+    accent: "from-cyan-200/80 via-sky-300/70 to-blue-500/70",
+  },
+  {
     path: "/arcana-tarot",
     title: "Arcana Tarot",
     blurb: "Draw the cards.",
@@ -41,6 +47,12 @@ export const WEBSITES: WebsiteEntry[] = [
     title: "Emoji Rain",
     blurb: "Falling icons.",
     accent: "from-sky-200/80 via-cyan-300/70 to-blue-500/70",
+  },
+  {
+    path: "/encoded-message",
+    title: "Encoded Message",
+    blurb: "Decode the message.",
+    accent: "from-blue-200/80 via-indigo-300/70 to-slate-500/70",
   },
   {
     path: "/focus-timer",
@@ -157,12 +169,6 @@ export const WEBSITES: WebsiteEntry[] = [
     accent: "from-sky-200/80 via-indigo-300/70 to-violet-500/70",
   },
   {
-    path: "/algo-race",
-    title: "Algo Race",
-    blurb: "Algorithms race to the finish.",
-    accent: "from-cyan-200/80 via-sky-300/70 to-blue-500/70",
-  },
-  {
     path: "/sticky-notes",
     title: "Sticky Notes",
     blurb: "Pin your thoughts.",
@@ -179,12 +185,6 @@ export const WEBSITES: WebsiteEntry[] = [
     title: "Submit to Void",
     blurb: "Throw text away.",
     accent: "from-slate-300/80 via-zinc-500/70 to-black/70",
-  },
-  {
-    path: "/text-decrypt",
-    title: "Text Decrypt",
-    blurb: "Decode a message.",
-    accent: "from-blue-200/80 via-indigo-300/70 to-slate-500/70",
   },
   {
     path: "/text-encrypt",

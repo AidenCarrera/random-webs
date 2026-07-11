@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Don't Click Me",
+    absolute: "Don't Click Me - Interactive Button Game",
   },
-  description: "A hilarious and interactive game where you are told not to click the button. Can you resist the temptation? See what happens if you click!",
+  description: "An interactive game where you are told not to click the button. Can you resist the temptation? See what happens if you click!",
   openGraph: {
-    title: "Don't Click Me",
-    description: "A hilarious and interactive game where you are told not to click the button. Can you resist the temptation? See what happens if you click!",
+    title: "Don't Click Me - Interactive Button Game",
+    description: "An interactive game where you are told not to click the button. Can you resist the temptation? See what happens if you click!",
     url: "/dont-click-me",
     type: "website",
     images: [
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Don't Click Me Preview",
+        alt: "Don't Click Me - Interactive Button Game Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Don't Click Me",
-    description: "A hilarious and interactive game where you are told not to click the button. Can you resist the temptation? See what happens if you click!",
+    title: "Don't Click Me - Interactive Button Game",
+    description: "An interactive game where you are told not to click the button. Can you resist the temptation? See what happens if you click!",
     images: ["/og-image.png"],
   },
   alternates: {

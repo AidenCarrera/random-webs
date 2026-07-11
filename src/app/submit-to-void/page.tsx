@@ -70,8 +70,8 @@ function createGifStars(): GifStar[] {
     const hasTrail = !isDeepBackground && idx % 13 === 0;
 
     return {
-      x: ((Math.sin(idx * 91.7) * 10000) % 1 + 1) % 1,
-      y: ((Math.sin(idx * 47.3 + 1.7) * 10000) % 1 + 1) % 1,
+      x: (((Math.sin(idx * 91.7) * 10000) % 1) + 1) % 1,
+      y: (((Math.sin(idx * 47.3 + 1.7) * 10000) % 1) + 1) % 1,
       size: isDeepBackground ? 0.7 : ((idx * 17) % 10) / 10 + 0.7,
       baseSpeed: isDeepBackground
         ? 0.0014 + (((idx * 19) % 10) / 10) * 0.005
@@ -238,7 +238,9 @@ function createVoidSvgMarkup(frame: number, mass = 1) {
 function loadSvgImage(svgMarkup: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const svgBlob = new Blob([svgMarkup], { type: "image/svg+xml;charset=utf-8" });
+    const svgBlob = new Blob([svgMarkup], {
+      type: "image/svg+xml;charset=utf-8",
+    });
     const objectUrl = URL.createObjectURL(svgBlob);
 
     img.onload = () => {
@@ -253,10 +255,7 @@ function loadSvgImage(svgMarkup: string): Promise<HTMLImageElement> {
   });
 }
 
-function getGifGlyphs(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-): GifGlyph[] {
+function getGifGlyphs(ctx: CanvasRenderingContext2D, text: string): GifGlyph[] {
   const maxWidth = 165;
   const lineHeight = 18;
   const glyphs: GifGlyph[] = [];
@@ -312,7 +311,8 @@ function drawGifPhraseFrame(
   frame: number,
 ) {
   ctx.save();
-  ctx.font = "900 15px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
+  ctx.font =
+    "900 15px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
@@ -321,7 +321,10 @@ function drawGifPhraseFrame(
   const suctionProgress =
     frame <= GIF_PURPLE_FRAMES
       ? 0
-      : Math.min(1, (frame - GIF_PURPLE_FRAMES) / (GIF_FRAMES - GIF_PURPLE_FRAMES - 1));
+      : Math.min(
+          1,
+          (frame - GIF_PURPLE_FRAMES) / (GIF_FRAMES - GIF_PURPLE_FRAMES - 1),
+        );
 
   glyphs.forEach((glyph, index) => {
     const dx = GIF_VOID_CENTER_X - glyph.x;
@@ -546,12 +549,19 @@ export default function SubmitToVoid() {
     let cursorY = 0;
 
     text.split("").forEach((char) => {
-      const charWidth = ctx ? ctx.measureText(char || " ").width : fontSize * 0.62;
+      const charWidth = ctx
+        ? ctx.measureText(char || " ").width
+        : fontSize * 0.62;
 
       if (char === "\n") {
         origins.push({
           x: textRect.left + paddingLeft + cursorX - voidCenterX,
-          y: textRect.top + paddingTop + cursorY + lineHeight * 0.5 - voidCenterY,
+          y:
+            textRect.top +
+            paddingTop +
+            cursorY +
+            lineHeight * 0.5 -
+            voidCenterY,
         });
         cursorX = 0;
         cursorY += lineHeight;
@@ -564,7 +574,8 @@ export default function SubmitToVoid() {
       }
 
       origins.push({
-        x: textRect.left + paddingLeft + cursorX + charWidth * 0.5 - voidCenterX,
+        x:
+          textRect.left + paddingLeft + cursorX + charWidth * 0.5 - voidCenterX,
         y: textRect.top + paddingTop + cursorY + lineHeight * 0.5 - voidCenterY,
       });
       cursorX += charWidth;
@@ -597,7 +608,9 @@ export default function SubmitToVoid() {
       const gifStars = createGifStars();
 
       for (let frame = 0; frame < GIF_FRAMES; frame += 1) {
-        const voidImage = await loadSvgImage(createVoidSvgMarkup(frame, voidMass));
+        const voidImage = await loadSvgImage(
+          createVoidSvgMarkup(frame, voidMass),
+        );
         drawVoidGifFrame(ctx, voidImage, gifStars, frame, voidMass);
         drawGifPhraseFrame(ctx, gifText, frame);
         const rgba = ctx.getImageData(0, 0, GIF_SIZE, GIF_SIZE).data;
