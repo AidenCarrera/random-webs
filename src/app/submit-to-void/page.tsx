@@ -83,7 +83,6 @@ function drawVoidGifFrame(
   image: CanvasImageSource,
   stars: GifStar[],
   frame: number,
-  mass = 1,
 ) {
   const size = GIF_SIZE;
   const drift = frame * GIF_STAR_DRIFT_PER_FRAME;
@@ -609,7 +608,7 @@ export default function SubmitToVoid() {
         const voidImage = await loadSvgImage(
           createVoidSvgMarkup(sourceFrame, voidMass),
         );
-        drawVoidGifFrame(ctx, voidImage, gifStars, sourceFrame, voidMass);
+        drawVoidGifFrame(ctx, voidImage, gifStars, sourceFrame);
         drawGifPhraseFrame(ctx, gifText, sourceFrame);
         const rgba = ctx.getImageData(0, 0, exportSize, exportSize).data;
         const palette = quantize(rgba, 256, { format: "rgb444" });

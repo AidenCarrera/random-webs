@@ -301,7 +301,7 @@ export default function TarotSpread() {
 
   return (
     <div
-      className={`min-h-[100dvh] bg-[#1a0b2e] text-[#e0b0ff] font-serif flex flex-col items-center justify-center py-8 px-4 overflow-x-hidden ${cinzel.className}`}
+      className={`min-h-dvh bg-[#1a0b2e] text-[#e0b0ff] font-serif flex flex-col items-center justify-center py-8 px-4 overflow-x-hidden ${cinzel.className}`}
     >
       <header className="mb-6 md:mb-8 text-center relative isolate z-10">
         <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(88,28,135,0.55)_0%,rgba(88,28,135,0.22)_42%,rgba(88,28,135,0)_74%)] md:h-64 md:w-64" />

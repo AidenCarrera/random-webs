@@ -19,17 +19,15 @@ import { PRESETS } from "../presets";
 import type { BassNote, DrumKit, KitDefinition, TrackConfig } from "../types";
 
 export function useBeatMakerController() {
-  const kitRegistryRef = useRef(
+  const [kitRegistry] = useState(() =>
     Object.fromEntries(FALLBACK_KITS.map((kit) => [kit.id, kit])),
   );
   const sampleUrl = useCallback(
     (kit: DrumKit, trackId: string) =>
-      resolveSampleUrl(kitRegistryRef.current, kit, trackId),
-    [],
+      resolveSampleUrl(kitRegistry, kit, trackId),
+    [kitRegistry],
   );
-  const engineRef = useRef<AudioEngine | null>(null);
-  engineRef.current ??= new AudioEngine(sampleUrl);
-  const engine = engineRef.current;
+  const [engine] = useState(() => new AudioEngine(sampleUrl));
 
   const [tracks, setTracks] = useState(INITIAL_TRACKS);
   const [grid, setGrid] = useState(() =>
@@ -143,14 +141,15 @@ export function useBeatMakerController() {
           }),
           SYNTH_KIT,
         ];
-        kitRegistryRef.current = Object.fromEntries(
-          kits.map((kit) => [kit.id, kit]),
+        Object.assign(
+          kitRegistry,
+          Object.fromEntries(kits.map((kit) => [kit.id, kit])),
         );
         setDrumKits(kits);
       })
       .catch(() => undefined);
     return () => controller.abort();
-  }, []);
+  }, [kitRegistry]);
 
   useEffect(() => {
     engine.mount();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Download, Upload } from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { canvasToBlob, downloadCanvasPng } from "@/lib/canvasExport";
@@ -15,6 +15,31 @@ const ASCII_EXPORT_LINE_HEIGHT = 20;
 const ASCII_EXPORT_CHAR_WIDTH = 10.8;
 const ASCII_EXPORT_PADDING = 32;
 
+function subscribeToTouchCapability(onStoreChange: () => void) {
+  const mediaQuery = window.matchMedia("(pointer: coarse)");
+  mediaQuery.addEventListener("change", onStoreChange);
+  return () => mediaQuery.removeEventListener("change", onStoreChange);
+}
+
+function getTouchCapabilitySnapshot() {
+  return (
+    window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0
+  );
+}
+
+function subscribeToLocation(onStoreChange: () => void) {
+  window.addEventListener("hashchange", onStoreChange);
+  window.addEventListener("popstate", onStoreChange);
+  return () => {
+    window.removeEventListener("hashchange", onStoreChange);
+    window.removeEventListener("popstate", onStoreChange);
+  };
+}
+
+const getShareUrlSnapshot = () => window.location.href;
+const getServerShareUrlSnapshot = () => "";
+const getServerTouchCapabilitySnapshot = () => false;
+
 export default function AsciiCamera() {
   const [asciiArt, setAsciiArt] = useState<string>("");
   const [asciiSize, setAsciiSize] = useState({ columns: 120, rows: 54 });
@@ -23,21 +48,20 @@ export default function AsciiCamera() {
   const [color, setColor] = useState<string>("#00ff00");
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [aspectRatio, setAspectRatio] = useState<number>(1.33);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const isTouchDevice = useSyncExternalStore(
+    subscribeToTouchCapability,
+    getTouchCapabilitySnapshot,
+    getServerTouchCapabilitySnapshot,
+  );
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewFileName, setPreviewFileName] = useState("ascii-vision.png");
-  const [shareUrl, setShareUrl] = useState("");
+  const shareUrl = useSyncExternalStore(
+    subscribeToLocation,
+    getShareUrlSnapshot,
+    getServerShareUrlSnapshot,
+  );
 
   const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    setIsTouchDevice(
-      window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0,
-    );
-    setShareUrl(window.location.href);
-  }, []);
 
   useEffect(() => {
     if (!imageSrc) return;

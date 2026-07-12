@@ -185,7 +185,7 @@ export const BassPianoRoll = memo(function BassPianoRoll({
             <h2 className="text-zinc-200 font-bold text-[10px] uppercase tracking-[0.3em]">
               808 Bass Piano Roll
             </h2>
-            <p className="mt-1 hidden text-[9px] text-zinc-500 [@media(pointer:coarse)]:block">
+            <p className="pointer-coarse:block mt-1 hidden text-[9px] text-zinc-500">
               Tap a cell to add. Drag notes or edges. Use Erase to remove.
             </p>
           </div>
