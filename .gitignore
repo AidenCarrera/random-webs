@@ -24,7 +24,6 @@
 .DS_Store
 *.pem
 .vscode
-/test.ps1
 /tasks/
 
 # debug

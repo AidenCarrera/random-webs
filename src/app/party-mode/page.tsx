@@ -95,8 +95,8 @@ export default function PartyMode() {
       )}
 
       <h1
-        className={`text-6xl md:text-8xl font-black text-center text-white drop-shadow-md mb-12 origin-center transition-all duration-300 ${
-          isPartying ? "animate-dance scale-110" : ""
+        className={`px-4 text-[clamp(2.75rem,13vw,3.5rem)] sm:text-6xl md:text-8xl leading-none tracking-tight font-black text-center text-white drop-shadow-md mb-8 sm:mb-12 origin-center transition-all duration-300 ${
+          isPartying ? "animate-dance scale-105 sm:scale-110" : ""
         }`}
       >
         PARTY MODE
