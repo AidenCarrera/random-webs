@@ -31,6 +31,9 @@ const SORT_NAMES: SortName[] = [
   "Heap Sort",
 ];
 
+const generateRandomData = (size: number) =>
+  Array.from({ length: size }, () => Math.floor(Math.random() * 100) + 5);
+
 // Algorithms
 const bubbleSort = async (
   arr: number[],
@@ -286,28 +289,25 @@ export default function AlgoRacePage() {
   const stopRef = useRef(false);
   const pausedRef = useRef(false);
   const raceIdRef = useRef(0);
+  const hasSeededInitialDataRef = useRef(false);
 
-  const generateRandomData = useCallback((size: number) => {
-    return Array.from(
-      { length: size },
-      () => Math.floor(Math.random() * 100) + 5,
-    );
+  const seedArrays = useCallback((size: number) => {
+    const newArr = generateRandomData(size);
+    setBubbleArr([...newArr]);
+    setSelectArr([...newArr]);
+    setInsertArr([...newArr]);
+    setQuickArr([...newArr]);
+    setMergeArr([...newArr]);
+    setHeapArr([...newArr]);
   }, []);
 
-  const seedArrays = useCallback(
-    (size: number) => {
-      const newArr = generateRandomData(size);
-      setBubbleArr([...newArr]);
-      setSelectArr([...newArr]);
-      setInsertArr([...newArr]);
-      setQuickArr([...newArr]);
-      setMergeArr([...newArr]);
-      setHeapArr([...newArr]);
-    },
-    [generateRandomData],
-  );
+  useEffect(() => {
+    if (hasSeededInitialDataRef.current) return;
+    hasSeededInitialDataRef.current = true;
+    seedArrays(arraySize);
+  }, [arraySize, seedArrays]);
 
-  const reset = useCallback(() => {
+  const reset = useCallback((size = arraySize) => {
     raceIdRef.current += 1;
     stopRef.current = true;
     pausedRef.current = false;
@@ -318,21 +318,15 @@ export default function AlgoRacePage() {
 
     setTimeout(() => {
       stopRef.current = false;
-      seedArrays(arraySize);
+      seedArrays(size);
     }, 100);
   }, [arraySize, seedArrays]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      seedArrays(60);
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [seedArrays]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => reset(), 0);
-    return () => clearTimeout(timer);
-  }, [reset]);
+  const changeArraySize = (size: number) => {
+    if (size === arraySize) return;
+    setArraySize(size);
+    reset(size);
+  };
 
   const registerFinish = useCallback(
     (raceId: number, name: SortName, startedAt: number) => {
@@ -467,7 +461,7 @@ export default function AlgoRacePage() {
               {[10, 60, 120].map((size) => (
                 <button
                   key={size}
-                  onClick={() => setArraySize(size)}
+                  onClick={() => changeArraySize(size)}
                   disabled={isRunning}
                   className={`rounded px-1.5 py-0.5 text-xs font-bold ${
                     arraySize === size
@@ -499,7 +493,7 @@ export default function AlgoRacePage() {
               )}
             </button>
             <button
-              onClick={reset}
+              onClick={() => reset()}
               className="flex items-center gap-1.5 rounded-lg border-2 border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-sm transition-all hover:bg-slate-100"
             >
               <RotateCcw className="h-3.5 w-3.5" /> RESET
