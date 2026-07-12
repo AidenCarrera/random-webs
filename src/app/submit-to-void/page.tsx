@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Download, LoaderCircle, Trash2, X } from "lucide-react";
 
 // --- Types ---
@@ -12,14 +12,7 @@ interface Particle {
   char: string;
   startX: number;
   startY: number;
-  x: number;
-  y: number;
-  purple: number;
-  t: number;
-  scale: number;
-  rotation: number;
   startRotation: number;
-  delay: number;
 }
 
 const GIF_SIZE = 420;
@@ -33,6 +26,7 @@ const GIF_VOID_CENTER_X = GIF_VOID_X + GIF_VOID_SIZE / 2;
 const GIF_VOID_CENTER_Y = GIF_VOID_Y + GIF_VOID_SIZE / 2;
 const GIF_STAR_DRIFT_PER_FRAME = 0.72;
 const LIVE_STAR_SPEED_MULTIPLIER = 0.38;
+const MOBILE_BREAKPOINT = 768;
 
 type GifGlyph = {
   char: string;
@@ -372,24 +366,32 @@ export default function SubmitToVoid() {
   const [lastShreddedText, setLastShreddedText] = useState("");
   const [phase, setPhase] = useState<Phase>("TYPING");
   const [voidMass, setVoidMass] = useState(1);
-  const [gravityPull, setGravityPull] = useState(0);
   const [isMakingGif, setIsMakingGif] = useState(false);
   const [showGifPrompt, setShowGifPrompt] = useState(false);
-  const [terminalLogs, setTerminalLogs] = useState<string[]>([
-    "SINGULARITY SYSTEM INITIALIZED.",
-    "AWAITING DESTRUCTIVE CONFLICT INPUTS...",
-  ]);
+  const [isMobile, setIsMobile] = useState(false);
   const [particles, setParticles] = useState<Particle[]>([]);
+  const reduceMotion = useReducedMotion();
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
-  const logContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const voidCenterRef = useRef<HTMLDivElement>(null);
+  const particleElementsRef = useRef(new Map<number, HTMLSpanElement>());
+
+  useEffect(() => {
+    const media = window.matchMedia(
+      `(max-width: ${MOBILE_BREAKPOINT - 1}px), (pointer: coarse)`,
+    );
+    const update = () => setIsMobile(media.matches);
+
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   // Background star field engine
   useEffect(() => {
     const canvas = backgroundCanvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
     interface Star {
@@ -398,18 +400,29 @@ export default function SubmitToVoid() {
       size: number;
       baseSpeed: number;
       hasTrail: boolean;
-      history: { x: number; y: number }[];
       opacity: number;
     }
 
-    let raf: number;
+    let raf = 0;
+    let resizeTimer: number | undefined;
+    let lastFrameTime = 0;
     let stars: Star[] = [];
+    const mobileMedia = window.matchMedia(
+      `(max-width: ${MOBILE_BREAKPOINT - 1}px), (pointer: coarse)`,
+    );
+    const reducedMotionMedia = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    );
+    const isMobileCanvas = mobileMedia.matches;
+    const starCount = isMobileCanvas ? 190 : 620;
+    const foregroundCount = isMobileCanvas ? 42 : 110;
+    const frameInterval = isMobileCanvas ? 1000 / 30 : 1000 / 50;
 
     const handleResize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      stars = Array.from({ length: 1200 }, (_, idx) => {
-        const isDeepBackground = idx >= 200;
+      stars = Array.from({ length: starCount }, (_, idx) => {
+        const isDeepBackground = idx >= foregroundCount;
         const hasTrail = !isDeepBackground && Math.random() < 0.08;
         return {
           x: Math.random() * canvas.width,
@@ -420,7 +433,6 @@ export default function SubmitToVoid() {
             : (Math.random() * (hasTrail ? 0.9 : 0.15) + 0.04) *
               LIVE_STAR_SPEED_MULTIPLIER,
           hasTrail,
-          history: [],
           opacity: isDeepBackground
             ? Math.random() * 0.2 + 0.08
             : Math.random() * 0.4 + 0.3,
@@ -428,54 +440,33 @@ export default function SubmitToVoid() {
       });
     };
     handleResize();
-    window.addEventListener("resize", handleResize);
+    const queueResize = () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(handleResize, 160);
+    };
+    window.addEventListener("resize", queueResize, { passive: true });
 
-    const draw = () => {
+    const draw = (time: number) => {
+      if (time - lastFrameTime < frameInterval) {
+        raf = requestAnimationFrame(draw);
+        return;
+      }
+      lastFrameTime = time;
+
       ctx.fillStyle = "#07060c";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-
       stars.forEach((star) => {
+        star.y += star.baseSpeed;
+        if (star.y > canvas.height) {
+          star.y = 0;
+          star.x = Math.random() * canvas.width;
+        }
+
         if (star.hasTrail) {
-          star.history.push({ x: star.x, y: star.y });
-          if (star.history.length > 6) {
-            star.history.shift();
-          }
-        }
-
-        // Gravitational pull calculations
-        const dx = centerX - star.x;
-        const dy = centerY - star.y;
-        const dist = Math.hypot(dx, dy);
-
-        if (gravityPull > 0 && dist > 10) {
-          const force = (gravityPull * 8) / dist;
-          star.x += (dx / dist) * force;
-          star.y += (dy / dist) * force;
-          if (dist < 40) {
-            star.x = Math.random() * canvas.width;
-            star.y = Math.random() * canvas.height;
-            star.history = [];
-          }
-        } else {
-          // Normal slow drift
-          star.y += star.baseSpeed;
-          if (star.y > canvas.height) {
-            star.y = 0;
-            star.x = Math.random() * canvas.width;
-            star.history = [];
-          }
-        }
-
-        // Draw individual trails for selected stars
-        if (star.hasTrail && star.history.length > 1) {
           ctx.beginPath();
-          ctx.moveTo(star.history[0].x, star.history[0].y);
-          for (let i = 1; i < star.history.length; i++) {
-            ctx.lineTo(star.history[i].x, star.history[i].y);
-          }
+          ctx.moveTo(star.x, star.y - 6);
+          ctx.lineTo(star.x, star.y);
           ctx.strokeStyle = `rgba(168, 85, 247, ${star.baseSpeed * 0.45})`;
           ctx.lineWidth = star.size * 0.9;
           ctx.stroke();
@@ -491,13 +482,19 @@ export default function SubmitToVoid() {
 
       raf = requestAnimationFrame(draw);
     };
-    raf = requestAnimationFrame(draw);
+    if (reducedMotionMedia.matches) {
+      draw(frameInterval);
+      cancelAnimationFrame(raf);
+    } else {
+      raf = requestAnimationFrame(draw);
+    }
 
     return () => {
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("resize", queueResize);
+      window.clearTimeout(resizeTimer);
       cancelAnimationFrame(raf);
     };
-  }, [gravityPull]);
+  }, []);
 
   // Handle typing effects
   const handleInputChange = (val: string) => {
@@ -506,15 +503,8 @@ export default function SubmitToVoid() {
     setVoidMass(1 + val.length * 0.008);
   };
 
-  // Add a line to the simulated log terminal
   const logMsg = useCallback((msg: string) => {
-    setTerminalLogs((prev) => [...prev.slice(-8), `> ${msg.toUpperCase()}`]);
-    setTimeout(() => {
-      if (logContainerRef.current) {
-        logContainerRef.current.scrollTop =
-          logContainerRef.current.scrollHeight;
-      }
-    }, 20);
+    console.info(`[void] ${msg}`);
   }, []);
 
   const getTextParticleOrigins = useCallback((text: string) => {
@@ -596,8 +586,11 @@ export default function SubmitToVoid() {
     try {
       const { GIFEncoder, applyPalette, quantize } = await import("gifenc");
       const canvas = document.createElement("canvas");
-      canvas.width = GIF_SIZE;
-      canvas.height = GIF_SIZE;
+      const exportSize = isMobile ? 300 : GIF_SIZE;
+      const frameCount = isMobile ? 32 : GIF_FRAMES;
+      const frameDelay = Math.round((GIF_DELAY_MS * GIF_FRAMES) / frameCount);
+      canvas.width = exportSize;
+      canvas.height = exportSize;
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
       if (!ctx) {
@@ -606,19 +599,24 @@ export default function SubmitToVoid() {
 
       const gif = GIFEncoder();
       const gifStars = createGifStars();
+      const logicalScale = exportSize / GIF_SIZE;
+      ctx.setTransform(logicalScale, 0, 0, logicalScale, 0, 0);
 
-      for (let frame = 0; frame < GIF_FRAMES; frame += 1) {
-        const voidImage = await loadSvgImage(
-          createVoidSvgMarkup(frame, voidMass),
+      for (let frame = 0; frame < frameCount; frame += 1) {
+        const sourceFrame = Math.round(
+          (frame / Math.max(1, frameCount - 1)) * (GIF_FRAMES - 1),
         );
-        drawVoidGifFrame(ctx, voidImage, gifStars, frame, voidMass);
-        drawGifPhraseFrame(ctx, gifText, frame);
-        const rgba = ctx.getImageData(0, 0, GIF_SIZE, GIF_SIZE).data;
+        const voidImage = await loadSvgImage(
+          createVoidSvgMarkup(sourceFrame, voidMass),
+        );
+        drawVoidGifFrame(ctx, voidImage, gifStars, sourceFrame, voidMass);
+        drawGifPhraseFrame(ctx, gifText, sourceFrame);
+        const rgba = ctx.getImageData(0, 0, exportSize, exportSize).data;
         const palette = quantize(rgba, 256, { format: "rgb444" });
         const index = applyPalette(rgba, palette, "rgb444");
-        gif.writeFrame(index, GIF_SIZE, GIF_SIZE, {
+        gif.writeFrame(index, exportSize, exportSize, {
           palette,
-          delay: GIF_DELAY_MS,
+          delay: frameDelay,
           repeat: 0,
         });
 
@@ -642,84 +640,99 @@ export default function SubmitToVoid() {
     } finally {
       setIsMakingGif(false);
     }
-  }, [isMakingGif, lastShreddedText, logMsg, voidMass]);
+  }, [isMakingGif, lastShreddedText, logMsg, voidMass, isMobile]);
 
-  // Sucking particle simulation loop
+  // Update particle DOM nodes directly so React does not reconcile the entire
+  // page on every animation frame.
   useEffect(() => {
-    if (phase !== "SUCKING") return;
+    if (phase !== "SUCKING" || particles.length === 0) return;
 
-    let timer: number;
-    const step = () => {
-      setParticles((prev) => {
-        const remaining = prev
-          .map((p) => {
-            if (p.delay > 0) {
-              return { ...p, delay: p.delay - 1 };
-            }
+    let raf = 0;
+    let lastFrameTime = 0;
+    const startedAt = performance.now();
+    const purpleDuration = reduceMotion ? 80 : isMobile ? 360 : 720;
+    const suctionDuration = reduceMotion ? 220 : isMobile ? 1280 : 1900;
+    const totalDuration = purpleDuration + suctionDuration;
+    const frameInterval = isMobile ? 1000 / 30 : 1000 / 60;
 
-            if (p.purple < 1) {
-              const nextPurple = Math.min(1, p.purple + 0.012);
+    const step = (time: number) => {
+      if (time - lastFrameTime < frameInterval) {
+        raf = requestAnimationFrame(step);
+        return;
+      }
+      lastFrameTime = time;
 
-              return {
-                ...p,
-                purple: nextPurple,
-                x: p.startX,
-                y: p.startY,
-                scale: 1.06 + Math.sin(nextPurple * Math.PI) * 0.08,
-                rotation: 0,
-              };
-            }
+      const elapsed = time - startedAt;
+      const purpleProgress = Math.min(1, elapsed / purpleDuration);
+      const suctionProgress = Math.max(
+        0,
+        Math.min(1, (elapsed - purpleDuration) / suctionDuration),
+      );
+      const red = Math.round(212 - purpleProgress * 44);
+      const green = Math.round(212 - purpleProgress * 127);
+      const blue = Math.round(216 + purpleProgress * 38);
 
-            // Progress incremental steps (slowing down animation for dramatic effect)
-            const nextT = Math.min(1, p.t + 0.0055);
+      particles.forEach((particle) => {
+        const element = particleElementsRef.current.get(particle.id);
+        if (!element) return;
 
-            const startDist = Math.hypot(p.startX, p.startY);
-            const startAngle = Math.atan2(p.startY, p.startX);
+        let x = particle.startX;
+        let y = particle.startY;
+        let scale = 1.06 + Math.sin(purpleProgress * Math.PI) * 0.08;
+        let rotation = 0;
 
-            // Exponential distance decay (pulling faster as they get closer)
-            const currentDist = startDist * Math.pow(1 - nextT, 2.1);
-            // Swirling: orbits around center by 2 full turns.
-            const currentAngle =
-              startAngle + nextT * (Math.PI * 4) + Math.sin(p.id * 1.7) * 0.22;
+        if (suctionProgress > 0) {
+          const startDist = Math.hypot(particle.startX, particle.startY);
+          const startAngle = Math.atan2(particle.startY, particle.startX);
+          const currentDist = startDist * Math.pow(1 - suctionProgress, 2.1);
+          const currentAngle =
+            startAngle +
+            suctionProgress * (Math.PI * 4) +
+            Math.sin(particle.id * 1.7) * 0.22;
 
-            const nextX = Math.cos(currentAngle) * currentDist;
-            const nextY = Math.sin(currentAngle) * currentDist;
-
-            const nextScale = (1 - nextT) * 1.1;
-            const nextRotation = p.startRotation + nextT * 540;
-
-            return {
-              ...p,
-              t: nextT,
-              x: nextX,
-              y: nextY,
-              scale: nextScale,
-              rotation: nextRotation,
-            };
-          })
-          .filter((p) => p.t < 1);
-
-        if (remaining.length === 0) {
-          // Swallow complete
-          setPhase("DIGESTING");
-          setVoidMass(1.8);
-          setShowGifPrompt(true);
-          logMsg("swallow sequence complete.");
-          logMsg("the void remains satisfied.");
-          setTimeout(() => {
-            setVoidMass(1.0);
-            setPhase("TYPING");
-          }, 1500);
+          x = Math.cos(currentAngle) * currentDist;
+          y = Math.sin(currentAngle) * currentDist;
+          scale = (1 - suctionProgress) * 1.1;
+          rotation = particle.startRotation + suctionProgress * 540;
         }
-        return remaining;
+
+        element.style.color = `rgb(${red}, ${green}, ${blue})`;
+        element.style.textShadow = `0 0 ${Math.round(
+          purpleProgress * (isMobile ? 9 : 16),
+        )}px rgba(168,85,247,${0.2 + purpleProgress * 0.65})`;
+        element.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${rotation}deg) scale(${scale})`;
       });
 
-      timer = requestAnimationFrame(step);
-    };
-    timer = requestAnimationFrame(step);
+      if (elapsed >= totalDuration) {
+        setParticles([]);
+        setPhase("DIGESTING");
+        setVoidMass(1.8);
+        setShowGifPrompt(true);
+        logMsg("swallow sequence complete.");
+        logMsg("the void remains satisfied.");
+        return;
+      }
 
-    return () => cancelAnimationFrame(timer);
-  }, [phase, logMsg]);
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+
+    return () => cancelAnimationFrame(raf);
+  }, [phase, particles, isMobile, reduceMotion, logMsg]);
+
+  useEffect(() => {
+    if (phase !== "DIGESTING") return;
+
+    const timer = window.setTimeout(
+      () => {
+        setVoidMass(1);
+        setPhase("TYPING");
+      },
+      isMobile ? 700 : 1100,
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [phase, isMobile]);
 
   // Shred & swallow action
   const handleShred = () => {
@@ -744,14 +757,7 @@ export default function SubmitToVoid() {
         char,
         startX: sX,
         startY: sY,
-        x: sX,
-        y: sY,
-        purple: 0,
-        t: 0,
-        scale: 1.1,
-        rotation: 0,
         startRotation,
-        delay: 0,
       };
     });
     setParticles(newParticles);
@@ -759,15 +765,15 @@ export default function SubmitToVoid() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07060c] text-white flex flex-col justify-center overflow-hidden relative select-none font-mono">
+    <div className="relative flex min-h-dvh flex-col justify-center overflow-hidden bg-[#07060c] font-mono text-white select-none">
       {/* Background star field */}
       <canvas
         ref={backgroundCanvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none z-0"
+        className="fixed inset-0 z-0 h-full w-full pointer-events-none"
       />
 
       {/* CORE WORKSPACE */}
-      <main className="z-10 flex-1 flex flex-col lg:flex-row items-center justify-center p-6 gap-12 max-w-7xl mx-auto w-full">
+      <main className="z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col items-center justify-center gap-0 px-4 py-5 lg:flex-row lg:gap-12 lg:p-6">
         {/* INPUT CARD */}
         <div className="w-full lg:w-[48%] flex flex-col items-center justify-center relative">
           <AnimatePresence mode="wait">
@@ -776,7 +782,7 @@ export default function SubmitToVoid() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -15 }}
-                className="w-full bg-[#12111a]/70 border border-zinc-800/60 rounded-3xl p-8 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                className="w-full rounded-3xl border border-zinc-800/60 bg-[#12111a]/94 p-5 shadow-[0_16px_36px_rgba(0,0,0,0.42)] md:bg-[#12111a]/70 md:p-8 md:backdrop-blur-xl md:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
               >
                 <h1 className="text-3xl lg:text-4xl font-black tracking-tighter uppercase mb-2 text-transparent bg-clip-text bg-linear-to-r from-zinc-100 to-zinc-400">
                   SEND TO THE VOID
@@ -793,8 +799,8 @@ export default function SubmitToVoid() {
                     onChange={(e) => handleInputChange(e.target.value)}
                     disabled={phase !== "TYPING"}
                     maxLength={140}
-                    className="w-full h-32 bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-4 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-purple-900/60 focus:ring-1 focus:ring-purple-900/60 transition-all outline-none resize-none font-mono disabled:text-zinc-700"
-                    placeholder="ENTER YOUR POINTLESS FRUSTRATION..."
+                    className="h-24 w-full resize-none rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-4 font-mono text-sm text-zinc-200 outline-none transition-[border-color,box-shadow] placeholder:text-zinc-600 focus:border-purple-900/60 focus:ring-1 focus:ring-purple-900/60 focus:outline-none disabled:text-zinc-700 md:h-32"
+                    placeholder="ENTER YOUR FRUSTRATION..."
                   />
                   <div className="absolute bottom-3 right-3 text-[10px] text-zinc-600">
                     {complaint.length}/140
@@ -817,7 +823,7 @@ export default function SubmitToVoid() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="w-full text-center p-8 bg-zinc-950/30 rounded-3xl border border-zinc-900/40 backdrop-blur-md"
+                className="w-full rounded-3xl border border-zinc-900/40 bg-zinc-950/90 p-6 text-center md:bg-zinc-950/30 md:p-8 md:backdrop-blur-md"
               >
                 <div className="text-sm font-bold text-zinc-400 animate-pulse">
                   SPAGETTHIFIYING TEXT...
@@ -828,30 +834,31 @@ export default function SubmitToVoid() {
         </div>
 
         {/* GLOWING SINGULARITY (Void Graphic) */}
-        <div className="w-full lg:w-[48%] flex items-center justify-center relative min-h-100 lg:translate-x-20">
+        <div className="relative flex min-h-72 w-full items-center justify-center lg:min-h-100 lg:w-[48%] lg:translate-x-20">
           {/* Sucking particles overlay */}
           {phase === "SUCKING" && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
               {particles.map((p) => {
-                if (p.delay > 0) return null;
                 return (
-                  <div
+                  <span
                     key={p.id}
+                    ref={(element) => {
+                      if (element) {
+                        particleElementsRef.current.set(p.id, element);
+                      } else {
+                        particleElementsRef.current.delete(p.id);
+                      }
+                    }}
                     className="absolute font-black text-sm font-mono"
                     style={{
-                      color: `rgb(${Math.round(212 - p.purple * 44)}, ${Math.round(
-                        212 - p.purple * 127,
-                      )}, ${Math.round(216 + p.purple * 38)})`,
-                      textShadow: `0 0 ${Math.round(
-                        p.purple * 16,
-                      )}px rgba(168,85,247,${0.2 + p.purple * 0.65})`,
-                      transform: `translate(${p.x}px, ${p.y}px) rotate(${p.rotation}deg) scale(${p.scale})`,
-                      transition: "transform 0.08s linear",
-                      willChange: "color, text-shadow, transform",
+                      color: "rgb(212, 212, 216)",
+                      transform: `translate3d(${p.startX}px, ${p.startY}px, 0) scale(1.06)`,
+                      willChange: "transform",
                     }}
+                    aria-hidden="true"
                   >
                     {p.char}
-                  </div>
+                  </span>
                 );
               })}
             </div>
@@ -860,11 +867,11 @@ export default function SubmitToVoid() {
           {/* Singular Orb Container */}
           <div
             ref={voidCenterRef}
-            className="relative flex items-center justify-center w-96 h-96 md:w-130 md:h-130 lg:w-145 lg:h-145"
+            className="relative flex h-72 w-72 items-center justify-center sm:h-80 sm:w-80 md:h-130 md:w-130 lg:h-145 lg:w-145"
           >
             <svg
               viewBox="0 0 400 400"
-              className="w-full h-full drop-shadow-[0_0_80px_rgba(124,58,237,0.2)]"
+              className="h-full w-full md:drop-shadow-[0_0_80px_rgba(124,58,237,0.2)]"
             >
               <defs>
                 {/* Glow Filters */}
@@ -930,7 +937,9 @@ export default function SubmitToVoid() {
 
               {/* Layer 1: Outer Sapphire Swirling Disk */}
               <motion.g
-                animate={{ rotate: -360 }}
+                animate={
+                  isMobile || reduceMotion ? undefined : { rotate: -360 }
+                }
                 transition={{ duration: 32, repeat: Infinity, ease: "linear" }}
                 className="origin-center"
               >
@@ -963,7 +972,7 @@ export default function SubmitToVoid() {
 
               {/* Layer 2: Middle Purple/Magenta Vortex */}
               <motion.g
-                animate={{ rotate: 360 }}
+                animate={isMobile || reduceMotion ? undefined : { rotate: 360 }}
                 transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
                 className="origin-center"
               >
@@ -995,7 +1004,9 @@ export default function SubmitToVoid() {
 
               {/* Layer 3: Inner Neon Cyan Accretion Swirls */}
               <motion.g
-                animate={{ rotate: -360 }}
+                animate={
+                  isMobile || reduceMotion ? undefined : { rotate: -360 }
+                }
                 transition={{ duration: 9, repeat: Infinity, ease: "linear" }}
                 className="origin-center"
               >
@@ -1046,7 +1057,7 @@ export default function SubmitToVoid() {
             initial={{ opacity: 0, y: 18, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.98 }}
-            className="absolute bottom-5 left-1/2 z-40 w-[min(calc(100vw-2rem),30rem)] -translate-x-1/2 rounded-3xl border border-zinc-800/60 bg-[#12111a]/78 p-6 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+            className="absolute bottom-5 left-1/2 z-40 w-[min(calc(100vw-2rem),30rem)] -translate-x-1/2 rounded-3xl border border-zinc-800/60 bg-[#12111a]/96 p-6 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] md:bg-[#12111a]/78 md:backdrop-blur-xl"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
