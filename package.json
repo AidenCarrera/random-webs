@@ -2,14 +2,14 @@
   "name": "random-webs",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "open:all": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Open-AllWebsites.ps1",
-    "open:modified": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Open-ModifiedWebsites.ps1",
-    "normalize:lofi": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Normalize-AudioLufs.ps1",
+    "open:websites": "node scripts/open-websites.ts",
+    "normalize:lofi": "node scripts/normalize-audio-lufs.ts",
     "generate:layouts": "npx tsx scripts/generate-layouts.ts"
   },
   "dependencies": {
