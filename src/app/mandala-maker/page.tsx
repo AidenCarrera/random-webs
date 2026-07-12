@@ -2,7 +2,17 @@
 
 import "./styles.css";
 import { useRef, useEffect, useState } from "react";
-import { Download, Trash2, Palette, Eye, EyeOff, Undo, Redo, Square, Maximize } from "lucide-react";
+import {
+  Download,
+  Trash2,
+  Palette,
+  Eye,
+  EyeOff,
+  Undo,
+  Redo,
+  Square,
+  Maximize,
+} from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { canvasToBlob, downloadCanvasPng } from "@/lib/canvasExport";
 
@@ -19,7 +29,10 @@ export default function MandalaMaker() {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState("");
-  const [canvasCssSize, setCanvasCssSize] = useState({ width: 1200, height: 800 });
+  const [canvasCssSize, setCanvasCssSize] = useState({
+    width: 1200,
+    height: 800,
+  });
 
   // Undo/Redo History Stacks
   const historyRef = useRef<string[]>([]);
@@ -28,7 +41,9 @@ export default function MandalaMaker() {
   const [canRedo, setCanRedo] = useState(false);
 
   const [windowSize, setWindowSize] = useState({ width: 1200, height: 800 });
-  const shouldUseSquareCanvas = isSquareCanvas || windowSize.width < 640;
+  const isMobileViewport =
+    windowSize.width < 768 || (isTouchDevice && windowSize.height <= 500);
+  const shouldUseSquareCanvas = isSquareCanvas && !isMobileViewport;
 
   // For rainbow cycle
   const hueRef = useRef(0);
@@ -37,9 +52,12 @@ export default function MandalaMaker() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const cleanHistory = historyRef.current.slice(0, historyIndexRef.current + 1);
+    const cleanHistory = historyRef.current.slice(
+      0,
+      historyIndexRef.current + 1,
+    );
     const snapshot = canvas.toDataURL();
-    
+
     cleanHistory.push(snapshot);
     if (cleanHistory.length > 50) {
       cleanHistory.shift();
@@ -90,7 +108,8 @@ export default function MandalaMaker() {
   useEffect(() => {
     setWindowSize({ width: window.innerWidth, height: window.innerHeight });
     setIsTouchDevice(
-      window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0,
+      window.matchMedia("(pointer: coarse)").matches ||
+        navigator.maxTouchPoints > 0,
     );
     setShareUrl(window.location.href);
 
@@ -109,13 +128,12 @@ export default function MandalaMaker() {
     if (!ctx) return;
 
     // Calculate dimensions
-    const mobileChromeOffset = windowSize.width < 640 ? 156 : 180;
     const side = Math.max(
       240,
-      Math.min(window.innerWidth - 16, window.innerHeight - mobileChromeOffset, 750),
+      Math.min(windowSize.width - 16, windowSize.height - 180, 750),
     );
-    const cssWidth = shouldUseSquareCanvas ? side : window.innerWidth;
-    const cssHeight = shouldUseSquareCanvas ? side : window.innerHeight;
+    const cssWidth = shouldUseSquareCanvas ? side : windowSize.width;
+    const cssHeight = shouldUseSquareCanvas ? side : windowSize.height;
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 3);
     const w = Math.round(cssWidth * pixelRatio);
     const h = Math.round(cssHeight * pixelRatio);
@@ -281,14 +299,15 @@ export default function MandalaMaker() {
   };
 
   return (
-    <div className="relative flex min-h-screen touch-none items-center justify-center overflow-hidden bg-neutral-950 px-2 py-32 font-sans sm:p-0">
+    <div className="mandala-page relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-neutral-950 font-sans">
       <canvas
         ref={canvasRef}
         onPointerDown={startDrawing}
         onPointerMove={drawMove}
         onPointerUp={stopDrawing}
+        onPointerCancel={stopDrawing}
         onPointerLeave={stopDrawing}
-        className={`cursor-crosshair bg-black transition-[border-color,border-radius,box-shadow] duration-300 ${
+        className={`touch-none cursor-crosshair bg-black transition-[border-color,border-radius,box-shadow] duration-300 ${
           shouldUseSquareCanvas
             ? "shadow-[0_0_50px_rgba(0,0,0,0.85)] border border-white/10 rounded-2xl relative"
             : "absolute inset-0"
@@ -306,39 +325,59 @@ export default function MandalaMaker() {
           showUI ? "hidden" : "flex"
         }`}
         title={showUI ? "Hide Controls" : "Show Controls"}
+        aria-label={showUI ? "Hide controls" : "Show controls"}
+        aria-pressed={showUI}
       >
         {showUI ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
       </button>
 
       {/* Controls */}
       <div
-        className={`pointer-events-none absolute left-0 top-0 z-10 flex w-full flex-wrap items-start justify-center gap-2 p-2 transition-opacity duration-300 sm:gap-4 sm:p-4 ${
-          showUI ? "opacity-100" : "opacity-0 pointer-events-none"
+        className={`mandala-controls-viewport pointer-events-none absolute left-0 top-0 z-10 flex w-full items-start justify-center p-2 transition-opacity duration-300 sm:p-4 ${
+          showUI
+            ? "mandala-controls-visible opacity-100"
+            : "opacity-0 pointer-events-none"
         }`}
       >
-        <div className="pointer-events-auto flex max-w-[calc(100vw-4rem)] flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-gray-900/80 p-2 shadow-2xl backdrop-blur-xl sm:max-w-none sm:gap-6 sm:p-4">
+        <div
+          className={`mandala-controls flex max-w-[calc(100vw-1rem)] flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-gray-900/80 p-2 shadow-2xl backdrop-blur-xl sm:max-w-none sm:gap-6 sm:p-4 ${
+            showUI ? "pointer-events-auto" : "pointer-events-none"
+          }`}
+        >
           {/* Layout Toggle */}
-          <div className="flex flex-col gap-1.5 sm:gap-2">
+          <div className="mandala-layout-control flex flex-col gap-1.5 sm:gap-2">
             <label className="text-[10px] font-bold uppercase text-white/50 sm:text-xs">
               Layout
             </label>
             <button
               onClick={() => setIsSquareCanvas(!isSquareCanvas)}
+              aria-label={
+                shouldUseSquareCanvas
+                  ? "Use fullscreen canvas"
+                  : "Use square canvas"
+              }
+              aria-pressed={shouldUseSquareCanvas}
               className={`flex cursor-pointer items-center gap-1.5 rounded-lg p-2 text-xs font-bold transition-colors ${
                 shouldUseSquareCanvas
                   ? "bg-cyan-500 text-white shadow-lg"
                   : "bg-white/10 text-white hover:bg-white/15"
               }`}
-              title={shouldUseSquareCanvas ? "Fullscreen Canvas" : "Square Canvas"}
+              title={
+                shouldUseSquareCanvas ? "Fullscreen Canvas" : "Square Canvas"
+              }
             >
-              {shouldUseSquareCanvas ? <Maximize className="h-4 w-4" /> : <Square className="h-4 w-4" />}
+              {shouldUseSquareCanvas ? (
+                <Maximize className="h-4 w-4" />
+              ) : (
+                <Square className="h-4 w-4" />
+              )}
               <span className="hidden sm:inline">
                 {shouldUseSquareCanvas ? "Fullscreen" : "Square"}
               </span>
             </button>
           </div>
 
-          <div className="hidden h-8 w-px bg-white/10 sm:block" />
+          <div className="mandala-layout-divider hidden h-8 w-px bg-white/10 sm:block" />
 
           <div className="flex flex-col gap-1.5 sm:gap-2">
             <label className="text-[10px] font-bold uppercase text-white/50 sm:text-xs">
@@ -356,7 +395,9 @@ export default function MandalaMaker() {
               />
               <button
                 onClick={() => setRainbowMode(!rainbowMode)}
-                className={`p-2 rounded-lg transition-colors cursor-pointer ${
+                aria-label="Toggle rainbow mode"
+                aria-pressed={rainbowMode}
+                className={`flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg transition-colors ${
                   rainbowMode
                     ? "bg-linear-to-r from-red-500 via-green-500 to-blue-500 text-white"
                     : "bg-white/10 text-white/50 hover:bg-white/15"
@@ -445,8 +486,9 @@ export default function MandalaMaker() {
             </button>
             <button
               onClick={() => setShowUI(false)}
-              className="cursor-pointer rounded-xl bg-white/10 p-2.5 text-white/60 transition-all hover:bg-white/20 hover:text-white active:scale-95 sm:hidden"
+              className="mandala-mobile-only cursor-pointer rounded-xl bg-white/10 p-2.5 text-white/60 transition-all hover:bg-white/20 hover:text-white active:scale-95"
               title="Hide Controls"
+              aria-label="Hide controls"
             >
               <EyeOff className="h-4 w-4" />
             </button>
