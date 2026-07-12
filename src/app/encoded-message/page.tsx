@@ -46,7 +46,7 @@ const ScrambleText = ({
 }) => {
   const isRevealedRef = useRef(false);
   const [display, setDisplay] = useState(() =>
-    getInitialDisplay(text, preserveSpacesInitially, isRevealedRef.current),
+    getInitialDisplay(text, preserveSpacesInitially, false),
   );
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const iterationRef = useRef(0);

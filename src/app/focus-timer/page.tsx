@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
 
 const PRESETS = [
@@ -32,7 +32,7 @@ export default function MinimalMono() {
       .padStart(2, "0")}`;
   };
 
-  const resetTimer = () => {
+  const resetTimer = useCallback(() => {
     setIsActive(false);
     setTime(duration);
     endTimeRef.current = null;
@@ -40,7 +40,7 @@ export default function MinimalMono() {
     if (containerRef.current) {
       containerRef.current.style.background = "black";
     }
-  };
+  }, [duration]);
 
   useEffect(() => {
     defaultTitleRef.current = document.title;
@@ -105,7 +105,7 @@ export default function MinimalMono() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [duration, isActive, isEditing]);
+  }, [duration, isActive, isEditing, resetTimer]);
 
   useEffect(() => {
     const tick = (frameTime: number) => {
@@ -170,7 +170,7 @@ export default function MinimalMono() {
         cancelAnimationFrame(requestIdRef.current);
       }
     };
-  }, [isActive, duration]);
+  }, [isActive, duration, time]);
 
   const handleTimeEdit = () => {
     const newMinutes = parseInt(editValue, 10);

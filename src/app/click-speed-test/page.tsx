@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Award, Calendar, MousePointer2, Trophy, Zap } from "lucide-react";
 
 const DURATIONS = [5, 10, 30] as const;
@@ -89,6 +89,13 @@ function formatTime() {
   });
 }
 
+function createId() {
+  return (
+    globalThis.crypto?.randomUUID?.() ??
+    `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  );
+}
+
 export default function ClickSpeedTest() {
   const [duration, setDuration] = useState<Duration>(10);
   const [timeLeft, setTimeLeft] = useState(10);
@@ -101,10 +108,6 @@ export default function ClickSpeedTest() {
   const [history, setHistory] = useState<RunResult[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
 
-  const createId = () =>
-    globalThis.crypto?.randomUUID?.() ??
-    `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-
   const startTimeRef = useRef<number | null>(null);
   const clickTimestampsRef = useRef<number[]>([]);
   const restartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -113,24 +116,7 @@ export default function ClickSpeedTest() {
   const elapsed = duration - timeLeft;
   const liveCps = isActive ? clicks / Math.max(elapsed, 0.1) : resultCps;
 
-  const livePace = useMemo(() => {
-    if (!isActive || !startTimeRef.current) return pace;
-    const startTime = startTimeRef.current;
-    const clickTimes = clickTimestampsRef.current;
-    const paceData: number[] = [];
-    const now = Date.now();
-    for (let i = 0; i < duration; i++) {
-      const startRange = startTime + i * 1000;
-      const endRange = startTime + (i + 1) * 1000;
-      if (now >= startRange) {
-        const count = clickTimes.filter((t) => t >= startRange && t < endRange).length;
-        paceData.push(count);
-      } else {
-        paceData.push(0);
-      }
-    }
-    return paceData;
-  }, [clicks, isActive, duration, timeLeft, pace]);
+  const livePace = pace;
 
   const livePaceHeights = useMemo(() => scaleValues(livePace, 15, 100), [livePace]);
 
@@ -180,31 +166,41 @@ export default function ClickSpeedTest() {
   }, [isActive, clicks, liveCps, livePace, livePaceHeights, resultCps, pace, history]);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw) as Partial<SavedProgress>;
+    let cancelled = false;
 
-        if (isDuration(saved.duration)) {
-          setDuration(saved.duration);
-          setTimeLeft(saved.duration);
+    queueMicrotask(() => {
+      if (cancelled) return;
+
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw) as Partial<SavedProgress>;
+
+          if (isDuration(saved.duration)) {
+            setDuration(saved.duration);
+            setTimeLeft(saved.duration);
+          }
+
+          if (saved.records) {
+            setRecords({
+              5: saved.records[5] ?? EMPTY_RECORD,
+              10: saved.records[10] ?? EMPTY_RECORD,
+              30: saved.records[30] ?? EMPTY_RECORD,
+            });
+          }
+
+          if (Array.isArray(saved.history)) setHistory(saved.history.slice(0, 5));
         }
-
-        if (saved.records) {
-          setRecords({
-            5: saved.records[5] ?? EMPTY_RECORD,
-            10: saved.records[10] ?? EMPTY_RECORD,
-            30: saved.records[30] ?? EMPTY_RECORD,
-          });
-        }
-
-        if (Array.isArray(saved.history)) setHistory(saved.history.slice(0, 5));
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+      } finally {
+        if (!cancelled) setHasLoaded(true);
       }
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-    } finally {
-      setHasLoaded(true);
-    }
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -212,23 +208,11 @@ export default function ClickSpeedTest() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ duration, records, history }));
   }, [duration, hasLoaded, history, records]);
 
-  useEffect(() => {
-    if (!isActive) return;
-
-    const interval = setInterval(() => {
-      setTimeLeft((current) => Math.max(0, current - 1));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isActive]);
-
-  useEffect(() => {
-    if (!isActive || timeLeft > 0) return;
-
+  const finishTest = useCallback(() => {
     const finalClicks = clickTimestampsRef.current.length;
     const cps = finalClicks / duration;
 
-    const startTime = startTimeRef.current ?? Date.now();
+    const startTime = startTimeRef.current ?? 0;
     const clickTimes = clickTimestampsRef.current;
     const paceData: number[] = [];
     for (let i = 0; i < duration; i++) {
@@ -238,6 +222,7 @@ export default function ClickSpeedTest() {
       paceData.push(count);
     }
 
+    setTimeLeft(0);
     setIsActive(false);
     setCanRestart(false);
     setResultCps(cps);
@@ -265,7 +250,21 @@ export default function ClickSpeedTest() {
       setCanRestart(true);
       restartTimeoutRef.current = null;
     }, RESULT_BUFFER_MS);
-  }, [duration, isActive, timeLeft]);
+  }, [duration]);
+
+  useEffect(() => {
+    if (!isActive) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft((current) => Math.max(0, current - 1));
+    }, 1000);
+    const completionTimeout = setTimeout(finishTest, duration * 1000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(completionTimeout);
+    };
+  }, [duration, finishTest, isActive]);
 
   useEffect(
     () => () => {
@@ -290,19 +289,29 @@ export default function ClickSpeedTest() {
     }
   }
 
-  function startTest() {
+  function startTest(startTime: number) {
     if (!canRestart) return false;
     clearRun();
-    startTimeRef.current = Date.now();
+    startTimeRef.current = startTime;
     setIsActive(true);
     return true;
   }
 
-  function handleMainClick() {
-    if (!isActive && !startTest()) return;
+  function handleMainClick(clickTime: number) {
+    if (!isActive && !startTest(clickTime)) return;
 
-    clickTimestampsRef.current.push(Date.now());
+    clickTimestampsRef.current.push(clickTime);
     setClicks(clickTimestampsRef.current.length);
+    setPace((current) => {
+      const next = current.length === duration ? [...current] : Array(duration).fill(0);
+      const startTime = startTimeRef.current ?? clickTime;
+      const second = Math.min(
+        duration - 1,
+        Math.max(0, Math.floor((clickTime - startTime) / 1000)),
+      );
+      next[second] += 1;
+      return next;
+    });
   }
 
   function changeDuration(nextDuration: Duration) {
@@ -415,7 +424,7 @@ export default function ClickSpeedTest() {
             )}
 
             <button
-              onClick={handleMainClick}
+              onClick={(event) => handleMainClick(event.timeStamp)}
               disabled={!isActive && !canRestart}
               className={`flex size-64 select-none flex-col items-center justify-center gap-2 rounded-full border-8 transition-all active:scale-95 shrink-0 ${
                 isActive

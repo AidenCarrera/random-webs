@@ -2,8 +2,8 @@
 
 import "./styles.css";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import type { Filter, PingPongDelay, PolySynth, Reverb, Synth } from "tone";
 import {
   Volume2,
   VolumeX,
@@ -672,8 +672,6 @@ function splitDouble(value: number): [number, number] {
 }
 
 export default function FractalExplorer() {
-  const router = useRouter();
-
   // Canvas Refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cpuCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -693,11 +691,11 @@ export default function FractalExplorer() {
   const juliaCRef = useRef<[number, number]>([-0.7, 0.27015]);
 
   // Audio system state (loaded dynamically to bypass SSR)
-  const toneRef = useRef<any>(null);
-  const synthRef = useRef<any>(null);
-  const filterRef = useRef<any>(null);
-  const delayRef = useRef<any>(null);
-  const reverbRef = useRef<any>(null);
+  const toneRef = useRef<typeof import("tone") | null>(null);
+  const synthRef = useRef<PolySynth<Synth> | null>(null);
+  const filterRef = useRef<Filter | null>(null);
+  const delayRef = useRef<PingPongDelay | null>(null);
+  const reverbRef = useRef<Reverb | null>(null);
   const lastNoteTimeRef = useRef<number>(0);
 
   // React State for Control Panels and Indicators
@@ -759,7 +757,7 @@ export default function FractalExplorer() {
   // Drawing Pipeline
   // -------------------------------------------------------------
 
-  const setCpuCanvasVisible = (visible: boolean) => {
+  const setCpuCanvasVisible = useCallback((visible: boolean) => {
     const canvas = cpuCanvasRef.current;
     if (!canvas) return;
     canvas.style.opacity = visible ? "1" : "0";
@@ -767,9 +765,9 @@ export default function FractalExplorer() {
       isCpuRenderActiveRef.current = visible;
       setIsCpuRenderActive(visible);
     }
-  };
+  }, []);
 
-  const syncCpuCanvasSize = () => {
+  const syncCpuCanvasSize = useCallback(() => {
     const sourceCanvas = canvasRef.current;
     const cpuCanvas = cpuCanvasRef.current;
     if (!sourceCanvas || !cpuCanvas) return;
@@ -781,7 +779,7 @@ export default function FractalExplorer() {
       cpuCanvas.width = sourceCanvas.width;
       cpuCanvas.height = sourceCanvas.height;
     }
-  };
+  }, []);
 
   const renderGpuFractal = useCallback((renderId: number): boolean => {
     if (
@@ -836,35 +834,9 @@ export default function FractalExplorer() {
     setCpuCanvasVisible(false);
 
     return true;
-  }, []);
+  }, [setCpuCanvasVisible]);
 
-  // Immediate low-res rendering during panning or zooming
-  const drawFastPreview = useCallback(() => {
-    if (isAnimatingRef.current) return;
-    const currentRenderId = ++renderIdRef.current;
-    drawPass(8, currentRenderId);
-  }, []);
-
-  // Main rendering passes (draws low res to high res chunked)
-  const triggerProgressiveRender = useCallback(() => {
-    if (drawTimerRef.current) clearTimeout(drawTimerRef.current);
-    const currentRenderId = ++renderIdRef.current;
-
-    if (renderGpuFractal(currentRenderId)) {
-      return;
-    }
-
-    // Pass 1: Render 4x4 pixel scaling (very fast)
-    drawPass(4, currentRenderId, () => {
-      // Pass 2: Render 2x2 pixel scaling (decent detail)
-      drawPass(2, currentRenderId, () => {
-        // Pass 3: Render 1x1 full resolution (Stripe-by-stripe to keep main thread completely unblocked)
-        drawPassStriped(1, currentRenderId);
-      });
-    });
-  }, [renderGpuFractal]);
-
-  const drawPass = (
+  const drawPass = useCallback((
     ratio: number,
     renderId: number,
     onComplete?: () => void,
@@ -964,9 +936,9 @@ export default function FractalExplorer() {
     if (onComplete) {
       drawTimerRef.current = setTimeout(onComplete, 16);
     }
-  };
+  }, [renderGpuFractal, setCpuCanvasVisible, syncCpuCanvasSize]);
 
-  const drawPassStriped = (ratio: number, renderId: number) => {
+  const drawPassStriped = useCallback((ratio: number, renderId: number) => {
     if (renderId !== renderIdRef.current) return;
 
     if (renderGpuFractal(renderId)) return;
@@ -1060,7 +1032,33 @@ export default function FractalExplorer() {
     };
 
     drawNextStripe();
-  };
+  }, [renderGpuFractal, setCpuCanvasVisible, syncCpuCanvasSize]);
+
+  // Immediate low-res rendering during panning or zooming
+  const drawFastPreview = useCallback(() => {
+    if (isAnimatingRef.current) return;
+    const currentRenderId = ++renderIdRef.current;
+    drawPass(8, currentRenderId);
+  }, [drawPass]);
+
+  // Main rendering passes (draws low res to high res chunked)
+  const triggerProgressiveRender = useCallback(() => {
+    if (drawTimerRef.current) clearTimeout(drawTimerRef.current);
+    const currentRenderId = ++renderIdRef.current;
+
+    if (renderGpuFractal(currentRenderId)) {
+      return;
+    }
+
+    // Pass 1: Render 4x4 pixel scaling (very fast)
+    drawPass(4, currentRenderId, () => {
+      // Pass 2: Render 2x2 pixel scaling (decent detail)
+      drawPass(2, currentRenderId, () => {
+        // Pass 3: Render 1x1 full resolution (Stripe-by-stripe to keep main thread completely unblocked)
+        drawPassStriped(1, currentRenderId);
+      });
+    });
+  }, [drawPass, drawPassStriped, renderGpuFractal]);
 
   // Render Mini Julia Set Preview (for Mandelbrot Mode) — kept on 2D canvas,
   // cheap enough (130x130, 70 iterations) that it doesn't need the GPU path.
@@ -1116,7 +1114,52 @@ export default function FractalExplorer() {
   // Tone.js Ambient Audio Engine
   // -------------------------------------------------------------
 
-  const initAudioEngine = async () => {
+  const updateSynthForPalette = useCallback((palette: PaletteName) => {
+    if (!synthRef.current) return;
+
+    try {
+      const synth = synthRef.current;
+      const reverb = reverbRef.current;
+      const delay = delayRef.current;
+
+      switch (palette) {
+        case "Neon":
+          synth.set({ oscillator: { type: "sine" }, volume: -6 });
+          if (reverb) reverb.decay = 2.0;
+          if (delay) delay.feedback.value = 0.45;
+          break;
+        case "Solar":
+          synth.set({ oscillator: { type: "sawtooth" }, volume: -13 });
+          if (reverb) reverb.decay = 3.0;
+          if (delay) delay.feedback.value = 0.35;
+          break;
+        case "Forest":
+          synth.set({ oscillator: { type: "sine" }, volume: -6 });
+          if (reverb) reverb.decay = 4.0;
+          if (delay) delay.feedback.value = 0.3;
+          break;
+        case "Ocean":
+          synth.set({ oscillator: { type: "sine" }, volume: -6 });
+          if (reverb) reverb.decay = 10.0;
+          if (delay) delay.feedback.value = 0.4;
+          break;
+        case "Spectrum":
+          synth.set({ oscillator: { type: "triangle" }, volume: -8 });
+          if (reverb) reverb.decay = 3.5;
+          if (delay) delay.feedback.value = 0.5;
+          break;
+        case "Monochrome":
+          synth.set({ oscillator: { type: "sine" }, volume: -6 });
+          if (reverb) reverb.decay = 1.2;
+          if (delay) delay.feedback.value = 0.15;
+          break;
+      }
+    } catch (error) {
+      console.error("Failed to update synth parameters for palette", error);
+    }
+  }, []);
+
+  const initAudioEngine = useCallback(async () => {
     if (synthRef.current) return;
     setIsAudioLoading(true);
     setAudioLoadingProgress(10);
@@ -1187,11 +1230,14 @@ export default function FractalExplorer() {
       clearInterval(progressInterval);
       setIsAudioLoading(false);
     }
-  };
+  }, [updateSynthForPalette]);
 
   const handleSonifyCoordinate = (cx: number, cy: number, iter: number) => {
+    const synth = synthRef.current;
+    const filter = filterRef.current;
     if (
-      !synthRef.current ||
+      !synth ||
+      !filter ||
       !isAudioEnabled ||
       toneRef.current?.context?.state !== "running"
     )
@@ -1211,9 +1257,9 @@ export default function FractalExplorer() {
         Math.floor(Math.abs(cx * 1.5 + cy) * drones.length) % drones.length;
       const note = drones[index];
 
-      filterRef.current.frequency.rampTo(400, 0.1);
+      filter.frequency.rampTo(400, 0.1);
 
-      synthRef.current.triggerAttackRelease(note, "2n", undefined, 0.05);
+      synth.triggerAttackRelease(note, "2n", undefined, 0.05);
     } else {
       const depthPct = iter / maxIter;
       const scaleIndex = Math.min(
@@ -1224,10 +1270,10 @@ export default function FractalExplorer() {
 
       const dist = Math.hypot(cx, cy);
       const filterCutoff = Math.min(2200, 300 + dist * 1000 + depthPct * 800);
-      filterRef.current.frequency.rampTo(filterCutoff, 0.15);
+      filter.frequency.rampTo(filterCutoff, 0.15);
 
       const velocity = 0.04 + (1 - depthPct) * 0.08;
-      synthRef.current.triggerAttackRelease(note, "4n", undefined, velocity);
+      synth.triggerAttackRelease(note, "4n", undefined, velocity);
     }
   };
 
@@ -1235,8 +1281,11 @@ export default function FractalExplorer() {
     if (!synthRef.current) {
       await initAudioEngine();
     } else {
-      if (toneRef.current.context.state === "suspended") {
-        await toneRef.current.context.resume();
+      const tone = toneRef.current;
+      if (!tone) return;
+
+      if (tone.context.state === "suspended") {
+        await tone.context.resume();
         setIsAudioEnabled(true);
       } else {
         const newState = !isAudioEnabled;
@@ -1262,9 +1311,10 @@ export default function FractalExplorer() {
     const startZoom = zoomRef.current;
 
     const duration = 1500; // 1.5 seconds cinematic zoom
-    const startTime = performance.now();
+    let startTime: number | null = null;
 
     const animate = (time: number) => {
+      startTime ??= time;
       const elapsed = time - startTime;
       const progress = Math.min(1.0, elapsed / duration);
 
@@ -1752,7 +1802,7 @@ export default function FractalExplorer() {
         gpuRendererRef.current = null;
       }
     };
-  }, [triggerProgressiveRender]);
+  }, [drawPass, syncCpuCanvasSize, triggerProgressiveRender]);
 
   // Initialize audio on first user gesture to comply with browser autoplay policies
   useEffect(() => {
@@ -1788,7 +1838,7 @@ export default function FractalExplorer() {
       window.removeEventListener("touchstart", handleFirstInteraction);
       window.removeEventListener("mousedown", handleFirstInteraction);
     };
-  }, [isAudioEnabled, isAudioLoading]);
+  }, [initAudioEngine, isAudioEnabled, isAudioLoading]);
 
   // Adjust parameters when slider inputs change
   const handleIterationChange = (newVal: number) => {
@@ -1796,69 +1846,6 @@ export default function FractalExplorer() {
     iterationsRef.current = nextIterations;
     setCurrentIterations(nextIterations);
     triggerProgressiveRender();
-  };
-
-  const updateSynthForPalette = (palette: PaletteName) => {
-    if (!synthRef.current) return;
-
-    try {
-      const synth = synthRef.current;
-      const reverb = reverbRef.current;
-      const delay = delayRef.current;
-
-      switch (palette) {
-        case "Neon":
-          synth.set({
-            oscillator: { type: "sine" },
-            volume: -6,
-          });
-          if (reverb) reverb.decay = 2.0;
-          if (delay) delay.feedback.value = 0.45;
-          break;
-        case "Solar":
-          synth.set({
-            oscillator: { type: "sawtooth" },
-            volume: -13,
-          });
-          if (reverb) reverb.decay = 3.0;
-          if (delay) delay.feedback.value = 0.35;
-          break;
-        case "Forest":
-          synth.set({
-            oscillator: { type: "sine" },
-            volume: -6,
-          });
-          if (reverb) reverb.decay = 4.0;
-          if (delay) delay.feedback.value = 0.3;
-          break;
-        case "Ocean":
-          synth.set({
-            oscillator: { type: "sine" },
-            volume: -6,
-          });
-          if (reverb) reverb.decay = 10.0;
-          if (delay) delay.feedback.value = 0.4;
-          break;
-        case "Spectrum":
-          synth.set({
-            oscillator: { type: "triangle" },
-            volume: -8,
-          });
-          if (reverb) reverb.decay = 3.5;
-          if (delay) delay.feedback.value = 0.5;
-          break;
-        case "Monochrome":
-          synth.set({
-            oscillator: { type: "sine" },
-            volume: -6,
-          });
-          if (reverb) reverb.decay = 1.2;
-          if (delay) delay.feedback.value = 0.15;
-          break;
-      }
-    } catch (e) {
-      console.error("Failed to update synth parameters for palette", e);
-    }
   };
 
   const handlePaletteChange = (palette: PaletteName) => {

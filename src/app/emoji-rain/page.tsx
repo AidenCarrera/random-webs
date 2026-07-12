@@ -284,9 +284,6 @@ const RAINBOW =
   "linear-gradient(to right, #ff3366, #ff9933, #ffff33, #33cc66, #3399ff, #9933ff)";
 const emojiCache = new Map<string, HTMLCanvasElement>();
 
-const randomItem = <T,>(items: readonly T[]) =>
-  items[Math.floor(Math.random() * items.length)];
-
 const getEmojiCanvas = (emoji: string) => {
   const cached = emojiCache.get(emoji);
   if (cached) return cached;
