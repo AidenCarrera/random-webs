@@ -234,7 +234,10 @@ export default function LofiPixelStudyClient({
         setShowMinimizedTimerTime(preferences.showMinimizedTimerTime);
       }
       if (typeof preferences.timerDuration === "number") {
-        const nextDuration = Math.min(180 * 60, Math.max(60, preferences.timerDuration));
+        const nextDuration = Math.min(
+          180 * 60,
+          Math.max(60, preferences.timerDuration),
+        );
         setTimerDuration(nextDuration);
         setTimeLeft(nextDuration);
       }
@@ -254,7 +257,8 @@ export default function LofiPixelStudyClient({
   }, [initialAlarms]);
 
   useEffect(() => {
-    if (!hasLoadedPreferencesRef.current || typeof window === "undefined") return;
+    if (!hasLoadedPreferencesRef.current || typeof window === "undefined")
+      return;
 
     const preferences = {
       selectedBgId: selectedBg.id,
@@ -507,7 +511,7 @@ export default function LofiPixelStudyClient({
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black text-zinc-100 select-none font-pixel text-base md:text-lg">
+    <div className="relative h-[100dvh] w-screen overflow-hidden bg-black text-zinc-100 select-none font-pixel text-base md:text-lg">
       {/* HTML5 Audio Node */}
       {currentTrack.path && (
         <audio ref={audioRef} src={currentTrack.path} loop={isLooping} />
@@ -594,6 +598,78 @@ export default function LofiPixelStudyClient({
           border-radius: 0px !important;
           box-shadow: 1px 1px 0px #000 !important;
         }
+
+        @media (orientation: landscape) and (max-width: 1024px) and (max-height: 600px) {
+          .lofi-study-timer {
+            top: max(0.5rem, env(safe-area-inset-top));
+            left: max(0.5rem, env(safe-area-inset-left));
+            transform: scale(0.78);
+            transform-origin: top left;
+          }
+
+          .lofi-bottom-controls {
+            right: max(0.5rem, env(safe-area-inset-right));
+            bottom: max(0.5rem, env(safe-area-inset-bottom));
+            left: max(0.5rem, env(safe-area-inset-left));
+            gap: 0.375rem;
+          }
+
+          .lofi-player-dock {
+            padding: 0.375rem 0.625rem;
+            gap: 0.5rem;
+          }
+
+          .lofi-player-row {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+          }
+
+          .lofi-track-info {
+            width: auto;
+            max-width: 10rem;
+            flex: 1 1 7rem;
+          }
+
+          .lofi-track-icon {
+            padding: 0.375rem;
+            border-radius: 0;
+          }
+
+          .lofi-audio-controls {
+            flex: 0 0 auto;
+            gap: 0.5rem;
+          }
+
+          .lofi-secondary-controls {
+            display: flex;
+            width: auto;
+            flex: 0 0 auto;
+            flex-wrap: nowrap;
+            justify-content: flex-end;
+            gap: 0.5rem;
+          }
+
+          .lofi-volume-slider {
+            width: 4rem;
+          }
+
+          .lofi-background-label {
+            display: none;
+          }
+
+          .lofi-progress-bar {
+            padding-top: 0.125rem;
+            padding-bottom: 0.125rem;
+          }
+
+          .lofi-floating-panel {
+            bottom: calc(max(0.5rem, env(safe-area-inset-bottom)) + 5.5rem);
+            max-height: calc(100dvh - 6.5rem);
+            overflow-y: auto;
+          }
+        }
       `}</style>
 
       {/* Background Container */}
@@ -646,7 +722,7 @@ export default function LofiPixelStudyClient({
       </div>
 
       {/* Top Left Study Timer */}
-      <div className="absolute top-4 left-4 z-10 pointer-events-none">
+      <div className="lofi-study-timer absolute top-4 left-4 z-10 pointer-events-none">
         {timerMinimized ? (
           <div className="pointer-events-auto pixel-box p-1.5 flex items-center gap-1.5 md:gap-2 text-zinc-200 text-xs md:text-sm">
             <span className="text-xs md:text-sm font-bold text-purple-400 uppercase tracking-widest leading-none">
@@ -796,130 +872,132 @@ export default function LofiPixelStudyClient({
       </div>
 
       {/* Bottom Main UI Bar */}
-      <div className="absolute bottom-6 left-4 right-4 flex flex-col items-center gap-3 md:gap-4 z-10 pointer-events-none">
+      <div className="lofi-bottom-controls absolute bottom-6 left-4 right-4 flex flex-col items-center gap-3 md:gap-4 z-10 pointer-events-none">
         {/* Music Player & Background Selector Dock */}
-        <div className="relative w-full max-w-3xl pointer-events-auto pixel-box px-3 py-3 md:px-4 md:py-4 flex flex-col gap-3 md:gap-4 text-xs md:text-sm">
-          <div className="flex w-full min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
-          {/* Active Track Info */}
-          <div className="flex items-center gap-2.5 md:gap-3 min-w-0 w-full md:max-w-[28%]">
-            <div
-              className={`shrink-0 p-2 md:p-2.5 rounded-xl bg-purple-900/30 border-2 border-purple-500/30 text-purple-400 ${isPlaying ? "animate-pulse" : ""}`}
-            >
-              <Music className="w-4 h-4 md:w-5 md:h-5" />
-            </div>
-            <div className="flex min-w-0 flex-col text-left">
-              <span className="text-base md:text-lg font-bold text-zinc-200 tracking-wide line-clamp-1">
-                {currentTrack.title}
-              </span>
-              <span className="text-xs md:text-sm text-zinc-400 font-medium tracking-wider uppercase">
-                {currentTrack.artist}
-              </span>
-            </div>
-          </div>
-
-          {/* Audio Controls */}
-          <div className="flex items-center justify-center gap-2.5 md:gap-3 md:flex-1">
-            <button
-              onClick={handlePrev}
-              className="grid h-7 w-7 md:h-8 md:w-8 place-items-center pixel-btn cursor-pointer"
-              title="Previous Track"
-            >
-              <SkipBack className="w-3.5 h-3.5 md:w-4 md:h-4" />
-            </button>
-
-            <button
-              onClick={handlePlayPause}
-              className="grid h-9 w-9 md:h-10 md:w-10 place-items-center bg-[#4a148c] border-2 border-purple-500 text-white transition-all cursor-pointer shadow-[2px_2px_0px_#000] active:translate-x-px active:translate-y-px active:shadow-none"
-              title={isPlaying ? "Pause" : "Play"}
-            >
-              {isPlaying ? (
-                <Pause className="w-3.5 h-3.5 md:w-4 md:h-4 fill-white" />
-              ) : (
-                <Play className="w-3.5 h-3.5 md:w-4 md:h-4 fill-white translate-x-0.5" />
-              )}
-            </button>
-
-            <button
-              onClick={handleNext}
-              className="grid h-7 w-7 md:h-8 md:w-8 place-items-center pixel-btn cursor-pointer"
-              title="Next Track"
-            >
-              <SkipForward className="w-3.5 h-3.5 md:w-4 md:h-4" />
-            </button>
-          </div>
-
-          {/* Buttons and Volume Slider */}
-          <div className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2 text-[10px] md:flex md:w-auto md:flex-wrap md:justify-end md:gap-3 md:text-xs">
-            {/* Loop Toggle */}
-            <button
-              onClick={() => setIsLooping(!isLooping)}
-              className={`grid h-8 w-8 place-items-center cursor-pointer pixel-btn md:h-auto md:w-auto md:px-2 md:py-1.5 ${
-                isLooping ? "pixel-btn-active" : ""
-              }`}
-              title="Loop Single Track"
-            >
-              <Repeat className="w-3 md:w-3.5 h-3 md:h-3.5" />
-            </button>
-
-            {/* Volume controls */}
-            <div className="flex min-w-0 items-center gap-1.5 border-l border-zinc-800 pl-1.5 md:gap-2 md:pl-2">
-              <button
-                onClick={() => setIsMuted(!isMuted)}
-                className="text-zinc-400 hover:text-white transition-colors cursor-pointer"
+        <div className="lofi-player-dock relative w-full max-w-3xl pointer-events-auto pixel-box px-3 py-3 md:px-4 md:py-4 flex flex-col gap-3 md:gap-4 text-xs md:text-sm">
+          <div className="lofi-player-row flex w-full min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+            {/* Active Track Info */}
+            <div className="lofi-track-info flex items-center gap-2.5 md:gap-3 min-w-0 w-full md:max-w-[28%]">
+              <div
+                className={`lofi-track-icon shrink-0 p-2 md:p-2.5 rounded-xl bg-purple-900/30 border-2 border-purple-500/30 text-purple-400 ${isPlaying ? "animate-pulse" : ""}`}
               >
-                {isMuted || volume === 0 ? (
-                  <VolumeX className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                <Music className="w-4 h-4 md:w-5 md:h-5" />
+              </div>
+              <div className="flex min-w-0 flex-col text-left">
+                <span className="text-base md:text-lg font-bold text-zinc-200 tracking-wide line-clamp-1">
+                  {currentTrack.title}
+                </span>
+                <span className="text-xs md:text-sm text-zinc-400 font-medium tracking-wider uppercase">
+                  {currentTrack.artist}
+                </span>
+              </div>
+            </div>
+
+            {/* Audio Controls */}
+            <div className="lofi-audio-controls flex items-center justify-center gap-2.5 md:gap-3 md:flex-1">
+              <button
+                onClick={handlePrev}
+                className="grid h-7 w-7 md:h-8 md:w-8 place-items-center pixel-btn cursor-pointer"
+                title="Previous Track"
+              >
+                <SkipBack className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              </button>
+
+              <button
+                onClick={handlePlayPause}
+                className="grid h-9 w-9 md:h-10 md:w-10 place-items-center bg-[#4a148c] border-2 border-purple-500 text-white transition-all cursor-pointer shadow-[2px_2px_0px_#000] active:translate-x-px active:translate-y-px active:shadow-none"
+                title={isPlaying ? "Pause" : "Play"}
+              >
+                {isPlaying ? (
+                  <Pause className="w-3.5 h-3.5 md:w-4 md:h-4 fill-white" />
                 ) : (
-                  <Volume2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  <Play className="w-3.5 h-3.5 md:w-4 md:h-4 fill-white translate-x-0.5" />
                 )}
               </button>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={isMuted ? 0 : volume}
-                onChange={(e) => {
-                  setVolume(parseFloat(e.target.value));
-                  if (isMuted) setIsMuted(false);
-                }}
-                className="w-full max-w-24 md:w-16 h-1.5 md:h-2 bg-zinc-950 border border-zinc-800 appearance-none cursor-pointer pixel-thumb"
-              />
+
+              <button
+                onClick={handleNext}
+                className="grid h-7 w-7 md:h-8 md:w-8 place-items-center pixel-btn cursor-pointer"
+                title="Next Track"
+              >
+                <SkipForward className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              </button>
             </div>
 
-            {/* Background Picker Trigger */}
-            <button
-              onClick={() => {
-                setIsPanelOpen(!isPanelOpen);
-                setIsSettingsOpen(false);
-              }}
-              className={`flex min-w-0 items-center justify-center gap-1.5 px-2.5 py-1 md:px-3 md:py-1.5 uppercase cursor-pointer pixel-btn ${
-                isPanelOpen ? "pixel-btn-active" : ""
-              }`}
-            >
-              <ImageIcon className="w-3 md:w-3.5 h-3 md:h-3.5" />
-              <span>Background</span>
-            </button>
+            {/* Buttons and Volume Slider */}
+            <div className="lofi-secondary-controls grid w-full grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2 text-[10px] md:flex md:w-auto md:flex-wrap md:justify-end md:gap-3 md:text-xs">
+              {/* Loop Toggle */}
+              <button
+                onClick={() => setIsLooping(!isLooping)}
+                className={`grid h-8 w-8 place-items-center cursor-pointer pixel-btn md:h-auto md:w-auto md:px-2 md:py-1.5 ${
+                  isLooping ? "pixel-btn-active" : ""
+                }`}
+                title="Loop Single Track"
+              >
+                <Repeat className="w-3 md:w-3.5 h-3 md:h-3.5" />
+              </button>
 
-            <button
-              onClick={() => {
-                setIsSettingsOpen(!isSettingsOpen);
-                setIsPanelOpen(false);
-              }}
-              className={`grid h-8 w-8 place-items-center justify-self-end cursor-pointer pixel-btn ${
-                isSettingsOpen ? "pixel-btn-active" : ""
-              }`}
-              title="Open Settings"
-              aria-label="Open Settings"
-            >
-              <Settings2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-            </button>
+              {/* Volume controls */}
+              <div className="flex min-w-0 items-center gap-1.5 border-l border-zinc-800 pl-1.5 md:gap-2 md:pl-2">
+                <button
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  {isMuted || volume === 0 ? (
+                    <VolumeX className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  ) : (
+                    <Volume2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  )}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={isMuted ? 0 : volume}
+                  onChange={(e) => {
+                    setVolume(parseFloat(e.target.value));
+                    if (isMuted) setIsMuted(false);
+                  }}
+                  className="lofi-volume-slider w-full max-w-24 md:w-16 h-1.5 md:h-2 bg-zinc-950 border border-zinc-800 appearance-none cursor-pointer pixel-thumb"
+                />
+              </div>
+
+              {/* Background Picker Trigger */}
+              <button
+                onClick={() => {
+                  setIsPanelOpen(!isPanelOpen);
+                  setIsSettingsOpen(false);
+                }}
+                title="Choose Background"
+                aria-label="Choose Background"
+                className={`flex min-w-0 items-center justify-center gap-1.5 px-2.5 py-1 md:px-3 md:py-1.5 uppercase cursor-pointer pixel-btn ${
+                  isPanelOpen ? "pixel-btn-active" : ""
+                }`}
+              >
+                <ImageIcon className="w-3 md:w-3.5 h-3 md:h-3.5" />
+                <span className="lofi-background-label">Background</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsSettingsOpen(!isSettingsOpen);
+                  setIsPanelOpen(false);
+                }}
+                className={`grid h-8 w-8 place-items-center justify-self-end cursor-pointer pixel-btn ${
+                  isSettingsOpen ? "pixel-btn-active" : ""
+                }`}
+                title="Open Settings"
+                aria-label="Open Settings"
+              >
+                <Settings2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              </button>
+            </div>
           </div>
-        </div>
         </div>
 
         {/* Progress Seek Bar */}
-        <div className="w-full max-w-3xl pointer-events-auto bg-black/60 border-2 border-zinc-900 px-3 md:px-4 py-1 md:py-2 rounded-none flex items-center gap-2.5 md:gap-3 text-[10px] md:text-xs text-zinc-400 shadow-md">
+        <div className="lofi-progress-bar w-full max-w-3xl pointer-events-auto bg-black/60 border-2 border-zinc-900 px-3 md:px-4 py-1 md:py-2 rounded-none flex items-center gap-2.5 md:gap-3 text-[10px] md:text-xs text-zinc-400 shadow-md">
           <span>{formatTime(progress)}</span>
           <input
             type="range"
@@ -940,7 +1018,7 @@ export default function LofiPixelStudyClient({
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 30 }}
-            className="absolute bottom-56 md:bottom-44 left-4 right-4 mx-auto w-[min(22rem,calc(100vw-2rem))] pixel-box p-3 md:p-4 z-10 text-xs md:text-sm"
+            className="lofi-floating-panel absolute bottom-56 md:bottom-44 left-4 right-4 mx-auto w-[min(22rem,calc(100vw-2rem))] pixel-box p-3 md:p-4 z-10 text-xs md:text-sm"
           >
             <div className="mb-3 flex items-center justify-between gap-3">
               <span className="text-xs md:text-sm font-bold uppercase tracking-wider text-purple-400">
@@ -1005,7 +1083,9 @@ export default function LofiPixelStudyClient({
               </button>
 
               <button
-                onClick={() => setShowMinimizedTimerTime(!showMinimizedTimerTime)}
+                onClick={() =>
+                  setShowMinimizedTimerTime(!showMinimizedTimerTime)
+                }
                 className={`flex items-center justify-between gap-3 px-2.5 py-2 text-left uppercase cursor-pointer pixel-btn ${
                   showMinimizedTimerTime ? "pixel-btn-active" : ""
                 }`}
@@ -1027,7 +1107,7 @@ export default function LofiPixelStudyClient({
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 30 }}
-            className="absolute bottom-56 md:bottom-44 left-4 right-4 mx-auto max-w-2xl pixel-box p-3 md:p-4 z-10 text-xs md:text-sm"
+            className="lofi-floating-panel absolute bottom-56 md:bottom-44 left-4 right-4 mx-auto max-w-2xl pixel-box p-3 md:p-4 z-10 text-xs md:text-sm"
           >
             <div className="flex justify-between items-center mb-3">
               <span className="text-xs md:text-sm font-bold uppercase tracking-wider text-purple-400">
