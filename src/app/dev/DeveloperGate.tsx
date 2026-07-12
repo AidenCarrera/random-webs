@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import type { WebsiteEntry } from "@/lib/websites";
 
 const PASSWORD = "olo";
+const UNLOCK_STORAGE_KEY = "developer-gate-unlocked";
 
 type DeveloperGateProps = {
   websites: WebsiteEntry[];
@@ -13,12 +14,26 @@ type DeveloperGateProps = {
 export function DeveloperGate({ websites }: DeveloperGateProps) {
   const [value, setValue] = useState("");
   const [unlocked, setUnlocked] = useState(false);
+  const [hasCheckedSavedUnlock, setHasCheckedSavedUnlock] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    try {
+      setUnlocked(window.localStorage.getItem(UNLOCK_STORAGE_KEY) === "true");
+    } finally {
+      setHasCheckedSavedUnlock(true);
+    }
+  }, []);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (value === PASSWORD) {
+      try {
+        window.localStorage.setItem(UNLOCK_STORAGE_KEY, "true");
+      } catch {
+        // Keep the current visit unlocked if local storage is unavailable.
+      }
       setUnlocked(true);
       setError("");
       return;
@@ -26,6 +41,10 @@ export function DeveloperGate({ websites }: DeveloperGateProps) {
 
     setError("Incorrect password.");
   };
+
+  if (!hasCheckedSavedUnlock) {
+    return null;
+  }
 
   if (!unlocked) {
     return (
