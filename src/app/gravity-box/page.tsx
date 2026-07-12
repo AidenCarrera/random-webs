@@ -1,21 +1,22 @@
 "use client";
 
 import "./styles.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Matter from "matter-js";
 
 const MIN_BOX_WIDTH = 220;
 const MIN_BOX_HEIGHT = 220;
 const MOBILE_BREAKPOINT = 768;
-const SHAKE_THRESHOLD = 18;
-const SHAKE_COOLDOWN_MS = 900;
 
 function getBoxCenter(
   viewportWidth: number,
   viewportHeight: number,
   toolbarHeight: number,
 ) {
-  const availableHeight = Math.max(viewportHeight - toolbarHeight, MIN_BOX_HEIGHT);
+  const availableHeight = Math.max(
+    viewportHeight - toolbarHeight,
+    MIN_BOX_HEIGHT,
+  );
 
   return {
     x: viewportWidth / 2,
@@ -32,17 +33,26 @@ function getBoxLimits(
   const isLandscape = viewportWidth > viewportHeight;
   const horizontalPadding = isMobile ? 24 : 80;
   const bottomPadding = isMobile ? 20 : 48;
-  const availableWidth = Math.max(viewportWidth - horizontalPadding, MIN_BOX_WIDTH);
+  const availableWidth = Math.max(
+    viewportWidth - horizontalPadding,
+    MIN_BOX_WIDTH,
+  );
   const availableHeight = Math.max(
     viewportHeight - toolbarHeight - bottomPadding,
     MIN_BOX_HEIGHT,
   );
 
   const defaultWidth = isMobile
-    ? Math.min(availableWidth, isLandscape ? viewportWidth * 0.72 : viewportWidth - 32)
+    ? Math.min(
+        availableWidth,
+        isLandscape ? viewportWidth * 0.72 : viewportWidth - 32,
+      )
     : Math.min(800, availableWidth);
   const defaultHeight = isMobile
-    ? Math.min(availableHeight, isLandscape ? viewportHeight * 0.5 : viewportHeight * 0.42)
+    ? Math.min(
+        availableHeight,
+        isLandscape ? viewportHeight * 0.5 : viewportHeight * 0.42,
+      )
     : Math.min(600, availableHeight);
 
   return {
@@ -68,13 +78,13 @@ export default function GravityBox() {
   const [toolbarHeight, setToolbarHeight] = useState(104);
   const [boxWidth, setBoxWidth] = useState(800);
   const [boxHeight, setBoxHeight] = useState(600);
-  const [shakeEnabled, setShakeEnabled] = useState(false);
+  const [isViewportReady, setIsViewportReady] = useState(false);
 
   const boxWidthRef = useRef(boxWidth);
   const boxHeightRef = useRef(boxHeight);
   const windowSizeRef = useRef(windowSize);
   const toolbarHeightRef = useRef(toolbarHeight);
-  const shakeCooldownRef = useRef(0);
+  const hasSyncedViewportRef = useRef(false);
 
   useEffect(() => {
     boxWidthRef.current = boxWidth;
@@ -93,20 +103,23 @@ export default function GravityBox() {
   }, [toolbarHeight]);
 
   // Window sizing & resize canvas sync
-  useEffect(() => {
+  useLayoutEffect(() => {
     const syncViewport = () => {
       const nextWindowSize = {
         width: window.innerWidth,
         height: window.innerHeight,
       };
-      const nextToolbarHeight = toolbarRef.current?.offsetHeight ?? toolbarHeightRef.current;
+      const nextToolbarHeight =
+        toolbarRef.current?.offsetHeight ?? toolbarHeightRef.current;
       const limits = getBoxLimits(
         nextWindowSize.width,
         nextWindowSize.height,
         nextToolbarHeight,
       );
+      const shouldApplyDefaults = !hasSyncedViewportRef.current;
       setWindowSize((current) =>
-        current.width === nextWindowSize.width && current.height === nextWindowSize.height
+        current.width === nextWindowSize.width &&
+        current.height === nextWindowSize.height
           ? current
           : nextWindowSize,
       );
@@ -114,19 +127,27 @@ export default function GravityBox() {
         current === nextToolbarHeight ? current : nextToolbarHeight,
       );
       setBoxWidth((current) => {
+        const preferredWidth = shouldApplyDefaults
+          ? limits.defaultWidth
+          : current || limits.defaultWidth;
         const nextWidth = Math.min(
           limits.maxWidth,
-          Math.max(MIN_BOX_WIDTH, current || limits.defaultWidth),
+          Math.max(MIN_BOX_WIDTH, preferredWidth),
         );
         return current === nextWidth ? current : nextWidth;
       });
       setBoxHeight((current) => {
+        const preferredHeight = shouldApplyDefaults
+          ? limits.defaultHeight
+          : current || limits.defaultHeight;
         const nextHeight = Math.min(
           limits.maxHeight,
-          Math.max(MIN_BOX_HEIGHT, current || limits.defaultHeight),
+          Math.max(MIN_BOX_HEIGHT, preferredHeight),
         );
         return current === nextHeight ? current : nextHeight;
       });
+      hasSyncedViewportRef.current = true;
+      setIsViewportReady(true);
 
       if (renderRef.current) {
         renderRef.current.options.width = nextWindowSize.width;
@@ -143,7 +164,9 @@ export default function GravityBox() {
     const handleResize = () => syncViewport();
     const shouldObserveToolbar = window.innerWidth < MOBILE_BREAKPOINT;
     const resizeObserver =
-      typeof ResizeObserver !== "undefined" && toolbarRef.current && shouldObserveToolbar
+      typeof ResizeObserver !== "undefined" &&
+      toolbarRef.current &&
+      shouldObserveToolbar
         ? new ResizeObserver(() => syncViewport())
         : null;
 
@@ -162,7 +185,7 @@ export default function GravityBox() {
 
   // Initialize Matter.js Physics simulation
   useEffect(() => {
-    if (!sceneRef.current) return;
+    if (!isViewportReady || !sceneRef.current) return;
 
     const Engine = Matter.Engine,
       Render = Matter.Render,
@@ -221,10 +244,19 @@ export default function GravityBox() {
     });
 
     // Populate initial shapes centered inside the default box area
-    const initialToolbarHeight = toolbarRef.current?.offsetHeight ?? toolbarHeightRef.current;
-    const limits = getBoxLimits(window.innerWidth, window.innerHeight, initialToolbarHeight);
+    const initialToolbarHeight =
+      toolbarRef.current?.offsetHeight ?? toolbarHeightRef.current;
+    const limits = getBoxLimits(
+      window.innerWidth,
+      window.innerHeight,
+      initialToolbarHeight,
+    );
     const cx = window.innerWidth / 2;
-    const cy = getBoxCenter(window.innerWidth, window.innerHeight, initialToolbarHeight).y;
+    const cy = getBoxCenter(
+      window.innerWidth,
+      window.innerHeight,
+      initialToolbarHeight,
+    ).y;
     setToolbarHeight(initialToolbarHeight);
     setBoxWidth(limits.defaultWidth);
     setBoxHeight(limits.defaultHeight);
@@ -273,62 +305,82 @@ export default function GravityBox() {
       Runner.stop(runner);
       if (render.canvas) render.canvas.remove();
     };
-  }, []);
-
-  useEffect(() => {
-    if (!shakeEnabled || typeof window === "undefined" || !("DeviceMotionEvent" in window)) {
-      return;
-    }
-
-    const handleMotion = (event: DeviceMotionEvent) => {
-      const acceleration = event.accelerationIncludingGravity ?? event.acceleration;
-      if (!acceleration) return;
-
-      const totalForce = Math.abs(acceleration.x ?? 0) + Math.abs(acceleration.y ?? 0) + Math.abs(acceleration.z ?? 0);
-      const now = Date.now();
-      if (totalForce > SHAKE_THRESHOLD && now - shakeCooldownRef.current > SHAKE_COOLDOWN_MS) {
-        shakeCooldownRef.current = now;
-        throwShapes();
-      }
-    };
-
-    window.addEventListener("devicemotion", handleMotion);
-    return () => {
-      window.removeEventListener("devicemotion", handleMotion);
-    };
-  }, [shakeEnabled]);
+  }, [isViewportReady]);
 
   // Dyn walls reconstruction matching sliders
   useEffect(() => {
+    if (!isViewportReady) return;
+
     const engine = engineRef.current;
     if (!engine) return;
 
-    if (leftWallRef.current) Matter.Composite.remove(engine.world, leftWallRef.current);
-    if (rightWallRef.current) Matter.Composite.remove(engine.world, rightWallRef.current);
-    if (topWallRef.current) Matter.Composite.remove(engine.world, topWallRef.current);
-    if (bottomWallRef.current) Matter.Composite.remove(engine.world, bottomWallRef.current);
+    if (leftWallRef.current)
+      Matter.Composite.remove(engine.world, leftWallRef.current);
+    if (rightWallRef.current)
+      Matter.Composite.remove(engine.world, rightWallRef.current);
+    if (topWallRef.current)
+      Matter.Composite.remove(engine.world, topWallRef.current);
+    if (bottomWallRef.current)
+      Matter.Composite.remove(engine.world, bottomWallRef.current);
 
-    const { x: cx, y: cy } = getBoxCenter(windowSize.width, windowSize.height, toolbarHeight);
+    const { x: cx, y: cy } = getBoxCenter(
+      windowSize.width,
+      windowSize.height,
+      toolbarHeight,
+    );
     const thickness = 100; // Deep 100px thickness prevents tunneling completely
     const wallOptions = { isStatic: true, render: { fillStyle: "#475569" } };
 
     // Taller left/right walls overlay the corners seamlessly and eliminate any 1px gaps
-    const leftWall = Matter.Bodies.rectangle(cx - boxWidth / 2 - thickness / 2, cy, thickness, boxHeight + 2 * thickness, wallOptions);
-    const rightWall = Matter.Bodies.rectangle(cx + boxWidth / 2 + thickness / 2, cy, thickness, boxHeight + 2 * thickness, wallOptions);
-    const topWall = Matter.Bodies.rectangle(cx, cy - boxHeight / 2 - thickness / 2, boxWidth + 2 * thickness, thickness, wallOptions);
-    const bottomWall = Matter.Bodies.rectangle(cx, cy + boxHeight / 2 + thickness / 2, boxWidth + 2 * thickness, thickness, wallOptions);
+    const leftWall = Matter.Bodies.rectangle(
+      cx - boxWidth / 2 - thickness / 2,
+      cy,
+      thickness,
+      boxHeight + 2 * thickness,
+      wallOptions,
+    );
+    const rightWall = Matter.Bodies.rectangle(
+      cx + boxWidth / 2 + thickness / 2,
+      cy,
+      thickness,
+      boxHeight + 2 * thickness,
+      wallOptions,
+    );
+    const topWall = Matter.Bodies.rectangle(
+      cx,
+      cy - boxHeight / 2 - thickness / 2,
+      boxWidth + 2 * thickness,
+      thickness,
+      wallOptions,
+    );
+    const bottomWall = Matter.Bodies.rectangle(
+      cx,
+      cy + boxHeight / 2 + thickness / 2,
+      boxWidth + 2 * thickness,
+      thickness,
+      wallOptions,
+    );
 
     leftWallRef.current = leftWall;
     rightWallRef.current = rightWall;
     topWallRef.current = topWall;
     bottomWallRef.current = bottomWall;
 
-    Matter.Composite.add(engine.world, [leftWall, rightWall, topWall, bottomWall]);
-  }, [boxWidth, boxHeight, windowSize]);
+    Matter.Composite.add(engine.world, [
+      leftWall,
+      rightWall,
+      topWall,
+      bottomWall,
+    ]);
+  }, [boxWidth, boxHeight, windowSize, toolbarHeight, isViewportReady]);
 
   const addShape = () => {
     if (!engineRef.current) return;
-    const { x: cx, y: cy } = getBoxCenter(windowSize.width, windowSize.height, toolbarHeight);
+    const { x: cx, y: cy } = getBoxCenter(
+      windowSize.width,
+      windowSize.height,
+      toolbarHeight,
+    );
     const x = cx + (Math.random() - 0.5) * (boxWidth * 0.6);
     const y = cy - boxHeight / 2 + 30; // Spawn near the top of the box
     const size = Math.random() * 40 + 20;
@@ -388,21 +440,6 @@ export default function GravityBox() {
     }
   };
 
-  const enableShake = async () => {
-    if (typeof window === "undefined" || !("DeviceMotionEvent" in window)) return;
-
-    const motionEvent = DeviceMotionEvent as typeof DeviceMotionEvent & {
-      requestPermission?: () => Promise<"granted" | "denied">;
-    };
-
-    if (typeof motionEvent.requestPermission === "function") {
-      const permission = await motionEvent.requestPermission();
-      if (permission !== "granted") return;
-    }
-
-    setShakeEnabled(true);
-  };
-
   // Clean up timers on unmount
   useEffect(() => {
     return () => {
@@ -410,12 +447,17 @@ export default function GravityBox() {
     };
   }, []);
 
-  const boxLimits = getBoxLimits(windowSize.width, windowSize.height, toolbarHeight);
-  const isMobile = windowSize.width < MOBILE_BREAKPOINT;
-  const canUseShake = typeof window !== "undefined" && "DeviceMotionEvent" in window;
-
+  const boxLimits = getBoxLimits(
+    windowSize.width,
+    windowSize.height,
+    toolbarHeight,
+  );
   return (
-    <div ref={sceneRef} className="fixed inset-0 overflow-hidden text-white">
+    <div
+      ref={sceneRef}
+      className="fixed inset-0 overflow-hidden bg-[#0f172a] text-white"
+      style={{ backgroundColor: "#0f172a" }}
+    >
       <div className="absolute bottom-8 left-8 pointer-events-none select-none opacity-20 hover:opacity-90 transition-opacity duration-300">
         <h1 className="font-black text-4xl md:text-5xl tracking-tighter text-slate-500/80 uppercase">
           GRAVITY BOX
@@ -432,7 +474,10 @@ export default function GravityBox() {
           onMouseDown={() => startAction(addShape)}
           onMouseUp={stopAction}
           onMouseLeave={stopAction}
-          onTouchStart={(e) => { e.preventDefault(); startAction(addShape); }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            startAction(addShape);
+          }}
           onTouchEnd={stopAction}
           className="group relative flex h-13 w-13 flex-col items-center justify-center overflow-hidden rounded-full bg-white/5 p-3.5 transition-all duration-200 active:scale-90 hover:bg-white/10 select-none touch-manipulation md:h-16 md:w-16 md:hover:w-40 md:hover:rounded-2xl"
           title="Add Shape (Hold)"
@@ -463,7 +508,10 @@ export default function GravityBox() {
           onMouseDown={() => startAction(removeShape)}
           onMouseUp={stopAction}
           onMouseLeave={stopAction}
-          onTouchStart={(e) => { e.preventDefault(); startAction(removeShape); }}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            startAction(removeShape);
+          }}
           onTouchEnd={stopAction}
           className="group relative flex h-13 w-13 flex-col items-center justify-center overflow-hidden rounded-full bg-white/5 p-3.5 transition-all duration-200 active:scale-90 hover:bg-rose-500/20 hover:text-rose-400 select-none touch-manipulation md:h-16 md:w-16 md:hover:w-40 md:hover:rounded-2xl"
           title="Remove Shape (Hold)"
@@ -516,25 +564,13 @@ export default function GravityBox() {
           </span>
         </button>
 
-        {isMobile && canUseShake ? (
-          <button
-            onClick={enableShake}
-            className={`flex h-13 min-w-24 items-center justify-center rounded-full px-4.5 text-xs font-black uppercase tracking-[0.18em] transition-colors ${
-              shakeEnabled
-                ? "bg-emerald-500/20 text-emerald-300"
-                : "bg-white/5 text-slate-200 hover:bg-white/10"
-            } select-none touch-manipulation`}
-            title="Enable phone shake chaos"
-          >
-            {shakeEnabled ? "Shake On" : "Enable Shake"}
-          </button>
-        ) : null}
-
         <div className="hidden h-9 w-px bg-white/10 md:block"></div>
 
         {/* Dynamic Box Width Slider */}
         <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-left md:w-32 md:flex-none">
-          <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Width</span>
+          <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider">
+            Width
+          </span>
           <input
             type="range"
             min={MIN_BOX_WIDTH}
@@ -547,7 +583,9 @@ export default function GravityBox() {
 
         {/* Dynamic Box Height Slider */}
         <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-left md:w-32 md:flex-none">
-          <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Height</span>
+          <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider">
+            Height
+          </span>
           <input
             type="range"
             min={MIN_BOX_HEIGHT}

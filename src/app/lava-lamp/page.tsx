@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -629,7 +630,7 @@ export default function LavaLampPage() {
     }
   }, [presetId]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     const stage = stageRef.current;
     if (!canvas || !stage) return;
@@ -1020,11 +1021,11 @@ export default function LavaLampPage() {
         />
 
         <div
-          className="absolute z-10 left-1/2 bottom-3.5 max-[700px]:bottom-5 max-[700px]:landscape:bottom-1.5 -translate-x-1/2 flex items-center gap-2.5 max-[700px]:gap-1.75 w-max max-w-[calc(100%-28px)] max-[700px]:w-[calc(100%-24px)] max-[700px]:justify-between p-1.5 border border-white/10 rounded-2xl bg-[#08090c]/58 shadow-[0_12px_38px_rgba(0,0,0,0.3)] backdrop-blur-lg cursor-default controls"
+          className="absolute z-10 left-1/2 bottom-3.5 max-[700px]:bottom-5 max-[700px]:landscape:bottom-1.5 -translate-x-1/2 flex h-12 flex-nowrap items-center gap-2.5 max-[700px]:gap-1.75 w-max max-w-[calc(100%-28px)] max-[700px]:w-[calc(100%-24px)] max-[700px]:justify-between overflow-hidden p-1.5 border border-white/10 rounded-2xl bg-[#08090c]/58 shadow-[0_12px_38px_rgba(0,0,0,0.3)] backdrop-blur-lg cursor-default controls"
           onPointerDown={(event) => event.stopPropagation()}
         >
           <div
-            className="flex items-center gap-0.5 overflow-x-auto no-scrollbar preset-list"
+            className="flex min-w-0 items-center gap-0.5 overflow-x-auto no-scrollbar preset-list"
             aria-label="Fluid presets"
           >
             {PRESET_IDS.map((id) => (
@@ -1047,7 +1048,7 @@ export default function LavaLampPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-1 pl-1.5 border-l border-white/8 icon-actions">
+          <div className="flex flex-none items-center gap-1 pl-1.5 border-l border-white/8 icon-actions">
             <label
               className="grid w-8.5 h-8.5 place-items-center border border-white/11 rounded-[9px] bg-white/4.5 cursor-pointer color-picker"
               title="Liquid color"

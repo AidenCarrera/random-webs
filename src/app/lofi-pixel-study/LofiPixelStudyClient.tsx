@@ -93,6 +93,7 @@ export default function LofiPixelStudyClient({
   initialAlarms,
 }: LofiPixelStudyClientProps) {
   const hasLoadedPreferencesRef = useRef(false);
+  const backgroundImageRef = useRef<HTMLImageElement | null>(null);
 
   // Background state (with preview on hover support)
   const [selectedBg, setSelectedBg] = useState(BACKGROUNDS[0]);
@@ -101,9 +102,12 @@ export default function LofiPixelStudyClient({
   );
   const activeBg = previewBg || selectedBg;
 
-  // Image dimension states for integer scaling calculation
-  const [imgDimensions, setImgDimensions] = useState({ w: 640, h: 360 });
-  const [scale, setScale] = useState(1);
+  // Wait for the current image's actual dimensions before showing it.
+  // This avoids briefly displaying the 640x360 fallback at the wrong size.
+  const [imgDimensions, setImgDimensions] = useState({ w: 0, h: 0 });
+  const [loadedBackgroundId, setLoadedBackgroundId] = useState<string | null>(
+    null,
+  );
   const [windowSize, setWindowSize] = useState({ w: 1920, h: 1080 });
 
   // Audio player state
@@ -321,13 +325,17 @@ export default function LofiPixelStudyClient({
     return () => clearInterval(intervalId);
   }, [selectedAlarm?.path, timerActive, timeLeft, timerSoundEnabled]);
 
-  // Calculate Integer Scale: Cover viewport fully with 16:9 pixel-perfect scaling
-  useEffect(() => {
-    const scaleX = Math.ceil(windowSize.w / imgDimensions.w);
-    const scaleY = Math.ceil(windowSize.h / imgDimensions.h);
-    const calculatedScale = Math.max(1, Math.max(scaleX, scaleY));
-    setScale(calculatedScale);
-  }, [windowSize, imgDimensions]);
+  // Calculate integer scale from the loaded image dimensions so every visible
+  // background frame already fills the viewport.
+  const backgroundScale =
+    imgDimensions.w && imgDimensions.h
+      ? Math.max(
+          1,
+          Math.ceil(windowSize.w / imgDimensions.w),
+          Math.ceil(windowSize.h / imgDimensions.h),
+        )
+      : 1;
+  const isActiveBackgroundLoaded = loadedBackgroundId === activeBg.id;
 
   // Audio Event Listeners
   useEffect(() => {
@@ -397,12 +405,26 @@ export default function LofiPixelStudyClient({
     setIsAlarmPreviewPlaying(false);
   }, [selectedAlarmIndex]);
 
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+  const handleImageLoad = (
+    backgroundId: string,
+    e: React.SyntheticEvent<HTMLImageElement>,
+  ) => {
     const { naturalWidth, naturalHeight } = e.currentTarget;
     if (naturalWidth && naturalHeight) {
       setImgDimensions({ w: naturalWidth, h: naturalHeight });
+      setLoadedBackgroundId(backgroundId);
     }
   };
+
+  // Mobile browsers can complete a cached image before React attaches onLoad.
+  // Check the mounted image as well so the initial background is never left hidden.
+  useEffect(() => {
+    const image = backgroundImageRef.current;
+    if (!image?.complete || !image.naturalWidth || !image.naturalHeight) return;
+
+    setImgDimensions({ w: image.naturalWidth, h: image.naturalHeight });
+    setLoadedBackgroundId(activeBg.id);
+  }, [activeBg.id]);
 
   const handlePlayPause = () => {
     if (!audioRef.current || !currentTrack.path) return;
@@ -579,11 +601,12 @@ export default function LofiPixelStudyClient({
         <AnimatePresence initial={false}>
           <motion.img
             key={activeBg.id}
+            ref={backgroundImageRef}
             src={activeBg.path}
             alt={activeBg.name}
-            onLoad={handleImageLoad}
+            onLoad={(event) => handleImageLoad(activeBg.id, event)}
             initial={{ opacity: 0, scale: 1 }}
-            animate={{ opacity: 1, scale: 1 }}
+            animate={{ opacity: isActiveBackgroundLoaded ? 1 : 0, scale: 1 }}
             exit={{ opacity: 0, scale: 1 }}
             transition={{
               opacity: { duration: 0.45, ease: "easeOut" },
@@ -599,8 +622,8 @@ export default function LofiPixelStudyClient({
                     willChange: "opacity, transform",
                   }
                 : {
-                    width: `${imgDimensions.w * scale}px`,
-                    height: `${imgDimensions.h * scale}px`,
+                    width: `${imgDimensions.w * backgroundScale}px`,
+                    height: `${imgDimensions.h * backgroundScale}px`,
                     imageRendering: "pixelated",
                     position: "absolute",
                     left: "50%",
@@ -1090,5 +1113,3 @@ export default function LofiPixelStudyClient({
     </div>
   );
 }
-
-
