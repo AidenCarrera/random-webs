@@ -24,9 +24,12 @@ export const BassPianoRoll = memo(function BassPianoRoll({
   onMove,
 }: BassPianoRollProps) {
   const isErasing = useRef(false);
-  const [eraseMode, setEraseMode] = useState(false);
+  const [tool, setTool] = useState<"edit" | "erase">("edit");
+  const [rightMouseErasing, setRightMouseErasing] = useState(false);
+  const eraseMode = tool === "erase" || rightMouseErasing;
   const resizing = useRef<{
     id: number;
+    pointerId: number;
     edge: "left" | "right";
     start: number;
     end: number;
@@ -35,6 +38,7 @@ export const BassPianoRoll = memo(function BassPianoRoll({
   } | null>(null);
   const moving = useRef<{
     id: number;
+    pointerId: number;
     pitchIndex: number;
     start: number;
     pointerX: number;
@@ -44,9 +48,14 @@ export const BassPianoRoll = memo(function BassPianoRoll({
   } | null>(null);
 
   useEffect(() => {
-    const handleMouseMove = (event: MouseEvent) => {
+    isErasing.current = eraseMode;
+  }, [eraseMode]);
+
+  useEffect(() => {
+    const handlePointerMove = (event: PointerEvent) => {
       const resize = resizing.current;
       if (resize) {
+        if (event.pointerId !== resize.pointerId) return;
         const step = Math.max(
           0,
           Math.min(
@@ -68,6 +77,7 @@ export const BassPianoRoll = memo(function BassPianoRoll({
 
       const drag = moving.current;
       if (!drag) return;
+      if (event.pointerId !== drag.pointerId) return;
       const stepDelta = Math.round(
         (event.clientX - drag.pointerX) / (drag.rowWidth / STEPS),
       );
@@ -83,33 +93,45 @@ export const BassPianoRoll = memo(function BassPianoRoll({
         drag.start + stepDelta,
       );
     };
-    const stop = () => {
-      isErasing.current = false;
-      setEraseMode(false);
+    const stop = (event: PointerEvent) => {
+      if (
+        (resizing.current && resizing.current.pointerId !== event.pointerId) ||
+        (moving.current && moving.current.pointerId !== event.pointerId)
+      ) {
+        return;
+      }
       resizing.current = null;
       moving.current = null;
+      if (event.pointerType === "mouse") setRightMouseErasing(false);
     };
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", stop);
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", stop);
+    window.addEventListener("pointercancel", stop);
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", stop);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
     };
   }, [onMove, onResize]);
 
   const beginResize = (
-    event: React.MouseEvent,
+    event: React.PointerEvent,
     note: BassNote,
     edge: "left" | "right",
   ) => {
     event.preventDefault();
     event.stopPropagation();
     if (event.button !== 0) return;
+    if (eraseMode) {
+      onRemove(note.id);
+      return;
+    }
     const row = event.currentTarget.closest("[data-bass-row]");
     if (!row) return;
     const bounds = row.getBoundingClientRect();
     resizing.current = {
       id: note.id,
+      pointerId: event.pointerId,
       edge,
       start: note.start,
       end: note.start + note.length,
@@ -118,8 +140,14 @@ export const BassPianoRoll = memo(function BassPianoRoll({
     };
   };
 
-  const beginMove = (event: React.MouseEvent, note: BassNote) => {
+  const beginMove = (event: React.PointerEvent, note: BassNote) => {
     if (event.button !== 0) return;
+    if (eraseMode) {
+      event.preventDefault();
+      event.stopPropagation();
+      onRemove(note.id);
+      return;
+    }
     event.preventDefault();
     const row = event.currentTarget.closest("[data-bass-row]");
     const rows = event.currentTarget.closest("[data-piano-rows]");
@@ -128,6 +156,7 @@ export const BassPianoRoll = memo(function BassPianoRoll({
     const rowsBounds = rows.getBoundingClientRect();
     moving.current = {
       id: note.id,
+      pointerId: event.pointerId,
       pitchIndex: note.pitchIndex,
       start: note.start,
       pointerX: event.clientX,
@@ -142,11 +171,11 @@ export const BassPianoRoll = memo(function BassPianoRoll({
       className={`w-full max-w-6xl rounded-2xl border border-indigo-400/20 p-3 md:p-4 mb-3 md:mb-4 overflow-hidden ${eraseMode ? "cursor-not-allowed" : ""}`}
       style={{ background: "linear-gradient(135deg,#101018,#0b0b12)" }}
       onContextMenu={(event) => event.preventDefault()}
-      onMouseDownCapture={(event) => {
-        if (event.button === 2) {
+      onPointerDownCapture={(event) => {
+        if (event.pointerType === "mouse" && event.button === 2) {
           event.preventDefault();
           isErasing.current = true;
-          setEraseMode(true);
+          setRightMouseErasing(true);
         }
       }}
     >
@@ -156,8 +185,31 @@ export const BassPianoRoll = memo(function BassPianoRoll({
             <h2 className="text-zinc-200 font-bold text-[10px] uppercase tracking-[0.3em]">
               808 Bass Piano Roll
             </h2>
-            <p className="hidden">Piano roll · choose a pitch for each step</p>
+            <p className="mt-1 hidden text-[9px] text-zinc-500 [@media(pointer:coarse)]:block">
+              Tap a cell to add. Drag notes or edges. Use Erase to remove.
+            </p>
           </div>
+        </div>
+        <div
+          className="flex shrink-0 overflow-hidden rounded-md border border-white/10 bg-black/20 p-0.5"
+          aria-label="Piano roll editing tool"
+        >
+          {(["edit", "erase"] as const).map((nextTool) => (
+            <button
+              key={nextTool}
+              type="button"
+              aria-pressed={tool === nextTool}
+              onClick={() => setTool(nextTool)}
+              className="min-h-7 min-w-12 rounded px-2 text-[9px] font-bold uppercase tracking-wider text-zinc-400 transition-colors active:scale-[0.98]"
+              style={
+                tool === nextTool
+                  ? { background: "#4f46e5", color: "#f4f4f5" }
+                  : undefined
+              }
+            >
+              {nextTool}
+            </button>
+          ))}
         </div>
       </div>
       <div
@@ -175,14 +227,17 @@ export const BassPianoRoll = memo(function BassPianoRoll({
               <button
                 type="button"
                 onDoubleClick={() => onPreview(pitch)}
-                className="w-16 md:w-20 shrink-0 py-1 text-left px-2 md:px-3 text-[9px] md:text-[10px] font-bold tracking-widest transition-colors"
+                onPointerDown={(event) => {
+                  if (event.pointerType !== "mouse") onPreview(pitch);
+                }}
+                className="w-16 md:w-20 shrink-0 touch-manipulation py-1 text-left px-2 md:px-3 text-[9px] md:text-[10px] font-bold tracking-widest transition-colors"
                 style={{
                   background: blackKey
                     ? "#09090d"
                     : "linear-gradient(90deg,#e4e4e7,#b8b8c1)",
                   color: blackKey ? "#71717a" : "#18181b",
                 }}
-                title={`Double-click to preview ${pitch}`}
+                title={`Double-click or tap to preview ${pitch}`}
               >
                 {pitch}
               </button>
@@ -193,7 +248,7 @@ export const BassPianoRoll = memo(function BassPianoRoll({
                     key={step}
                     aria-label={`Add ${pitch} at step ${step + 1}`}
                     onClick={() => onAdd(pitchIndex, step)}
-                    className="min-h-6 md:min-h-7 border-r border-b border-white/5"
+                    className="min-h-6 touch-manipulation md:min-h-7 border-r border-b border-white/5"
                     style={{
                       background: blackKey
                         ? "rgba(0,0,0,0.25)"
@@ -219,15 +274,19 @@ export const BassPianoRoll = memo(function BassPianoRoll({
                         background: "linear-gradient(135deg,#a5b4fc,#4f46e5)",
                         boxShadow:
                           "inset 0 0 12px rgba(255,255,255,0.22),0 0 8px rgba(99,102,241,0.55)",
+                        touchAction: "none",
                       }}
-                      onMouseDownCapture={(event) => {
-                        if (event.button === 2) {
+                      onPointerDownCapture={(event) => {
+                        if (
+                          event.pointerType === "mouse" &&
+                          event.button === 2
+                        ) {
                           event.preventDefault();
                           onRemove(note.id);
                         }
                       }}
-                      onMouseDown={(event) => beginMove(event, note)}
-                      onMouseEnter={() => {
+                      onPointerDown={(event) => beginMove(event, note)}
+                      onPointerEnter={() => {
                         if (isErasing.current) onRemove(note.id);
                       }}
                       onDoubleClick={() => onRemove(note.id)}
@@ -236,19 +295,19 @@ export const BassPianoRoll = memo(function BassPianoRoll({
                         event.stopPropagation();
                         onRemove(note.id);
                       }}
-                      title="Left-drag either edge to resize. Right-click to remove."
+                      title="Drag the note to move it. Drag either edge to resize. Right-click or use Erase to remove."
                     >
                       <span
-                        onMouseDown={(event) =>
+                        onPointerDown={(event) =>
                           beginResize(event, note, "left")
                         }
-                        className={`absolute left-0 top-0 bottom-0 w-2 ${eraseMode ? "cursor-not-allowed" : "cursor-ew-resize"}`}
+                        className={`absolute left-0 top-0 bottom-0 w-3 ${eraseMode ? "cursor-not-allowed" : "cursor-ew-resize"}`}
                       />
                       <span
-                        onMouseDown={(event) =>
+                        onPointerDown={(event) =>
                           beginResize(event, note, "right")
                         }
-                        className={`absolute right-0 top-0 bottom-0 w-2 ${eraseMode ? "cursor-not-allowed" : "cursor-ew-resize"}`}
+                        className={`absolute right-0 top-0 bottom-0 w-3 ${eraseMode ? "cursor-not-allowed" : "cursor-ew-resize"}`}
                       />
                     </div>
                   ))}
