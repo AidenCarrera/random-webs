@@ -2,7 +2,7 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 
-import { downloadCanvasPng } from "@/lib/canvasExport";
+import { canvasToBlob } from "@/lib/canvasExport";
 
 import {
   getSeparationRadius,
@@ -33,6 +33,12 @@ type PointerState = {
   mode: PointerMode;
 };
 
+type ActivePointer = {
+  x: number;
+  y: number;
+  mode: PointerMode;
+};
+
 export type BoidsMetrics = {
   fps: number;
   neighbors: number;
@@ -41,7 +47,13 @@ export type BoidsMetrics = {
 export type BoidsCanvasHandle = {
   reseed: () => void;
   scatter: () => void;
-  snapshot: () => Promise<void>;
+  snapshot: () => Promise<BoidsSnapshot | null>;
+};
+
+export type BoidsSnapshot = {
+  blob: Blob;
+  fileName: string;
+  imageSrc: string;
 };
 
 type BoidsCanvasProps = {
@@ -169,6 +181,7 @@ export const BoidsCanvas = forwardRef<BoidsCanvasHandle, BoidsCanvasProps>(
     const trailsRef = useRef(trails);
     const sizeRef = useRef({ width: 1, height: 1 });
     const resetRef = useRef(true);
+    const activePointersRef = useRef(new Map<number, ActivePointer>());
     const pointerRef = useRef<PointerState>({
       x: 0,
       y: 0,
@@ -204,8 +217,14 @@ export const BoidsCanvas = forwardRef<BoidsCanvasHandle, BoidsCanvasProps>(
           }
         },
         snapshot: async () => {
-          if (!canvasRef.current) return;
-          await downloadCanvasPng(canvasRef.current, "boids-simulator.png");
+          if (!canvasRef.current) return null;
+          const fileName = `boids-simulator-${Date.now()}.png`;
+          const blob = await canvasToBlob(canvasRef.current);
+          return {
+            blob,
+            fileName,
+            imageSrc: canvasRef.current.toDataURL("image/png"),
+          };
         },
       }),
       [],
@@ -593,11 +612,36 @@ export const BoidsCanvas = forwardRef<BoidsCanvasHandle, BoidsCanvasProps>(
       };
     }, [onMetrics]);
 
-    const updatePointer = (event: React.PointerEvent<HTMLCanvasElement>) => {
-      const bounds = event.currentTarget.getBoundingClientRect();
-      pointerRef.current.x = event.clientX - bounds.left;
-      pointerRef.current.y = event.clientY - bounds.top;
+    const syncPointerState = () => {
+      const pointers = Array.from(activePointersRef.current.values());
+      if (pointers.length === 0) {
+        pointerRef.current.active = false;
+        pointerRef.current.pressed = false;
+        return;
+      }
+
+      pointerRef.current.x =
+        pointers.reduce((total, pointer) => total + pointer.x, 0) /
+        pointers.length;
+      pointerRef.current.y =
+        pointers.reduce((total, pointer) => total + pointer.y, 0) /
+        pointers.length;
       pointerRef.current.active = true;
+      pointerRef.current.pressed = true;
+      pointerRef.current.mode =
+        pointers.length >= 2 ? "repel" : pointers[0].mode;
+    };
+
+    const trackPointer = (event: React.PointerEvent<HTMLCanvasElement>) => {
+      const bounds = event.currentTarget.getBoundingClientRect();
+      const trackedPointer = activePointersRef.current.get(event.pointerId);
+      activePointersRef.current.set(event.pointerId, {
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+        mode:
+          trackedPointer?.mode ?? (event.button === 2 ? "repel" : "attract"),
+      });
+      syncPointerState();
     };
 
     return (
@@ -606,26 +650,29 @@ export const BoidsCanvas = forwardRef<BoidsCanvasHandle, BoidsCanvasProps>(
         aria-label="Interactive Boids Simulator"
         onPointerDown={(event) => {
           event.preventDefault();
-          updatePointer(event);
-          pointerRef.current.pressed = true;
-          pointerRef.current.active = true;
-          pointerRef.current.mode = event.button === 2 ? "repel" : "attract";
+          trackPointer(event);
           event.currentTarget.setPointerCapture(event.pointerId);
         }}
-        onPointerMove={updatePointer}
+        onPointerMove={(event) => {
+          if (activePointersRef.current.has(event.pointerId)) {
+            trackPointer(event);
+          }
+        }}
         onPointerUp={(event) => {
-          pointerRef.current.pressed = false;
-          pointerRef.current.active = false;
+          activePointersRef.current.delete(event.pointerId);
+          syncPointerState();
           if (event.currentTarget.hasPointerCapture(event.pointerId)) {
             event.currentTarget.releasePointerCapture(event.pointerId);
           }
         }}
-        onPointerCancel={() => {
-          pointerRef.current.active = false;
-          pointerRef.current.pressed = false;
+        onPointerCancel={(event) => {
+          activePointersRef.current.delete(event.pointerId);
+          syncPointerState();
         }}
         onPointerLeave={() => {
-          if (!pointerRef.current.pressed) pointerRef.current.active = false;
+          if (activePointersRef.current.size === 0) {
+            pointerRef.current.active = false;
+          }
         }}
         onContextMenu={(event) => event.preventDefault()}
       />

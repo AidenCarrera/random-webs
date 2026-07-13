@@ -30,13 +30,20 @@ type ExportPreviewModalProps = {
   onClose: () => void;
   onSaveImage?: () => void | Promise<void>;
   pixelatedPreview?: boolean;
+  emailBody?: string;
+  emailSubject?: string;
+  facebookHashtag?: string;
   shareUrl: string;
   shareHeading?: string;
+  socialTitle?: string;
   title?: string;
 };
 
 export function ExportPreviewModal({
   description = "Your PNG downloaded automatically. You can also save it manually or share it here.",
+  emailBody = "Check out this Hypno Spiral export:",
+  emailSubject = "Hypno Spiral export",
+  facebookHashtag = "#HypnoSpiral",
   fileName,
   imageAlt = "Export preview",
   imageSrc,
@@ -46,6 +53,7 @@ export function ExportPreviewModal({
   pixelatedPreview = false,
   shareUrl,
   shareHeading = "Share Anywhere",
+  socialTitle = "Check out this Hypno Spiral export.",
   title = "Export preview",
 }: ExportPreviewModalProps) {
   const [copyLinkLabel, setCopyLinkLabel] = useState("Copy Link");
@@ -147,7 +155,7 @@ export function ExportPreviewModal({
 
                 <XShareButton
                   url={shareUrl}
-                  title="Check out this Hypno Spiral export."
+                  title={socialTitle}
                   className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
                 >
                   <XIcon size={44} round />
@@ -156,7 +164,7 @@ export function ExportPreviewModal({
 
                 <RedditShareButton
                   url={shareUrl}
-                  title="Check out this Hypno Spiral export."
+                  title={socialTitle}
                   className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
                 >
                   <RedditIcon size={44} round />
@@ -165,7 +173,7 @@ export function ExportPreviewModal({
 
                 <BlueskyShareButton
                   url={shareUrl}
-                  title="Check out this Hypno Spiral export."
+                  title={socialTitle}
                   className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
                 >
                   <BlueskyIcon size={44} round />
@@ -174,7 +182,7 @@ export function ExportPreviewModal({
 
                 <WhatsappShareButton
                   url={shareUrl}
-                  title="Check out this Hypno Spiral export."
+                  title={socialTitle}
                   separator=" "
                   className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
                 >
@@ -184,7 +192,7 @@ export function ExportPreviewModal({
 
                 <TelegramShareButton
                   url={shareUrl}
-                  title="Check out this Hypno Spiral export."
+                  title={socialTitle}
                   className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
                 >
                   <TelegramIcon size={44} round />
@@ -193,7 +201,7 @@ export function ExportPreviewModal({
 
                 <FacebookShareButton
                   url={shareUrl}
-                  hashtag="#HypnoSpiral"
+                  hashtag={facebookHashtag}
                   className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
                 >
                   <FacebookIcon size={44} round />
@@ -202,8 +210,8 @@ export function ExportPreviewModal({
 
                 <EmailShareButton
                   url={shareUrl}
-                  subject="Hypno Spiral export"
-                  body="Check out this Hypno Spiral export:"
+                  subject={emailSubject}
+                  body={emailBody}
                   className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
                 >
                   <EmailIcon size={44} round />

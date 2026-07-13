@@ -14,7 +14,7 @@ test.describe("Boids Simulator interactions", () => {
     await expect(page.getByRole("heading", { name: "Controls" })).toBeVisible();
     await expect(
       page.getByText(
-        "Left click to attract birds. Right click to repel birds. Space to pause.",
+        "Left click to attract boids. Right click to repel boids. Space to pause.",
       ),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: "Pause" })).toBeVisible();
@@ -22,7 +22,9 @@ test.describe("Boids Simulator interactions", () => {
     await expect(
       page.getByRole("button", { name: "Reset", exact: true }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: "Snapshot" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Download PNG" }),
+    ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Presets" })).toBeVisible();
   });
 
@@ -129,17 +131,54 @@ test.describe("Boids Simulator interactions", () => {
     expect(farNeighbors).toBeGreaterThan(nearNeighbors);
   });
 
+  test("downloads a snapshot and opens the shared export preview", async ({
+    page,
+  }) => {
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download PNG" }).click();
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toMatch(/^boids-simulator-\d+\.png$/);
+    await expect(
+      page.getByRole("heading", { name: "Boids snapshot" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("img", { name: "Boids Simulator snapshot" }),
+    ).toBeVisible();
+    await expect(page.getByText("Share your flock")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Copy Link" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Download PNG" }),
+    ).toHaveAttribute("download", download.suggestedFilename());
+
+    await page.getByRole("button", { name: "Close export preview" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Boids snapshot" }),
+    ).toHaveCount(0);
+  });
+
   test("opens the compact control drawer on mobile", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload({ waitUntil: "domcontentloaded" });
 
     const drawer = page.getByRole("button", { name: "Boids Simulator" });
+    const touchInstructions = page.getByText(
+      "Tap to attract boids. Use two fingers to repel boids.",
+    );
     await expect(drawer).toBeVisible();
     await expect(drawer).toHaveAttribute("aria-expanded", "false");
+    await expect(touchInstructions).toBeHidden();
     await drawer.click();
     await expect(drawer).toHaveAttribute("aria-expanded", "true");
-    const snapshot = page.getByRole("button", { name: "Snapshot" });
-    await snapshot.scrollIntoViewIfNeeded();
-    await expect(snapshot).toBeVisible();
+    await expect(touchInstructions).toBeVisible();
+    await expect(page.locator("main")).toHaveCSS("user-select", "none");
+    const population = page.getByRole("slider", { name: "Population" });
+    await expect(population).toHaveAttribute("max", "1500");
+    await expect(population).toHaveValue("600");
+    await population.fill("1500");
+    await expect(population).toHaveValue("1500");
+    const download = page.getByRole("button", { name: "Download PNG" });
+    await download.scrollIntoViewIfNeeded();
+    await expect(download).toBeVisible();
   });
 });

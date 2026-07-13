@@ -483,6 +483,13 @@
 }
 
 @media (max-width: 720px) {
+  .root,
+  .root * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
   .panel,
   .panelCollapsed {
     top: auto;
@@ -500,7 +507,13 @@
     transform: translateY(0);
   }
 
-  .panelCollapsed .panelBody {
+  .panel:not(.panelOpen) .panelBody {
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .panelOpen .panelBody {
     visibility: visible;
     opacity: 1;
     pointer-events: auto;
