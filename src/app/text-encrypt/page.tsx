@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Cpu, Wifi, Settings2 } from "lucide-react";
 
+import styles from "./styles.module.css";
+
 const CopyButton = ({ text }: { text: string }) => {
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
@@ -96,7 +98,9 @@ export default function TextEncrypt() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050510] text-[#00ff9d] p-8 font-mono relative overflow-hidden">
+    <div
+      className={`${styles.root} min-h-screen bg-[#050510] text-[#00ff9d] p-8 font-mono relative overflow-hidden`}
+    >
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.05)_1px,transparent_1px)] bg-size-[50px_50px] pointer-events-none" />
 
       <div className="absolute top-0 left-0 w-full h-32 bg-[#00ff9d]/04 blur-[100px] pointer-events-none" />
@@ -453,49 +457,6 @@ export default function TextEncrypt() {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 16px;
-          height: 16px;
-          border-radius: 0;
-          cursor: pointer;
-          transition: transform 0.1s ease;
-        }
-
-        input[type="range"]::-moz-range-thumb {
-          width: 16px;
-          height: 16px;
-          border-radius: 0;
-          border: none;
-          cursor: pointer;
-          transition: transform 0.1s ease;
-        }
-
-        input[type="range"]:hover::-webkit-slider-thumb {
-          transform: scale(1.2);
-        }
-
-        .caesar-slider::-webkit-slider-thumb {
-          background-color: #ffff00;
-          border: 1px solid #ffff00;
-        }
-        .caesar-slider::-moz-range-thumb {
-          background-color: #ffff00;
-          border: 1px solid #ffff00;
-        }
-
-        .base64-slider::-webkit-slider-thumb {
-          background-color: #ff9900;
-          border: 1px solid #ff9900;
-        }
-        .base64-slider::-moz-range-thumb {
-          background-color: #ff9900;
-          border: 1px solid #ff9900;
-        }
-      `}</style>
     </div>
   );
 }

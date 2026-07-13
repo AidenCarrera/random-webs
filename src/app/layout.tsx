@@ -1,23 +1,36 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Silkscreen } from "next/font/google";
+import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { SITE_URL } from "@/lib/websites";
 
-const geistSans = Geist({
+const geistSans = localFont({
+  src: "../../public/fonts/geist-latin.woff2",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  weight: "100 900",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "../../public/fonts/geist-mono-latin.woff2",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: "100 900",
+  display: "swap",
 });
 
-const silkscreen = Silkscreen({
+const silkscreen = localFont({
+  src: [
+    {
+      path: "../../public/fonts/silkscreen-400-latin.woff2",
+      weight: "400",
+    },
+    {
+      path: "../../public/fonts/silkscreen-700-latin.woff2",
+      weight: "700",
+    },
+  ],
   variable: "--font-silkscreen",
-  subsets: ["latin"],
-  weight: ["400", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {

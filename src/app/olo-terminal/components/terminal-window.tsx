@@ -3,6 +3,7 @@ import type { TerminalController } from "../hooks/use-terminal-controller";
 import { TerminalHeader } from "./terminal-header";
 import { TerminalInput } from "./terminal-input";
 import { TerminalOutput } from "./terminal-output";
+import styles from "./terminal-window.module.css";
 
 interface TerminalWindowProps {
   terminal: TerminalController;
@@ -57,7 +58,9 @@ export function TerminalWindow({ terminal }: TerminalWindowProps) {
         }}
       >
         {isMatrixMode && (
-          <div className="absolute inset-0 pointer-events-none opacity-[0.06] z-50 bg-scanlines bg-size-[100%_4px]" />
+          <div
+            className={`${styles.scanlines} absolute inset-0 pointer-events-none opacity-[0.06] z-50 bg-size-[100%_4px]`}
+          />
         )}
 
         <TerminalHeader
@@ -90,15 +93,6 @@ export function TerminalWindow({ terminal }: TerminalWindowProps) {
           prompt={getPromptString()}
         />
       </div>
-
-      <style jsx global>{`
-        .bg-scanlines {
-          background: linear-gradient(
-            rgba(0, 0, 0, 0) 50%,
-            rgba(0, 0, 0, 0.7) 50%
-          );
-        }
-      `}</style>
     </div>
   );
 }

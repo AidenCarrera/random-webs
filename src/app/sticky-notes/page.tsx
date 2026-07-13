@@ -9,7 +9,22 @@ import {
   Settings,
   X,
 } from "lucide-react";
+import localFont from "next/font/local";
 import { useEffect, useRef, useState } from "react";
+
+const kalam = localFont({
+  src: [
+    {
+      path: "../../../public/fonts/kalam-400-latin.woff2",
+      weight: "400",
+    },
+    {
+      path: "../../../public/fonts/kalam-700-latin.woff2",
+      weight: "700",
+    },
+  ],
+  display: "swap",
+});
 
 interface Note {
   id: number;
@@ -273,13 +288,6 @@ export default function StickyNotes() {
             showIds={showIds}
           />
         ))}
-
-      <style jsx global>{`
-        @import url("https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap");
-        .font-handwriting {
-          font-family: "Kalam", cursive;
-        }
-      `}</style>
     </div>
   );
 }
@@ -383,7 +391,7 @@ function NoteItem({
       <textarea
         value={note.text}
         onChange={(e) => updateNoteText(note.id, e.target.value)}
-        className="mt-5 h-full w-full resize-none bg-transparent font-handwriting text-lg leading-relaxed text-slate-800 focus:outline-none md:mt-4 md:text-xl"
+        className={`mt-5 h-full w-full resize-none bg-transparent text-lg leading-relaxed text-slate-800 focus:outline-none md:mt-4 md:text-xl ${kalam.className}`}
         spellCheck={false}
         placeholder="Type something..."
         onPointerDown={(e) => e.stopPropagation()}

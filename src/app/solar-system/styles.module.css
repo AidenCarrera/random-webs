@@ -1,0 +1,37 @@
+@keyframes rotate-texture {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: -200% 50%;
+  }
+}
+
+.root :global(.planet-texture-spin) {
+  background-position-y: 50% !important;
+  background-size: 200% 140% !important;
+  animation: rotate-texture 16s linear infinite;
+}
+
+.root :global(.planet-texture-spin-slow) {
+  background-position-y: 50% !important;
+  background-size: 200% 140% !important;
+  animation: rotate-texture 32s linear infinite;
+}
+
+.root :global(.solar-system-scrollbar)::-webkit-scrollbar {
+  width: 6px;
+}
+
+.root :global(.solar-system-scrollbar)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.root :global(.solar-system-scrollbar)::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.root :global(.solar-system-scrollbar)::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}

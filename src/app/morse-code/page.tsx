@@ -3,14 +3,34 @@
 
 import { useState } from "react";
 import { Zap } from "lucide-react";
-import { Courier_Prime } from "next/font/google";
+import localFont from "next/font/local";
 import { useTelegraph } from "./hooks/useTelegraph";
 import { CheatSheet } from "./components/CheatSheet";
 
-const courierPrime = Courier_Prime({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  style: ["normal", "italic"],
+const courierPrime = localFont({
+  src: [
+    {
+      path: "../../../public/fonts/courier-prime-400-normal-latin.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../../public/fonts/courier-prime-400-italic-latin.woff2",
+      weight: "400",
+      style: "italic",
+    },
+    {
+      path: "../../../public/fonts/courier-prime-700-normal-latin.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../../public/fonts/courier-prime-700-italic-latin.woff2",
+      weight: "700",
+      style: "italic",
+    },
+  ],
+  display: "swap",
 });
 
 export default function MorseTelegraph() {

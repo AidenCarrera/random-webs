@@ -1,0 +1,25 @@
+@keyframes gradient-cycle {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: -300% 0%;
+  }
+}
+
+.root :global(.rolling-grid) {
+  background-position: 0 0;
+}
+
+.root :global(.liquid-gradient-btn) {
+  background: linear-gradient(
+    90deg,
+    #9333ea,
+    #ec4899,
+    #06b6d4,
+    #ec4899,
+    #9333ea
+  );
+  background-size: 300% 100%;
+  animation: gradient-cycle 10s linear infinite;
+}

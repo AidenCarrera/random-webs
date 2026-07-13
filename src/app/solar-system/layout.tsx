@@ -1,8 +1,8 @@
 import { createWebsiteMetadata } from "@/lib/websiteMetadata";
-import "./styles.css";
+import styles from "./styles.module.css";
 
 export const metadata = createWebsiteMetadata("/solar-system");
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <div className={styles.root}>{children}</div>;
 }

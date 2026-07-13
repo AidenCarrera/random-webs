@@ -3,11 +3,24 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { RefreshCw, Eye, BookOpenText } from "lucide-react";
-import { Cinzel_Decorative } from "next/font/google";
+import localFont from "next/font/local";
 
-const cinzel = Cinzel_Decorative({
-  weight: ["400", "700", "900"],
-  subsets: ["latin"],
+const cinzel = localFont({
+  src: [
+    {
+      path: "../../../public/fonts/cinzel-decorative-400-latin.woff2",
+      weight: "400",
+    },
+    {
+      path: "../../../public/fonts/cinzel-decorative-700-latin.woff2",
+      weight: "700",
+    },
+    {
+      path: "../../../public/fonts/cinzel-decorative-900-latin.woff2",
+      weight: "900",
+    },
+  ],
+  display: "swap",
 });
 
 // Detailed Tarot Data
@@ -482,19 +495,21 @@ export default function TarotSpread() {
                 {/* Card Container with Flip */}
                 <div
                   onClick={() => !slot.revealed && revealCard(index)}
-                  className={`relative w-64 h-96 cursor-pointer transform-style-3d transition-transform duration-700 ${
-                    slot.revealed ? "rotate-y-180" : "hover:scale-105"
+                  className={`relative w-64 h-96 cursor-pointer [transform-style:preserve-3d] transition-transform duration-700 ${
+                    slot.revealed
+                      ? "[transform:rotateY(180deg)]"
+                      : "hover:scale-105"
                   }`}
                 >
                   {/* Card Back */}
-                  <div className="absolute inset-0 backface-hidden w-full h-full rounded-xl border-4 border-[#ffd700]/50 bg-[#2d1b4e] flex items-center justify-center shadow-[0_0_30px_rgba(0,0,0,0.5)] bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')]">
+                  <div className="absolute inset-0 [backface-visibility:hidden] w-full h-full rounded-xl border-4 border-[#ffd700]/50 bg-[#2d1b4e] flex items-center justify-center shadow-[0_0_30px_rgba(0,0,0,0.5)] bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')]">
                     <div className="border-2 border-[#ffd700]/20 w-[90%] h-[90%] flex items-center justify-center">
                       <Eye className="w-16 h-16 text-[#ffd700]/40" />
                     </div>
                   </div>
 
                   {/* Card Front */}
-                  <div className="absolute inset-0 backface-hidden w-full h-full rounded-xl border-4 border-[#ffd700] bg-[#150a26] flex flex-col items-center justify-between p-6 shadow-[0_0_50px_rgba(255,215,0,0.2)] rotate-y-180 bg-linear-to-b from-[#150a26] to-[#2d1b4e]">
+                  <div className="absolute inset-0 [backface-visibility:hidden] w-full h-full rounded-xl border-4 border-[#ffd700] bg-[#150a26] flex flex-col items-center justify-between p-6 shadow-[0_0_50px_rgba(255,215,0,0.2)] [transform:rotateY(180deg)] bg-linear-to-b from-[#150a26] to-[#2d1b4e]">
                     <div className="text-center w-full">
                       <span className="text-xl opacity-50 block mb-1">✦</span>
                       <h3 className="text-2xl font-bold text-[#ffd700] leading-tight mb-2">
@@ -627,19 +642,6 @@ export default function TarotSpread() {
 
       {/* Bottom spacer to lift layout vertically on desktop */}
       <div className="hidden md:block h-16 md:h-20 shrink-0" />
-
-      {/* Global Style for 3D Transform Class utilities since Tailwind sometimes strips transform-style-3d */}
-      <style jsx global>{`
-        .transform-style-3d {
-          transform-style: preserve-3d;
-        }
-        .backface-hidden {
-          backface-visibility: hidden;
-        }
-        .rotate-y-180 {
-          transform: rotateY(180deg);
-        }
-      `}</style>
     </div>
   );
 }

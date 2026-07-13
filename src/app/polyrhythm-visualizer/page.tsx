@@ -24,6 +24,8 @@ import {
   VolumeX,
 } from "lucide-react";
 
+import styles from "./styles.module.css";
+
 type ViewMode = "circle" | "timeline" | "bloom" | "orbit3d";
 type PulseKey = `${number}-${number}`;
 type Rhythm = {
@@ -510,7 +512,7 @@ export default function PolyrhythmVisualizer() {
                     setBpm(nextBpm);
                     setBpmInput(String(nextBpm));
                   }}
-                  className="poly-slider w-full"
+                  className={`${styles.slider} w-full`}
                   aria-label="BPM"
                 />
                 <div className="flex h-11 w-24 items-center rounded-xl border border-[#faf9f6]/12 bg-[#0e0d13]/55 px-2">
@@ -599,29 +601,6 @@ export default function PolyrhythmVisualizer() {
           </section>
         </section>
       </main>
-
-      <style jsx>{`
-        .poly-slider {
-          appearance: none;
-          height: 6px;
-          border-radius: 999px;
-          background: rgba(250, 249, 246, 0.24);
-          outline: none;
-        }
-        .poly-slider::-webkit-slider-thumb,
-        .poly-slider::-moz-range-thumb {
-          width: 18px;
-          height: 18px;
-          border: 2px solid rgba(23, 19, 26, 0.9);
-          border-radius: 999px;
-          background: #faf9f6;
-          box-shadow: 0 0 18px rgba(250, 249, 246, 0.38);
-          cursor: pointer;
-        }
-        .poly-slider::-webkit-slider-thumb {
-          appearance: none;
-        }
-      `}</style>
     </div>
   );
 }

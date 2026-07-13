@@ -5,6 +5,8 @@ import { Download, Upload } from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { canvasToBlob, downloadCanvasPng } from "@/lib/canvasExport";
 
+import styles from "./styles.module.css";
+
 /**
  * ASCII Density strings from dark to light
  */
@@ -181,7 +183,7 @@ export default function AsciiCamera() {
 
   return (
     <div
-      className="ascii-shell min-h-screen bg-black font-mono flex flex-col items-center justify-center px-2 py-2 overflow-hidden select-none sm:p-4"
+      className={`${styles.root} ascii-shell min-h-screen bg-black font-mono flex flex-col items-center justify-center px-2 py-2 overflow-hidden select-none sm:p-4`}
       style={
         {
           "--theme-color": color,
@@ -399,218 +401,6 @@ export default function AsciiCamera() {
           title="ASCII snapshot"
         />
       ) : null}
-
-      <style jsx>{`
-        input[type="range"] {
-          color: ${color};
-        }
-
-        .ascii-shell {
-          --ascii-font-size: calc(
-            min(
-                (100vw - 16px) / var(--ascii-columns),
-                1180px / var(--ascii-columns),
-                ((100dvh - 168px) * var(--ascii-aspect-ratio)) /
-                  var(--ascii-columns),
-                (100dvh - 168px) / var(--ascii-rows)
-              ) *
-              var(--ascii-scale)
-          );
-        }
-
-        .ascii-header,
-        .ascii-controls,
-        .ascii-frame,
-        .ascii-overlay,
-        .ascii-output,
-        .ascii-actions,
-        .ascii-swatch-group,
-        .ascii-swatch,
-        .ascii-file-actions,
-        .ascii-slider-group,
-        .ascii-icon-button {
-          transition-duration: 0.5s;
-        }
-
-        .ascii-output pre {
-          font-size: var(--ascii-font-size);
-        }
-
-        .ascii-slider {
-          background: color-mix(in srgb, ${color} 30%, #111 70%);
-          accent-color: ${color};
-          transition:
-            background 0.5s ease,
-            accent-color 0.5s ease;
-        }
-
-        .ascii-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 18px;
-          height: 18px;
-          border-radius: 0;
-          background: ${color};
-          border: 2px solid #000;
-          transition:
-            background 0.5s ease,
-            transform 0.2s ease;
-        }
-
-        .ascii-slider::-moz-range-thumb {
-          width: 18px;
-          height: 18px;
-          border-radius: 0;
-          background: ${color};
-          border: 2px solid #000;
-          transition:
-            background 0.5s ease,
-            transform 0.2s ease;
-        }
-
-        .ascii-slider::-moz-range-track {
-          background: color-mix(in srgb, ${color} 30%, #111 70%);
-          height: 8px;
-          border-radius: 9999px;
-          transition: background 0.5s ease;
-        }
-
-        @media (orientation: portrait) and (max-width: 639px) {
-          .ascii-shell {
-            padding-top: 0.75rem;
-            padding-bottom: 0.75rem;
-          }
-
-          .ascii-frame {
-            border-radius: 1.75rem;
-            padding: 0.75rem;
-          }
-
-          .ascii-overlay {
-            border-radius: 1.5rem;
-          }
-
-          .ascii-header {
-            margin-bottom: 0.75rem;
-            padding-bottom: 0.75rem;
-          }
-
-          .ascii-output {
-            min-height: 72dvh;
-            border-radius: 1rem;
-            padding: 0.5rem;
-          }
-
-          .ascii-controls {
-            margin-top: 1rem;
-            gap: 1rem;
-          }
-        }
-
-        @media (orientation: landscape) and (max-width: 639px) {
-          .ascii-shell {
-            padding-top: 0.35rem;
-            padding-bottom: 0.35rem;
-          }
-
-          .ascii-frame {
-            border-radius: 1rem;
-            padding: 0.45rem;
-          }
-
-          .ascii-overlay {
-            border-radius: 0.85rem;
-          }
-
-          .ascii-header {
-            margin-bottom: 0.45rem;
-            padding-bottom: 0.45rem;
-          }
-
-          .ascii-output {
-            min-height: calc(100dvh - 7.8rem);
-            border-radius: 0.8rem;
-            padding: 0.2rem;
-          }
-
-          .ascii-controls {
-            margin-top: 0.5rem;
-            gap: 0.4rem;
-            grid-template-columns: minmax(4.5rem, 1fr) minmax(4.5rem, 1fr) auto;
-            align-items: end;
-          }
-
-          .ascii-slider-group {
-            min-width: 0;
-          }
-
-          .ascii-slider-group label {
-            font-size: 0.6rem;
-            line-height: 1;
-          }
-
-          .ascii-actions {
-            gap: 0.35rem;
-            justify-content: flex-end;
-            min-width: 0;
-            flex-wrap: nowrap;
-          }
-
-          .ascii-swatch-group {
-            gap: 0.35rem;
-            min-width: 0;
-            flex-wrap: nowrap;
-          }
-
-          .ascii-file-actions {
-            gap: 0.35rem;
-            flex: 0 0 auto;
-          }
-
-          .ascii-swatch {
-            width: 1.65rem;
-            height: 1.65rem;
-            min-width: 1.65rem;
-            min-height: 1.65rem;
-          }
-
-          .ascii-icon-button {
-            width: 2rem;
-            height: 2rem;
-            min-width: 2rem;
-            min-height: 2rem;
-          }
-
-          .ascii-icon-button :global(svg) {
-            width: 1rem;
-            height: 1rem;
-          }
-
-          .ascii-swatch-group > button,
-          .ascii-swatch-group > div,
-          .ascii-file-actions > label,
-          .ascii-file-actions > button {
-            flex: 0 0 auto;
-          }
-
-          .ascii-slider-group .ascii-slider {
-            min-width: 0;
-          }
-
-          .ascii-shell {
-            --ascii-font-size: calc(
-              min(
-                  (100vw - 6px) / var(--ascii-columns),
-                  1180px / var(--ascii-columns),
-                  ((100dvh - 108px) * var(--ascii-aspect-ratio)) /
-                    var(--ascii-columns),
-                  (100dvh - 108px) / var(--ascii-rows)
-                ) *
-                calc(var(--ascii-scale) + 0.1)
-            );
-          }
-        }
-      `}</style>
     </div>
   );
 }

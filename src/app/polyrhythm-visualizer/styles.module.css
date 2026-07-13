@@ -1,0 +1,22 @@
+.slider {
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(250, 249, 246, 0.24);
+  outline: none;
+}
+
+.slider::-webkit-slider-thumb,
+.slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(23, 19, 26, 0.9);
+  border-radius: 999px;
+  background: #faf9f6;
+  box-shadow: 0 0 18px rgba(250, 249, 246, 0.38);
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+}

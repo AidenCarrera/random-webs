@@ -3,6 +3,8 @@
 import { useRef, useEffect, useState } from "react";
 import { MousePointer2, Circle } from "lucide-react";
 
+import styles from "./styles.module.css";
+
 interface Particle {
   x: number;
   y: number;
@@ -154,49 +156,9 @@ export default function ParticleCollider() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0a0a14] cursor-crosshair select-none touch-none">
-      <style>{`
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          height: 16px;
-          width: 16px;
-          border-radius: 50%;
-          background: #ffffff;
-          box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
-          cursor: pointer;
-          transition: all 0.1s ease;
-          margin-top: -6px;
-        }
-
-        input[type="range"]::-webkit-slider-thumb:hover {
-          transform: scale(1.2);
-          box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
-        }
-
-        input[type="range"]::-webkit-slider-runnable-track {
-          width: 100%;
-          height: 4px;
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 2px;
-        }
-
-        input[type="range"]::-moz-range-thumb {
-          border: none;
-          height: 16px;
-          width: 16px;
-          border-radius: 50%;
-          background: #ffffff;
-          box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
-          cursor: pointer;
-          transition: all 0.1s ease;
-        }
-
-        input[type="range"]::-moz-range-thumb:hover {
-          transform: scale(1.2);
-          box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
-        }
-      `}</style>
-
+    <div
+      className={`${styles.root} relative min-h-screen overflow-hidden bg-[#0a0a14] cursor-crosshair select-none touch-none`}
+    >
       <canvas
         ref={canvasRef}
         className="absolute inset-0 touch-none select-none"

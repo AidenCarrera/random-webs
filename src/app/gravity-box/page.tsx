@@ -1,8 +1,9 @@
 "use client";
 
-import "./styles.css";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Matter from "matter-js";
+
+import styles from "./styles.module.css";
 
 const MIN_BOX_WIDTH = 220;
 const MIN_BOX_HEIGHT = 220;
@@ -455,7 +456,7 @@ export default function GravityBox() {
   return (
     <div
       ref={sceneRef}
-      className="fixed inset-0 overflow-hidden bg-[#0f172a] text-white"
+      className={`${styles.root} fixed inset-0 overflow-hidden bg-[#0f172a] text-white`}
       style={{ backgroundColor: "#0f172a" }}
     >
       <div className="absolute bottom-8 left-8 pointer-events-none select-none opacity-20 hover:opacity-90 transition-opacity duration-300">

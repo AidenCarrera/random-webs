@@ -1,0 +1,13 @@
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 0.96;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.root {
+  animation: flicker 0.15s infinite;
+}

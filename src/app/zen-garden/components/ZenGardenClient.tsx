@@ -1,7 +1,7 @@
 "use client";
 
-import "../styles.css";
 import { useZenGarden } from "../hooks/useZenGarden";
+import styles from "../styles.module.css";
 import { GardenCanvas } from "./GardenCanvas";
 import { GardenExportPreview } from "./GardenExportPreview";
 import { GardenTitle } from "./GardenTitle";
@@ -16,7 +16,7 @@ export function ZenGardenClient() {
 
   return (
     <div
-      className={`min-h-screen ${garden.activeTheme.textColor} select-none relative overflow-hidden transition-colors duration-1000 font-sans`}
+      className={`${styles.root} min-h-screen ${garden.activeTheme.textColor} select-none relative overflow-hidden transition-colors duration-1000 font-sans`}
       style={{ touchAction: "none", backgroundColor: garden.backgroundColor }}
     >
       <GardenCanvas {...garden} />

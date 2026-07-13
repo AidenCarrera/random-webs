@@ -19,6 +19,8 @@ import {
   XShareButton,
 } from "react-share";
 
+import styles from "./ExportPreviewModal.module.css";
+
 type ExportPreviewModalProps = {
   description?: string;
   fileName: string;
@@ -49,8 +51,12 @@ export function ExportPreviewModal({
   const [copyLinkLabel, setCopyLinkLabel] = useState("Copy Link");
 
   return (
-    <div className="export-preview-modal fixed inset-0 z-100 flex items-end justify-center bg-black/82 px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6">
-      <div className="export-preview-card flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-4xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] text-white shadow-[0_32px_120px_rgba(0,0,0,0.6)] ring-1 ring-black/30 sm:max-h-208 sm:rounded-3xl">
+    <div
+      className={`${styles.modal} fixed inset-0 z-100 flex items-end justify-center bg-black/82 px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6`}
+    >
+      <div
+        className={`${styles.card} flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-4xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] text-white shadow-[0_32px_120px_rgba(0,0,0,0.6)] ring-1 ring-black/30 sm:max-h-208 sm:rounded-3xl`}
+      >
         <div className="flex items-start justify-between gap-3 border-b border-white/10 bg-white/3 px-4 pb-3 pt-4 sm:px-5">
           <div>
             <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-white/40">
@@ -73,12 +79,16 @@ export function ExportPreviewModal({
           </button>
         </div>
 
-        <div className="export-preview-body min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
-          <div className="export-preview-image-shell rounded-[1.6rem] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),rgba(255,255,255,0.02)_45%,rgba(0,0,0,0.24)_100%)] p-2 shadow-inner shadow-black/30 sm:p-3">
+        <div
+          className={`${styles.body} min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-4 sm:px-5 sm:pb-5`}
+        >
+          <div
+            className={`${styles.imageShell} rounded-[1.6rem] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),rgba(255,255,255,0.02)_45%,rgba(0,0,0,0.24)_100%)] p-2 shadow-inner shadow-black/30 sm:p-3`}
+          >
             <img
               src={imageSrc}
               alt={imageAlt}
-              className={`export-preview-image mx-auto block rounded-[1.15rem] border border-white/8 bg-black object-contain ${
+              className={`${styles.image} mx-auto block rounded-[1.15rem] border border-white/8 bg-black object-contain ${
                 pixelatedPreview
                   ? "h-auto max-h-[38vh] w-auto max-w-full sm:max-h-[52vh]"
                   : "max-h-[38vh] w-full sm:max-h-[52vh]"
@@ -89,7 +99,7 @@ export function ExportPreviewModal({
             />
           </div>
 
-          <div className="export-preview-sidebar">
+          <div className={styles.sidebar}>
             <div className="mt-4">
               {isTouchDevice ? (
                 <button
@@ -204,89 +214,6 @@ export function ExportPreviewModal({
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @media (orientation: landscape) and (max-height: 560px) {
-          .export-preview-modal {
-            position: fixed !important;
-            z-index: 100 !important;
-            align-items: center;
-            padding: 0.25rem;
-          }
-
-          .export-preview-card {
-            width: min(100vw - 0.5rem, 58rem);
-            max-width: min(100vw - 0.5rem, 58rem);
-            max-height: calc(100dvh - 0.5rem);
-            border-radius: 1.1rem;
-          }
-
-          .export-preview-body {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) clamp(10.5rem, 30vw, 13rem);
-            gap: 0.65rem;
-            align-items: start;
-            padding: 0.65rem;
-          }
-
-          .export-preview-sidebar {
-            min-width: 0;
-          }
-
-          .export-preview-sidebar > :global(div:first-child) {
-            margin-top: 0;
-          }
-
-          .export-preview-image-shell {
-            min-height: 0;
-            min-width: 0;
-            padding: 0.35rem;
-          }
-
-          .export-preview-image {
-            max-width: 100%;
-            max-height: calc(100dvh - 6.5rem) !important;
-            width: 100%;
-          }
-
-          .export-preview-card > :global(div:first-child) {
-            padding: 0.8rem 0.9rem 0.65rem;
-          }
-
-          .export-preview-card > :global(div:first-child h2) {
-            font-size: 1rem;
-          }
-
-          .export-preview-card > :global(div:first-child p:last-child) {
-            font-size: 0.76rem;
-            line-height: 1.35;
-          }
-
-          .export-preview-sidebar > :global(div:first-child) {
-            margin-top: 0;
-          }
-
-          .export-preview-sidebar > :global(div:last-child) {
-            margin-top: 0.65rem;
-          }
-
-          .export-preview-sidebar > :global(div:last-child > div:last-child) {
-            gap: 0.4rem;
-            padding: 0.5rem;
-          }
-
-          .export-preview-sidebar
-            > :global(div:last-child > div:last-child > * > span) {
-            font-size: 0.6rem;
-          }
-
-          .export-preview-sidebar
-            > :global(div:last-child > div:last-child > * :global(svg)) {
-            width: 2rem;
-            height: 2rem;
-          }
-        }
-      `}</style>
     </div>
   );
 }

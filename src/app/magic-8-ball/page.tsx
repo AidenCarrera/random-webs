@@ -1,8 +1,9 @@
 "use client";
 
-import "./styles.css";
 import { useState, useRef } from "react";
 import { RefreshCw } from "lucide-react";
+
+import styles from "./styles.module.css";
 
 const ANSWERS = [
   // Affirmative
@@ -72,7 +73,7 @@ export default function MagicEightBall() {
 
   return (
     <div
-      className="min-h-screen bg-[#07070a] text-[#b4b4b8] flex flex-col items-center justify-center p-4 relative overflow-hidden font-serif select-none"
+      className={`${styles.root} min-h-screen bg-[#07070a] text-[#b4b4b8] flex flex-col items-center justify-center p-4 relative overflow-hidden font-serif select-none`}
       style={{
         backgroundImage:
           "radial-gradient(circle at center, #111116 0%, #030305 100%)",

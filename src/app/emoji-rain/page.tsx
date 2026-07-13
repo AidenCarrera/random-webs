@@ -9,6 +9,8 @@ import {
   type RefObject,
 } from "react";
 
+import styles from "./styles.module.css";
+
 const EMOJIS = {
   rain: ["💧", "🌧️", "☔", "⛈️", "🌊", "💦"],
   money: ["💸", "💰", "💵", "💎", "🪙", "📈", "🏦"],
@@ -650,7 +652,7 @@ export default function EmojiRain() {
 
   return (
     <main
-      className="relative min-h-screen overflow-hidden transition-colors duration-1000"
+      className={`${styles.root} relative min-h-screen overflow-hidden transition-colors duration-1000`}
       style={{
         backgroundColor: isRainbow
           ? "#09050d"
@@ -659,27 +661,6 @@ export default function EmojiRain() {
             : "#f5f5f7",
       }}
     >
-      <style>{`
-        @keyframes rainbow-flow {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        .animate-rainbow {
-          background: linear-gradient(-45deg, #ff3366, #ff9933, #ffff33, #33cc66, #3399ff, #9933ff, #ff3366);
-          background-size: 400% 400%;
-          animation: rainbow-flow 8s ease infinite;
-        }
-        @keyframes button-glow {
-          0%, 100% { box-shadow: 0 0 12px rgba(255,51,102,.7), 0 0 20px rgba(255,51,102,.4); }
-          17% { box-shadow: 0 0 12px rgba(255,153,51,.7), 0 0 20px rgba(255,153,51,.4); }
-          33% { box-shadow: 0 0 12px rgba(255,255,51,.5), 0 0 20px rgba(255,255,51,.3); }
-          50% { box-shadow: 0 0 12px rgba(51,204,102,.7), 0 0 20px rgba(51,204,102,.4); }
-          67% { box-shadow: 0 0 12px rgba(51,153,255,.7), 0 0 20px rgba(51,153,255,.4); }
-          83% { box-shadow: 0 0 12px rgba(153,51,255,.7), 0 0 20px rgba(153,51,255,.4); }
-        }
-        .animate-button-glow { animation: button-glow 4s linear infinite; }
-      `}</style>
-
       <div
         className={`pointer-events-none absolute inset-0 z-0 transition-all duration-300 ${
           isRainbow ? "animate-rainbow" : ""

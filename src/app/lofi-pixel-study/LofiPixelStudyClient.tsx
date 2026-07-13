@@ -28,6 +28,8 @@ import {
   Bell,
 } from "lucide-react";
 
+import styles from "./styles.module.css";
+
 // Data structures
 const BACKGROUNDS = [
   {
@@ -556,7 +558,9 @@ export default function LofiPixelStudyClient({
   };
 
   return (
-    <div className="relative h-[100dvh] w-screen overflow-hidden bg-black text-zinc-100 select-none font-pixel text-base md:text-lg">
+    <div
+      className={`${styles.root} relative h-[100dvh] w-screen overflow-hidden bg-black text-zinc-100 select-none font-pixel text-base md:text-lg`}
+    >
       {/* HTML5 Audio Node */}
       {currentTrack.path && (
         <audio ref={audioRef} src={currentTrack.path} loop={isLooping} />
@@ -566,156 +570,6 @@ export default function LofiPixelStudyClient({
       )}
 
       {/* Retro scanline & subpixel animation styling */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-        
-        .font-pixel {
-          font-family: 'VT323', monospace;
-        }
-        
-        @keyframes crt-roll {
-          0% {
-            background-position: 0 0, 0 0, 0 0;
-          }
-          100% {
-            background-position: 0 400px, 0 0, 0 800px;
-          }
-        }
-        
-        .crt-overlay {
-          background-image: 
-            linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.22) 50%),
-            linear-gradient(90deg, rgba(255,0,0,0.035), rgba(0,255,0,0.015), rgba(0,0,255,0.035)),
-            linear-gradient(to bottom, rgba(18,16,16,0) 0%, rgba(18,16,16,0.12) 50%, rgba(18,16,16,0) 100%);
-          background-size: 100% 4px, 6px 100%, 100% 800px;
-          animation: crt-roll 22s linear infinite;
-        }
-
-        .pixel-box {
-          background-color: #0d0714;
-          border: 3px solid #3b2063;
-          box-shadow: 4px 4px 0px #000;
-        }
-
-        .pixel-btn {
-          background-color: #1e122b;
-          border: 2px solid #5a3291;
-          color: #d1c4e9;
-          box-shadow: 3px 3px 0px #000;
-          transition: all 0.05s steps(2);
-        }
-
-        .pixel-btn:hover {
-          background-color: #2e1c42;
-          border-color: #7b4cc4;
-          color: #fff;
-        }
-
-        .pixel-btn:active {
-          transform: translate(2px, 2px);
-          box-shadow: 1px 1px 0px #000;
-        }
-
-        .pixel-btn-active {
-          background-color: #6a1b9a;
-          border-color: #ab47bc;
-          color: #fff;
-          box-shadow: inset 2px 2px 0px #000;
-          transform: translate(1px, 1px);
-        }
-
-        .pixel-thumb::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 8px !important;
-          height: 14px !important;
-          background: #d1c4e9 !important;
-          border: 2px solid #5a3291 !important;
-          border-radius: 0px !important;
-          box-shadow: 1px 1px 0px #000 !important;
-        }
-
-        .pixel-thumb::-moz-range-thumb {
-          width: 8px !important;
-          height: 14px !important;
-          background: #d1c4e9 !important;
-          border: 2px solid #5a3291 !important;
-          border-radius: 0px !important;
-          box-shadow: 1px 1px 0px #000 !important;
-        }
-
-        @media (orientation: landscape) and (max-width: 1024px) and (max-height: 600px) {
-          .lofi-study-timer {
-            top: max(0.5rem, env(safe-area-inset-top));
-            left: max(0.5rem, env(safe-area-inset-left));
-            transform: scale(0.78);
-            transform-origin: top left;
-          }
-
-          .lofi-bottom-controls {
-            right: max(0.5rem, env(safe-area-inset-right));
-            bottom: max(0.5rem, env(safe-area-inset-bottom));
-            left: max(0.5rem, env(safe-area-inset-left));
-            gap: 0.375rem;
-          }
-
-          .lofi-player-dock {
-            padding: 0.375rem 0.625rem;
-            gap: 0.5rem;
-          }
-
-          .lofi-player-row {
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
-          }
-
-          .lofi-track-info {
-            width: auto;
-            max-width: 10rem;
-            flex: 1 1 7rem;
-          }
-
-          .lofi-track-icon {
-            padding: 0.375rem;
-            border-radius: 0;
-          }
-
-          .lofi-audio-controls {
-            flex: 0 0 auto;
-            gap: 0.5rem;
-          }
-
-          .lofi-secondary-controls {
-            display: flex;
-            width: auto;
-            flex: 0 0 auto;
-            flex-wrap: nowrap;
-            justify-content: flex-end;
-            gap: 0.5rem;
-          }
-
-          .lofi-volume-slider {
-            width: 4rem;
-          }
-
-          .lofi-background-label {
-            display: none;
-          }
-
-          .lofi-progress-bar {
-            padding-top: 0.125rem;
-            padding-bottom: 0.125rem;
-          }
-
-          .lofi-floating-panel {
-            bottom: calc(max(0.5rem, env(safe-area-inset-bottom)) + 5.5rem);
-            max-height: calc(100dvh - 6.5rem);
-            overflow-y: auto;
-          }
-        }
-      `}</style>
 
       {/* Background Container */}
       <div className="absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center bg-zinc-950 z-0">

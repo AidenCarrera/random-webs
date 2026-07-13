@@ -1,4 +1,4 @@
-.pixel-font {
+.root :global(.pixel-font) {
   font-family: var(--font-silkscreen), var(--font-geist-mono), monospace;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -8,15 +8,15 @@
   -moz-osx-font-smoothing: auto;
 }
 
-.pixel-panel {
+.root :global(.pixel-panel) {
   border: 4px solid #1d2b53;
   box-shadow: 8px 8px 0 #1d2b53;
 }
 
-.pixel-label {
+.root :global(.pixel-label) {
   font-family: var(--font-geist-mono), "Courier New", monospace;
-  font-weight: 700;
   font-size: 10px;
+  font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   text-rendering: geometricPrecision;
@@ -24,63 +24,63 @@
   -moz-osx-font-smoothing: auto;
 }
 
-.pixel-chip {
+.root :global(.pixel-chip) {
+  padding: 0.65rem 0.85rem;
   border: 3px solid #1d2b53;
   background: #c2c3c7;
-  padding: 0.65rem 0.85rem;
+  color: #1d2b53;
+  box-shadow: 4px 4px 0 #1d2b53;
   font-family: var(--font-geist-mono), "Courier New", monospace;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #1d2b53;
-  box-shadow: 4px 4px 0 #1d2b53;
   transition:
     transform 120ms ease,
     box-shadow 120ms ease,
     background 120ms ease;
 }
 
-.pixel-chip:hover {
+.root :global(.pixel-chip):hover {
   transform: translate(1px, 1px);
   box-shadow: 3px 3px 0 #1d2b53;
 }
 
-.pixel-chip-active {
+.root :global(.pixel-chip-active) {
   background: #29adff;
   color: #fff7dd;
 }
 
-.pixel-action {
+.root :global(.pixel-action) {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
+  padding: 0.9rem 0.75rem;
   border: 3px solid #1d2b53;
   background: #c2c3c7;
-  padding: 0.9rem 0.75rem;
+  box-shadow: 4px 4px 0 #1d2b53;
   font-family: var(--font-geist-mono), "Courier New", monospace;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.08em;
-  box-shadow: 4px 4px 0 #1d2b53;
   transition:
     transform 120ms ease,
     box-shadow 120ms ease,
     filter 120ms ease;
 }
 
-.pixel-action:hover:not(:disabled) {
+.root :global(.pixel-action):hover:not(:disabled) {
   transform: translate(1px, 1px);
   box-shadow: 3px 3px 0 #1d2b53;
   filter: brightness(1.03);
 }
 
-.pixel-action:disabled {
+.root :global(.pixel-action):disabled {
   cursor: wait;
   opacity: 0.7;
 }
 
-.pixel-action-active {
+.root :global(.pixel-action-active) {
   background: #29adff;
   color: #fff7dd;
 }

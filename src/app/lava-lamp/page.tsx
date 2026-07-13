@@ -12,6 +12,8 @@ import {
 } from "react";
 import { Maximize2, Minimize2, Pause, Play, RefreshCw } from "lucide-react";
 
+import styles from "./styles.module.css";
+
 type PresetId = "ember" | "lagoon" | "orchid" | "honey";
 
 type Preset = {
@@ -999,7 +1001,7 @@ export default function LavaLampPage() {
 
   return (
     <main
-      className={`flex h-svh min-h-svh flex-col overflow-hidden p-6 sm:p-8 md:p-12 pb-3 max-[700px]:p-0 lava-page ${isFullscreen ? "is-fullscreen" : ""}`}
+      className={`${styles.root} flex h-svh min-h-svh flex-col overflow-hidden p-6 sm:p-8 md:p-12 pb-3 max-[700px]:p-0 lava-page ${isFullscreen ? "is-fullscreen" : ""}`}
       style={pageStyle}
     >
       <section
@@ -1104,122 +1106,6 @@ export default function LavaLampPage() {
           </div>
         </div>
       </section>
-
-      <style jsx>{`
-        :global(*) {
-          box-sizing: border-box;
-        }
-
-        :global(html) {
-          background: var(--bg-b);
-        }
-
-        :global(body) {
-          margin: 0;
-          background: var(--bg-b);
-        }
-
-        :global(button) {
-          font: inherit;
-        }
-
-        .sr-only {
-          position: absolute;
-          width: 1px;
-          height: 1px;
-          padding: 0;
-          margin: -1px;
-          overflow: hidden;
-          clip: rect(0, 0, 0, 0);
-          white-space: nowrap;
-          border: 0;
-        }
-
-        .lava-page {
-          color: rgba(255, 255, 255, 0.92);
-          transition: background 450ms ease;
-        }
-
-        .lamp-stage.cursor-grab {
-          cursor: grab;
-        }
-
-        .lamp-stage.cursor-grabbing {
-          cursor: grabbing;
-        }
-
-        canvas {
-          display: block;
-          width: 100%;
-          height: 100%;
-          border: 0;
-          outline: 0;
-          background: transparent;
-          pointer-events: none;
-          -webkit-user-drag: none;
-        }
-
-        .preset-list {
-          scrollbar-width: none;
-        }
-
-        .preset-list::-webkit-scrollbar {
-          display: none;
-        }
-
-        .color-picker input::-webkit-color-swatch-wrapper {
-          padding: 0;
-        }
-
-        .color-picker input::-webkit-color-swatch {
-          border: 2px solid rgba(255, 255, 255, 0.8);
-          border-radius: 50%;
-        }
-
-        .is-fullscreen {
-          position: fixed;
-          z-index: 9999;
-          inset: 0;
-          width: 100%;
-          min-height: 100svh;
-          padding: 0;
-        }
-
-        .is-fullscreen .page-header {
-          display: none;
-        }
-
-        .is-fullscreen .lamp-stage {
-          width: 100%;
-          height: 100svh;
-          min-height: 0;
-          border: 0;
-          border-radius: 0;
-          box-shadow: none;
-        }
-
-        @media (max-width: 900px) and (orientation: landscape) {
-          .controls {
-            bottom: 6px !important;
-          }
-        }
-
-        .lamp-stage:fullscreen {
-          width: 100vw;
-          height: 100vh;
-          min-height: 0;
-          border: 0;
-          border-radius: 0;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .preset-list button,
-          .icon-button,
-          .lava-page {
-            transition: none;
-          }
-        }
-      `}</style>
     </main>
   );
 }

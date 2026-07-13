@@ -1,9 +1,10 @@
 "use client";
 
-import "./styles.css";
 import { useState, useRef } from "react";
 import confetti from "canvas-confetti";
 import { Sparkles } from "lucide-react";
+
+import styles from "./styles.module.css";
 
 export default function PartyMode() {
   const [isPartying, setIsPartying] = useState(false);
@@ -60,7 +61,7 @@ export default function PartyMode() {
 
   return (
     <div
-      className={`min-h-screen bg-linear-to-t from-yellow-300 to-orange-400 flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ${
+      className={`${styles.root} min-h-screen bg-linear-to-t from-yellow-300 to-orange-400 flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ${
         isPartying ? "animate-party-bg" : ""
       }`}
     >

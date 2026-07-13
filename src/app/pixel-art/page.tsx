@@ -1,6 +1,5 @@
 "use client";
 
-import "./styles.css";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Download,
@@ -15,6 +14,8 @@ import {
 } from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { canvasToBlob, downloadCanvasPng } from "@/lib/canvasExport";
+
+import styles from "./styles.module.css";
 
 const DEFAULT_SIZE = 32;
 const MOBILE_DEFAULT_SIZE = 16;
@@ -545,7 +546,9 @@ export default function PixelArt() {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#c2c3c7] px-3 py-3 text-[#1d2b53] sm:px-4 sm:py-8 lg:flex lg:items-center lg:justify-center">
+    <div
+      className={`${styles.root} min-h-screen overflow-x-hidden bg-[#c2c3c7] px-3 py-3 text-[#1d2b53] sm:px-4 sm:py-8 lg:flex lg:items-center lg:justify-center`}
+    >
       <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-3 sm:gap-4 lg:my-auto">
         <header className="pixel-panel bg-white p-3 sm:p-5">
           <div className="flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-end lg:justify-between">

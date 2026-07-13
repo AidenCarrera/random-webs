@@ -11,6 +11,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+import styles from "./styles.module.css";
+
 type WindowWithWebkitAudio = Window &
   typeof globalThis & {
     webkitAudioContext?: typeof AudioContext;
@@ -393,7 +395,9 @@ export default function TypeRacer() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0d071c] text-white flex flex-col justify-center overflow-hidden relative select-none font-mono">
+    <div
+      className={`${styles.root} min-h-screen bg-[#0d071c] text-white flex flex-col justify-center overflow-hidden relative select-none font-mono`}
+    >
       {/* Cosmic grid lines backdrop */}
       <div className="absolute inset-0 bg-size-[50px_50px] bg-[linear-gradient(rgba(139,92,246,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.06)_1px,transparent_1px)] z-0 pointer-events-none" />
 
@@ -783,39 +787,6 @@ export default function TypeRacer() {
       </div>
 
       {/* Global CSS keyframes for floor scroll */}
-      <style jsx global>{`
-        @keyframes gridScroll {
-          from {
-            background-position: 0 0;
-          }
-          to {
-            background-position: 0 40px;
-          }
-        }
-        @keyframes gradientCycle {
-          from {
-            background-position: 0% 0%;
-          }
-          to {
-            background-position: -300% 0%;
-          }
-        }
-        .rolling-grid {
-          background-position: 0 0;
-        }
-        .liquid-gradient-btn {
-          background: linear-gradient(
-            90deg,
-            #9333ea,
-            #ec4899,
-            #06b6d4,
-            #ec4899,
-            #9333ea
-          );
-          background-size: 300% 100%;
-          animation: gradientCycle 10s linear infinite;
-        }
-      `}</style>
     </div>
   );
 }

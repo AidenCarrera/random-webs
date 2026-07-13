@@ -1,6 +1,5 @@
 "use client";
 
-import "./styles.css";
 import {
   useCallback,
   useEffect,
@@ -21,6 +20,8 @@ import {
 } from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { canvasToBlob, downloadCanvasPng } from "@/lib/canvasExport";
+
+import styles from "./styles.module.css";
 
 function subscribeToViewport(onStoreChange: () => void) {
   window.addEventListener("resize", onStoreChange);
@@ -331,7 +332,9 @@ export default function MandalaMaker() {
   };
 
   return (
-    <div className="mandala-page relative flex h-dvh w-full items-center justify-center overflow-hidden bg-neutral-950 font-sans">
+    <div
+      className={`${styles.root} mandala-page relative flex h-dvh w-full items-center justify-center overflow-hidden bg-neutral-950 font-sans`}
+    >
       <canvas
         ref={canvasRef}
         onPointerDown={startDrawing}

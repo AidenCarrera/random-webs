@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import * as Tone from "tone";
 import { Music, Activity } from "lucide-react";
 
+import styles from "./styles.module.css";
+
 const SCALES = {
   Major: [
     "C4",
@@ -271,7 +273,7 @@ export default function PadSynth() {
 
   return (
     <div
-      className={`min-h-screen bg-[#e0e5ec] text-slate-600 font-sans flex items-center justify-center p-3 sm:p-6 select-none transition-opacity duration-150 ${
+      className={`${styles.root} min-h-screen bg-[#e0e5ec] text-slate-600 font-sans flex items-center justify-center p-3 sm:p-6 select-none transition-opacity duration-150 ${
         stylesReady ? "opacity-100" : "opacity-0"
       }`}
     >
@@ -479,77 +481,6 @@ export default function PadSynth() {
           })}
         </div>
       </div>
-
-      <style jsx>{`
-        input[type="range"] {
-          -webkit-appearance: none;
-          appearance: none;
-          background: transparent;
-        }
-
-        input[type="range"]:focus {
-          outline: none;
-        }
-
-        input[type="range"]::-webkit-slider-runnable-track {
-          width: 100%;
-          height: 6px;
-          cursor: pointer;
-          background: #e0e5ec;
-          border-radius: 9999px;
-          box-shadow:
-            inset 2px 2px 5px #bebebe,
-            inset -2px -2px 5px #ffffff;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          height: 18px;
-          width: 18px;
-          border-radius: 9999px;
-          background: #e0e5ec;
-          border: none;
-          box-shadow:
-            2px 2px 5px #bebebe,
-            -2px -2px 5px #ffffff;
-          cursor: pointer;
-          margin-top: -6px;
-          transition: background-color 0.2s;
-        }
-
-        input[type="range"]::-webkit-slider-thumb:hover {
-          background: #d8dee8;
-        }
-
-        input[type="range"]::-moz-range-track {
-          width: 100%;
-          height: 6px;
-          cursor: pointer;
-          background: #e0e5ec;
-          border-radius: 9999px;
-          box-shadow:
-            inset 2px 2px 5px #bebebe,
-            inset -2px -2px 5px #ffffff;
-        }
-
-        input[type="range"]::-moz-range-thumb {
-          height: 18px;
-          width: 18px;
-          border-radius: 9999px;
-          background: #e0e5ec;
-          border: none;
-          box-shadow:
-            2px 2px 5px #bebebe,
-            -2px -2px 5px #ffffff;
-          cursor: pointer;
-          transition: background-color 0.2s;
-        }
-
-        input[type="range"]::-moz-range-thumb:hover {
-          background: #d8dee8;
-        }
-      `}</style>
     </div>
   );
 }

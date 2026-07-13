@@ -1,10 +1,19 @@
 // src/components/CheatSheet.tsx
 import { MORSE_CODE } from "../lib/morse";
-import { Kalam } from "next/font/google";
+import localFont from "next/font/local";
 
-const kalam = Kalam({
-  subsets: ["latin"],
-  weight: ["400", "700"],
+const kalam = localFont({
+  src: [
+    {
+      path: "../../../../public/fonts/kalam-400-latin.woff2",
+      weight: "400",
+    },
+    {
+      path: "../../../../public/fonts/kalam-700-latin.woff2",
+      weight: "700",
+    },
+  ],
+  display: "swap",
 });
 
 const letters = Object.keys(MORSE_CODE).filter(
