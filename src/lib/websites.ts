@@ -55,6 +55,17 @@ export const WEBSITES: WebsiteEntry[] = [
     },
   },
   {
+    path: "/boids-simulator",
+    title: "Boids Simulator",
+    blurb: "Emergent boid movement.",
+    accent: "from-lime-200/80 via-green-300/70 to-emerald-500/70",
+    metadata: {
+      title: "Boids Simulator - Interactive Flocking Lab",
+      description:
+        "Shape a living field of boids with your pointer, then tune vision, movement accuracy, forces, speed, drag, and population in real time.",
+    },
+  },
+  {
     path: "/click-speed-test",
     title: "Click Speed Test",
     blurb: "A clicks per second test.",

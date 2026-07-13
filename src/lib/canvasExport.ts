@@ -16,6 +16,10 @@ export async function downloadCanvasPng(
   fileName: string,
 ): Promise<void> {
   const blob = await canvasToBlob(canvas);
+  downloadBlob(blob, fileName);
+}
+
+export function downloadBlob(blob: Blob, fileName: string): void {
   const objectUrl = URL.createObjectURL(blob);
   const link = document.createElement("a");
 
