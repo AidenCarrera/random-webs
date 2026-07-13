@@ -13,7 +13,6 @@
     "typecheck": "tsc --noEmit",
     "open:websites": "node scripts/open-websites.ts",
     "normalize:lofi": "node scripts/normalize-audio-lufs.ts",
-    "generate:layouts": "node scripts/generate-layouts.ts",
     "validate:websites": "node scripts/validate-websites.ts"
   },
   "dependencies": {
