@@ -1,0 +1,137 @@
+.zen-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.zen-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.dark .zen-slider::-webkit-slider-runnable-track {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.zen-slider::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: #059669;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: transform 0.1s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.zen-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.zen-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.dark .zen-slider::-moz-range-track {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.zen-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: #059669;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  transition: transform 0.1s ease;
+}
+
+.zen-slider::-moz-range-thumb:hover {
+  transform: scale(1.15);
+}
+
+.zen-emoji {
+  width: 80px;
+  height: 80px;
+  margin-top: -40px;
+  margin-left: -40px;
+  font-size: 3.5rem;
+}
+
+@media (orientation: landscape) and (max-height: 480px) {
+  .zen-title {
+    display: none !important;
+  }
+
+  .zen-header {
+    top: 0.5rem !important;
+    right: 0.5rem !important;
+    padding: 0 !important;
+  }
+
+  .zen-footer {
+    bottom: 0.5rem !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    padding: 0 0.5rem !important;
+  }
+
+  .zen-emoji-box {
+    max-width: 320px !important;
+    gap: 0.25rem !important;
+    padding: 0.35rem !important;
+    border-radius: 1rem !important;
+  }
+
+  .zen-emoji-box button {
+    padding: 0.15rem 0.35rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .zen-emoji-box .no-scrollbar button {
+    width: 2rem !important;
+    height: 2rem !important;
+    font-size: 1.25rem !important;
+  }
+
+  .zen-emoji-box .no-scrollbar {
+    max-height: 2.2rem !important;
+  }
+
+  .zen-cat-text,
+  .zen-random-text,
+  .zen-header-btn,
+  .zen-header-sep {
+    display: none !important;
+  }
+
+  .zen-sidebar-actions {
+    display: flex !important;
+  }
+
+  .zen-tool-bar {
+    padding: 0.25rem !important;
+  }
+
+  .zen-tool-bar button {
+    padding: 0.35rem 0.5rem !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+@media (max-width: 640px), (orientation: landscape) and (max-height: 520px) {
+  .zen-emoji {
+    width: 48px !important;
+    height: 48px !important;
+    margin-top: -24px !important;
+    margin-left: -24px !important;
+    font-size: 2rem !important;
+  }
+}
