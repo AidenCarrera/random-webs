@@ -104,7 +104,8 @@ export default function PadSynth() {
   const lastPlayedNote = useRef<string | null>(null);
 
   useEffect(() => {
-    setStylesReady(true);
+    const frame = requestAnimationFrame(() => setStylesReady(true));
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {

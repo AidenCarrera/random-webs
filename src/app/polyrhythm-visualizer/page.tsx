@@ -347,7 +347,6 @@ export default function PolyrhythmVisualizer() {
   };
 
   useEffect(() => {
-    setBpmInput(String(bpm));
     const position = progressRef.current * cycleSeconds(bpm);
     cyclePositionRef.current = position;
     lastElapsedRef.current = position;
@@ -433,9 +432,9 @@ export default function PolyrhythmVisualizer() {
     <div className="min-h-screen overflow-hidden bg-[#0d0c12] font-sans text-[#fafaf9]">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(145deg,#17121b_0%,#0d1317_48%,#171018_100%)]" />
-        <div className="absolute -left-64 -top-80 h-[56rem] w-[56rem] rounded-full bg-[radial-gradient(circle,rgba(252,140,116,0.12)_0%,rgba(252,140,116,0.04)_38%,transparent_70%)] blur-2xl" />
-        <div className="absolute -bottom-80 -right-56 h-[54rem] w-[54rem] rounded-full bg-[radial-gradient(circle,rgba(64,196,187,0.1)_0%,rgba(64,196,187,0.03)_40%,transparent_70%)] blur-2xl" />
-        <div className="absolute left-1/2 top-1/2 h-[76rem] w-[76rem] -translate-x-1/2 -translate-y-1/2 -rotate-12 rounded-[42%] bg-[repeating-radial-gradient(ellipse_at_center,transparent_0_42px,rgba(250,249,246,0.035)_43px_44px)] opacity-70" />
+        <div className="absolute -left-64 -top-80 h-224 w-4xl rounded-full bg-[radial-gradient(circle,rgba(252,140,116,0.12)_0%,rgba(252,140,116,0.04)_38%,transparent_70%)] blur-2xl" />
+        <div className="absolute -bottom-80 -right-56 h-216 w-216 rounded-full bg-[radial-gradient(circle,rgba(64,196,187,0.1)_0%,rgba(64,196,187,0.03)_40%,transparent_70%)] blur-2xl" />
+        <div className="absolute left-1/2 top-1/2 h-304 w-304 -translate-x-1/2 -translate-y-1/2 -rotate-12 rounded-[42%] bg-[repeating-radial-gradient(ellipse_at_center,transparent_0_42px,rgba(250,249,246,0.035)_43px_44px)] opacity-70" />
         <svg
           className="absolute inset-x-0 top-[8%] h-[76%] w-full opacity-35"
           viewBox="0 0 1600 900"
@@ -506,7 +505,11 @@ export default function PolyrhythmVisualizer() {
                   min={BPM_MIN}
                   max={BPM_MAX}
                   value={bpm}
-                  onChange={(event) => setBpm(Number(event.target.value))}
+                  onChange={(event) => {
+                    const nextBpm = Number(event.target.value);
+                    setBpm(nextBpm);
+                    setBpmInput(String(nextBpm));
+                  }}
                   className="poly-slider w-full"
                   aria-label="BPM"
                 />

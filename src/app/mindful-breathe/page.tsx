@@ -143,7 +143,7 @@ export default function MindfulBreathePage() {
           </motion.div>
         </div>
 
-        <div className="bg-white/20 backdrop-blur-md px-6 py-5 rounded-2xl border border-white/40 shadow-lg flex flex-col items-center gap-4 w-full max-w-[21rem] md:max-w-[22rem]">
+        <div className="bg-white/20 backdrop-blur-md px-6 py-5 rounded-2xl border border-white/40 shadow-lg flex flex-col items-center gap-4 w-full max-w-84 md:max-w-88">
           <label className="text-slate-500/90 font-light text-xs tracking-wider uppercase mt-1">
             Breath Duration:{" "}
             <span className="font-normal text-slate-600">{speed}s</span>

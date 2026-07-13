@@ -12,6 +12,17 @@ interface Particle {
   color: string;
 }
 
+const PARTICLE_COLORS = ["#00ffff", "#ff00ff", "#ffff00", "#ffffff"];
+
+const createParticle = (width: number, height: number): Particle => ({
+  x: Math.random() * width,
+  y: Math.random() * height,
+  vx: (Math.random() - 0.5) * 2,
+  vy: (Math.random() - 0.5) * 2,
+  size: Math.random() * 2 + 1,
+  color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
+});
+
 export default function ParticleCollider() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const requestRef = useRef<number | null>(null);
@@ -25,8 +36,6 @@ export default function ParticleCollider() {
   const modeRef = useRef(mode);
   const forcePowerRef = useRef(forcePower);
 
-  const colors = ["#00ffff", "#ff00ff", "#ffff00", "#ffffff"];
-
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
@@ -34,15 +43,6 @@ export default function ParticleCollider() {
   useEffect(() => {
     forcePowerRef.current = forcePower;
   }, [forcePower]);
-
-  const createParticle = (width: number, height: number): Particle => ({
-    x: Math.random() * width,
-    y: Math.random() * height,
-    vx: (Math.random() - 0.5) * 2,
-    vy: (Math.random() - 0.5) * 2,
-    size: Math.random() * 2 + 1,
-    color: colors[Math.floor(Math.random() * colors.length)],
-  });
 
   useEffect(() => {
     const width = window.innerWidth;
@@ -67,10 +67,6 @@ export default function ParticleCollider() {
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
-    particlesRef.current = Array.from({ length: particleCount }, () =>
-      createParticle(canvas.width, canvas.height),
-    );
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -108,7 +104,7 @@ export default function ParticleCollider() {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = p.color;
-        ctx.shadowBlur = particleCount > 300 ? 0 : 10;
+        ctx.shadowBlur = particlesRef.current.length > 300 ? 0 : 10;
         ctx.shadowColor = p.color;
         ctx.fill();
         ctx.shadowBlur = 0;

@@ -20,7 +20,7 @@ interface CheatSheetProps {
 export function CheatSheet({ onClose }: CheatSheetProps) {
   return (
     <div
-      className={`max-w-[280px] w-full bg-[#f4efe2] border-4 border-[#c0a080] p-5 rounded-sm shadow-2xl relative text-[#2d2219] ${kalam.className} animate-fade-in shrink-0`}
+      className={`max-w-70 w-full bg-[#f4efe2] border-4 border-[#c0a080] p-5 rounded-sm shadow-2xl relative text-[#2d2219] ${kalam.className} animate-fade-in shrink-0`}
       style={{ boxShadow: "3px 3px 20px rgba(0,0,0,0.4)" }}
     >
       {/* Vintage Tape decoration at the top */}

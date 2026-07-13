@@ -1,7 +1,7 @@
 "use client";
 
 import "./styles.css";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Download,
   Eraser,
@@ -104,25 +104,29 @@ export default function PixelArt() {
     const isMobilePointer =
       window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
 
-    setIsTouchDevice(isMobilePointer);
-    setShareUrl(window.location.href);
+    const frame = requestAnimationFrame(() => {
+      setIsTouchDevice(isMobilePointer);
+      setShareUrl(window.location.href);
 
-    if (isMobilePointer) {
-      const nextGrid = createEmptyGrid(MOBILE_DEFAULT_SIZE);
-      gridRef.current = nextGrid;
-      historyRef.current = [nextGrid];
-      historyIndexRef.current = 0;
-      lastDrawnIndexRef.current = null;
+      if (isMobilePointer) {
+        const nextGrid = createEmptyGrid(MOBILE_DEFAULT_SIZE);
+        gridRef.current = nextGrid;
+        historyRef.current = [nextGrid];
+        historyIndexRef.current = 0;
+        lastDrawnIndexRef.current = null;
 
-      setGridSize(MOBILE_DEFAULT_SIZE);
-      setGrid(nextGrid);
-      setHistory([nextGrid]);
-      setHistoryIndex(0);
-      setPreviewFileName(createFileName(MOBILE_DEFAULT_SIZE));
-    }
+        setGridSize(MOBILE_DEFAULT_SIZE);
+        setGrid(nextGrid);
+        setHistory([nextGrid]);
+        setHistoryIndex(0);
+        setPreviewFileName(createFileName(MOBILE_DEFAULT_SIZE));
+      }
+    });
+
+    return () => cancelAnimationFrame(frame);
   }, []);
 
-  const updateGrid = (nextGrid: string[]) => {
+  const updateGrid = useCallback((nextGrid: string[]) => {
     const nextHistory = historyRef.current.slice(0, historyIndexRef.current + 1);
     nextHistory.push(nextGrid);
     if (nextHistory.length > 50) {
@@ -136,16 +140,16 @@ export default function PixelArt() {
     setHistory(nextHistory);
     setHistoryIndex(nextHistory.length - 1);
     setGrid(nextGrid);
-  };
+  }, []);
 
-  const commitCurrentGrid = () => {
+  const commitCurrentGrid = useCallback(() => {
     const snapshot = historyRef.current[historyIndexRef.current];
     const current = gridRef.current;
 
     if (JSON.stringify(current) !== JSON.stringify(snapshot)) {
       updateGrid([...current]);
     }
-  };
+  }, [updateGrid]);
 
   useEffect(() => {
     const stopDrawing = () => {
@@ -165,7 +169,7 @@ export default function PixelArt() {
       window.removeEventListener("pointerup", stopDrawing);
       window.removeEventListener("pointercancel", stopDrawing);
     };
-  }, []);
+  }, [commitCurrentGrid]);
 
   const undo = () => {
     if (historyIndexRef.current <= 0) {

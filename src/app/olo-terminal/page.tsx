@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { Check, Settings, Terminal, Maximize2, X, Minus } from "lucide-react";
 import {
   ADVICE,
@@ -12,7 +12,6 @@ import {
   MATRIX_THEME,
   SYSTEM_INFO,
   TERMINAL_THEMES,
-  type TerminalTheme,
 } from "./utils";
 
 type FileSystemNode = {
@@ -31,6 +30,58 @@ interface CommandResult {
   stderr: string;
   exitCode: number;
 }
+
+interface NavigatorWithDeviceInfo extends Navigator {
+  deviceMemory?: number;
+  connection?: {
+    effectiveType?: string;
+  };
+}
+
+const PANIC_LOGS = [
+  "[    0.000000] Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000007",
+  "[    0.000000] CPU: 0 PID: 1 Comm: init Not tainted 5.15.0-fake-generic #1",
+  "[    0.000000] Hardware name: Browser Simulation Container",
+  "[    0.000000] Call Trace:",
+  "[    0.000000]  [<ffffffff8107ef4c>] dump_stack+0x4d/0x63",
+  "[    0.000000]  [<ffffffff81057e9b>] panic+0xc8/0x1d7",
+  "[    0.000000]  [<ffffffff8105c316>] do_exit+0xa56/0xa60",
+  "[    0.000000]  [<ffffffff8105c3fc>] do_group_exit+0x3c/0xa0",
+  "[    0.000000]  [<ffffffff8105c474>] __wake_up_parent+0x0/0x30",
+  "[    0.000000]  [<ffffffff8100215b>] system_call_fastpath+0x16/0x1b",
+  "[    0.000000] ---[ end Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000007 ]---",
+  "",
+  "CRITICAL FAULT: SYSTEM FILES DELETED.",
+  "Initiating hardware reboot sequence in 5 seconds...",
+];
+
+const getBrowserMemory = (): string => {
+  if (typeof navigator !== "undefined") {
+    const memory = (navigator as NavigatorWithDeviceInfo).deviceMemory ?? 16;
+    return `${memory * 1024}MB RAM`;
+  }
+  return "16384MB RAM";
+};
+
+const BOOT_SEQUENCE = [
+  "OLO-BIOS v2.04 (C) 2026 Olo Technologies, Inc.",
+  `CPU: ${getVirtualCPU()}`,
+  `Memory Test: ${getBrowserMemory()} OK`,
+  "Detecting storage devices... /dev/sda1 (50GB SSD) detected.",
+  "Loading kernel olo-kernel-5.15.0-olo-generic... done.",
+  "Mounting root filesystem (type ext4) on /dev/sda1...",
+  "Initializing OloOS system services...",
+  "[  OK  ] Started LVM Metadata Daemon.",
+  "[  OK  ] Started Network Time Service.",
+  "[  OK  ] Started D-Bus System Message Bus.",
+  "[  OK  ] Started Logger Service.",
+  "[  OK  ] Reached target Multi-User System.",
+  "[  OK  ] Started Olo Shell Environment.",
+  "",
+  "Welcome to OloOS v2.0 browser terminal.",
+  "Type 'help' to see available commands.",
+  "",
+];
 
 interface ShellContext {
   fs: Record<string, FileSystemNode>;
@@ -719,7 +770,7 @@ const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     };
   },
 
-  df: (args, flags) => {
+  df: () => {
     return {
       stdout: [
         "Filesystem      Size  Used Avail Use% Mounted on",
@@ -840,10 +891,13 @@ const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     const sessionUptime = ctx.getUptime ? ctx.getUptime() : SYSTEM_INFO.uptime;
 
     // Memory info
-    const memInfo =
-      typeof navigator !== "undefined" && (navigator as any).deviceMemory
-        ? `${(navigator as any).deviceMemory} GB`
-        : "Unknown / Sandbox Memory";
+    const browserNavigator =
+      typeof navigator !== "undefined"
+        ? (navigator as NavigatorWithDeviceInfo)
+        : null;
+    const memInfo = browserNavigator?.deviceMemory
+      ? `${browserNavigator.deviceMemory} GB`
+      : "Unknown / Sandbox Memory";
 
     // Theme state
     const activeTheme = ctx.isMatrixMode
@@ -851,10 +905,9 @@ const COMMAND_REGISTRY: Record<string, CommandHandler> = {
       : "Tokyo Night (Lavender)";
 
     // Connection
-    const connType =
-      typeof navigator !== "undefined" && (navigator as any).connection
-        ? ` (${(navigator as any).connection.effectiveType || "WiFi"})`
-        : "";
+    const connType = browserNavigator?.connection
+      ? ` (${browserNavigator.connection.effectiveType || "WiFi"})`
+      : "";
 
     const info = [
       `OS: ${SYSTEM_INFO.os}`,
@@ -898,7 +951,7 @@ const COMMAND_REGISTRY: Record<string, CommandHandler> = {
     return { stdout: lines.join("\n"), stderr: "", exitCode: 0 };
   },
 
-  sudo: (args, flags, ctx) => {
+  sudo: (args) => {
     if (args.length === 0) {
       return { stdout: "usage: sudo [command]", stderr: "", exitCode: 1 };
     }
@@ -919,7 +972,7 @@ const COMMAND_REGISTRY: Record<string, CommandHandler> = {
 };
 
 export default function OloTerminal() {
-  const loadTimeRef = useRef(Date.now());
+  const loadTimeRef = useRef<number | null>(null);
   const [history, setHistory] = useState<string[]>([
     "Welcome to OloOS v2.0 browser terminal.",
     "Initializing OloOS environment...",
@@ -955,7 +1008,6 @@ export default function OloTerminal() {
   const [isBooting, setIsBooting] = useState(true);
   const [bootLogs, setBootLogs] = useState<string[]>([]);
   const [isPanic, setIsPanic] = useState(false);
-  const [panicLogs, setPanicLogs] = useState<string[]>([]);
 
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -965,55 +1017,25 @@ export default function OloTerminal() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(scrollToBottom, [history, bootLogs, panicLogs]);
+  useEffect(scrollToBottom, [history, bootLogs]);
+
+  useEffect(() => {
+    loadTimeRef.current = Date.now();
+  }, []);
 
   // Session uptime helper
   const getUptime = (): string => {
-    const diffSec = Math.floor((Date.now() - loadTimeRef.current) / 1000);
+    const loadTime = loadTimeRef.current;
+    if (loadTime === null) return "0s";
+
+    const diffSec = Math.floor((Date.now() - loadTime) / 1000);
     const mins = Math.floor(diffSec / 60);
     const secs = diffSec % 60;
     return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   };
 
-  // Dynamic Browser environment CPU detection helper
-  const getBrowserCPU = (): string => {
-    return getVirtualCPU();
-  };
-
-  // Dynamic Browser memory helper
-  const getBrowserMemory = (): string => {
-    if (typeof navigator !== "undefined") {
-      const mem = (navigator as any).deviceMemory || 16;
-      return `${mem * 1024}MB RAM`;
-    }
-    return "16384MB RAM";
-  };
-
-  // BIOS Boot sequence log lines
-  const BOOT_SEQUENCE = [
-    "OLO-BIOS v2.04 (C) 2026 Olo Technologies, Inc.",
-    `CPU: ${getBrowserCPU()}`,
-    `Memory Test: ${getBrowserMemory()} OK`,
-    "Detecting storage devices... /dev/sda1 (50GB SSD) detected.",
-    "Loading kernel olo-kernel-5.15.0-olo-generic... done.",
-    "Mounting root filesystem (type ext4) on /dev/sda1...",
-    "Initializing OloOS system services...",
-    "[  OK  ] Started LVM Metadata Daemon.",
-    "[  OK  ] Started Network Time Service.",
-    "[  OK  ] Started D-Bus System Message Bus.",
-    "[  OK  ] Started Logger Service.",
-    "[  OK  ] Reached target Multi-User System.",
-    "[  OK  ] Started Olo Shell Environment.",
-    "",
-    "Welcome to OloOS v2.0 browser terminal.",
-    "Type 'help' to see available commands.",
-    "",
-  ];
-
-  // Starts BIOS loading boot sequence interval
-  const startBootSequence = () => {
-    setIsBooting(true);
-    setBootLogs([]);
+  // Starts the timed portion of the BIOS boot sequence.
+  const runBootSequence = useCallback(() => {
     let index = 0;
     const interval = setInterval(() => {
       if (index < BOOT_SEQUENCE.length) {
@@ -1025,33 +1047,22 @@ export default function OloTerminal() {
       }
     }, 120);
     return interval;
-  };
+  }, []);
+
+  const startBootSequence = useCallback(() => {
+    setIsBooting(true);
+    setBootLogs([]);
+    return runBootSequence();
+  }, [runBootSequence]);
 
   useEffect(() => {
-    const bootInterval = startBootSequence();
+    const bootInterval = runBootSequence();
     return () => clearInterval(bootInterval);
-  }, []);
+  }, [runBootSequence]);
 
   // Bricked system panic screen timeout handler
   useEffect(() => {
     if (!isPanic) return;
-
-    setPanicLogs([
-      "[    0.000000] Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000007",
-      "[    0.000000] CPU: 0 PID: 1 Comm: init Not tainted 5.15.0-fake-generic #1",
-      "[    0.000000] Hardware name: Browser Simulation Container",
-      "[    0.000000] Call Trace:",
-      "[    0.000000]  [<ffffffff8107ef4c>] dump_stack+0x4d/0x63",
-      "[    0.000000]  [<ffffffff81057e9b>] panic+0xc8/0x1d7",
-      "[    0.000000]  [<ffffffff8105c316>] do_exit+0xa56/0xa60",
-      "[    0.000000]  [<ffffffff8105c3fc>] do_group_exit+0x3c/0xa0",
-      "[    0.000000]  [<ffffffff8105c474>] __wake_up_parent+0x0/0x30",
-      "[    0.000000]  [<ffffffff8100215b>] system_call_fastpath+0x16/0x1b",
-      "[    0.000000] ---[ end Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000007 ]---",
-      "",
-      "CRITICAL FAULT: SYSTEM FILES DELETED.",
-      "Initiating hardware reboot sequence in 5 seconds...",
-    ]);
 
     const panicTimer = setTimeout(() => {
       setFs(structuredClone(FILESYSTEM) as Record<string, FileSystemNode>);
@@ -1060,7 +1071,7 @@ export default function OloTerminal() {
     }, 5000);
 
     return () => clearTimeout(panicTimer);
-  }, [isPanic]);
+  }, [isPanic, startBootSequence]);
 
   // Matrix Rain Canvas Animation
   useEffect(() => {
@@ -1279,33 +1290,6 @@ export default function OloTerminal() {
     let lastResult: CommandResult = { stdout: "", stderr: "", exitCode: 0 };
     let pipeInput: string | null = null;
 
-    const baseContext: ShellContext = {
-      fs,
-      setFs,
-      cwd,
-      setCwd,
-      env,
-      setEnv,
-      history,
-      setHistory,
-      commandHistory,
-      setCommandHistory,
-      isMatrixMode,
-      setIsMatrixMode,
-      isPanic,
-      setIsPanic,
-      isSudoElevated,
-      setIsSudoElevated,
-      resolveAbsolutePath,
-      getNodeByAbsolutePath,
-      getParentAndName,
-      createNode,
-      deleteNode,
-      getUptime,
-    };
-
-    const runContext = { ...baseContext, ...customContext };
-
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
       let cmdToRun = token.cmdLine;
@@ -1315,7 +1299,7 @@ export default function OloTerminal() {
         pipeInput = null;
       }
 
-      lastResult = await executeCommand(cmdToRun);
+      lastResult = await executeCommand(cmdToRun, customContext);
 
       if (token.operator === "|") {
         pipeInput = lastResult.stdout || lastResult.stderr;
@@ -1330,7 +1314,10 @@ export default function OloTerminal() {
   };
 
   // Execute single command line string with redirections support
-  const executeCommand = async (line: string): Promise<CommandResult> => {
+  const executeCommand = async (
+    line: string,
+    customContext?: Partial<ShellContext>,
+  ): Promise<CommandResult> => {
     const trimmed = line.trim();
     if (!trimmed) return { stdout: "", stderr: "", exitCode: 0 };
 
@@ -1393,10 +1380,11 @@ export default function OloTerminal() {
       createNode,
       deleteNode,
       getUptime,
+      ...customContext,
     };
 
     try {
-      let result = await handler(args, flags, context);
+      const result = await handler(args, flags, context);
 
       // Redirection execution!
       if (redirectFile && result.exitCode === 0) {
@@ -1453,10 +1441,11 @@ export default function OloTerminal() {
       }
 
       return result;
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
       return {
         stdout: "",
-        stderr: `bash: error executing ${commandName}: ${err.message}`,
+        stderr: `bash: error executing ${commandName}: ${message}`,
         exitCode: 1,
       };
     }
@@ -1680,7 +1669,7 @@ export default function OloTerminal() {
             <span>!!! SYSTEM KERNEL PANIC !!!</span>
           </div>
           <div className="overflow-y-auto leading-relaxed h-[60vh] text-sm font-bold">
-            {panicLogs.map((line, i) => (
+            {PANIC_LOGS.map((line, i) => (
               <div
                 key={i}
                 className="whitespace-pre-wrap break-all mb-1 font-bold"
