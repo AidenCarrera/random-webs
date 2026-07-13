@@ -3,43 +3,17 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-export type SolarTextureKey =
-  | "mercury"
-  | "venus_surface"
-  | "earth"
-  | "moon"
-  | "mars"
-  | "ceres"
-  | "eris"
-  | "haumea"
-  | "makemake"
-  | "jupiter"
-  | "saturn"
-  | "uranus"
-  | "neptune"
-  | "sun"
-  | "stars"
-  | "stars_milky_way"
-  | "saturn_ring";
-
-export type ScenePlanet = {
-  id: string;
-  textureKey: SolarTextureKey;
-  size: number;
-  orbitSize: number;
-  duration: number;
-  hasRings?: boolean;
-  hasMoon?: boolean;
-};
+import { TEXTURE_MAP } from "./constants";
+import type { BackgroundTheme, Planet, SolarTextureKey } from "./types";
 
 type Props = {
-  planets: ScenePlanet[];
+  planets: Planet[];
   paused: boolean;
   timeScale: number;
   showOrbits: boolean;
   showMoons: boolean;
   enableGlow: boolean;
-  bgTheme: "stars" | "stars_milky_way";
+  bgTheme: BackgroundTheme;
   onPlanetSelect: (id: string) => void;
   onSunSelect: () => void;
   onCanvasReady: (canvas: HTMLCanvasElement | null) => void;
@@ -69,25 +43,7 @@ const MAX_PIXEL_RATIO = 1.75;
 const TWO_PI = Math.PI * 2;
 const BASE_SIMULATION_RATE = 0.25;
 
-const textureUrls: Record<SolarTextureKey, string> = {
-  mercury: "/solar-system/2k_mercury.jpg",
-  venus_surface: "/solar-system/2k_venus_surface.jpg",
-  earth: "/solar-system/2k_earth_daymap.jpg",
-  moon: "/solar-system/2k_moon.jpg",
-  mars: "/solar-system/2k_mars.jpg",
-  ceres: "/solar-system/2k_ceres_fictional.jpg",
-  eris: "/solar-system/2k_eris_fictional.jpg",
-  haumea: "/solar-system/2k_haumea_fictional.jpg",
-  makemake: "/solar-system/2k_makemake_fictional.jpg",
-  jupiter: "/solar-system/2k_jupiter.jpg",
-  saturn: "/solar-system/2k_saturn.jpg",
-  uranus: "/solar-system/2k_uranus.jpg",
-  neptune: "/solar-system/2k_neptune.jpg",
-  sun: "/solar-system/2k_sun.jpg",
-  stars: "/solar-system/2k_stars.jpg",
-  stars_milky_way: "/solar-system/2k_stars_milky_way.jpg",
-  saturn_ring: "/solar-system/2k_saturn_ring_alpha.png",
-};
+const textureUrls = TEXTURE_MAP;
 
 function finiteOr(value: number, fallback: number) {
   return Number.isFinite(value) ? value : fallback;
@@ -490,7 +446,7 @@ export function ThreeSolarSystem({
       depthWrite: false,
     });
 
-    const createPlanetNode = (planet: ScenePlanet) => {
+    const createPlanetNode = (planet: Planet) => {
       const ringKind = ringKindFor(planet.textureKey);
       const orbit = new THREE.Group();
       const orbitLine = new THREE.LineLoop(orbitGeometry, orbitMaterial);
@@ -544,7 +500,7 @@ export function ThreeSolarSystem({
 
     const updatePlanetNode = (
       node: PlanetNode,
-      planet: ScenePlanet,
+      planet: Planet,
       current: typeof propsRef.current,
     ) => {
       const radius = Math.max(3, finiteOr(planet.size, 6) / 2);

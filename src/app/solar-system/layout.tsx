@@ -1,4 +1,5 @@
 import { createWebsiteMetadata } from "@/lib/websiteMetadata";
+import "./styles.css";
 
 export const metadata = createWebsiteMetadata("/solar-system");
 
