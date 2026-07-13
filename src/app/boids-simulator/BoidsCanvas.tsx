@@ -5,6 +5,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { canvasToBlob } from "@/lib/canvasExport";
 
 import {
+  getFrameScale,
   getSeparationRadius,
   type BoidsSettings,
   type PointerMode,
@@ -235,7 +236,10 @@ export const BoidsCanvas = forwardRef<BoidsCanvasHandle, BoidsCanvasProps>(
       const parent = canvas?.parentElement;
       if (!canvas || !parent) return;
 
-      const context = canvas.getContext("2d", { alpha: false });
+      const context = canvas.getContext("2d", {
+        alpha: false,
+        desynchronized: true,
+      });
       if (!context) return;
 
       const syncSize = () => {
@@ -281,10 +285,7 @@ export const BoidsCanvas = forwardRef<BoidsCanvasHandle, BoidsCanvasProps>(
         const { width, height } = sizeRef.current;
         const currentSettings = settingsRef.current;
         const boids = boidsRef.current;
-        const delta = Math.min(
-          1.8,
-          Math.max(0.45, (time - previousTime) / 16.67),
-        );
+        const delta = getFrameScale(time - previousTime);
         previousTime = time;
 
         if (resetRef.current) {

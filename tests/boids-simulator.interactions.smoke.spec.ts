@@ -1,6 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-import { getSeparationRadius } from "../src/app/boids-simulator/simulator";
+import {
+  BASE_FRAME_DURATION,
+  getFrameScale,
+  getSeparationRadius,
+} from "../src/app/boids-simulator/simulator";
 
 test.describe("Boids Simulator interactions", () => {
   test.describe.configure({ mode: "serial" });
@@ -129,6 +133,11 @@ test.describe("Boids Simulator interactions", () => {
     const farNeighbors = Number(await neighborMetric.textContent());
 
     expect(farNeighbors).toBeGreaterThan(nearNeighbors);
+  });
+
+  test("keeps simulation speed consistent at 60 Hz and 120 Hz", () => {
+    expect(getFrameScale(BASE_FRAME_DURATION)).toBeCloseTo(1, 5);
+    expect(getFrameScale(BASE_FRAME_DURATION / 2)).toBeCloseTo(0.5, 5);
   });
 
   test("downloads a snapshot and opens the shared export preview", async ({

@@ -15,6 +15,11 @@ export type BoidsSettings = {
 export type BoidsPresetName = "Relaxed" | "Balanced" | "Frenzy";
 
 export const MAX_SEPARATION_FORCE = 3;
+export const BASE_FRAME_DURATION = 1000 / 60;
+
+export function getFrameScale(elapsedMilliseconds: number) {
+  return Math.min(1.8, Math.max(0, elapsedMilliseconds / BASE_FRAME_DURATION));
+}
 
 export function getSeparationRadius(
   boidVision: number,
