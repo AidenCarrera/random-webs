@@ -42,3 +42,11 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Smoke test websites
+        run: pnpm test:smoke
+        env:
+          SMOKE_SERVER_COMMAND: pnpm start --hostname 127.0.0.1 --port 3100

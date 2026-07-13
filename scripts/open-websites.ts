@@ -1,8 +1,9 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { WEBSITES } from "../src/lib/websites.ts";
+import { getChangedWebsites } from "./lib/changed-websites.ts";
 
 type Options = {
   baseUrl: string;
@@ -72,68 +73,12 @@ function parseOptions(args: string[]): Options | null {
   return options;
 }
 
-function runGit(args: string[]) {
-  return execFileSync("git", ["-C", repositoryRoot, ...args], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  }).trim();
-}
-
-function getChangedFiles() {
-  try {
-    runGit(["rev-parse", "--verify", "HEAD"]);
-
-    const trackedChanges = runGit([
-      "diff",
-      "--name-only",
-      "--diff-filter=ACMRTUXB",
-      "HEAD",
-      "--",
-    ]);
-    const untrackedChanges = runGit([
-      "ls-files",
-      "--others",
-      "--exclude-standard",
-    ]);
-
-    return new Set(
-      `${trackedChanges}\n${untrackedChanges}`
-        .split(/\r?\n/)
-        .map((file) => file.trim().replaceAll("\\", "/"))
-        .filter(Boolean),
-    );
-  } catch {
-    throw new Error(
-      "Could not compare website changes with the latest Git commit.",
-    );
-  }
-}
-
-function isWebsiteFile(routePath: string, file: string) {
-  const routeDirectory = routePath.replace(/^\//, "");
-  const websiteRoots = [
-    `src/app/${routeDirectory}`,
-    `public/${routeDirectory}`,
-  ];
-
-  return websiteRoots.some(
-    (root) => file === root || file.startsWith(`${root}/`),
-  );
-}
-
 function getWebsites(changedOnly: boolean) {
-  const websites = [...WEBSITES].sort((left, right) =>
-    left.path.localeCompare(right.path, "en"),
-  );
-
-  if (!changedOnly) {
-    return websites;
-  }
-
-  const changedFiles = getChangedFiles();
-  return websites.filter((website) =>
-    [...changedFiles].some((file) => isWebsiteFile(website.path, file)),
-  );
+  return changedOnly
+    ? getChangedWebsites(repositoryRoot)
+    : [...WEBSITES].sort((left, right) =>
+        left.path.localeCompare(right.path, "en"),
+      );
 }
 
 function openUrl(url: string) {

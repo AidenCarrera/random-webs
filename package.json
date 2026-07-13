@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "24.x",
+    "pnpm": "11.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,6 +14,7 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm validate:websites",
     "format:check": "prettier --check .",
     "lint": "eslint",
+    "test:smoke": "node scripts/test-smoke.ts",
     "typecheck": "tsc --noEmit",
     "open:websites": "node scripts/open-websites.ts",
     "normalize:lofi": "node scripts/normalize-audio-lufs.ts",
@@ -31,6 +36,7 @@
     "tone": "^15.1.22"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.3.2",
     "@types/canvas-confetti": "^1.9.0",
     "@types/matter-js": "^0.20.2",

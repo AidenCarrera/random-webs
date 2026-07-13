@@ -1,3 +1,5 @@
 .agents/
 public/
 pnpm-lock.yaml
+.env.example
+.env.*.example
