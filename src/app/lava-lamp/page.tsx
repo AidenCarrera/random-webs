@@ -338,8 +338,6 @@ function createBlobs(preset: Preset) {
 function drawLampHardware(
   context: CanvasRenderingContext2D,
   geometry: Geometry,
-  preset: Preset,
-  glowStrength: number,
 ) {
   const {
     centerX: cx,
@@ -893,7 +891,7 @@ export default function LavaLampPage() {
         drawGlass(context, geometry, activePreset, glassPath, glowStrength);
         renderLava(geometry, activePreset);
         drawGlass(context, geometry, activePreset, glassPath, glowStrength);
-        drawLampHardware(context, geometry, activePreset, glowStrength);
+        drawLampHardware(context, geometry);
       }
 
       animationFrame = requestAnimationFrame(draw);

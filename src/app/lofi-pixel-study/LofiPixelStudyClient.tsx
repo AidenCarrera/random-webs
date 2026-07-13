@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Volume2,
@@ -88,6 +89,20 @@ const DEFAULT_TRACK_TITLE = "lofi hip hop";
 const DEFAULT_ALARM_NAME = "Beep Alarm";
 const STORAGE_KEY = "lofi-pixel-study-preferences";
 
+function subscribeToViewport(onStoreChange: () => void) {
+  window.addEventListener("resize", onStoreChange);
+  return () => window.removeEventListener("resize", onStoreChange);
+}
+
+const getViewportSnapshot = () => `${window.innerWidth}:${window.innerHeight}`;
+const getServerViewportSnapshot = () => "1920:1080";
+
+function getAlarmVolume(alarmName?: string) {
+  if (alarmName === "Beep Alarm") return 1;
+  if (alarmName === "Bedside Clock") return 0.82;
+  return 0.9;
+}
+
 export default function LofiPixelStudyClient({
   initialTracks,
   initialAlarms,
@@ -108,11 +123,18 @@ export default function LofiPixelStudyClient({
   const [loadedBackgroundId, setLoadedBackgroundId] = useState<string | null>(
     null,
   );
-  const [windowSize, setWindowSize] = useState({ w: 1920, h: 1080 });
+  const viewportSnapshot = useSyncExternalStore(
+    subscribeToViewport,
+    getViewportSnapshot,
+    getServerViewportSnapshot,
+  );
+  const [viewportWidth, viewportHeight] = viewportSnapshot.split(":").map(Number);
 
   // Audio player state
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const alarmAudioRef = useRef<HTMLAudioElement | null>(null);
+  const selectedAlarmRef = useRef<AlarmSound | null>(null);
+  const timerSoundEnabledRef = useRef(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(() => {
     const defaultTrackIndex = initialTracks.findIndex(
@@ -153,7 +175,8 @@ export default function LofiPixelStudyClient({
   const [timerActive, setTimerActive] = useState(false);
   const [timerDuration, setTimerDuration] = useState(25 * 60);
   const [timerMinimized, setTimerMinimized] = useState(false);
-  const isPortrait = windowSize.h > windowSize.w;
+  const timerEndTimeRef = useRef<number | null>(null);
+  const isPortrait = viewportHeight > viewportWidth;
 
   // Safeguard in case initialTracks is empty
   const currentTrack = initialTracks[currentTrackIndex] || {
@@ -163,97 +186,86 @@ export default function LofiPixelStudyClient({
     path: "",
   };
   const selectedAlarm = initialAlarms[selectedAlarmIndex] || null;
+  const handleNext = useCallback(() => {
+    if (initialTracks.length === 0) return;
+    setCurrentTrackIndex((previous) => (previous + 1) % initialTracks.length);
+  }, [initialTracks.length]);
 
-  // Monitor Window Resize
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+    let cancelled = false;
 
-    const handleResize = () => {
-      setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+    queueMicrotask(() => {
+      if (cancelled) return;
+
+      try {
+        const rawPreferences = window.localStorage.getItem(STORAGE_KEY);
+        if (!rawPreferences) return;
+
+        const preferences = JSON.parse(rawPreferences) as {
+          selectedBgId?: string;
+          volume?: number;
+          isMuted?: boolean;
+          isLooping?: boolean;
+          showRetroFilter?: boolean;
+          showVignette?: boolean;
+          hoverPreviewEnabled?: boolean;
+          timerSoundEnabled?: boolean;
+          showMinimizedTimerTime?: boolean;
+          timerDuration?: number;
+          selectedAlarmId?: string;
+        };
+
+        if (preferences.selectedBgId) {
+          const matchedBackground = BACKGROUNDS.find(
+            (bg) => bg.id === preferences.selectedBgId,
+          );
+          if (matchedBackground) setSelectedBg(matchedBackground);
+        }
+
+        if (typeof preferences.volume === "number") {
+          setVolume(Math.min(1, Math.max(0, preferences.volume)));
+        }
+        if (typeof preferences.isMuted === "boolean") setIsMuted(preferences.isMuted);
+        if (typeof preferences.isLooping === "boolean") setIsLooping(preferences.isLooping);
+        if (typeof preferences.showRetroFilter === "boolean") {
+          setShowRetroFilter(preferences.showRetroFilter);
+        }
+        if (typeof preferences.showVignette === "boolean") {
+          setShowVignette(preferences.showVignette);
+        }
+        if (typeof preferences.hoverPreviewEnabled === "boolean") {
+          setHoverPreviewEnabled(preferences.hoverPreviewEnabled);
+        }
+        if (typeof preferences.timerSoundEnabled === "boolean") {
+          setTimerSoundEnabled(preferences.timerSoundEnabled);
+        }
+        if (typeof preferences.showMinimizedTimerTime === "boolean") {
+          setShowMinimizedTimerTime(preferences.showMinimizedTimerTime);
+        }
+        if (typeof preferences.timerDuration === "number") {
+          const nextDuration = Math.min(
+            180 * 60,
+            Math.max(60, preferences.timerDuration),
+          );
+          setTimerDuration(nextDuration);
+          setTimeLeft(nextDuration);
+        }
+        if (preferences.selectedAlarmId) {
+          const matchedAlarmIndex = initialAlarms.findIndex(
+            (alarm) => alarm.id === preferences.selectedAlarmId,
+          );
+          if (matchedAlarmIndex >= 0) setSelectedAlarmIndex(matchedAlarmIndex);
+        }
+      } catch (error) {
+        console.error("Failed to load study preferences:", error);
+      } finally {
+        if (!cancelled) hasLoadedPreferencesRef.current = true;
+      }
+    });
+
+    return () => {
+      cancelled = true;
     };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    try {
-      const rawPreferences = window.localStorage.getItem(STORAGE_KEY);
-      if (!rawPreferences) {
-        hasLoadedPreferencesRef.current = true;
-        return;
-      }
-
-      const preferences = JSON.parse(rawPreferences) as {
-        selectedBgId?: string;
-        volume?: number;
-        isMuted?: boolean;
-        isLooping?: boolean;
-        showRetroFilter?: boolean;
-        showVignette?: boolean;
-        hoverPreviewEnabled?: boolean;
-        timerSoundEnabled?: boolean;
-        showMinimizedTimerTime?: boolean;
-        timerDuration?: number;
-        selectedAlarmId?: string;
-      };
-
-      if (preferences.selectedBgId) {
-        const matchedBackground = BACKGROUNDS.find(
-          (bg) => bg.id === preferences.selectedBgId,
-        );
-        if (matchedBackground) {
-          setSelectedBg(matchedBackground);
-        }
-      }
-
-      if (typeof preferences.volume === "number") {
-        setVolume(Math.min(1, Math.max(0, preferences.volume)));
-      }
-      if (typeof preferences.isMuted === "boolean") {
-        setIsMuted(preferences.isMuted);
-      }
-      if (typeof preferences.isLooping === "boolean") {
-        setIsLooping(preferences.isLooping);
-      }
-      if (typeof preferences.showRetroFilter === "boolean") {
-        setShowRetroFilter(preferences.showRetroFilter);
-      }
-      if (typeof preferences.showVignette === "boolean") {
-        setShowVignette(preferences.showVignette);
-      }
-      if (typeof preferences.hoverPreviewEnabled === "boolean") {
-        setHoverPreviewEnabled(preferences.hoverPreviewEnabled);
-      }
-      if (typeof preferences.timerSoundEnabled === "boolean") {
-        setTimerSoundEnabled(preferences.timerSoundEnabled);
-      }
-      if (typeof preferences.showMinimizedTimerTime === "boolean") {
-        setShowMinimizedTimerTime(preferences.showMinimizedTimerTime);
-      }
-      if (typeof preferences.timerDuration === "number") {
-        const nextDuration = Math.min(
-          180 * 60,
-          Math.max(60, preferences.timerDuration),
-        );
-        setTimerDuration(nextDuration);
-        setTimeLeft(nextDuration);
-      }
-      if (preferences.selectedAlarmId) {
-        const matchedAlarmIndex = initialAlarms.findIndex(
-          (alarm) => alarm.id === preferences.selectedAlarmId,
-        );
-        if (matchedAlarmIndex >= 0) {
-          setSelectedAlarmIndex(matchedAlarmIndex);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load study preferences:", error);
-    } finally {
-      hasLoadedPreferencesRef.current = true;
-    }
   }, [initialAlarms]);
 
   useEffect(() => {
@@ -291,30 +303,41 @@ export default function LofiPixelStudyClient({
 
   // Delay enabling hover preview to prevent accidental triggers upon drawer open
   useEffect(() => {
-    if (isPanelOpen && hoverPreviewEnabled) {
-      const timer = setTimeout(() => {
+    const timer = setTimeout(
+      () => {
+        if (isPanelOpen && hoverPreviewEnabled) {
         setHoverActive(true);
-      }, 350);
-      return () => clearTimeout(timer);
-    } else {
-      setHoverActive(false);
-      setPreviewBg(null);
-    }
+        } else {
+          setHoverActive(false);
+          setPreviewBg(null);
+        }
+      },
+      isPanelOpen && hoverPreviewEnabled ? 350 : 0,
+    );
+    return () => clearTimeout(timer);
   }, [isPanelOpen, hoverPreviewEnabled]);
+
+  useEffect(() => {
+    selectedAlarmRef.current = selectedAlarm;
+    timerSoundEnabledRef.current = timerSoundEnabled;
+  }, [selectedAlarm, timerSoundEnabled]);
 
   // Countdown Timer Hook
   useEffect(() => {
-    let intervalId: any = null;
-    if (timerActive && timeLeft > 0) {
-      intervalId = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0 && timerActive) {
+    if (!timerActive || timerEndTimeRef.current === null) return;
+
+    const intervalId = setInterval(() => {
+      setTimeLeft((previous) => Math.max(0, previous - 1));
+    }, 1000);
+    const completionId = setTimeout(() => {
+      setTimeLeft(0);
       setTimerActive(false);
+      timerEndTimeRef.current = null;
 
       // Play the selected alarm sound at completion
-      if (timerSoundEnabled && typeof window !== "undefined") {
+      if (timerSoundEnabledRef.current) {
         try {
+          const selectedAlarm = selectedAlarmRef.current;
           if (alarmAudioRef.current && selectedAlarm?.path) {
             alarmAudioRef.current.pause();
             alarmAudioRef.current.currentTime = 0;
@@ -325,9 +348,13 @@ export default function LofiPixelStudyClient({
           console.error("Timer beep failed:", e);
         }
       }
-    }
-    return () => clearInterval(intervalId);
-  }, [selectedAlarm?.path, timerActive, timeLeft, timerSoundEnabled]);
+    }, timerEndTimeRef.current);
+
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(completionId);
+    };
+  }, [timerActive]);
 
   // Calculate integer scale from the loaded image dimensions so every visible
   // background frame already fills the viewport.
@@ -335,8 +362,8 @@ export default function LofiPixelStudyClient({
     imgDimensions.w && imgDimensions.h
       ? Math.max(
           1,
-          Math.ceil(windowSize.w / imgDimensions.w),
-          Math.ceil(windowSize.h / imgDimensions.h),
+          Math.ceil(viewportWidth / imgDimensions.w),
+          Math.ceil(viewportHeight / imgDimensions.h),
         )
       : 1;
   const isActiveBackgroundLoaded = loadedBackgroundId === activeBg.id;
@@ -370,25 +397,29 @@ export default function LofiPixelStudyClient({
       audio.removeEventListener("durationchange", updateDuration);
       audio.removeEventListener("ended", handleEnded);
     };
-  }, [currentTrackIndex, isLooping, initialTracks]);
+  }, [handleNext, isLooping]);
 
   // Apply volume changes
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = isMuted ? 0 : volume;
     }
-  }, [volume, isMuted, currentTrackIndex, isPlaying]);
+  }, [isMuted, volume]);
 
   // Sync source and state when track changes
   useEffect(() => {
-    if (audioRef.current && currentTrack.path) {
-      audioRef.current.src = currentTrack.path;
-      audioRef.current.load();
+    const audio = audioRef.current;
+    if (audio && currentTrack.path) {
+      const nextSource = new URL(currentTrack.path, window.location.href).href;
+      if (audio.src === nextSource) return;
+
+      audio.src = currentTrack.path;
+      audio.load();
       if (isPlaying) {
-        audioRef.current.play().catch(() => setIsPlaying(false));
+        audio.play().catch(() => setIsPlaying(false));
       }
     }
-  }, [currentTrackIndex]);
+  }, [currentTrack.path, isPlaying]);
 
   useEffect(() => {
     const alarmAudio = alarmAudioRef.current;
@@ -401,13 +432,6 @@ export default function LofiPixelStudyClient({
     alarmAudio.addEventListener("ended", handleAlarmEnded);
     return () => alarmAudio.removeEventListener("ended", handleAlarmEnded);
   }, []);
-
-  useEffect(() => {
-    if (!alarmAudioRef.current) return;
-    alarmAudioRef.current.pause();
-    alarmAudioRef.current.currentTime = 0;
-    setIsAlarmPreviewPlaying(false);
-  }, [selectedAlarmIndex]);
 
   const handleImageLoad = (
     backgroundId: string,
@@ -426,11 +450,13 @@ export default function LofiPixelStudyClient({
     const image = backgroundImageRef.current;
     if (!image?.complete || !image.naturalWidth || !image.naturalHeight) return;
 
-    setImgDimensions({ w: image.naturalWidth, h: image.naturalHeight });
-    setLoadedBackgroundId(activeBg.id);
+    queueMicrotask(() => {
+      setImgDimensions({ w: image.naturalWidth, h: image.naturalHeight });
+      setLoadedBackgroundId(activeBg.id);
+    });
   }, [activeBg.id]);
 
-  const handlePlayPause = () => {
+  const handlePlayPause = useCallback(() => {
     if (!audioRef.current || !currentTrack.path) return;
     if (isPlaying) {
       audioRef.current.pause();
@@ -441,7 +467,7 @@ export default function LofiPixelStudyClient({
         .then(() => setIsPlaying(true))
         .catch((err) => console.log("Audio play blocked: ", err));
     }
-  };
+  }, [currentTrack.path, isPlaying]);
 
   // Global Spacebar Play/Pause
   useEffect(() => {
@@ -458,12 +484,7 @@ export default function LofiPixelStudyClient({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isPlaying]);
-
-  const handleNext = () => {
-    if (initialTracks.length === 0) return;
-    setCurrentTrackIndex((prev) => (prev + 1) % initialTracks.length);
-  };
+  }, [handlePlayPause]);
 
   const handlePrev = () => {
     if (initialTracks.length === 0) return;
@@ -486,10 +507,24 @@ export default function LofiPixelStudyClient({
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
-  const getAlarmVolume = (alarmName?: string) => {
-    if (alarmName === "Beep Alarm") return 1;
-    if (alarmName === "Bedside Clock") return 0.82;
-    return 0.9;
+  const selectAlarm = (index: number) => {
+    if (alarmAudioRef.current) {
+      alarmAudioRef.current.pause();
+      alarmAudioRef.current.currentTime = 0;
+    }
+    setIsAlarmPreviewPlaying(false);
+    setSelectedAlarmIndex(index);
+  };
+
+  const toggleTimer = () => {
+    if (timerActive) {
+      timerEndTimeRef.current = null;
+      setTimerActive(false);
+      return;
+    }
+
+    timerEndTimeRef.current = timeLeft * 1000;
+    setTimerActive(true);
   };
 
   const handleAlarmPreview = () => {
@@ -765,7 +800,7 @@ export default function LofiPixelStudyClient({
             {/* Controls row */}
             <div className="flex gap-1.5 md:gap-2 w-full">
               <button
-                onClick={() => setTimerActive(!timerActive)}
+                onClick={toggleTimer}
                 className={`flex-1 py-0.5 md:py-1 text-xs md:text-sm pixel-btn uppercase cursor-pointer ${timerActive ? "pixel-btn-active" : ""}`}
               >
                 {timerActive ? "Pause" : "Start"}
@@ -773,6 +808,7 @@ export default function LofiPixelStudyClient({
               <button
                 onClick={() => {
                   setTimerActive(false);
+                  timerEndTimeRef.current = null;
                   setTimeLeft(timerDuration);
                 }}
                 className="flex-1 py-0.5 md:py-1 text-xs md:text-sm pixel-btn uppercase cursor-pointer"
@@ -786,6 +822,7 @@ export default function LofiPixelStudyClient({
               <button
                 onClick={() => {
                   setTimerActive(false);
+                  timerEndTimeRef.current = null;
                   setTimerDuration(25 * 60);
                   setTimeLeft(25 * 60);
                 }}
@@ -796,6 +833,7 @@ export default function LofiPixelStudyClient({
               <button
                 onClick={() => {
                   setTimerActive(false);
+                  timerEndTimeRef.current = null;
                   setTimerDuration(5 * 60);
                   setTimeLeft(5 * 60);
                 }}
@@ -839,7 +877,7 @@ export default function LofiPixelStudyClient({
                 <select
                   value={selectedAlarm?.id ?? ""}
                   onChange={(e) =>
-                    setSelectedAlarmIndex(
+                    selectAlarm(
                       Math.max(
                         0,
                         initialAlarms.findIndex(
@@ -1140,9 +1178,11 @@ export default function LofiPixelStudyClient({
                 >
                   {/* Thumbnail Image */}
                   <div className="relative aspect-video rounded-none overflow-hidden bg-zinc-950">
-                    <img
+                    <Image
                       src={bg.path}
                       alt={bg.name}
+                      fill
+                      sizes="(max-width: 640px) 50vw, 25vw"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       style={{ imageRendering: "pixelated" }}
                     />

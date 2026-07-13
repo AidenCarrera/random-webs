@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, Settings2, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { canvasToBlob, downloadCanvasPng } from "@/lib/canvasExport";
 
@@ -142,6 +142,31 @@ function getRingStrokeStyle(radius: number, offset: number, mode: ColorMode): st
   return getPaletteColor(palettePosition / 360, mode);
 }
 
+function subscribeToTouchCapability(onStoreChange: () => void) {
+  const mediaQuery = window.matchMedia("(pointer: coarse)");
+  mediaQuery.addEventListener("change", onStoreChange);
+  return () => mediaQuery.removeEventListener("change", onStoreChange);
+}
+
+function getTouchCapabilitySnapshot() {
+  return (
+    window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0
+  );
+}
+
+function subscribeToLocation(onStoreChange: () => void) {
+  window.addEventListener("hashchange", onStoreChange);
+  window.addEventListener("popstate", onStoreChange);
+  return () => {
+    window.removeEventListener("hashchange", onStoreChange);
+    window.removeEventListener("popstate", onStoreChange);
+  };
+}
+
+const getShareUrlSnapshot = () => window.location.href;
+const getServerShareUrlSnapshot = () => "";
+const getServerTouchCapabilitySnapshot = () => false;
+
 export default function HypnoSpiral() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const offsetRef = useRef(0);
@@ -153,11 +178,19 @@ export default function HypnoSpiral() {
   const [colorMode, setColorMode] = useState<ColorMode>("default");
   const [ringCount, setRingCount] = useState(90);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const isTouchDevice = useSyncExternalStore(
+    subscribeToTouchCapability,
+    getTouchCapabilitySnapshot,
+    getServerTouchCapabilitySnapshot,
+  );
   const [downloadCountdown, setDownloadCountdown] = useState<number | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewFileName, setPreviewFileName] = useState("hypno-spiral.png");
-  const [shareUrl, setShareUrl] = useState("");
+  const shareUrl = useSyncExternalStore(
+    subscribeToLocation,
+    getShareUrlSnapshot,
+    getServerShareUrlSnapshot,
+  );
 
   useEffect(() => {
     colorModeRef.current = colorMode;
@@ -166,15 +199,6 @@ export default function HypnoSpiral() {
   useEffect(() => {
     ringCountRef.current = ringCount;
   }, [ringCount]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    setIsTouchDevice(
-      window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0,
-    );
-    setShareUrl(window.location.href);
-  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;

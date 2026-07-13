@@ -1,7 +1,13 @@
 "use client";
 
 import "./styles.css";
-import { useRef, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   Download,
   Trash2,
@@ -16,6 +22,36 @@ import {
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { canvasToBlob, downloadCanvasPng } from "@/lib/canvasExport";
 
+function subscribeToViewport(onStoreChange: () => void) {
+  window.addEventListener("resize", onStoreChange);
+  return () => window.removeEventListener("resize", onStoreChange);
+}
+
+const getViewportSnapshot = () => `${window.innerWidth}:${window.innerHeight}`;
+const getServerViewportSnapshot = () => "1200:800";
+
+function subscribeToTouchCapability(onStoreChange: () => void) {
+  const mediaQuery = window.matchMedia("(pointer: coarse)");
+  mediaQuery.addEventListener("change", onStoreChange);
+  return () => mediaQuery.removeEventListener("change", onStoreChange);
+}
+
+const getTouchCapabilitySnapshot = () =>
+  window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+const getServerTouchCapabilitySnapshot = () => false;
+
+function subscribeToLocation(onStoreChange: () => void) {
+  window.addEventListener("hashchange", onStoreChange);
+  window.addEventListener("popstate", onStoreChange);
+  return () => {
+    window.removeEventListener("hashchange", onStoreChange);
+    window.removeEventListener("popstate", onStoreChange);
+  };
+}
+
+const getShareUrlSnapshot = () => window.location.href;
+const getServerShareUrlSnapshot = () => "";
+
 export default function MandalaMaker() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [color, setColor] = useState("#00ffea");
@@ -26,13 +62,17 @@ export default function MandalaMaker() {
   const [showUI, setShowUI] = useState(true);
   const [isSquareCanvas, setIsSquareCanvas] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const isTouchDevice = useSyncExternalStore(
+    subscribeToTouchCapability,
+    getTouchCapabilitySnapshot,
+    getServerTouchCapabilitySnapshot,
+  );
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [shareUrl, setShareUrl] = useState("");
-  const [canvasCssSize, setCanvasCssSize] = useState({
-    width: 1200,
-    height: 800,
-  });
+  const shareUrl = useSyncExternalStore(
+    subscribeToLocation,
+    getShareUrlSnapshot,
+    getServerShareUrlSnapshot,
+  );
 
   // Undo/Redo History Stacks
   const historyRef = useRef<string[]>([]);
@@ -40,10 +80,21 @@ export default function MandalaMaker() {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
 
-  const [windowSize, setWindowSize] = useState({ width: 1200, height: 800 });
+  const viewportSnapshot = useSyncExternalStore(
+    subscribeToViewport,
+    getViewportSnapshot,
+    getServerViewportSnapshot,
+  );
+  const [viewportWidth, viewportHeight] = viewportSnapshot.split(":").map(Number);
   const isMobileViewport =
-    windowSize.width < 768 || (isTouchDevice && windowSize.height <= 500);
+    viewportWidth < 768 || (isTouchDevice && viewportHeight <= 500);
   const shouldUseSquareCanvas = isSquareCanvas && !isMobileViewport;
+  const squareSide = Math.max(
+    240,
+    Math.min(viewportWidth - 16, viewportHeight - 180, 750),
+  );
+  const canvasCssWidth = shouldUseSquareCanvas ? squareSide : viewportWidth;
+  const canvasCssHeight = shouldUseSquareCanvas ? squareSide : viewportHeight;
 
   // For rainbow cycle
   const hueRef = useRef(0);
@@ -70,21 +121,7 @@ export default function MandalaMaker() {
     setCanRedo(false);
   };
 
-  const undo = () => {
-    if (historyIndexRef.current > 0) {
-      historyIndexRef.current -= 1;
-      restoreHistoryState();
-    }
-  };
-
-  const redo = () => {
-    if (historyIndexRef.current < historyRef.current.length - 1) {
-      historyIndexRef.current += 1;
-      restoreHistoryState();
-    }
-  };
-
-  const restoreHistoryState = () => {
+  const restoreHistoryState = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -102,23 +139,21 @@ export default function MandalaMaker() {
       setCanUndo(historyIndexRef.current > 0);
       setCanRedo(historyIndexRef.current < historyRef.current.length - 1);
     };
-  };
-
-  // Sync window resize dimensions state
-  useEffect(() => {
-    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    setIsTouchDevice(
-      window.matchMedia("(pointer: coarse)").matches ||
-        navigator.maxTouchPoints > 0,
-    );
-    setShareUrl(window.location.href);
-
-    const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const undo = useCallback(() => {
+    if (historyIndexRef.current > 0) {
+      historyIndexRef.current -= 1;
+      restoreHistoryState();
+    }
+  }, [restoreHistoryState]);
+
+  const redo = useCallback(() => {
+    if (historyIndexRef.current < historyRef.current.length - 1) {
+      historyIndexRef.current += 1;
+      restoreHistoryState();
+    }
+  }, [restoreHistoryState]);
 
   // Handle canvas sizing and history backups on window sizing or layout toggle
   useEffect(() => {
@@ -128,17 +163,11 @@ export default function MandalaMaker() {
     if (!ctx) return;
 
     // Calculate dimensions
-    const side = Math.max(
-      240,
-      Math.min(windowSize.width - 16, windowSize.height - 180, 750),
-    );
-    const cssWidth = shouldUseSquareCanvas ? side : windowSize.width;
-    const cssHeight = shouldUseSquareCanvas ? side : windowSize.height;
+    const cssWidth = canvasCssWidth;
+    const cssHeight = canvasCssHeight;
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 3);
     const w = Math.round(cssWidth * pixelRatio);
     const h = Math.round(cssHeight * pixelRatio);
-    setCanvasCssSize({ width: cssWidth, height: cssHeight });
-
     // Copy current state if it exists
     const tempUrl = canvas.toDataURL();
     const oldWidth = canvas.width;
@@ -165,7 +194,7 @@ export default function MandalaMaker() {
       historyIndexRef.current = 0;
       setCanUndo(false);
     }
-  }, [shouldUseSquareCanvas, windowSize]);
+  }, [canvasCssHeight, canvasCssWidth]);
 
   // Keyboard shortcut listener (Ctrl+Z, Ctrl+Y)
   useEffect(() => {
@@ -188,7 +217,7 @@ export default function MandalaMaker() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [redo, undo]);
 
   // Drawing Implementation with Ref for coordinates
   const lastPos = useRef<{ x: number; y: number } | null>(null);
@@ -299,7 +328,7 @@ export default function MandalaMaker() {
   };
 
   return (
-    <div className="mandala-page relative flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-neutral-950 font-sans">
+    <div className="mandala-page relative flex h-dvh w-full items-center justify-center overflow-hidden bg-neutral-950 font-sans">
       <canvas
         ref={canvasRef}
         onPointerDown={startDrawing}
@@ -313,8 +342,8 @@ export default function MandalaMaker() {
             : "absolute inset-0"
         }`}
         style={{
-          width: shouldUseSquareCanvas ? canvasCssSize.width : "100%",
-          height: shouldUseSquareCanvas ? canvasCssSize.height : "100%",
+          width: shouldUseSquareCanvas ? canvasCssWidth : "100%",
+          height: shouldUseSquareCanvas ? canvasCssHeight : "100%",
         }}
       />
 
