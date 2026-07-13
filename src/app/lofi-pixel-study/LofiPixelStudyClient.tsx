@@ -559,7 +559,7 @@ export default function LofiPixelStudyClient({
 
   return (
     <div
-      className={`${styles.root} relative h-[100dvh] w-screen overflow-hidden bg-black text-zinc-100 select-none font-pixel text-base md:text-lg`}
+      className={`${styles.root} relative h-dvh w-screen overflow-hidden bg-black text-zinc-100 select-none font-pixel text-base md:text-lg`}
     >
       {/* HTML5 Audio Node */}
       {currentTrack.path && (
