@@ -112,7 +112,10 @@ export function formatDate(date: string): string {
   }).format(new Date(date));
 }
 
-export function selectTreePaths(paths: string[], requiredPaths: string[]): string[] {
+export function selectTreePaths(
+  paths: string[],
+  requiredPaths: string[],
+): string[] {
   const required = new Set(requiredPaths.map(normalizePath));
   const unique = Array.from(new Set(paths.map(normalizePath).filter(Boolean)));
 
@@ -135,7 +138,9 @@ export function selectTreePaths(paths: string[], requiredPaths: string[]): strin
   return selected;
 }
 
-export function parseRenamePath(renamePath: string): { oldPath: string; newPath: string } | null {
+export function parseRenamePath(
+  renamePath: string,
+): { oldPath: string; newPath: string } | null {
   if (!renamePath.includes("{") && renamePath.includes(" => ")) {
     const parts = renamePath.split(" => ");
     return { oldPath: parts[0].trim(), newPath: parts[1].trim() };
@@ -148,32 +153,48 @@ export function parseRenamePath(renamePath: string): { oldPath: string; newPath:
     const newSegment = braceMatch[3].trim();
     const suffix = braceMatch[4];
 
-    const oldPath = `${prefix}${oldSegment}${suffix}`.replace(/\/+/g, "/").replace(/^\/|\/$/g, "");
-    const newPath = `${prefix}${newSegment}${suffix}`.replace(/\/+/g, "/").replace(/^\/|\/$/g, "");
+    const oldPath = `${prefix}${oldSegment}${suffix}`
+      .replace(/\/+/g, "/")
+      .replace(/^\/|\/$/g, "");
+    const newPath = `${prefix}${newSegment}${suffix}`
+      .replace(/\/+/g, "/")
+      .replace(/^\/|\/$/g, "");
     return { oldPath, newPath };
   }
 
   return null;
 }
 
-export function parseGitLog(text: string): { events: CommitEvent[]; allPaths: string[] } {
+export function parseGitLog(text: string): {
+  events: CommitEvent[];
+  allPaths: string[];
+} {
   const lines = text.split(/\r?\n/);
   const events: CommitEvent[] = [];
-  
+
   let currentEvent: CommitEvent | null = null;
   let inMessage = false;
-  let rawChanges: Array<{ path: string; additions: number; deletions: number }> = [];
+  let rawChanges: Array<{
+    path: string;
+    additions: number;
+    deletions: number;
+  }> = [];
   const createdFiles = new Set<string>();
   const deletedFiles = new Set<string>();
 
   const finalizeCurrentEvent = () => {
     if (!currentEvent) return;
 
-    const changes: Array<{ path: string; status: ChangeStatus; additions: number; deletions: number }> = [];
+    const changes: Array<{
+      path: string;
+      status: ChangeStatus;
+      additions: number;
+      deletions: number;
+    }> = [];
 
     for (const change of rawChanges) {
       let status: ChangeStatus = "modified";
-      
+
       if (change.path.includes(" => ") || change.path.includes("=>")) {
         const parsedRename = parseRenamePath(change.path);
         if (parsedRename) {
@@ -208,9 +229,27 @@ export function parseGitLog(text: string): { events: CommitEvent[]; allPaths: st
     }
 
     currentEvent.changes = changes;
-    currentEvent.additions = changes.reduce((sum, c) => sum + (c.status === "added" ? c.additions : c.status === "modified" ? c.additions : 0), 0);
-    currentEvent.deletions = changes.reduce((sum, c) => sum + (c.status === "removed" ? c.deletions : c.status === "modified" ? c.deletions : 0), 0);
-    
+    currentEvent.additions = changes.reduce(
+      (sum, c) =>
+        sum +
+        (c.status === "added"
+          ? c.additions
+          : c.status === "modified"
+            ? c.additions
+            : 0),
+      0,
+    );
+    currentEvent.deletions = changes.reduce(
+      (sum, c) =>
+        sum +
+        (c.status === "removed"
+          ? c.deletions
+          : c.status === "modified"
+            ? c.deletions
+            : 0),
+      0,
+    );
+
     events.push(currentEvent);
     currentEvent = null;
     rawChanges = [];
@@ -243,7 +282,9 @@ export function parseGitLog(text: string): { events: CommitEvent[]; allPaths: st
       const match = line.match(/^Author:\s+([^<]+)(?:<([^>]+)>)?/);
       if (match) {
         const name = match[1].trim();
-        const email = match[2] ? match[2].trim() : name.toLowerCase().replace(/\s+/g, "-");
+        const email = match[2]
+          ? match[2].trim()
+          : name.toLowerCase().replace(/\s+/g, "-");
         currentEvent.author = {
           key: email,
           name,
@@ -286,8 +327,10 @@ export function parseGitLog(text: string): { events: CommitEvent[]; allPaths: st
     const numstatMatch = trimmed.match(/^([0-9-]+)\s+([0-9-]+)\s+(.+)$/);
     if (numstatMatch) {
       inMessage = false;
-      const addVal = numstatMatch[1] === "-" ? 0 : parseInt(numstatMatch[1], 10);
-      const delVal = numstatMatch[2] === "-" ? 0 : parseInt(numstatMatch[2], 10);
+      const addVal =
+        numstatMatch[1] === "-" ? 0 : parseInt(numstatMatch[1], 10);
+      const delVal =
+        numstatMatch[2] === "-" ? 0 : parseInt(numstatMatch[2], 10);
       const filePath = numstatMatch[3].trim();
       rawChanges.push({
         path: filePath,
@@ -312,7 +355,9 @@ export function parseGitLog(text: string): { events: CommitEvent[]; allPaths: st
 
   finalizeCurrentEvent();
 
-  events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  events.sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
 
   const allPathsSet = new Set<string>();
   for (const event of events) {

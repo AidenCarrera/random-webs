@@ -34,7 +34,10 @@
   letter-spacing: 0.08em;
   color: #1d2b53;
   box-shadow: 4px 4px 0 #1d2b53;
-  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
 }
 
 .pixel-chip:hover {
@@ -60,7 +63,10 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   box-shadow: 4px 4px 0 #1d2b53;
-  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    filter 120ms ease;
 }
 
 .pixel-action:hover:not(:disabled) {

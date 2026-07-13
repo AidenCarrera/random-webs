@@ -23,7 +23,8 @@ function subscribeToTouchCapability(onStoreChange: () => void) {
 
 function getTouchCapabilitySnapshot() {
   return (
-    window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0
+    window.matchMedia("(pointer: coarse)").matches ||
+    navigator.maxTouchPoints > 0
   );
 }
 
@@ -128,7 +129,9 @@ export default function AsciiCamera() {
     if (!context) return null;
 
     exportCanvasRef.current = canvas;
-    canvas.width = Math.ceil(ASCII_EXPORT_PADDING * 2 + columnCount * ASCII_EXPORT_CHAR_WIDTH);
+    canvas.width = Math.ceil(
+      ASCII_EXPORT_PADDING * 2 + columnCount * ASCII_EXPORT_CHAR_WIDTH,
+    );
     canvas.height = Math.ceil(
       ASCII_EXPORT_PADDING * 2 + rowCount * ASCII_EXPORT_LINE_HEIGHT,
     );
@@ -223,7 +226,9 @@ export default function AsciiCamera() {
                     className="hidden"
                   />
                 </label>
-                <p className="font-mono text-xs opacity-50">Supports JPG, PNG, WEBP</p>
+                <p className="font-mono text-xs opacity-50">
+                  Supports JPG, PNG, WEBP
+                </p>
               </div>
             ) : (
               <pre
@@ -405,9 +410,11 @@ export default function AsciiCamera() {
             min(
                 (100vw - 16px) / var(--ascii-columns),
                 1180px / var(--ascii-columns),
-                ((100dvh - 168px) * var(--ascii-aspect-ratio)) / var(--ascii-columns),
+                ((100dvh - 168px) * var(--ascii-aspect-ratio)) /
+                  var(--ascii-columns),
                 (100dvh - 168px) / var(--ascii-rows)
-              ) * var(--ascii-scale)
+              ) *
+              var(--ascii-scale)
           );
         }
 
@@ -595,9 +602,11 @@ export default function AsciiCamera() {
               min(
                   (100vw - 6px) / var(--ascii-columns),
                   1180px / var(--ascii-columns),
-                  ((100dvh - 108px) * var(--ascii-aspect-ratio)) / var(--ascii-columns),
+                  ((100dvh - 108px) * var(--ascii-aspect-ratio)) /
+                    var(--ascii-columns),
                   (100dvh - 108px) / var(--ascii-rows)
-                ) * calc(var(--ascii-scale) + 0.1)
+                ) *
+                calc(var(--ascii-scale) + 0.1)
             );
           }
         }

@@ -121,7 +121,9 @@ export default function StylePet() {
   const [tempName, setTempName] = useState("CYBER-KITY");
 
   // Menu toggles
-  const [currentMenu, setCurrentMenu] = useState<"NONE" | "STYLE" | "STATS">("NONE");
+  const [currentMenu, setCurrentMenu] = useState<"NONE" | "STYLE" | "STATS">(
+    "NONE",
+  );
   const [selectedStyleIndex, setSelectedStyleIndex] = useState(0); // 0 = SKIN, 1 = HAT, 2 = ACC
 
   // Zzz sleep floaters
@@ -274,7 +276,8 @@ export default function StylePet() {
   const cycleAccessory = (dir = 1) => {
     synth.playSelect();
     const accs: AccessoryStyle[] = ["NONE", "SHADES", "BOWTIE", "HALO"];
-    const next = accs[(accs.indexOf(accessory) + dir + accs.length) % accs.length];
+    const next =
+      accs[(accs.indexOf(accessory) + dir + accs.length) % accs.length];
     setAccessory(next);
   };
 
@@ -684,33 +687,52 @@ export default function StylePet() {
               <div className="absolute inset-x-2 bottom-2 bg-zinc-900/95 text-[9px] rounded-lg p-2.5 flex flex-col gap-1 border border-zinc-800 text-zinc-300 z-30">
                 <div className="font-bold tracking-wider text-center text-zinc-400 border-b border-zinc-800/60 pb-0.5 uppercase mb-1.5 flex justify-between px-1">
                   <span>STYLE CUSTOMIZER</span>
-                  <span className="text-zinc-500 font-mono select-none">▲▼ Select</span>
+                  <span className="text-zinc-500 font-mono select-none">
+                    ▲▼ Select
+                  </span>
                 </div>
-                
+
                 {/* Skin item */}
-                <div className={`flex justify-between items-center px-1.5 py-0.5 rounded transition-all ${selectedStyleIndex === 0 ? "bg-zinc-800/40 text-cyan-400 font-bold" : "opacity-80"}`}>
+                <div
+                  className={`flex justify-between items-center px-1.5 py-0.5 rounded transition-all ${selectedStyleIndex === 0 ? "bg-zinc-800/40 text-cyan-400 font-bold" : "opacity-80"}`}
+                >
                   <span className="flex items-center gap-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${selectedStyleIndex === 0 ? "bg-cyan-400 animate-pulse" : "bg-transparent"}`} />
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${selectedStyleIndex === 0 ? "bg-cyan-400 animate-pulse" : "bg-transparent"}`}
+                    />
                     <span>SKIN COLOR</span>
                   </span>
                   <span>
-                    {skin.replace("cyber-", "").replace("neon-", "").replace("slime-", "").replace("golden-", "").toUpperCase()}
+                    {skin
+                      .replace("cyber-", "")
+                      .replace("neon-", "")
+                      .replace("slime-", "")
+                      .replace("golden-", "")
+                      .toUpperCase()}
                   </span>
                 </div>
 
                 {/* Hat item */}
-                <div className={`flex justify-between items-center px-1.5 py-0.5 rounded transition-all ${selectedStyleIndex === 1 ? "bg-zinc-800/40 text-cyan-400 font-bold" : "opacity-80"}`}>
+                <div
+                  className={`flex justify-between items-center px-1.5 py-0.5 rounded transition-all ${selectedStyleIndex === 1 ? "bg-zinc-800/40 text-cyan-400 font-bold" : "opacity-80"}`}
+                >
                   <span className="flex items-center gap-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${selectedStyleIndex === 1 ? "bg-cyan-400 animate-pulse" : "bg-transparent"}`} />
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${selectedStyleIndex === 1 ? "bg-cyan-400 animate-pulse" : "bg-transparent"}`}
+                    />
                     <span>HAT STYLE</span>
                   </span>
                   <span>{hat}</span>
                 </div>
 
                 {/* Accessory item */}
-                <div className={`flex justify-between items-center px-1.5 py-0.5 rounded transition-all ${selectedStyleIndex === 2 ? "bg-zinc-800/40 text-cyan-400 font-bold" : "opacity-80"}`}>
+                <div
+                  className={`flex justify-between items-center px-1.5 py-0.5 rounded transition-all ${selectedStyleIndex === 2 ? "bg-zinc-800/40 text-cyan-400 font-bold" : "opacity-80"}`}
+                >
                   <span className="flex items-center gap-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${selectedStyleIndex === 2 ? "bg-cyan-400 animate-pulse" : "bg-transparent"}`} />
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${selectedStyleIndex === 2 ? "bg-cyan-400 animate-pulse" : "bg-transparent"}`}
+                    />
                     <span>ACCESSORY</span>
                   </span>
                   <span>{accessory}</span>
@@ -820,9 +842,11 @@ export default function StylePet() {
                 onClick={() => {
                   synth.playSelect();
                   if (currentMenu === "STYLE") {
-                    setSelectedStyleIndex(prev => (prev - 1 + 3) % 3);
+                    setSelectedStyleIndex((prev) => (prev - 1 + 3) % 3);
                   } else {
-                    setCurrentMenu(prev => prev === "STATS" ? "NONE" : "STATS");
+                    setCurrentMenu((prev) =>
+                      prev === "STATS" ? "NONE" : "STATS",
+                    );
                   }
                 }}
                 className="absolute top-0 w-8 h-11 bg-zinc-900 hover:bg-zinc-950 rounded-t shadow-[inset_0_2px_0_rgba(255,255,255,0.1)] active:translate-y-px active:shadow-none flex items-center justify-center"
@@ -834,7 +858,7 @@ export default function StylePet() {
                 onClick={() => {
                   synth.playSelect();
                   if (currentMenu === "STYLE") {
-                    setSelectedStyleIndex(prev => (prev + 1) % 3);
+                    setSelectedStyleIndex((prev) => (prev + 1) % 3);
                   } else {
                     setCurrentMenu("NONE");
                   }
@@ -879,7 +903,9 @@ export default function StylePet() {
             <div className="flex flex-col items-center gap-1 text-[9px] text-zinc-500 font-bold uppercase tracking-wider min-w-25 text-center">
               {currentMenu === "STYLE" ? (
                 <>
-                  <span className="text-cyan-500 animate-pulse">▲▼ - SELECT</span>
+                  <span className="text-cyan-500 animate-pulse">
+                    ▲▼ - SELECT
+                  </span>
                   <span className="text-cyan-500">◀▶ - CHANGE</span>
                   <span className="text-zinc-600">▼ - CLOSE</span>
                 </>

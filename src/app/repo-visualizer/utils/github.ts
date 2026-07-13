@@ -1,4 +1,9 @@
-import { CommitEvent, FileChange, ChangeStatus, GithubCommitDetail } from "../types";
+import {
+  CommitEvent,
+  FileChange,
+  ChangeStatus,
+  GithubCommitDetail,
+} from "../types";
 import { normalizePath } from "./common";
 
 export function parseRepositoryInput(
@@ -25,7 +30,9 @@ export function parseRepositoryInput(
   }
 }
 
-export function buildGithubEvents(details: GithubCommitDetail[]): CommitEvent[] {
+export function buildGithubEvents(
+  details: GithubCommitDetail[],
+): CommitEvent[] {
   return details
     .slice()
     .reverse()

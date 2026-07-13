@@ -37,7 +37,8 @@ function subscribeToTouchCapability(onStoreChange: () => void) {
 }
 
 const getTouchCapabilitySnapshot = () =>
-  window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+  window.matchMedia("(pointer: coarse)").matches ||
+  navigator.maxTouchPoints > 0;
 const getServerTouchCapabilitySnapshot = () => false;
 
 function subscribeToLocation(onStoreChange: () => void) {
@@ -85,7 +86,9 @@ export default function MandalaMaker() {
     getViewportSnapshot,
     getServerViewportSnapshot,
   );
-  const [viewportWidth, viewportHeight] = viewportSnapshot.split(":").map(Number);
+  const [viewportWidth, viewportHeight] = viewportSnapshot
+    .split(":")
+    .map(Number);
   const isMobileViewport =
     viewportWidth < 768 || (isTouchDevice && viewportHeight <= 500);
   const shouldUseSquareCanvas = isSquareCanvas && !isMobileViewport;

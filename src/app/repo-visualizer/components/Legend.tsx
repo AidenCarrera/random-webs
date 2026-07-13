@@ -8,16 +8,16 @@ type LegendProps = {
 };
 
 const labelToColor: Record<string, string> = {
-  "TypeScript": FILE_COLORS.typescript,
-  "JavaScript": FILE_COLORS.javascript,
-  "Styles": FILE_COLORS.styles,
-  "Data": FILE_COLORS.data,
-  "Docs": FILE_COLORS.docs,
-  "Images": FILE_COLORS.image,
-  "Audio": FILE_COLORS.audio,
-  "Video": FILE_COLORS.video,
-  "Config": FILE_COLORS.config,
-  "Other": FILE_COLORS.other,
+  TypeScript: FILE_COLORS.typescript,
+  JavaScript: FILE_COLORS.javascript,
+  Styles: FILE_COLORS.styles,
+  Data: FILE_COLORS.data,
+  Docs: FILE_COLORS.docs,
+  Images: FILE_COLORS.image,
+  Audio: FILE_COLORS.audio,
+  Video: FILE_COLORS.video,
+  Config: FILE_COLORS.config,
+  Other: FILE_COLORS.other,
 };
 
 const colorToLabel: Record<string, string> = {
@@ -98,7 +98,8 @@ export function Legend({ graphRef }: LegendProps) {
       {activeItems.length > 0 ? (
         <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
           {activeItems.map((item) => {
-            const percentage = totalActiveFiles > 0 ? (item.count / totalActiveFiles) * 100 : 0;
+            const percentage =
+              totalActiveFiles > 0 ? (item.count / totalActiveFiles) * 100 : 0;
             return (
               <motion.div layout key={item.label} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
@@ -107,7 +108,9 @@ export function Legend({ graphRef }: LegendProps) {
                       className="size-2 rounded-full"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="font-semibold text-slate-300">{item.label}</span>
+                    <span className="font-semibold text-slate-300">
+                      {item.label}
+                    </span>
                   </div>
                   <span className="font-mono text-[10px] font-bold text-slate-400">
                     {item.count}
@@ -126,7 +129,9 @@ export function Legend({ graphRef }: LegendProps) {
           })}
         </div>
       ) : (
-        <p className="py-4 text-center text-xs text-slate-600">No active files</p>
+        <p className="py-4 text-center text-xs text-slate-600">
+          No active files
+        </p>
       )}
 
       <div className="mt-2 border-t border-white/5 pt-3">

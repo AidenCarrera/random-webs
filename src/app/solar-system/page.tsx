@@ -195,7 +195,7 @@ const TYPE_OPTIONS = [
 ];
 
 const AMBIENT_AUDIO_URL = "/solar-system/space-ambient.mp3";
-const DEFAULT_AMBIENT_VOLUME = 0.20;
+const DEFAULT_AMBIENT_VOLUME = 0.2;
 
 const getSuggestedPlanetType = (textureKey: TextureKey) => {
   switch (textureKey) {
@@ -2189,13 +2189,9 @@ export default function SolarSystem() {
             try {
               const response = await fetch(exportImage);
               const blob = await response.blob();
-              const pngFile = new File(
-                [blob],
-                exportFileName,
-                {
-                  type: "image/png",
-                },
-              );
+              const pngFile = new File([blob], exportFileName, {
+                type: "image/png",
+              });
               const canShareFile =
                 typeof navigator !== "undefined" &&
                 "share" in navigator &&

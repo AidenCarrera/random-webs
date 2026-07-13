@@ -68,12 +68,12 @@ const MATRIX_SOURCE_LINES = [
   `// OVERRIDE COMPILER STATE = GRANTED.`,
   `// hidden_init(): TODOs=load_bearing; tests=null;`,
   `// final_build_status: working locally, good enough.`,
-  `export default function MatrixRain() { return <TerminalCore />; }`
+  `export default function MatrixRain() { return <TerminalCore />; }`,
 ];
 
 const HACKER_CODE = MATRIX_SOURCE_LINES.join("\n");
 const RAIN_CHARACTERS = Array.from(
-  new Set(HACKER_CODE.replace(/\s+/g, ""))
+  new Set(HACKER_CODE.replace(/\s+/g, "")),
 ).join("");
 
 export default function MatrixRain() {
@@ -143,16 +143,18 @@ export default function MatrixRain() {
 
       // 1. Calculate active typing speed multiplier based on the last 1.5 seconds
       const now = performance.now();
-      tapTimestampsRef.current = tapTimestampsRef.current.filter((t) => now - t < 1500);
+      tapTimestampsRef.current = tapTimestampsRef.current.filter(
+        (t) => now - t < 1500,
+      );
       const tapsPerSecond = tapTimestampsRef.current.length / 1.5;
-      
+
       // Speed multiplier caps at 1.0 (equivalent to full default cascade speed) at 8 keystrokes per second
       const speedMultiplier = 0.04 + Math.min(0.96, tapsPerSecond / 8.0);
 
       const drops = dropsRef.current;
       for (let i = 0; i < drops.length; i++) {
         const text = RAIN_CHARACTERS.charAt(
-          Math.floor(Math.random() * RAIN_CHARACTERS.length)
+          Math.floor(Math.random() * RAIN_CHARACTERS.length),
         );
         const x = i * fontSize;
         const y = Math.floor(drops[i]) * fontSize;
@@ -223,11 +225,14 @@ export default function MatrixRain() {
   };
 
   return (
-    <div 
+    <div
       onPointerDown={advanceHacking}
       className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black px-4 pt-24 pb-36 font-mono touch-manipulation select-none md:px-6 md:pt-10 md:pb-24"
     >
-      <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 pointer-events-none"
+      />
 
       {/* Top Banner UI */}
       <div className="pointer-events-none absolute top-4 left-1/2 z-10 w-full max-w-[calc(100vw-2rem)] -translate-x-1/2 px-4 text-center md:top-8 md:left-8 md:max-w-none md:translate-x-0 md:px-0 md:text-left">
@@ -241,7 +246,10 @@ export default function MatrixRain() {
       </div>
 
       {/* Control Buttons */}
-      <div className="absolute right-4 bottom-4 left-4 z-30 flex items-center justify-center gap-3 md:right-8 md:bottom-8 md:left-auto" onPointerDown={(e) => e.stopPropagation()}>
+      <div
+        className="absolute right-4 bottom-4 left-4 z-30 flex items-center justify-center gap-3 md:right-8 md:bottom-8 md:left-auto"
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <button
           onClick={() => setIsPlaying(!isPlaying)}
           className="w-full max-w-xs rounded border border-[#0F0] px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.22em] text-[#0F0] transition-colors hover:bg-[#0F0] hover:text-black md:w-auto md:px-5 md:text-xs"
@@ -251,9 +259,7 @@ export default function MatrixRain() {
       </div>
 
       {/* Floating Hacker Terminal */}
-      <div 
-        className="relative z-20 flex h-[min(68vh,42rem)] w-full max-w-4xl flex-col rounded-xl border border-[#0F0]/25 bg-black/85 p-4 font-mono text-xs text-[#0F0] shadow-[0_0_40px_rgba(0,255,0,0.18)] backdrop-blur-md md:h-[min(72vh,46rem)] md:p-5"
-      >
+      <div className="relative z-20 flex h-[min(68vh,42rem)] w-full max-w-4xl flex-col rounded-xl border border-[#0F0]/25 bg-black/85 p-4 font-mono text-xs text-[#0F0] shadow-[0_0_40px_rgba(0,255,0,0.18)] backdrop-blur-md md:h-[min(72vh,46rem)] md:p-5">
         {/* Terminal Header */}
         <div className="flex items-center justify-between pb-3 border-b border-[#0F0]/15 mb-3 text-[10px] text-[#0F0]/50 tracking-wider">
           <div className="flex items-center gap-2">
@@ -268,17 +274,29 @@ export default function MatrixRain() {
         </div>
 
         {/* Console Printout Body */}
-        <div 
+        <div
           ref={consoleRef}
           className="flex-1 space-y-2 overflow-y-auto pr-1 text-[10px] md:text-xs"
         >
           <div className="text-[#0F0]/40">
-            SECURE LINK ROOT AUTHENTICATED...<br />
-            LOAD TARGET SPEC: <span className="text-[#0F0]/80 font-bold">src/app/matrix-rain/page.tsx</span><br />
-            --------------------------------------------------------<br />
-            [INFO] <span className="text-[#0F0]/80 font-bold">BEGIN KEYBOARD INPUT OR SCREEN TAPS TO DECOMPILE...</span><br />
-            [WARN] npm audit fix --force attempted.<br />
-            [NOTE] MOBILE PATCH APPLIED. Text displays. Layout is cooked.<br />
+            SECURE LINK ROOT AUTHENTICATED...
+            <br />
+            LOAD TARGET SPEC:{" "}
+            <span className="text-[#0F0]/80 font-bold">
+              src/app/matrix-rain/page.tsx
+            </span>
+            <br />
+            --------------------------------------------------------
+            <br />
+            [INFO]{" "}
+            <span className="text-[#0F0]/80 font-bold">
+              BEGIN KEYBOARD INPUT OR SCREEN TAPS TO DECOMPILE...
+            </span>
+            <br />
+            [WARN] npm audit fix --force attempted.
+            <br />
+            [NOTE] MOBILE PATCH APPLIED. Text displays. Layout is cooked.
+            <br />
           </div>
 
           <pre className="whitespace-pre-wrap wrap-break-word text-[#0F0] font-mono leading-relaxed">
@@ -291,7 +309,9 @@ export default function MatrixRain() {
 
         {/* Bottom Status bar */}
         <div className="mt-3 pt-2 border-t border-[#0F0]/10 flex items-center justify-between text-[9px] text-[#0F0]/40 uppercase tracking-widest">
-          <span>PROGRESS: {Math.round((typedChars / HACKER_CODE.length) * 100)}%</span>
+          <span>
+            PROGRESS: {Math.round((typedChars / HACKER_CODE.length) * 100)}%
+          </span>
           <span>SYSTEM BYPASS PROMPT</span>
         </div>
 
@@ -303,7 +323,8 @@ export default function MatrixRain() {
               ACCESS GRANTED
             </h2>
             <p className="text-xs text-[#0F0]/70 max-w-sm mb-6 leading-relaxed">
-              Mainframe override completes successfully. Security logs cleared. Cascade parameters fully operational.
+              Mainframe override completes successfully. Security logs cleared.
+              Cascade parameters fully operational.
             </p>
             <button
               onClick={resetBypass}

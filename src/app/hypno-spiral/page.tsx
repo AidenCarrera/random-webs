@@ -5,13 +5,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { canvasToBlob, downloadCanvasPng } from "@/lib/canvasExport";
 
-type ColorMode =
-  | "default"
-  | "neon"
-  | "solar"
-  | "ocean"
-  | "spectrum"
-  | "forest";
+type ColorMode = "default" | "neon" | "solar" | "ocean" | "spectrum" | "forest";
 
 const COLOR_MODES: Array<{ id: ColorMode; label: string }> = [
   { id: "default", label: "Default" },
@@ -128,7 +122,11 @@ function getSpectrumColor(offset: number): string {
   return `rgb(${red} ${green} ${blue})`;
 }
 
-function getRingStrokeStyle(radius: number, offset: number, mode: ColorMode): string {
+function getRingStrokeStyle(
+  radius: number,
+  offset: number,
+  mode: ColorMode,
+): string {
   if (mode === "default") {
     const hue = (radius * 0.5 + offset * 5) % 360;
     return `hsl(${hue} 100% 50%)`;
@@ -150,7 +148,8 @@ function subscribeToTouchCapability(onStoreChange: () => void) {
 
 function getTouchCapabilitySnapshot() {
   return (
-    window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0
+    window.matchMedia("(pointer: coarse)").matches ||
+    navigator.maxTouchPoints > 0
   );
 }
 
@@ -183,7 +182,9 @@ export default function HypnoSpiral() {
     getTouchCapabilitySnapshot,
     getServerTouchCapabilitySnapshot,
   );
-  const [downloadCountdown, setDownloadCountdown] = useState<number | null>(null);
+  const [downloadCountdown, setDownloadCountdown] = useState<number | null>(
+    null,
+  );
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewFileName, setPreviewFileName] = useState("hypno-spiral.png");
   const shareUrl = useSyncExternalStore(
@@ -257,7 +258,8 @@ export default function HypnoSpiral() {
 
       for (let radius = 0; radius < maxRadius; radius += baseRingStep) {
         const distortion =
-          Math.sin(radius * frequency - offsetRef.current) * (12.5 * topIntensity);
+          Math.sin(radius * frequency - offsetRef.current) *
+          (12.5 * topIntensity);
 
         context.beginPath();
         context.strokeStyle = getRingStrokeStyle(
@@ -265,7 +267,13 @@ export default function HypnoSpiral() {
           offsetRef.current,
           colorModeRef.current,
         );
-        context.arc(centerX, centerY, Math.max(0, radius + distortion), 0, Math.PI * 2);
+        context.arc(
+          centerX,
+          centerY,
+          Math.max(0, radius + distortion),
+          0,
+          Math.PI * 2,
+        );
         context.stroke();
       }
     };
@@ -280,8 +288,12 @@ export default function HypnoSpiral() {
 
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
-    window.addEventListener("pointermove", handlePointerMove, { passive: true });
-    window.addEventListener("pointerdown", handlePointerDown, { passive: true });
+    window.addEventListener("pointermove", handlePointerMove, {
+      passive: true,
+    });
+    window.addEventListener("pointerdown", handlePointerDown, {
+      passive: true,
+    });
 
     draw();
 
@@ -331,8 +343,14 @@ export default function HypnoSpiral() {
     setIsMenuOpen(false);
     setDownloadCountdown(3);
 
-    const secondTickOne = window.setTimeout(() => setDownloadCountdown(2), 1000);
-    const secondTickTwo = window.setTimeout(() => setDownloadCountdown(1), 2000);
+    const secondTickOne = window.setTimeout(
+      () => setDownloadCountdown(2),
+      1000,
+    );
+    const secondTickTwo = window.setTimeout(
+      () => setDownloadCountdown(1),
+      2000,
+    );
     const finalTick = window.setTimeout(async () => {
       const fileName = `hypno-spiral-rings-${colorModeRef.current}.png`;
 
@@ -449,7 +467,10 @@ export default function HypnoSpiral() {
 
           <div className="space-y-3">
             <div>
-              <label htmlFor="ring-count" className="mb-2 block text-sm text-white/80">
+              <label
+                htmlFor="ring-count"
+                className="mb-2 block text-sm text-white/80"
+              >
                 Ring count
               </label>
               <input
@@ -462,21 +483,32 @@ export default function HypnoSpiral() {
                 onChange={(event) => setRingCount(Number(event.target.value))}
                 className="custom-slider"
               />
-              <div className="mt-2 text-xs text-white/55">{ringCount} rings</div>
+              <div className="mt-2 text-xs text-white/55">
+                {ringCount} rings
+              </div>
             </div>
 
             <div>
-              <label htmlFor="color-mode" className="mb-2 block text-sm text-white/80">
+              <label
+                htmlFor="color-mode"
+                className="mb-2 block text-sm text-white/80"
+              >
                 Palette
               </label>
               <select
                 id="color-mode"
                 value={colorMode}
-                onChange={(event) => setColorMode(event.target.value as ColorMode)}
+                onChange={(event) =>
+                  setColorMode(event.target.value as ColorMode)
+                }
                 className="w-full rounded-2xl border border-white/15 bg-white/10 px-3 py-3 text-sm text-white outline-none transition focus:border-white/40"
               >
                 {COLOR_MODES.map((mode) => (
-                  <option key={mode.id} value={mode.id} className="bg-black text-white">
+                  <option
+                    key={mode.id}
+                    value={mode.id}
+                    className="bg-black text-white"
+                  >
                     {mode.label}
                   </option>
                 ))}
@@ -490,7 +522,9 @@ export default function HypnoSpiral() {
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-wait disabled:bg-white/70"
             >
               <Download size={16} />
-              {downloadCountdown !== null ? `Saving in ${downloadCountdown}...` : "Download PNG"}
+              {downloadCountdown !== null
+                ? `Saving in ${downloadCountdown}...`
+                : "Download PNG"}
             </button>
           </div>
         </div>

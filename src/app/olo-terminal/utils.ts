@@ -205,7 +205,6 @@ export const JOKES = [
   "There are two hard things in computer science: cache invalidation, naming things, and off-by-one errors.",
   "A SQL query walks into a bar, walks up to two tables and asks, 'Can I join you?'",
   "Why do programmers prefer dark mode? Because light attracts bugs.",
-  
 ];
 
 export const FORTUNES = [
@@ -223,7 +222,6 @@ export const FORTUNES = [
   "A coffee will get you unstuck.",
   "The next random idea you write down will be worth revisiting.",
   "A forgotten TODO will become your next great feature.",
-  
 ];
 
 export const ADVICE = [
@@ -248,5 +246,4 @@ export const ADVICE = [
   "Write code that your future self will thank you for.",
   "Normalize deleting code. The best code is no code at all, because it has no bugs and requires no maintenance.",
   "The first 90% of the code accounts for the first 90% of the development time. The remaining 10% of the code accounts for the other 90% of the development time.",
-  
 ];

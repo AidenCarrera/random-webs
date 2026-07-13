@@ -378,7 +378,8 @@ const COMMAND_REGISTRY: Record<string, CommandHandler> = {
   uname: (args, flags) => {
     if (flags.a) {
       return {
-        stdout: "OloOS browser-simulation 5.15.0-olo-generic #1 SMP Jul 4 x86_64 OloOS",
+        stdout:
+          "OloOS browser-simulation 5.15.0-olo-generic #1 SMP Jul 4 x86_64 OloOS",
         stderr: "",
         exitCode: 0,
       };
@@ -1266,8 +1267,7 @@ export default function OloTerminal() {
   };
 
   const selectedTheme =
-    TERMINAL_THEMES.find((theme) => theme.id === themeId) ||
-    TERMINAL_THEMES[0];
+    TERMINAL_THEMES.find((theme) => theme.id === themeId) || TERMINAL_THEMES[0];
   const previewTheme =
     TERMINAL_THEMES.find((theme) => theme.id === previewThemeId) || null;
   const activeTheme = isMatrixMode

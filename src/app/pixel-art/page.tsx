@@ -56,7 +56,8 @@ const COLORS = [
 
 type Tool = "pencil" | "eraser" | "fill" | "picker";
 
-const createEmptyGrid = (size: number) => Array(size * size).fill(DEFAULT_COLOR);
+const createEmptyGrid = (size: number) =>
+  Array(size * size).fill(DEFAULT_COLOR);
 const createFileName = (size: number) => `pixel-art-${size}x${size}.png`;
 
 const isDefaultColor = (color: string) =>
@@ -65,7 +66,9 @@ const isDefaultColor = (color: string) =>
 export default function PixelArt() {
   const [gridSize, setGridSize] = useState(DEFAULT_SIZE);
   const [grid, setGrid] = useState<string[]>(createEmptyGrid(DEFAULT_SIZE));
-  const [history, setHistory] = useState<string[][]>([createEmptyGrid(DEFAULT_SIZE)]);
+  const [history, setHistory] = useState<string[][]>([
+    createEmptyGrid(DEFAULT_SIZE),
+  ]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const [activeTool, setActiveTool] = useState<Tool>("pencil");
@@ -73,7 +76,9 @@ export default function PixelArt() {
   const [isSaving, setIsSaving] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [previewFileName, setPreviewFileName] = useState(createFileName(DEFAULT_SIZE));
+  const [previewFileName, setPreviewFileName] = useState(
+    createFileName(DEFAULT_SIZE),
+  );
   const [shareUrl, setShareUrl] = useState("");
 
   const gridRef = useRef(grid);
@@ -102,7 +107,8 @@ export default function PixelArt() {
     }
 
     const isMobilePointer =
-      window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+      window.matchMedia("(pointer: coarse)").matches ||
+      navigator.maxTouchPoints > 0;
 
     const frame = requestAnimationFrame(() => {
       setIsTouchDevice(isMobilePointer);
@@ -127,7 +133,10 @@ export default function PixelArt() {
   }, []);
 
   const updateGrid = useCallback((nextGrid: string[]) => {
-    const nextHistory = historyRef.current.slice(0, historyIndexRef.current + 1);
+    const nextHistory = historyRef.current.slice(
+      0,
+      historyIndexRef.current + 1,
+    );
     nextHistory.push(nextGrid);
     if (nextHistory.length > 50) {
       nextHistory.shift();
@@ -262,7 +271,10 @@ export default function PixelArt() {
         }
 
         const neighborIndex = nextY * gridSize + nextX;
-        if (!visited.has(neighborIndex) && nextGrid[neighborIndex] === targetColor) {
+        if (
+          !visited.has(neighborIndex) &&
+          nextGrid[neighborIndex] === targetColor
+        ) {
           visited.add(neighborIndex);
           queue.push(neighborIndex);
         }
@@ -305,7 +317,11 @@ export default function PixelArt() {
     setGrid(nextGrid);
   };
 
-  const drawInterpolatedLine = (fromIndex: number, toIndex: number, tool: Tool) => {
+  const drawInterpolatedLine = (
+    fromIndex: number,
+    toIndex: number,
+    tool: Tool,
+  ) => {
     if (tool !== "pencil" && tool !== "eraser") {
       handleInteraction(toIndex, false, tool);
       return;
@@ -359,8 +375,14 @@ export default function PixelArt() {
       return null;
     }
 
-    const relativeX = Math.min(Math.max(clientX - rect.left, 0), rect.width - 0.001);
-    const relativeY = Math.min(Math.max(clientY - rect.top, 0), rect.height - 0.001);
+    const relativeX = Math.min(
+      Math.max(clientX - rect.left, 0),
+      rect.width - 0.001,
+    );
+    const relativeY = Math.min(
+      Math.max(clientY - rect.top, 0),
+      rect.height - 0.001,
+    );
     const column = Math.floor((relativeX / rect.width) * gridSize);
     const row = Math.floor((relativeY / rect.height) * gridSize);
 
@@ -394,7 +416,9 @@ export default function PixelArt() {
     }
 
     const tool =
-      event.buttons === 2 || event.buttons === 3 ? "eraser" : pointerToolRef.current;
+      event.buttons === 2 || event.buttons === 3
+        ? "eraser"
+        : pointerToolRef.current;
     pointerToolRef.current = tool;
     const previousIndex = lastDrawnIndexRef.current;
     if (previousIndex !== null && previousIndex !== index) {
@@ -449,7 +473,10 @@ export default function PixelArt() {
 
     for (let index = 0; index < gridRef.current.length; index += 1) {
       const color = gridRef.current[index];
-      if (!includeBackground && (color.toLowerCase() === "#ffffff" || isDefaultColor(color))) {
+      if (
+        !includeBackground &&
+        (color.toLowerCase() === "#ffffff" || isDefaultColor(color))
+      ) {
         continue;
       }
 
@@ -677,7 +704,9 @@ export default function PixelArt() {
                     key={index}
                     onContextMenu={(event) => event.preventDefault()}
                     className={`h-full w-full select-none ${
-                      activeTool === "picker" ? "cursor-copy" : "cursor-crosshair"
+                      activeTool === "picker"
+                        ? "cursor-copy"
+                        : "cursor-crosshair"
                     }`}
                     draggable={false}
                     style={{ backgroundColor: color }}
@@ -717,7 +746,9 @@ export default function PixelArt() {
                   className="h-10 w-10 shrink-0 border-2 border-[#1d2b53]"
                   style={{ backgroundColor: selectedColor }}
                 />
-                <span className="pixel-font text-xs sm:text-sm">{selectedColor}</span>
+                <span className="pixel-font text-xs sm:text-sm">
+                  {selectedColor}
+                </span>
               </div>
             </div>
           </aside>
@@ -767,7 +798,6 @@ export default function PixelArt() {
           title="Pixel art snapshot"
         />
       ) : null}
-
     </div>
   );
 }

@@ -44,13 +44,20 @@ export function CommitOverlay({ currentEvent }: CommitOverlayProps) {
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-slate-200 truncate" title={currentEvent.message}>
+            <p
+              className="text-xs font-semibold text-slate-200 truncate"
+              title={currentEvent.message}
+            >
               {currentEvent.message}
             </p>
             <p className="text-[10px] text-slate-500 mt-0.5">
-              {currentEvent.author.login ? `@${currentEvent.author.login}` : currentEvent.author.name}
+              {currentEvent.author.login
+                ? `@${currentEvent.author.login}`
+                : currentEvent.author.name}
               <span className="mx-1 text-slate-700">•</span>
-              <code className="text-[9px] text-slate-500">{currentEvent.hash}</code>
+              <code className="text-[9px] text-slate-500">
+                {currentEvent.hash}
+              </code>
             </p>
           </div>
         </div>
@@ -67,7 +74,11 @@ export function CommitOverlay({ currentEvent }: CommitOverlayProps) {
                 {change.path}
               </span>
               <span className="font-semibold text-right shrink-0">
-                {change.status === "added" ? "[+]" : change.status === "removed" ? "[-]" : "[~]"}
+                {change.status === "added"
+                  ? "[+]"
+                  : change.status === "removed"
+                    ? "[-]"
+                    : "[~]"}
               </span>
             </div>
           ))}

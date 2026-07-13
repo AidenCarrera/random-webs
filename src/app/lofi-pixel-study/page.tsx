@@ -2,39 +2,6 @@ import fs from "fs";
 import path from "path";
 import LofiPixelStudyClient from "./LofiPixelStudyClient";
 
-export const metadata = {
-  title: {
-    absolute: "Lofi Pixel Study",
-  },
-  description:
-    "Relax, study, or work in a cozy pixel art room with dynamic lofi music tracks and customizable backgrounds.",
-  openGraph: {
-    title: "Lofi Pixel Study",
-    description:
-      "Relax, study, or work in a cozy pixel art room with dynamic lofi music tracks and customizable backgrounds.",
-    url: "/lofi-pixel-study",
-    type: "website",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Lofi Pixel Study Preview",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Lofi Pixel Study",
-    description:
-      "Relax, study, or work in a cozy pixel art room with dynamic lofi music tracks and customizable backgrounds.",
-    images: ["/og-image.png"],
-  },
-  alternates: {
-    canonical: "/lofi-pixel-study",
-  },
-};
-
 const ALLOWED_ALARMS = new Set(["Bedside Clock", "Beep Alarm"]);
 
 export default async function Page() {
@@ -83,14 +50,16 @@ export default async function Page() {
     };
   });
 
-  const alarms = alarmFiles.map((filename) => {
-    const cleanName = filename.replace(/\.(mp3|wav|ogg|m4a)$/i, "");
-    return {
-      id: cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-      name: cleanName,
-      path: `/lofi-pixel-study/${alarmDir}/${filename}`,
-    };
-  }).filter((alarm) => ALLOWED_ALARMS.has(alarm.name));
+  const alarms = alarmFiles
+    .map((filename) => {
+      const cleanName = filename.replace(/\.(mp3|wav|ogg|m4a)$/i, "");
+      return {
+        id: cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        name: cleanName,
+        path: `/lofi-pixel-study/${alarmDir}/${filename}`,
+      };
+    })
+    .filter((alarm) => ALLOWED_ALARMS.has(alarm.name));
 
   return <LofiPixelStudyClient initialTracks={tracks} initialAlarms={alarms} />;
 }

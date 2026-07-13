@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 
-
 // -------------------------------------------------------------
 // TYPES
 // -------------------------------------------------------------
@@ -577,7 +576,8 @@ export default function ZenGarden() {
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       const isMobilePointer =
-        window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
+        window.matchMedia("(pointer: coarse)").matches ||
+        navigator.maxTouchPoints > 0;
       setIsTouchDevice(isMobilePointer);
       setShareUrl(window.location.href);
     });
@@ -807,7 +807,7 @@ export default function ZenGarden() {
       const px = points[0].x * width;
       const py = points[0].y * height;
       const size = stroke.brushSize * 2.2;
-      
+
       // Draw outer pool glow
       ctx.fillStyle = "rgba(56, 189, 248, 0.25)";
       ctx.beginPath();
@@ -1193,7 +1193,6 @@ export default function ZenGarden() {
         }
       }
     }
-
   };
 
   // Helper to determine relative scale factors for different emojis
@@ -1347,7 +1346,7 @@ export default function ZenGarden() {
         atmosphere,
       };
       const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
-      
+
       const element = document.createElement("a");
       const file = new Blob([b64], { type: "text/plain;charset=utf-8" });
       element.href = URL.createObjectURL(file);
@@ -1355,7 +1354,7 @@ export default function ZenGarden() {
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
-      
+
       showToast("Layout text file downloaded!");
     } catch {
       showToast("Failed to export garden.");
@@ -1415,7 +1414,8 @@ export default function ZenGarden() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+    const dpr =
+      typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
     const width = canvas.width;
     const height = canvas.height;
 
@@ -1431,8 +1431,10 @@ export default function ZenGarden() {
       ctx.translate(px, py);
       ctx.rotate((plant.rotation * Math.PI) / 180);
 
-      const isMobileSize = typeof window !== "undefined" && 
-        (window.innerWidth < 640 || (window.innerHeight < 520 && window.innerWidth > window.innerHeight));
+      const isMobileSize =
+        typeof window !== "undefined" &&
+        (window.innerWidth < 640 ||
+          (window.innerHeight < 520 && window.innerWidth > window.innerHeight));
       const baseFontSize = isMobileSize ? 32 : 56;
       const finalFontSize = baseFontSize * plant.scale * dpr;
 
@@ -1818,7 +1820,9 @@ export default function ZenGarden() {
                     }`}
                   >
                     <span>{cat.icon}</span>
-                    <span className="zen-cat-text hidden sm:inline">{cat.name}</span>
+                    <span className="zen-cat-text hidden sm:inline">
+                      {cat.name}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -1856,7 +1860,6 @@ export default function ZenGarden() {
                 ),
               )}
             </div>
-
           </div>
         )}
 
@@ -2062,7 +2065,9 @@ export default function ZenGarden() {
                   <div>
                     <div className="flex justify-between text-xs text-emerald-850 dark:text-emerald-300 mb-1">
                       <span>Water Brush Width</span>
-                      <span className="font-mono font-bold">{waterBrushSize}px</span>
+                      <span className="font-mono font-bold">
+                        {waterBrushSize}px
+                      </span>
                     </div>
                     <input
                       type="range"
@@ -2070,7 +2075,9 @@ export default function ZenGarden() {
                       max="32"
                       step="2"
                       value={waterBrushSize}
-                      onChange={(e) => setWaterBrushSize(parseInt(e.target.value))}
+                      onChange={(e) =>
+                        setWaterBrushSize(parseInt(e.target.value))
+                      }
                       className="w-full zen-slider"
                     />
                   </div>
@@ -2137,13 +2144,18 @@ export default function ZenGarden() {
                 Import Zen Garden Layout
               </h3>
               <p className="text-xs text-zinc-400">
-                Select a layout text file (`.txt`) exported from Zen Garden to rebuild your sanctuary.
+                Select a layout text file (`.txt`) exported from Zen Garden to
+                rebuild your sanctuary.
               </p>
-              
+
               <label className="flex flex-col items-center justify-center border border-dashed border-emerald-500/30 hover:border-emerald-500/50 rounded-xl p-4 cursor-pointer bg-zinc-950/40 hover:bg-zinc-950/60 transition-all">
                 <Upload className="w-6 h-6 text-emerald-500 mb-1" />
-                <span className="text-xs font-semibold text-zinc-200">Choose layout text file</span>
-                <span className="text-[10px] text-zinc-500">Accepts .txt files</span>
+                <span className="text-xs font-semibold text-zinc-200">
+                  Choose layout text file
+                </span>
+                <span className="text-[10px] text-zinc-500">
+                  Accepts .txt files
+                </span>
                 <input
                   type="file"
                   accept=".txt"

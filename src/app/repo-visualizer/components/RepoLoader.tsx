@@ -14,7 +14,11 @@ type RepoLoaderProps = {
   isLoadingRepository: boolean;
   repositoryError: string;
   handleRepositoryLoad: (e: FormEvent<HTMLFormElement>) => void;
-  handleLocalLogUpload: (text: string, filename: string, onLoadSuccess: () => void) => void;
+  handleLocalLogUpload: (
+    text: string,
+    filename: string,
+    onLoadSuccess: () => void,
+  ) => void;
   handleUseDemo: () => void;
   dataset: Dataset;
   onLoadSuccess: () => void;
@@ -48,14 +52,10 @@ export function RepoLoader({
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
-      handleLocalLogUpload(
-        event.target?.result as string,
-        file.name,
-        () => {
-          onLoadSuccess();
-          onClose();
-        },
-      );
+      handleLocalLogUpload(event.target?.result as string, file.name, () => {
+        onLoadSuccess();
+        onClose();
+      });
     };
     reader.readAsText(file);
   };
@@ -80,7 +80,9 @@ export function RepoLoader({
   return (
     <section className="absolute inset-x-4 top-[4.9rem] z-50 rounded-2xl border border-white/10 bg-slate-950/95 p-3 shadow-2xl shadow-black/50 backdrop-blur-2xl">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-xs font-semibold text-slate-100">Switch repository</p>
+        <p className="text-xs font-semibold text-slate-100">
+          Switch repository
+        </p>
         <button
           type="button"
           onClick={onClose}
@@ -135,7 +137,11 @@ export function RepoLoader({
               className="absolute right-1.5 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-lg bg-blue-500/20 text-blue-200 transition hover:bg-blue-500/30 disabled:opacity-50"
               aria-label="Load repository"
             >
-              {isLoadingRepository ? <LoaderCircle className="size-4 animate-spin" /> : <Search className="size-4" />}
+              {isLoadingRepository ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : (
+                <Search className="size-4" />
+              )}
             </button>
           </label>
 
@@ -157,14 +163,21 @@ export function RepoLoader({
                 className="h-8 w-full rounded-lg border border-white/5 bg-black/40 px-2.5 text-xs text-slate-200 outline-none focus:border-blue-400/40"
               />
               <label className="block text-[10px] text-slate-500">
-                <span className="mb-1 flex justify-between"><span>Commit limit</span><strong className="font-mono text-slate-300">{commitLimit}</strong></span>
+                <span className="mb-1 flex justify-between">
+                  <span>Commit limit</span>
+                  <strong className="font-mono text-slate-300">
+                    {commitLimit}
+                  </strong>
+                </span>
                 <input
                   type="range"
                   min={5}
                   max={150}
                   step={5}
                   value={commitLimit}
-                  onChange={(event) => setCommitLimit(Number(event.target.value))}
+                  onChange={(event) =>
+                    setCommitLimit(Number(event.target.value))
+                  }
                   className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-blue-400"
                 />
               </label>
@@ -184,16 +197,35 @@ export function RepoLoader({
               : "border-white/15 bg-black/20 hover:border-blue-400/40 hover:bg-white/4"
           }`}
         >
-          <input id={fileInputId} type="file" accept=".txt,.log" className="hidden" onChange={handleFileChange} />
+          <input
+            id={fileInputId}
+            type="file"
+            accept=".txt,.log"
+            className="hidden"
+            onChange={handleFileChange}
+          />
           <FileUp className="mb-2 size-5 text-slate-400" />
-          <span className="text-xs font-medium text-slate-200">Upload git log file</span>
-          <span className="mt-1 text-[10px] text-slate-500">Drop a .txt or .log file here</span>
+          <span className="text-xs font-medium text-slate-200">
+            Upload git log file
+          </span>
+          <span className="mt-1 text-[10px] text-slate-500">
+            Drop a .txt or .log file here
+          </span>
         </label>
       )}
 
-      {repositoryError ? <p className="mt-2 text-[10px] text-rose-300">{repositoryError}</p> : null}
+      {repositoryError ? (
+        <p className="mt-2 text-[10px] text-rose-300">{repositoryError}</p>
+      ) : null}
       {dataset.source === "github" ? (
-        <button type="button" onClick={() => { handleUseDemo(); onClose(); }} className="mt-2 text-[10px] text-blue-400 transition hover:text-blue-300">
+        <button
+          type="button"
+          onClick={() => {
+            handleUseDemo();
+            onClose();
+          }}
+          className="mt-2 text-[10px] text-blue-400 transition hover:text-blue-300"
+        >
           Use demo data
         </button>
       ) : null}

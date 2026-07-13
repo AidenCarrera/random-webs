@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
-} from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Play, Pause, RotateCcw, Trophy } from "lucide-react";
 
 type SortName =
@@ -289,6 +284,7 @@ export default function AlgoRacePage() {
   const stopRef = useRef(false);
   const pausedRef = useRef(false);
   const raceIdRef = useRef(0);
+  const finishedSortsRef = useRef(new Set<SortName>());
   const hasSeededInitialDataRef = useRef(false);
 
   const seedArrays = useCallback((size: number) => {
@@ -307,20 +303,24 @@ export default function AlgoRacePage() {
     seedArrays(arraySize);
   }, [arraySize, seedArrays]);
 
-  const reset = useCallback((size = arraySize) => {
-    raceIdRef.current += 1;
-    stopRef.current = true;
-    pausedRef.current = false;
-    setIsRunning(false);
-    setIsPaused(false);
-    setWinners([]);
-    setRaceStats([]);
+  const reset = useCallback(
+    (size = arraySize) => {
+      raceIdRef.current += 1;
+      stopRef.current = true;
+      pausedRef.current = false;
+      setIsRunning(false);
+      setIsPaused(false);
+      setWinners([]);
+      setRaceStats([]);
+      finishedSortsRef.current.clear();
 
-    setTimeout(() => {
-      stopRef.current = false;
-      seedArrays(size);
-    }, 100);
-  }, [arraySize, seedArrays]);
+      setTimeout(() => {
+        stopRef.current = false;
+        seedArrays(size);
+      }, 100);
+    },
+    [arraySize, seedArrays],
+  );
 
   const changeArraySize = (size: number) => {
     if (size === arraySize) return;
@@ -333,11 +333,12 @@ export default function AlgoRacePage() {
       if (stopRef.current || raceId !== raceIdRef.current) return;
 
       const durationMs = performance.now() - startedAt;
+      const finishedSorts = finishedSortsRef.current;
 
-      setWinners((prev) => {
-        if (prev.includes(name)) return prev;
-        return [...prev, name];
-      });
+      if (finishedSorts.has(name)) return;
+
+      finishedSorts.add(name);
+      setWinners([...finishedSorts]);
 
       setRaceStats((prev) => {
         if (prev.some((entry) => entry.name === name)) return prev;
@@ -350,17 +351,15 @@ export default function AlgoRacePage() {
           },
         ];
       });
+
+      if (finishedSorts.size === SORT_NAMES.length) {
+        pausedRef.current = false;
+        setIsRunning(false);
+        setIsPaused(false);
+      }
     },
     [arraySize],
   );
-
-  useEffect(() => {
-    if (winners.length === SORT_NAMES.length) {
-      setIsRunning(false);
-      setIsPaused(false);
-      pausedRef.current = false;
-    }
-  }, [winners]);
 
   const toggleRace = () => {
     if (isRunning) {
@@ -375,6 +374,7 @@ export default function AlgoRacePage() {
     setIsPaused(false);
     setWinners([]);
     setRaceStats([]);
+    finishedSortsRef.current.clear();
     stopRef.current = false;
     pausedRef.current = false;
 
@@ -400,19 +400,11 @@ export default function AlgoRacePage() {
     );
     selectionSort(selectArr, setSelectArr, checkStop, checkPause, delay).then(
       () =>
-        registerFinish(
-          raceId,
-          "Selection Sort",
-          startTimes["Selection Sort"],
-        ),
+        registerFinish(raceId, "Selection Sort", startTimes["Selection Sort"]),
     );
     insertionSort(insertArr, setInsertArr, checkStop, checkPause, delay).then(
       () =>
-        registerFinish(
-          raceId,
-          "Insertion Sort",
-          startTimes["Insertion Sort"],
-        ),
+        registerFinish(raceId, "Insertion Sort", startTimes["Insertion Sort"]),
     );
     quickSort(quickArr, setQuickArr, checkStop, checkPause, delay).then(() =>
       registerFinish(raceId, "Quick Sort", startTimes["Quick Sort"]),
@@ -436,7 +428,7 @@ export default function AlgoRacePage() {
   );
   const averageTime =
     orderedStats.reduce((sum, entry) => sum + entry.durationMs, 0) /
-      (orderedStats.length || 1);
+    (orderedStats.length || 1);
   const winnerTime = orderedStats[0]?.durationMs ?? 0;
   const slowestTime = orderedStats.at(-1)?.durationMs ?? 0;
   const spread = slowestTime - winnerTime;
@@ -654,7 +646,6 @@ function SortVisualizer({
           />
         ))}
       </div>
-
     </div>
   );
 }

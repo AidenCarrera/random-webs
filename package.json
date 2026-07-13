@@ -7,10 +7,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm validate:websites",
+    "format:check": "prettier --check .",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "open:websites": "node scripts/open-websites.ts",
     "normalize:lofi": "node scripts/normalize-audio-lufs.ts",
-    "generate:layouts": "npx tsx scripts/generate-layouts.ts"
+    "generate:layouts": "node scripts/generate-layouts.ts",
+    "validate:websites": "node scripts/validate-websites.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

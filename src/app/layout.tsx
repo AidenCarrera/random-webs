@@ -65,7 +65,8 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: SITE_URL,
     title: "Random Webs",
-    description: "A creative sandbox of interactive, unique mini web applications and frontend experiments.",
+    description:
+      "A creative sandbox of interactive, unique mini web applications and frontend experiments.",
     siteName: "Random Webs",
     images: [
       {
@@ -79,7 +80,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Random Webs | Creative Coding",
-    description: "A creative sandbox of interactive, unique mini web applications and frontend experiments.",
+    description:
+      "A creative sandbox of interactive, unique mini web applications and frontend experiments.",
     images: ["/og-image.png"],
     creator: "@randomwebs",
   },
@@ -112,6 +114,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-
-

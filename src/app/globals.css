@@ -51,7 +51,9 @@ body {
   border: 2px solid #0ea5e9;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-  transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
+  transition:
+    transform 0.1s ease-in-out,
+    background-color 0.1s ease-in-out;
 }
 
 .custom-slider::-webkit-slider-thumb:hover {
@@ -67,7 +69,9 @@ body {
   border: 2px solid #0ea5e9;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-  transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
+  transition:
+    transform 0.1s ease-in-out,
+    background-color 0.1s ease-in-out;
 }
 
 .custom-slider::-moz-range-thumb:hover {

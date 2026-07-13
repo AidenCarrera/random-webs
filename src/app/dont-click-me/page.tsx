@@ -44,8 +44,7 @@ export default function DontClickMe() {
     positionRef.current = { x, y };
 
     if (buttonWrapRef.current) {
-      buttonWrapRef.current.style.transform =
-        `translate3d(${x}px, ${y}px, 0)`;
+      buttonWrapRef.current.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     }
   }, []);
 
@@ -68,10 +67,7 @@ export default function DontClickMe() {
     return {
       width,
       height,
-      maxX: Math.max(
-        0,
-        (width - button.offsetWidth) / 2 - CONFIG.edgePadding,
-      ),
+      maxX: Math.max(0, (width - button.offsetWidth) / 2 - CONFIG.edgePadding),
       maxY: Math.max(
         0,
         (height - button.offsetHeight) / 2 - CONFIG.edgePadding,
@@ -128,9 +124,7 @@ export default function DontClickMe() {
     }
   }, [beginYielding, getMovementBounds, moveButton]);
 
-  const handlePointerDown = (
-    event: React.PointerEvent<HTMLButtonElement>,
-  ) => {
+  const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>) => {
     if (clickCount < 10) return;
     if (phaseRef.current !== "avoiding") return;
 
@@ -195,8 +189,7 @@ export default function DontClickMe() {
       passive: true,
     });
 
-    return () =>
-      window.removeEventListener("pointermove", handlePointerMove);
+    return () => window.removeEventListener("pointermove", handlePointerMove);
   }, [escape, clickCount]);
 
   useEffect(() => {
@@ -215,8 +208,7 @@ export default function DontClickMe() {
 
     viewport.addEventListener("resize", keepButtonInBounds);
 
-    return () =>
-      viewport.removeEventListener("resize", keepButtonInBounds);
+    return () => viewport.removeEventListener("resize", keepButtonInBounds);
   }, [getMovementBounds, moveButton]);
 
   useEffect(() => {
@@ -321,9 +313,7 @@ export default function DontClickMe() {
             className="touch-manipulation border-2 px-10 py-4 text-lg font-black uppercase tracking-widest transition-colors duration-150"
             style={{
               fontFamily: FONT,
-              background: isYielding
-                ? "rgba(200,0,0,0.12)"
-                : "rgba(0,0,0,0.6)",
+              background: isYielding ? "rgba(200,0,0,0.12)" : "rgba(0,0,0,0.6)",
               borderColor: isYielding ? "#ff2222" : "#222",
               color: isYielding ? "#ff4040" : "#333",
               boxShadow: isYielding

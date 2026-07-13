@@ -133,9 +133,7 @@ export default function MinimalMono() {
 
       setTime((prevTime) => {
         const flooredRemaining = Math.ceil(remaining);
-        return Math.ceil(prevTime) !== flooredRemaining
-          ? remaining
-          : prevTime;
+        return Math.ceil(prevTime) !== flooredRemaining ? remaining : prevTime;
       });
 
       if (remaining <= 0) {

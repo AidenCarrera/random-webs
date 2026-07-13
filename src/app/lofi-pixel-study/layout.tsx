@@ -1,6 +1,6 @@
 import { createWebsiteMetadata } from "@/lib/websiteMetadata";
 
-export const metadata = createWebsiteMetadata("/typing-racer");
+export const metadata = createWebsiteMetadata("/lofi-pixel-study");
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return children;

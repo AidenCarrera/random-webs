@@ -335,7 +335,8 @@ const PALETTE_GRADIENTS: Record<PaletteName, string> = {
   Solar: "linear-gradient(90deg, #7f1d1d 0%, #f97316 52%, #fde68a 100%)",
   Forest: "linear-gradient(90deg, #123c2a 0%, #839735 48%, #e9d5ff 100%)",
   Ocean: "linear-gradient(90deg, #0c3a68 0%, #0891b2 52%, #a7f3d0 100%)",
-  Spectrum: "linear-gradient(90deg, #ef4444, #facc15, #22c55e, #06b6d4, #8b5cf6)",
+  Spectrum:
+    "linear-gradient(90deg, #ef4444, #facc15, #22c55e, #06b6d4, #8b5cf6)",
   Monochrome: "linear-gradient(90deg, #3f3f46 0%, #a1a1aa 52%, #fafafa 100%)",
 };
 
@@ -579,7 +580,11 @@ function createGpuFractalRenderer(
   });
   if (!gl) return null;
 
-  const vertexShader = compileShader(gl, gl.VERTEX_SHADER, FRACTAL_VERTEX_SHADER);
+  const vertexShader = compileShader(
+    gl,
+    gl.VERTEX_SHADER,
+    FRACTAL_VERTEX_SHADER,
+  );
   const fragmentShader = compileShader(
     gl,
     gl.FRAGMENT_SHADER,
@@ -734,9 +739,9 @@ export default function FractalExplorer() {
   const hasDraggedRef = useRef<boolean>(false);
   const mouseDownStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const startDragMouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const activeTouchPointersRef = useRef<
-    Map<number, { x: number; y: number }>
-  >(new Map());
+  const activeTouchPointersRef = useRef<Map<number, { x: number; y: number }>>(
+    new Map(),
+  );
   const pinchRef = useRef<{
     distance: number;
     zoom: number;
@@ -781,210 +786,110 @@ export default function FractalExplorer() {
     }
   }, []);
 
-  const renderGpuFractal = useCallback((renderId: number): boolean => {
-    if (
-      renderId !== renderIdRef.current ||
-      gpuUnavailableRef.current ||
-      zoomRef.current > CPU_DEEP_ZOOM_THRESHOLD
-    ) {
-      return false;
-    }
-
-    const canvas = canvasRef.current;
-    if (!canvas) return false;
-
-    let renderer = gpuRendererRef.current;
-    if (!renderer) {
-      renderer = createGpuFractalRenderer(canvas);
-      if (!renderer) {
-        gpuUnavailableRef.current = true;
+  const renderGpuFractal = useCallback(
+    (renderId: number): boolean => {
+      if (
+        renderId !== renderIdRef.current ||
+        gpuUnavailableRef.current ||
+        zoomRef.current > CPU_DEEP_ZOOM_THRESHOLD
+      ) {
         return false;
       }
-      gpuRendererRef.current = renderer;
-    }
 
-    const { gl, program, vao, uniforms } = renderer;
-    const widthInComplex = 3.0 / zoomRef.current;
-    const heightInComplex = widthInComplex * (canvas.height / canvas.width);
-    const centerX = splitDouble(centerXRef.current);
-    const centerY = splitDouble(centerYRef.current);
-    const pixelScaleX = splitDouble(widthInComplex / canvas.width);
-    const pixelScaleY = splitDouble(heightInComplex / canvas.height);
-    const juliaX = splitDouble(juliaCRef.current[0]);
-    const juliaY = splitDouble(juliaCRef.current[1]);
+      const canvas = canvasRef.current;
+      if (!canvas) return false;
 
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.useProgram(program);
-    gl.bindVertexArray(vao);
-    gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
-    gl.uniform2f(uniforms.centerX, centerX[0], centerX[1]);
-    gl.uniform2f(uniforms.centerY, centerY[0], centerY[1]);
-    gl.uniform2f(uniforms.pixelScaleX, pixelScaleX[0], pixelScaleX[1]);
-    gl.uniform2f(uniforms.pixelScaleY, pixelScaleY[0], pixelScaleY[1]);
-    gl.uniform1i(
-      uniforms.maxIterations,
-      Math.min(iterationsRef.current, MAX_SHADER_ITERATIONS),
-    );
-    gl.uniform1i(uniforms.palette, GPU_PALETTE_INDEX[paletteRef.current]);
-    gl.uniform1i(uniforms.mode, modeRef.current === "mandelbrot" ? 0 : 1);
-    gl.uniform2f(uniforms.juliaX, juliaX[0], juliaX[1]);
-    gl.uniform2f(uniforms.juliaY, juliaY[0], juliaY[1]);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
-    gl.bindVertexArray(null);
-    setCpuCanvasVisible(false);
-
-    return true;
-  }, [setCpuCanvasVisible]);
-
-  const drawPass = useCallback((
-    ratio: number,
-    renderId: number,
-    onComplete?: () => void,
-  ) => {
-    if (renderId !== renderIdRef.current) return;
-
-    if (renderGpuFractal(renderId)) {
-      if (onComplete) {
-        drawTimerRef.current = setTimeout(onComplete, 16);
-      }
-      return;
-    }
-
-    syncCpuCanvasSize();
-    setCpuCanvasVisible(true);
-
-    const canvas = cpuCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    // View calculations
-    const widthInComplex = 3.0 / zoomRef.current;
-    const heightInComplex = widthInComplex * (height / width);
-    const cxMin = centerXRef.current - widthInComplex / 2;
-    const cyMin = centerYRef.current - heightInComplex / 2;
-
-    const maxIter = Math.min(iterationsRef.current, CPU_MAX_ITERATIONS);
-    const palette = paletteRef.current;
-    const fractalMode = modeRef.current;
-    const juliaC = juliaCRef.current;
-
-    // Create downscaled canvas data
-    const sw = Math.ceil(width / ratio);
-    const sh = Math.ceil(height / ratio);
-
-    if (sw <= 0 || sh <= 0) return;
-
-    const imgData = ctx.createImageData(sw, sh);
-    const data = imgData.data;
-
-    for (let py = 0; py < sh; py++) {
-      const cy = cyMin + py * ratio * (heightInComplex / height);
-      for (let px = 0; px < sw; px++) {
-        const cx = cxMin + px * ratio * (widthInComplex / width);
-
-        let iter = 0;
-        let zr = 0.0;
-        let zi = 0.0;
-        let zr2 = 0.0;
-        let zi2 = 0.0;
-
-        if (fractalMode === "mandelbrot") {
-          while (zr2 + zi2 <= 4.0 && iter < maxIter) {
-            zi = 2.0 * zr * zi + cy;
-            zr = zr2 - zi2 + cx;
-            zr2 = zr * zr;
-            zi2 = zi * zi;
-            iter++;
-          }
-        } else {
-          zr = cx;
-          zi = cy;
-          zr2 = zr * zr;
-          zi2 = zi * zi;
-          while (zr2 + zi2 <= 4.0 && iter < maxIter) {
-            zi = 2.0 * zr * zi + juliaC[1];
-            zr = zr2 - zi2 + juliaC[0];
-            zr2 = zr * zr;
-            zi2 = zi * zi;
-            iter++;
-          }
+      let renderer = gpuRendererRef.current;
+      if (!renderer) {
+        renderer = createGpuFractalRenderer(canvas);
+        if (!renderer) {
+          gpuUnavailableRef.current = true;
+          return false;
         }
-
-        const rgb = getColor(iter, maxIter, zr2, zi2, palette);
-        const idx = (py * sw + px) * 4;
-        data[idx] = rgb[0];
-        data[idx + 1] = rgb[1];
-        data[idx + 2] = rgb[2];
-        data[idx + 3] = 255;
+        gpuRendererRef.current = renderer;
       }
-    }
 
-    const offscreen = document.createElement("canvas");
-    offscreen.width = sw;
-    offscreen.height = sh;
-    const offscreenCtx = offscreen.getContext("2d");
-    if (offscreenCtx) {
-      offscreenCtx.putImageData(imgData, 0, 0);
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(offscreen, 0, 0, width, height);
-    }
+      const { gl, program, vao, uniforms } = renderer;
+      const widthInComplex = 3.0 / zoomRef.current;
+      const heightInComplex = widthInComplex * (canvas.height / canvas.width);
+      const centerX = splitDouble(centerXRef.current);
+      const centerY = splitDouble(centerYRef.current);
+      const pixelScaleX = splitDouble(widthInComplex / canvas.width);
+      const pixelScaleY = splitDouble(heightInComplex / canvas.height);
+      const juliaX = splitDouble(juliaCRef.current[0]);
+      const juliaY = splitDouble(juliaCRef.current[1]);
 
-    if (onComplete) {
-      drawTimerRef.current = setTimeout(onComplete, 16);
-    }
-  }, [renderGpuFractal, setCpuCanvasVisible, syncCpuCanvasSize]);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.useProgram(program);
+      gl.bindVertexArray(vao);
+      gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
+      gl.uniform2f(uniforms.centerX, centerX[0], centerX[1]);
+      gl.uniform2f(uniforms.centerY, centerY[0], centerY[1]);
+      gl.uniform2f(uniforms.pixelScaleX, pixelScaleX[0], pixelScaleX[1]);
+      gl.uniform2f(uniforms.pixelScaleY, pixelScaleY[0], pixelScaleY[1]);
+      gl.uniform1i(
+        uniforms.maxIterations,
+        Math.min(iterationsRef.current, MAX_SHADER_ITERATIONS),
+      );
+      gl.uniform1i(uniforms.palette, GPU_PALETTE_INDEX[paletteRef.current]);
+      gl.uniform1i(uniforms.mode, modeRef.current === "mandelbrot" ? 0 : 1);
+      gl.uniform2f(uniforms.juliaX, juliaX[0], juliaX[1]);
+      gl.uniform2f(uniforms.juliaY, juliaY[0], juliaY[1]);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.bindVertexArray(null);
+      setCpuCanvasVisible(false);
 
-  const drawPassStriped = useCallback((ratio: number, renderId: number) => {
-    if (renderId !== renderIdRef.current) return;
+      return true;
+    },
+    [setCpuCanvasVisible],
+  );
 
-    if (renderGpuFractal(renderId)) return;
-
-    syncCpuCanvasSize();
-    setCpuCanvasVisible(true);
-
-    const canvas = cpuCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    const widthInComplex = 3.0 / zoomRef.current;
-    const heightInComplex = widthInComplex * (height / width);
-    const cxMin = centerXRef.current - widthInComplex / 2;
-    const cyMin = centerYRef.current - heightInComplex / 2;
-
-    const maxIter = Math.min(iterationsRef.current, CPU_MAX_ITERATIONS);
-    const palette = paletteRef.current;
-    const fractalMode = modeRef.current;
-    const juliaC = juliaCRef.current;
-
-    const numStripes = 10;
-    const stripeHeight = Math.ceil(height / numStripes);
-    let currentStripe = 0;
-
-    const drawNextStripe = () => {
+  const drawPass = useCallback(
+    (ratio: number, renderId: number, onComplete?: () => void) => {
       if (renderId !== renderIdRef.current) return;
 
-      const yStart = currentStripe * stripeHeight;
-      const yEnd = Math.min(height, (currentStripe + 1) * stripeHeight);
-      const currHeight = yEnd - yStart;
+      if (renderGpuFractal(renderId)) {
+        if (onComplete) {
+          drawTimerRef.current = setTimeout(onComplete, 16);
+        }
+        return;
+      }
 
-      if (currHeight <= 0) return;
+      syncCpuCanvasSize();
+      setCpuCanvasVisible(true);
 
-      const imgData = ctx.createImageData(width, currHeight);
+      const canvas = cpuCanvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const width = canvas.width;
+      const height = canvas.height;
+
+      // View calculations
+      const widthInComplex = 3.0 / zoomRef.current;
+      const heightInComplex = widthInComplex * (height / width);
+      const cxMin = centerXRef.current - widthInComplex / 2;
+      const cyMin = centerYRef.current - heightInComplex / 2;
+
+      const maxIter = Math.min(iterationsRef.current, CPU_MAX_ITERATIONS);
+      const palette = paletteRef.current;
+      const fractalMode = modeRef.current;
+      const juliaC = juliaCRef.current;
+
+      // Create downscaled canvas data
+      const sw = Math.ceil(width / ratio);
+      const sh = Math.ceil(height / ratio);
+
+      if (sw <= 0 || sh <= 0) return;
+
+      const imgData = ctx.createImageData(sw, sh);
       const data = imgData.data;
 
-      for (let py = 0; py < currHeight; py++) {
-        const canvasY = yStart + py;
-        const cy = cyMin + canvasY * (heightInComplex / height);
-        for (let px = 0; px < width; px++) {
-          const cx = cxMin + px * (widthInComplex / width);
+      for (let py = 0; py < sh; py++) {
+        const cy = cyMin + py * ratio * (heightInComplex / height);
+        for (let px = 0; px < sw; px++) {
+          const cx = cxMin + px * ratio * (widthInComplex / width);
 
           let iter = 0;
           let zr = 0.0;
@@ -1015,7 +920,7 @@ export default function FractalExplorer() {
           }
 
           const rgb = getColor(iter, maxIter, zr2, zi2, palette);
-          const idx = (py * width + px) * 4;
+          const idx = (py * sw + px) * 4;
           data[idx] = rgb[0];
           data[idx + 1] = rgb[1];
           data[idx + 2] = rgb[2];
@@ -1023,16 +928,121 @@ export default function FractalExplorer() {
         }
       }
 
-      ctx.putImageData(imgData, 0, yStart);
-
-      currentStripe++;
-      if (currentStripe < numStripes) {
-        drawTimerRef.current = setTimeout(drawNextStripe, 10);
+      const offscreen = document.createElement("canvas");
+      offscreen.width = sw;
+      offscreen.height = sh;
+      const offscreenCtx = offscreen.getContext("2d");
+      if (offscreenCtx) {
+        offscreenCtx.putImageData(imgData, 0, 0);
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(offscreen, 0, 0, width, height);
       }
-    };
 
-    drawNextStripe();
-  }, [renderGpuFractal, setCpuCanvasVisible, syncCpuCanvasSize]);
+      if (onComplete) {
+        drawTimerRef.current = setTimeout(onComplete, 16);
+      }
+    },
+    [renderGpuFractal, setCpuCanvasVisible, syncCpuCanvasSize],
+  );
+
+  const drawPassStriped = useCallback(
+    (ratio: number, renderId: number) => {
+      if (renderId !== renderIdRef.current) return;
+
+      if (renderGpuFractal(renderId)) return;
+
+      syncCpuCanvasSize();
+      setCpuCanvasVisible(true);
+
+      const canvas = cpuCanvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const width = canvas.width;
+      const height = canvas.height;
+
+      const widthInComplex = 3.0 / zoomRef.current;
+      const heightInComplex = widthInComplex * (height / width);
+      const cxMin = centerXRef.current - widthInComplex / 2;
+      const cyMin = centerYRef.current - heightInComplex / 2;
+
+      const maxIter = Math.min(iterationsRef.current, CPU_MAX_ITERATIONS);
+      const palette = paletteRef.current;
+      const fractalMode = modeRef.current;
+      const juliaC = juliaCRef.current;
+
+      const numStripes = 10;
+      const stripeHeight = Math.ceil(height / numStripes);
+      let currentStripe = 0;
+
+      const drawNextStripe = () => {
+        if (renderId !== renderIdRef.current) return;
+
+        const yStart = currentStripe * stripeHeight;
+        const yEnd = Math.min(height, (currentStripe + 1) * stripeHeight);
+        const currHeight = yEnd - yStart;
+
+        if (currHeight <= 0) return;
+
+        const imgData = ctx.createImageData(width, currHeight);
+        const data = imgData.data;
+
+        for (let py = 0; py < currHeight; py++) {
+          const canvasY = yStart + py;
+          const cy = cyMin + canvasY * (heightInComplex / height);
+          for (let px = 0; px < width; px++) {
+            const cx = cxMin + px * (widthInComplex / width);
+
+            let iter = 0;
+            let zr = 0.0;
+            let zi = 0.0;
+            let zr2 = 0.0;
+            let zi2 = 0.0;
+
+            if (fractalMode === "mandelbrot") {
+              while (zr2 + zi2 <= 4.0 && iter < maxIter) {
+                zi = 2.0 * zr * zi + cy;
+                zr = zr2 - zi2 + cx;
+                zr2 = zr * zr;
+                zi2 = zi * zi;
+                iter++;
+              }
+            } else {
+              zr = cx;
+              zi = cy;
+              zr2 = zr * zr;
+              zi2 = zi * zi;
+              while (zr2 + zi2 <= 4.0 && iter < maxIter) {
+                zi = 2.0 * zr * zi + juliaC[1];
+                zr = zr2 - zi2 + juliaC[0];
+                zr2 = zr * zr;
+                zi2 = zi * zi;
+                iter++;
+              }
+            }
+
+            const rgb = getColor(iter, maxIter, zr2, zi2, palette);
+            const idx = (py * width + px) * 4;
+            data[idx] = rgb[0];
+            data[idx + 1] = rgb[1];
+            data[idx + 2] = rgb[2];
+            data[idx + 3] = 255;
+          }
+        }
+
+        ctx.putImageData(imgData, 0, yStart);
+
+        currentStripe++;
+        if (currentStripe < numStripes) {
+          drawTimerRef.current = setTimeout(drawNextStripe, 10);
+        }
+      };
+
+      drawNextStripe();
+    },
+    [renderGpuFractal, setCpuCanvasVisible, syncCpuCanvasSize],
+  );
 
   // Immediate low-res rendering during panning or zooming
   const drawFastPreview = useCallback(() => {
@@ -1374,8 +1384,7 @@ export default function FractalExplorer() {
       px: (clientX - rect.left) * scaleX,
       py: (clientY - rect.top) * scaleY,
       widthInComplex: 3.0 / zoomRef.current,
-      heightInComplex:
-        (3.0 / zoomRef.current) * (canvas.height / canvas.width),
+      heightInComplex: (3.0 / zoomRef.current) * (canvas.height / canvas.width),
     };
   };
 
@@ -1566,7 +1575,9 @@ export default function FractalExplorer() {
     }
   };
 
-  const handlePointerUpOrCancel = (e: React.PointerEvent<HTMLCanvasElement>) => {
+  const handlePointerUpOrCancel = (
+    e: React.PointerEvent<HTMLCanvasElement>,
+  ) => {
     if (e.pointerType === "touch") {
       markRecentTouchInteraction();
       activeTouchPointersRef.current.delete(e.pointerId);
@@ -1625,10 +1636,7 @@ export default function FractalExplorer() {
       (mousePy - canvas.height / 2) * (heightInComplex / canvas.height);
 
     const factor = e.deltaY < 0 ? 1.18 : 1 / 1.18;
-    const newZoom = Math.max(
-      0.1,
-      Math.min(MAX_ZOOM, zoomRef.current * factor),
-    );
+    const newZoom = Math.max(0.1, Math.min(MAX_ZOOM, zoomRef.current * factor));
 
     const newWidthInComplex = 3.0 / newZoom;
     const newHeightInComplex =
@@ -1696,10 +1704,7 @@ export default function FractalExplorer() {
 
   // Enter Julia Mode using selected seed coordinate
   const enterJuliaModeWithSeed = () => {
-    const lockedSeed: [number, number] = [
-      juliaCDisplay[0],
-      juliaCDisplay[1],
-    ];
+    const lockedSeed: [number, number] = [juliaCDisplay[0], juliaCDisplay[1]];
 
     modeRef.current = "julia";
     juliaCRef.current = lockedSeed;
@@ -1933,9 +1938,9 @@ export default function FractalExplorer() {
                     Zoom
                   </span>
                   <span className="text-zinc-200">
-                  {zoomLevel < 1000
-                    ? zoomLevel.toFixed(1)
-                    : zoomLevel.toExponential(2)}
+                    {zoomLevel < 1000
+                      ? zoomLevel.toFixed(1)
+                      : zoomLevel.toExponential(2)}
                     ×
                   </span>
                 </div>
@@ -2254,8 +2259,14 @@ export default function FractalExplorer() {
                   </div>
                   <input
                     type="range"
-                    min={Math.max(-2.0, juliaCLocked[0] - JULIA_SEED_ADJUST_RANGE)}
-                    max={Math.min(2.0, juliaCLocked[0] + JULIA_SEED_ADJUST_RANGE)}
+                    min={Math.max(
+                      -2.0,
+                      juliaCLocked[0] - JULIA_SEED_ADJUST_RANGE,
+                    )}
+                    max={Math.min(
+                      2.0,
+                      juliaCLocked[0] + JULIA_SEED_ADJUST_RANGE,
+                    )}
                     step={JULIA_SEED_STEP}
                     value={juliaCDisplay[0]}
                     onChange={(e) =>
@@ -2274,8 +2285,14 @@ export default function FractalExplorer() {
                   </div>
                   <input
                     type="range"
-                    min={Math.max(-2.0, juliaCLocked[1] - JULIA_SEED_ADJUST_RANGE)}
-                    max={Math.min(2.0, juliaCLocked[1] + JULIA_SEED_ADJUST_RANGE)}
+                    min={Math.max(
+                      -2.0,
+                      juliaCLocked[1] - JULIA_SEED_ADJUST_RANGE,
+                    )}
+                    max={Math.min(
+                      2.0,
+                      juliaCLocked[1] + JULIA_SEED_ADJUST_RANGE,
+                    )}
                     step={JULIA_SEED_STEP}
                     value={juliaCDisplay[1]}
                     onChange={(e) =>

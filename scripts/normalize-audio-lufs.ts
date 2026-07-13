@@ -150,7 +150,9 @@ function parseOptions(args: string[]): Options | null {
   options.inputDirectory = path.resolve(options.inputDirectory);
 
   if (!existsSync(options.inputDirectory)) {
-    throw new Error(`Input directory does not exist: ${options.inputDirectory}`);
+    throw new Error(
+      `Input directory does not exist: ${options.inputDirectory}`,
+    );
   }
 
   if (!options.overwrite) {

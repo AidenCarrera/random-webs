@@ -145,7 +145,10 @@ export function GraphCanvas({
       const secondaryWave = animationTime * 0.22 + phase * 1.7;
 
       return {
-        x: node.x + Math.sin(primaryWave) * amplitude + Math.sin(secondaryWave) * 0.7,
+        x:
+          node.x +
+          Math.sin(primaryWave) * amplitude +
+          Math.sin(secondaryWave) * 0.7,
         y:
           node.y +
           Math.cos(primaryWave * 0.84) * amplitude * 0.62 +
@@ -473,7 +476,11 @@ export function GraphCanvas({
         if (node.kind === "directory" && id !== ROOT_ID && !node.deleted) {
           let hasActiveChildren = false;
           for (const other of graph.values()) {
-            if (other.parentId === id && other.alpha > 0.015 && !other.deleted) {
+            if (
+              other.parentId === id &&
+              other.alpha > 0.015 &&
+              !other.deleted
+            ) {
               hasActiveChildren = true;
               break;
             }
@@ -516,7 +523,11 @@ export function GraphCanvas({
           (node) => node.displayAlpha > 0.08 && !node.deleted,
         );
 
-        for (let leftIndex = 0; leftIndex < visibleNodes.length; leftIndex += 1) {
+        for (
+          let leftIndex = 0;
+          leftIndex < visibleNodes.length;
+          leftIndex += 1
+        ) {
           const left = visibleNodes[leftIndex];
           for (
             let rightIndex = leftIndex + 1;
@@ -738,8 +749,10 @@ export function GraphCanvas({
           const midpointX = (points[0].x + points[1].x) / 2 - bounds.left;
           const midpointY = (points[0].y + points[1].y) / 2 - bounds.top;
           const camera = cameraRef.current;
-          const worldX = (midpointX - bounds.width / 2) / camera.zoom - camera.x;
-          const worldY = (midpointY - bounds.height / 2) / camera.zoom - camera.y;
+          const worldX =
+            (midpointX - bounds.width / 2) / camera.zoom - camera.x;
+          const worldY =
+            (midpointY - bounds.height / 2) / camera.zoom - camera.y;
           const nextZoom = Math.min(
             2.6,
             Math.max(0.16, camera.zoom * (nextDistance / previousDistance)),

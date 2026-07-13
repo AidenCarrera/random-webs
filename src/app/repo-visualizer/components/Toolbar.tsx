@@ -23,8 +23,7 @@ export function Toolbar({
   speed,
   setSpeed,
 }: ToolbarProps) {
-  const progress =
-    (cursor / Math.max(dataset.events.length, 1)) * 100;
+  const progress = (cursor / Math.max(dataset.events.length, 1)) * 100;
   const progressDuration = isPlaying
     ? Math.max(0.18, BASE_EVENT_DELAY / speed / 1000)
     : 0.24;

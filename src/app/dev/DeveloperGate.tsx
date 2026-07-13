@@ -55,7 +55,11 @@ export function DeveloperGate({ websites }: DeveloperGateProps) {
               Enter Password
             </h1>
 
-            <form className="mt-8 space-y-4" onSubmit={handleSubmit} suppressHydrationWarning>
+            <form
+              className="mt-8 space-y-4"
+              onSubmit={handleSubmit}
+              suppressHydrationWarning
+            >
               <input
                 type="password"
                 value={value}
@@ -87,8 +91,7 @@ export function DeveloperGate({ websites }: DeveloperGateProps) {
             Website Index
           </h1>
           <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-            Alphabetical quick navigation for every website in the
-            collection.
+            Alphabetical quick navigation for every website in the collection.
           </p>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -104,8 +107,12 @@ export function DeveloperGate({ websites }: DeveloperGateProps) {
                 <div
                   className={`absolute inset-x-0 top-0 h-px bg-linear-to-r opacity-75 ${website.accent}`}
                 />
-                <p className="relative text-lg font-semibold text-white">{website.title}</p>
-                <p className="relative mt-2 text-sm text-slate-300">{website.path}</p>
+                <p className="relative text-lg font-semibold text-white">
+                  {website.title}
+                </p>
+                <p className="relative mt-2 text-sm text-slate-300">
+                  {website.path}
+                </p>
               </Link>
             ))}
           </div>

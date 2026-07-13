@@ -8,7 +8,7 @@ const kalam = Kalam({
 });
 
 const letters = Object.keys(MORSE_CODE).filter(
-  (char) => char !== " " && isNaN(Number(char))
+  (char) => char !== " " && isNaN(Number(char)),
 );
 const numbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
 const orderedKeys = [...letters, ...numbers];

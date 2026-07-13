@@ -19,22 +19,26 @@ export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
-    const savedWebsites = window.localStorage.getItem(REVEALED_WEBSITES_KEY);
+    const hydrationTimer = window.setTimeout(() => {
+      setIsMounted(true);
+      const savedWebsites = window.localStorage.getItem(REVEALED_WEBSITES_KEY);
 
-    if (!savedWebsites) {
-      return;
-    }
-
-    try {
-      const parsedWebsites = JSON.parse(savedWebsites);
-
-      if (Array.isArray(parsedWebsites)) {
-        setRevealedWebsites(parsedWebsites);
+      if (!savedWebsites) {
+        return;
       }
-    } catch {
-      window.localStorage.removeItem(REVEALED_WEBSITES_KEY);
-    }
+
+      try {
+        const parsedWebsites = JSON.parse(savedWebsites);
+
+        if (Array.isArray(parsedWebsites)) {
+          setRevealedWebsites(parsedWebsites);
+        }
+      } catch {
+        window.localStorage.removeItem(REVEALED_WEBSITES_KEY);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(hydrationTimer);
   }, []);
 
   const visitRandomWebsite = () => {
@@ -81,9 +85,11 @@ export default function Home() {
           <div className="relative rounded-4xl border border-white/6 bg-white/1.5 p-4 shadow-[0_12px_28px_rgba(0,0,0,0.2)]">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {WEBSITES.map((website, index) => {
-                const isRevealed = !isMounted || revealedWebsites.includes(website.path);
-                const isRevealedClient = isMounted && revealedWebsites.includes(website.path);
-                
+                const isRevealed =
+                  !isMounted || revealedWebsites.includes(website.path);
+                const isRevealedClient =
+                  isMounted && revealedWebsites.includes(website.path);
+
                 const cardClassName = isRevealedClient
                   ? "group relative overflow-hidden rounded-[1.6rem] border border-white/8 bg-zinc-950 p-4 text-left text-zinc-100 shadow-[0_8px_18px_rgba(0,0,0,0.22)] transition-colors duration-300"
                   : "relative overflow-hidden rounded-[1.6rem] border border-white/7 bg-black p-4 text-left text-white/90 shadow-[0_8px_18px_rgba(0,0,0,0.2)]";

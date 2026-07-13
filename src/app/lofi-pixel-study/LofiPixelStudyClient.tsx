@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -128,7 +134,9 @@ export default function LofiPixelStudyClient({
     getViewportSnapshot,
     getServerViewportSnapshot,
   );
-  const [viewportWidth, viewportHeight] = viewportSnapshot.split(":").map(Number);
+  const [viewportWidth, viewportHeight] = viewportSnapshot
+    .split(":")
+    .map(Number);
 
   // Audio player state
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -225,8 +233,10 @@ export default function LofiPixelStudyClient({
         if (typeof preferences.volume === "number") {
           setVolume(Math.min(1, Math.max(0, preferences.volume)));
         }
-        if (typeof preferences.isMuted === "boolean") setIsMuted(preferences.isMuted);
-        if (typeof preferences.isLooping === "boolean") setIsLooping(preferences.isLooping);
+        if (typeof preferences.isMuted === "boolean")
+          setIsMuted(preferences.isMuted);
+        if (typeof preferences.isLooping === "boolean")
+          setIsLooping(preferences.isLooping);
         if (typeof preferences.showRetroFilter === "boolean") {
           setShowRetroFilter(preferences.showRetroFilter);
         }
@@ -306,7 +316,7 @@ export default function LofiPixelStudyClient({
     const timer = setTimeout(
       () => {
         if (isPanelOpen && hoverPreviewEnabled) {
-        setHoverActive(true);
+          setHoverActive(true);
         } else {
           setHoverActive(false);
           setPreviewBg(null);

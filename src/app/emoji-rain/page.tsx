@@ -1,6 +1,13 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 
 const EMOJIS = {
   rain: ["💧", "🌧️", "☔", "⛈️", "🌊", "💦"],
@@ -322,11 +329,7 @@ const getBackgroundOpacity = (
     : Math.min(0.04 + ratio * 0.76, 0.8);
 };
 
-const sliderBackground = (
-  value: number,
-  accent: string,
-  isRainbow: boolean,
-) =>
+const sliderBackground = (value: number, accent: string, isRainbow: boolean) =>
   isRainbow
     ? RAINBOW
     : `linear-gradient(to right, ${accent} 0%, ${accent} ${value}%, #e2e8f0 ${value}%, #e2e8f0 100%)`;
@@ -596,8 +599,7 @@ export default function EmojiRain() {
   const [selected, setSelected] = useState<Category[]>([DEFAULT_CATEGORY]);
   const [mode, setMode] = useState<Category>(DEFAULT_CATEGORY);
   const [minimized, setMinimized] = useState(false);
-  const [intensityPercent, setIntensityPercent] =
-    useState(DEFAULT_INTENSITY);
+  const [intensityPercent, setIntensityPercent] = useState(DEFAULT_INTENSITY);
   const [speed, setSpeed] = useState(1);
 
   const intensity = (intensityPercent / 100) * MAX_SPAWN_RATE;
