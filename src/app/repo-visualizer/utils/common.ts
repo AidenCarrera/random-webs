@@ -160,11 +160,11 @@ export function parseGitLog(text: string): { events: CommitEvent[]; allPaths: st
   const lines = text.split(/\r?\n/);
   const events: CommitEvent[] = [];
   
-  let currentEvent: any = null;
+  let currentEvent: CommitEvent | null = null;
   let inMessage = false;
   let rawChanges: Array<{ path: string; additions: number; deletions: number }> = [];
-  let createdFiles = new Set<string>();
-  let deletedFiles = new Set<string>();
+  const createdFiles = new Set<string>();
+  const deletedFiles = new Set<string>();
 
   const finalizeCurrentEvent = () => {
     if (!currentEvent) return;
@@ -257,7 +257,7 @@ export function parseGitLog(text: string): { events: CommitEvent[]; allPaths: st
       const dateStr = line.substring(6).trim();
       try {
         currentEvent.date = new Date(dateStr).toISOString();
-      } catch (e) {
+      } catch {
         currentEvent.date = new Date().toISOString();
       }
       inMessage = true;

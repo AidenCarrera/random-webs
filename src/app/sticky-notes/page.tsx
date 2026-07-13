@@ -65,23 +65,22 @@ export default function StickyNotes() {
 
   useEffect(() => {
     const savedNotes = window.localStorage.getItem(STORAGE_KEY);
-
-    if (savedNotes) {
-      try {
-        const parsedNotes = JSON.parse(savedNotes) as Note[];
-        if (Array.isArray(parsedNotes)) {
-          setNotes(parsedNotes);
-        } else {
+    const frame = requestAnimationFrame(() => {
+      if (savedNotes) {
+        try {
+          const parsedNotes = JSON.parse(savedNotes) as Note[];
+          setNotes(Array.isArray(parsedNotes) ? parsedNotes : DEFAULT_NOTES);
+        } catch {
           setNotes(DEFAULT_NOTES);
         }
-      } catch {
+      } else {
         setNotes(DEFAULT_NOTES);
       }
-    } else {
-      setNotes(DEFAULT_NOTES);
-    }
 
-    setHasLoadedNotes(true);
+      setHasLoadedNotes(true);
+    });
+
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {

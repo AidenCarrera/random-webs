@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -81,19 +81,19 @@ export default function GithubHistoryVisualizerPage() {
     }
   };
 
-  const handleFitGraph = () => {
+  const handleFitGraph = useCallback(() => {
     if (visualizationRef.current) {
       fitGraph(
         visualizationRef.current.clientWidth,
         visualizationRef.current.clientHeight,
       );
     }
-  };
+  }, [fitGraph]);
 
   useEffect(() => {
     const timeout = window.setTimeout(handleFitGraph, 300);
     return () => window.clearTimeout(timeout);
-  }, [isSidebarCollapsed]);
+  }, [handleFitGraph, isSidebarCollapsed]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

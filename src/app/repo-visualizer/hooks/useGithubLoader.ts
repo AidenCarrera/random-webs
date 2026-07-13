@@ -235,7 +235,7 @@ export function useGithubLoader() {
         allPaths: parsed.allPaths,
       });
       onLoadSuccess();
-    } catch (e) {
+    } catch {
       setDataset(createDemoDataset());
       onLoadSuccess();
     } finally {

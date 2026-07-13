@@ -1,16 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
-  Info,
   LoaderCircle,
   Pause,
   Play,
   Plus,
   Trash2,
   X,
-  Settings,
-  RotateCcw,
   Download,
 } from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
@@ -276,6 +273,9 @@ export default function SolarSystem() {
 
   // Export Modal state
   const [exportImage, setExportImage] = useState<string | null>(null);
+  const [exportFileName, setExportFileName] = useState(
+    "helios-solar-system.png",
+  );
   const [isExporting, setIsExporting] = useState(false);
   const [isGeneratingPng, setIsGeneratingPng] = useState(false);
 
@@ -295,6 +295,41 @@ export default function SolarSystem() {
   const [newPlanetHasMoon, setNewPlanetHasMoon] = useState(false);
   const [newPlanetHasRings, setNewPlanetHasRings] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+
+  const previewPlanet = useMemo<Planet | null>(() => {
+    if (!isAdding) return null;
+
+    return {
+      id: "preview-planet",
+      name: newPlanetName.trim() || "New Planet",
+      textureKey: newPlanetTexture,
+      size: newPlanetSize,
+      orbitSize: newPlanetOrbit,
+      duration: newPlanetDuration,
+      type: newPlanetType,
+      temp: newPlanetTemp,
+      desc: newPlanetDesc,
+      hasMoon: newPlanetHasMoon,
+      hasRings: newPlanetHasRings,
+    };
+  }, [
+    isAdding,
+    newPlanetDesc,
+    newPlanetDuration,
+    newPlanetHasMoon,
+    newPlanetHasRings,
+    newPlanetName,
+    newPlanetOrbit,
+    newPlanetSize,
+    newPlanetTemp,
+    newPlanetTexture,
+    newPlanetType,
+  ]);
+
+  const displayedPlanets = useMemo(
+    () => (previewPlanet ? [...planets, previewPlanet] : planets),
+    [planets, previewPlanet],
+  );
 
   // Scaler state for responsive fitting
   const [containerScale, setContainerScale] = useState(1);
@@ -319,14 +354,15 @@ export default function SolarSystem() {
     new Map(),
   );
   const requestRef = useRef<number>(0);
-  const planetsRef = useRef(planets);
+  const planetsRef = useRef(displayedPlanets);
   const pausedRef = useRef(paused);
   const timeScaleRef = useRef(timeScale);
+  const lastMobileViewportRef = useRef<boolean | null>(null);
 
   // Sync state with refs to keep the frame loop up-to-date without restarting
   useEffect(() => {
-    planetsRef.current = planets;
-  }, [planets]);
+    planetsRef.current = displayedPlanets;
+  }, [displayedPlanets]);
   useEffect(() => {
     pausedRef.current = paused;
   }, [paused]);
@@ -373,12 +409,15 @@ export default function SolarSystem() {
 
   // Handle container resizing to fit on screen
   useEffect(() => {
-    setMounted(true);
     const handleResize = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
       const isMobile = w < 768;
-      setIsMobileViewport(isMobile);
+      if (lastMobileViewportRef.current !== isMobile) {
+        lastMobileViewportRef.current = isMobile;
+        setIsMobileViewport(isMobile);
+        setSidebarOpen(!isMobile);
+      }
 
       if (isMobile) {
         const scaleX = (w - 12) / 760;
@@ -391,18 +430,20 @@ export default function SolarSystem() {
       // We target fitting the 900px wide system orbits
       const scaleX = (w - (w < 1024 ? 40 : 380)) / 920;
       const scaleY = (h - 160) / 920;
-      let scale = Math.min(scaleX, scaleY);
+      const scale = Math.min(scaleX, scaleY);
       setContainerScale(Math.min(1.2, Math.max(0.25, scale)));
     };
 
-    handleResize();
+    const frame = requestAnimationFrame(() => {
+      setMounted(true);
+      handleResize();
+    });
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
-
-  useEffect(() => {
-    setSidebarOpen(!isMobileViewport);
-  }, [isMobileViewport]);
 
   useEffect(() => {
     return () => {
@@ -518,52 +559,6 @@ export default function SolarSystem() {
     requestRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(requestRef.current);
   }, []);
-
-  // Synchronize temporary preview planet while form is active (isAdding = true)
-  useEffect(() => {
-    if (isAdding) {
-      const previewP: Planet = {
-        id: "preview-planet",
-        name: newPlanetName.trim() || `New Planet`,
-        textureKey: newPlanetTexture,
-        size: newPlanetSize,
-        orbitSize: newPlanetOrbit,
-        duration: newPlanetDuration,
-        type: newPlanetType,
-        temp: newPlanetTemp,
-        desc: newPlanetDesc,
-        hasMoon: newPlanetHasMoon,
-        hasRings: newPlanetHasRings,
-      };
-
-      setPlanets((prev) => {
-        const index = prev.findIndex((p: Planet) => p.id === "preview-planet");
-        if (index > -1) {
-          const updated = [...prev];
-          updated[index] = previewP;
-          return updated;
-        } else {
-          return [...prev, previewP];
-        }
-      });
-    } else {
-      setPlanets((prev) =>
-        prev.filter((p: Planet) => p.id !== "preview-planet"),
-      );
-    }
-  }, [
-    isAdding,
-    newPlanetName,
-    newPlanetTexture,
-    newPlanetSize,
-    newPlanetOrbit,
-    newPlanetDuration,
-    newPlanetType,
-    newPlanetTemp,
-    newPlanetDesc,
-    newPlanetHasMoon,
-    newPlanetHasRings,
-  ]);
 
   // Toggle pause state
   const togglePause = () => setPaused(!paused);
@@ -957,7 +952,7 @@ export default function SolarSystem() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     if (showOrbits) {
-      planets.forEach((planet) => drawOrbit(planet.orbitSize));
+      displayedPlanets.forEach((planet) => drawOrbit(planet.orbitSize));
     }
 
     await drawTexturedSphere(
@@ -971,8 +966,8 @@ export default function SolarSystem() {
       0.5,
     );
 
-    for (let index = 0; index < planets.length; index += 1) {
-      const planet = planets[index];
+    for (let index = 0; index < displayedPlanets.length; index += 1) {
+      const planet = displayedPlanets[index];
       const angleDeg = planetRotations.current[planet.id] ?? (index * 45) % 360;
       const angle = (angleDeg * Math.PI) / 180;
       const orbitRadius = planet.orbitSize / 2;
@@ -1289,7 +1284,12 @@ export default function SolarSystem() {
                   </span>
                   <select
                     value={bgTheme}
-                    onChange={(e) => setBgTheme(e.target.value as any)}
+                    onChange={(e) => {
+                      const theme = e.target.value;
+                      if (theme === "stars" || theme === "stars_milky_way") {
+                        setBgTheme(theme);
+                      }
+                    }}
                     className="bg-black/80 border border-white/15 px-2 py-1.5 rounded-lg text-xs font-mono w-full focus:outline-none focus:border-white/30 cursor-pointer"
                   >
                     <option value="stars">Default</option>
@@ -1328,6 +1328,9 @@ export default function SolarSystem() {
                       });
                       const dataUrl = await captureSolarSystem();
                       if (!dataUrl) return;
+                      setExportFileName(
+                        `helios-solar-system-${Date.now()}.png`,
+                      );
                       setExportImage(dataUrl);
                       setIsExporting(true);
                     } finally {
@@ -1679,7 +1682,7 @@ export default function SolarSystem() {
               className={`absolute inset-0 z-30 transition-opacity duration-1000 ${systemLoaded ? "opacity-100" : "opacity-0"}`}
             >
               <ThreeSolarSystem
-                planets={planets}
+                planets={displayedPlanets}
                 paused={paused}
                 timeScale={timeScale}
                 showOrbits={showOrbits}
@@ -1724,7 +1727,7 @@ export default function SolarSystem() {
               </div>
 
               {/* Dynamic Planets Render Loop */}
-              {planets.map((planet, index) => (
+              {displayedPlanets.map((planet, index) => (
                 <div
                   key={planet.id}
                   ref={(el) => {
@@ -2174,7 +2177,7 @@ export default function SolarSystem() {
       {isExporting && exportImage && (
         <ExportPreviewModal
           imageSrc={exportImage}
-          fileName={`helios-solar-system-${Date.now()}.png`}
+          fileName={exportFileName}
           imageAlt="Helios Solar System Export"
           title="Helios System Snapshot"
           description="Capture of your custom simulated celestial alignment."
@@ -2188,7 +2191,7 @@ export default function SolarSystem() {
               const blob = await response.blob();
               const pngFile = new File(
                 [blob],
-                `helios-solar-system-${Date.now()}.png`,
+                exportFileName,
                 {
                   type: "image/png",
                 },

@@ -1,4 +1,4 @@
-import { MutableRefObject } from "react";
+import { type MutableRefObject, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FILE_COLORS, STATUS_COLORS } from "../constants";
 import { GraphNode } from "../types";
@@ -33,11 +33,19 @@ const colorToLabel: Record<string, string> = {
   [FILE_COLORS.other]: "Other",
 };
 
-export function Legend({ graphRef }: LegendProps) {
-  const graph = graphRef.current;
+type Distribution = {
+  activeItems: Array<{ label: string; count: number; color: string }>;
+  totalActiveFiles: number;
+};
+
+const EMPTY_DISTRIBUTION: Distribution = {
+  activeItems: [],
+  totalActiveFiles: 0,
+};
+
+function getDistribution(graph: Map<string, GraphNode>): Distribution {
   const counts = new Map<string, number>();
 
-  // Initialize
   Object.keys(labelToColor).forEach((label) => {
     counts.set(label, 0);
   });
@@ -58,6 +66,28 @@ export function Legend({ graphRef }: LegendProps) {
     }))
     .filter((item) => item.count > 0)
     .sort((a, b) => b.count - a.count);
+
+  return { activeItems, totalActiveFiles };
+}
+
+export function Legend({ graphRef }: LegendProps) {
+  const [distribution, setDistribution] =
+    useState<Distribution>(EMPTY_DISTRIBUTION);
+
+  useEffect(() => {
+    const updateDistribution = () => {
+      setDistribution(getDistribution(graphRef.current));
+    };
+    const frame = requestAnimationFrame(updateDistribution);
+    const interval = window.setInterval(updateDistribution, 250);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearInterval(interval);
+    };
+  }, [graphRef]);
+
+  const { activeItems, totalActiveFiles } = distribution;
 
   return (
     <div className="flex flex-col gap-3 pt-4 border-t border-white/10">

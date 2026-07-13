@@ -1,4 +1,4 @@
-import { GitCommit } from "lucide-react";
+import Image from "next/image";
 import { CommitEvent } from "../types";
 import { initials } from "../utils/common";
 import { STATUS_COLORS } from "../constants";
@@ -29,9 +29,12 @@ export function CommitOverlay({ currentEvent }: CommitOverlayProps) {
       <div className="rounded-xl border border-white/5 bg-slate-950/30 p-3 space-y-2">
         <div className="flex items-start gap-2.5">
           {currentEvent.author.avatarUrl ? (
-            <img
+            <Image
               src={currentEvent.author.avatarUrl}
               alt={currentEvent.author.name}
+              width={30}
+              height={30}
+              unoptimized
               className="size-7.5 shrink-0 rounded-full border border-white/10 object-cover"
               referrerPolicy="no-referrer"
             />

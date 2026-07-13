@@ -240,20 +240,35 @@ export function ThreeSolarSystem({
     onLoaded,
   });
 
-  propsRef.current = {
-    planets,
-    paused,
-    timeScale,
-    showOrbits,
-    showMoons,
-    enableGlow,
+  useEffect(() => {
+    propsRef.current = {
+      planets,
+      paused,
+      timeScale,
+      showOrbits,
+      showMoons,
+      enableGlow,
+      bgTheme,
+      onPlanetSelect,
+      onSunSelect,
+      onCanvasReady,
+      isExporting,
+      onLoaded,
+    };
+  }, [
     bgTheme,
+    enableGlow,
+    isExporting,
+    onCanvasReady,
+    onLoaded,
     onPlanetSelect,
     onSunSelect,
-    onCanvasReady,
-    isExporting,
-    onLoaded,
-  };
+    paused,
+    planets,
+    showMoons,
+    showOrbits,
+    timeScale,
+  ]);
 
   useEffect(() => {
     sceneRevisionRef.current += 1;

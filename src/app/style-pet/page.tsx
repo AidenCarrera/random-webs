@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, RotateCcw, Volume2, VolumeX, Award } from "lucide-react";
 
@@ -9,6 +9,11 @@ type PetStatus = "IDLE" | "EATING" | "SLEEPING" | "PLAYING" | "DEAD";
 type SkinColor = "cyber-cyan" | "neon-pink" | "golden-orange" | "slime-green";
 type HatStyle = "NONE" | "COWBOY" | "CROWN" | "WIZARD" | "BOW";
 type AccessoryStyle = "NONE" | "SHADES" | "BOWTIE" | "HALO";
+
+type WindowWithWebkitAudio = Window &
+  typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext;
+  };
 
 const SKIN_COLORS: Record<
   SkinColor,
@@ -27,9 +32,11 @@ class AudioSynth {
 
   init() {
     if (this.ctx) return;
-    this.ctx = new (
-      window.AudioContext || (window as any).webkitAudioContext
-    )();
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as WindowWithWebkitAudio).webkitAudioContext;
+    if (!AudioContextClass) return;
+    this.ctx = new AudioContextClass();
   }
 
   beep(freq: number, type: OscillatorType = "square", duration = 0.12) {
@@ -181,6 +188,7 @@ export default function StylePet() {
     if (status === "SLEEPING") {
       synth.playSelect();
       setStatus("IDLE");
+      setSleepBubbles([]);
     } else {
       synth.playSleep();
       setStatus("SLEEPING");
@@ -197,6 +205,7 @@ export default function StylePet() {
     setLevel(1);
     setExp(0);
     setStatus("IDLE");
+    setSleepBubbles([]);
     setHat("NONE");
     setAccessory("NONE");
   };
@@ -226,17 +235,18 @@ export default function StylePet() {
   // Handle death condition
   useEffect(() => {
     if (hunger === 0 && happiness === 0 && energy === 0 && status !== "DEAD") {
-      setStatus("DEAD");
-      synth.playDead();
+      const frame = requestAnimationFrame(() => {
+        setStatus("DEAD");
+        setSleepBubbles([]);
+        synth.playDead();
+      });
+      return () => cancelAnimationFrame(frame);
     }
   }, [hunger, happiness, energy, status]);
 
   // Zzz Animation Loop
   useEffect(() => {
-    if (status !== "SLEEPING") {
-      setSleepBubbles([]);
-      return;
-    }
+    if (status !== "SLEEPING") return;
     const interval = setInterval(() => {
       setSleepBubbles((prev) => [
         ...prev.slice(-3),

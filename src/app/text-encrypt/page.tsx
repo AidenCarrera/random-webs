@@ -117,7 +117,7 @@ export default function TextEncrypt() {
                   try {
                     const clipboardText = await navigator.clipboard.readText();
                     setText(clipboardText);
-                  } catch (err) {
+                  } catch {
                     // Fallback alert if clipboard read is blocked
                   }
                 }}

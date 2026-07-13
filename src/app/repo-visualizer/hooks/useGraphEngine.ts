@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { Dataset, GraphNode, AuthorAgent, Particle, Camera, GraphStats, CommitEvent, ChangeStatus } from "../types";
+import { Dataset, GraphNode, AuthorAgent, Particle, Camera, GraphStats, CommitEvent } from "../types";
 import { buildGraph, resetGraph, revealAncestors, countGraph } from "../utils/graph";
 import { deterministicUnit } from "../utils/common";
-import { STATUS_COLORS, BASE_EVENT_DELAY } from "../constants";
+import { BASE_EVENT_DELAY } from "../constants";
 
 export function useGraphEngine(dataset: Dataset) {
   const [cursor, setCursor] = useState(0);
@@ -36,31 +36,6 @@ export function useGraphEngine(dataset: Dataset) {
     image.referrerPolicy = "no-referrer";
     image.src = url;
     avatarCacheRef.current.set(url, image);
-  }, []);
-
-  const spawnParticles = useCallback((node: GraphNode, status: ChangeStatus) => {
-    const count = status === "modified" ? 12 : 20;
-    const color = STATUS_COLORS[status];
-
-    for (let index = 0; index < count; index += 1) {
-      const angle = deterministicUnit(`${node.id}:${status}:${performance.now()}:${index}`) * Math.PI * 2;
-      const speedValue = 0.7 + deterministicUnit(`${node.id}:${index}:speed`) * 2.4;
-      const maxLife = 40 + deterministicUnit(`${node.id}:${index}:life`) * 38;
-
-      particlesRef.current.push({
-        x: node.x,
-        y: node.y,
-        vx: Math.cos(angle) * speedValue,
-        vy: Math.sin(angle) * speedValue,
-        life: maxLife,
-        maxLife,
-        color,
-      });
-    }
-
-    if (particlesRef.current.length > 520) {
-      particlesRef.current.splice(0, particlesRef.current.length - 520);
-    }
   }, []);
 
   const applyEventToGraph = useCallback((event: CommitEvent, animate: boolean) => {
@@ -210,8 +185,12 @@ export function useGraphEngine(dataset: Dataset) {
     particlesRef.current = [];
     activeNodeIdsRef.current.clear();
     previousCursorRef.current = 0;
-    setCursor(0);
-    setGraphStats(countGraph(graphRef.current));
+    const frame = requestAnimationFrame(() => {
+      setCursor(0);
+      setGraphStats(countGraph(graphRef.current));
+    });
+
+    return () => cancelAnimationFrame(frame);
   }, [dataset]);
 
   useEffect(() => {
@@ -236,19 +215,17 @@ export function useGraphEngine(dataset: Dataset) {
 
     const timeout = window.setTimeout(
       () => {
-        setCursor((value) => Math.min(dataset.events.length, value + 1));
+        const nextCursor = Math.min(dataset.events.length, cursor + 1);
+        setCursor(nextCursor);
+        if (nextCursor >= dataset.events.length) {
+          setIsPlaying(false);
+        }
       },
       Math.max(180, BASE_EVENT_DELAY / speed),
     );
 
     return () => window.clearTimeout(timeout);
   }, [cursor, dataset.events.length, isPlaying, speed]);
-
-  useEffect(() => {
-    if (cursor >= dataset.events.length && dataset.events.length > 0) {
-      setIsPlaying(false);
-    }
-  }, [cursor, dataset.events.length]);
 
   const changeZoom = useCallback((factor: number) => {
     cameraRef.current.zoom = Math.min(

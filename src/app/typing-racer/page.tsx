@@ -11,14 +11,21 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+type WindowWithWebkitAudio = Window &
+  typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext;
+  };
+
 // --- Cosmic Synth Sweeps ---
 class RaceSynth {
   ctx: AudioContext | null = null;
   init() {
     if (this.ctx) return;
-    this.ctx = new (
-      window.AudioContext || (window as any).webkitAudioContext
-    )();
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as WindowWithWebkitAudio).webkitAudioContext;
+    if (!AudioContextClass) return;
+    this.ctx = new AudioContextClass();
   }
   playBeep(freq: number, duration: number) {
     this.init();
@@ -91,7 +98,6 @@ export default function TypeRacer() {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [timeElapsed, setTimeElapsed] = useState(0); // in seconds
   const [wpm, setWpm] = useState(0);
-  const [accuracy, setAccuracy] = useState(100);
   const [totalKeysTyped, setTotalKeysTyped] = useState(0);
   const [errors, setErrors] = useState(0);
 
@@ -108,18 +114,24 @@ export default function TypeRacer() {
     const saved =
       localStorage.getItem("typing_racer_high_score") ||
       localStorage.getItem("neon_racer_high_score");
-    if (saved) {
+    if (!saved) return;
+
+    const frame = requestAnimationFrame(() => {
       setHighScore(parseInt(saved, 10));
-    }
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   // Update high score
-  const saveHighScore = (finalWpm: number) => {
-    if (finalWpm > highScore) {
-      setHighScore(finalWpm);
-      localStorage.setItem("typing_racer_high_score", finalWpm.toString());
-    }
-  };
+  const saveHighScore = useCallback(
+    (finalWpm: number) => {
+      if (finalWpm > highScore) {
+        setHighScore(finalWpm);
+        localStorage.setItem("typing_racer_high_score", finalWpm.toString());
+      }
+    },
+    [highScore],
+  );
 
   // Setup game configuration
   const handleSetupGame = () => {
@@ -127,7 +139,6 @@ export default function TypeRacer() {
     setPassage(randomPassage);
     setTypedText("");
     setWpm(0);
-    setAccuracy(100);
     setTotalKeysTyped(0);
     setErrors(0);
     setStartTime(null);
@@ -230,7 +241,7 @@ export default function TypeRacer() {
         saveHighScore(finalWpm);
       }
     },
-    [passage, startTime, highScore],
+    [passage, saveHighScore, startTime],
   );
 
   // Keyboard inputs
