@@ -1,4 +1,45 @@
-export const FILESYSTEM = {
+import type { FileSystem, TerminalTheme } from "./types";
+
+import { getBrowserMemory, getVirtualCPU } from "./lib/browser-info";
+
+export const PANIC_LOGS = [
+  "[    0.000000] Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000007",
+  "[    0.000000] CPU: 0 PID: 1 Comm: init Not tainted 5.15.0-fake-generic #1",
+  "[    0.000000] Hardware name: Browser Simulation Container",
+  "[    0.000000] Call Trace:",
+  "[    0.000000]  [<ffffffff8107ef4c>] dump_stack+0x4d/0x63",
+  "[    0.000000]  [<ffffffff81057e9b>] panic+0xc8/0x1d7",
+  "[    0.000000]  [<ffffffff8105c316>] do_exit+0xa56/0xa60",
+  "[    0.000000]  [<ffffffff8105c3fc>] do_group_exit+0x3c/0xa0",
+  "[    0.000000]  [<ffffffff8105c474>] __wake_up_parent+0x0/0x30",
+  "[    0.000000]  [<ffffffff8100215b>] system_call_fastpath+0x16/0x1b",
+  "[    0.000000] ---[ end Kernel panic - not syncing: Attempted to kill init! exitcode=0x00000007 ]---",
+  "",
+  "CRITICAL FAULT: SYSTEM FILES DELETED.",
+  "Initiating hardware reboot sequence in 5 seconds...",
+];
+
+export const BOOT_SEQUENCE = [
+  "OLO-BIOS v2.04 (C) 2026 Olo Technologies, Inc.",
+  `CPU: ${getVirtualCPU()}`,
+  `Memory Test: ${getBrowserMemory()} OK`,
+  "Detecting storage devices... /dev/sda1 (50GB SSD) detected.",
+  "Loading kernel olo-kernel-5.15.0-olo-generic... done.",
+  "Mounting root filesystem (type ext4) on /dev/sda1...",
+  "Initializing OloOS system services...",
+  "[  OK  ] Started LVM Metadata Daemon.",
+  "[  OK  ] Started Network Time Service.",
+  "[  OK  ] Started D-Bus System Message Bus.",
+  "[  OK  ] Started Logger Service.",
+  "[  OK  ] Reached target Multi-User System.",
+  "[  OK  ] Started Olo Shell Environment.",
+  "",
+  "Welcome to OloOS v2.0 browser terminal.",
+  "Type 'help' to see available commands.",
+  "",
+];
+
+export const FILESYSTEM: FileSystem = {
   "~": {
     type: "dir",
     permissions: "drwxr-xr-x",
@@ -68,16 +109,6 @@ export const FILESYSTEM = {
   },
 };
 
-export type TerminalTheme = {
-  id: string;
-  name: string;
-  bg: string;
-  panel: string;
-  border: string;
-  text: string;
-  shadow: string;
-};
-
 export const TERMINAL_THEMES: TerminalTheme[] = [
   {
     id: "tokyo",
@@ -143,14 +174,6 @@ export const MATRIX_THEME: TerminalTheme = {
   border: "#008f11",
   text: "#00ff41",
   shadow: "0 0 20px rgba(0,143,17,0.25)",
-};
-
-export const getVirtualCPU = (): string => {
-  if (typeof navigator !== "undefined") {
-    const cores = navigator.hardwareConcurrency || 8;
-    return `OloCore Virtual CPU (${cores} threads)`;
-  }
-  return "OloCore Virtual CPU (8 threads)";
 };
 
 export const ASCII_ART = {
