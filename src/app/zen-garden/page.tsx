@@ -9,19 +9,13 @@ import {
   VolumeX,
   Undo,
   Redo,
-  ChevronLeft,
   Settings2,
-  Info,
   Download,
   Upload,
-  Sparkles,
   Compass,
-  Smile,
   Check,
-  Music,
   Camera,
 } from "lucide-react";
-import Link from "next/link";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 
 
@@ -78,6 +72,29 @@ interface HistoryEntry {
   strokes: Stroke[];
   ripples: Ripple[];
 }
+
+type Atmosphere = "day" | "dusk" | "night";
+
+type WindowWithWebkitAudio = Window &
+  typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext;
+  };
+
+type ImportedGarden = {
+  plants?: unknown;
+  strokes?: Stroke[];
+  ripples?: Ripple[];
+  theme?: string;
+};
+
+const randomUnit = () => Math.random();
+
+const createRandomId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : randomUnit().toString(36).slice(2);
+
+const createExportFileName = () => `my-zen-garden-${Date.now()}.png`;
 
 // -------------------------------------------------------------
 // STATIC DATA & CONFIGS
@@ -201,30 +218,6 @@ const THEMES: Theme[] = [
   },
 ];
 
-const DEFAULT_RIPPLES: Ripple[] = [
-  { id: "def-1", x: 0.3, y: 0.45, radius: 48 },
-  { id: "def-2", x: 0.7, y: 0.55, radius: 48 },
-];
-
-const generateDefaultStrokes = (): Stroke[] => {
-  const strokes: Stroke[] = [];
-  for (let row = 1; row <= 3; row++) {
-    const points: Point[] = [];
-    const yVal = 0.25 * row;
-    for (let i = 0; i <= 20; i++) {
-      const x = i / 20;
-      const y = yVal + Math.sin(x * Math.PI * 4) * 0.03;
-      points.push({ x, y });
-    }
-    strokes.push({
-      points,
-      brushSize: 6,
-      brushType: "wave",
-    });
-  }
-  return strokes;
-};
-
 const blendColors = (c1: string, c2: string, ratio: number) => {
   // Simple hex blend helper
   if (!c1.startsWith("#")) return c1;
@@ -263,7 +256,9 @@ class ZenAudio {
     if (this.isInitialized) return;
     try {
       const AudioCtx =
-        window.AudioContext || (window as any).webkitAudioContext;
+        window.AudioContext ||
+        (window as WindowWithWebkitAudio).webkitAudioContext;
+      if (!AudioCtx) return;
       this.ctx = new AudioCtx();
       this.masterGain = this.ctx.createGain();
       this.masterGain.gain.setValueAtTime(0.12, this.ctx.currentTime);
@@ -472,8 +467,10 @@ export default function ZenGarden() {
   const [visualRipples, setVisualRipples] = useState<VisualRipple[]>([]);
 
   // History for Undo/Redo
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [history, setHistory] = useState<HistoryEntry[]>([
+    { plants: [], strokes: [], ripples: [] },
+  ]);
+  const [historyIndex, setHistoryIndex] = useState(0);
 
   // Image download preview states
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -492,7 +489,7 @@ export default function ZenGarden() {
   const [emojiSize, setEmojiSize] = useState<number>(1.2);
   const [rakeSize, setRakeSize] = useState<number>(6);
   const [waterBrushSize, setWaterBrushSize] = useState<number>(16);
-  const atmosphere: any = "day";
+  const [atmosphere] = useState<Atmosphere>("day");
   const [soundEnabled, setSoundEnabled] = useState<boolean>(false);
 
   // Settings & Panels UI states
@@ -506,12 +503,9 @@ export default function ZenGarden() {
   const [draggingPlantId, setDraggingPlantId] = useState<string | null>(null);
   const [isShoveling, setIsShoveling] = useState<boolean>(false);
 
-  const plantsRef = useRef<Plant[]>([]);
-  plantsRef.current = plants;
-  const strokesRef = useRef<Stroke[]>([]);
-  strokesRef.current = strokes;
-  const ripplesRef = useRef<Ripple[]>([]);
-  ripplesRef.current = ripples;
+  const plantsRef = useRef<Plant[]>(plants);
+  const strokesRef = useRef<Stroke[]>(strokes);
+  const ripplesRef = useRef<Ripple[]>(ripples);
 
   // DOM Refs
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -520,6 +514,12 @@ export default function ZenGarden() {
   const audioRef = useRef<ZenAudio | null>(null);
 
   const activeTheme = THEMES.find((t) => t.id === selectedTheme) || THEMES[0];
+
+  useEffect(() => {
+    plantsRef.current = plants;
+    strokesRef.current = strokes;
+    ripplesRef.current = ripples;
+  }, [plants, ripples, strokes]);
 
   const getActiveBgColor = () => {
     let bg = activeTheme.bg;
@@ -573,39 +573,17 @@ export default function ZenGarden() {
     return () => clearTimeout(timerId);
   }, [soundEnabled]);
 
-  // Load default layout on first mount (blank sheet)
+  // Detect client-only sharing and pointer capabilities on first mount.
   useEffect(() => {
-    setStrokes([]);
-    setRipples([]);
-
-    const initialEntry: HistoryEntry = {
-      plants: [],
-      strokes: [],
-      ripples: [],
-    };
-    setHistory([initialEntry]);
-    setHistoryIndex(0);
-
-    if (typeof window !== "undefined") {
+    const frame = requestAnimationFrame(() => {
       const isMobilePointer =
         window.matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints > 0;
       setIsTouchDevice(isMobilePointer);
       setShareUrl(window.location.href);
-    }
+    });
+
+    return () => cancelAnimationFrame(frame);
   }, []);
-
-  // Canvas resize and render listener
-  useEffect(() => {
-    const handleResize = () => {
-      drawCanvas();
-    };
-
-    window.addEventListener("resize", handleResize);
-    // Draw canvas whenever these variables modify
-    drawCanvas();
-
-    return () => window.removeEventListener("resize", handleResize);
-  }, [strokes, ripples, currentStroke, selectedTheme, atmosphere]);
 
   // Render trigger whenever elements change
   const drawCanvas = () => {
@@ -700,7 +678,7 @@ export default function ZenGarden() {
         const imgData = nCtx.createImageData(128, 128);
         const data = imgData.data;
         for (let i = 0; i < data.length; i += 4) {
-          const val = Math.floor(Math.random() * 60) + 195;
+          const val = Math.floor(randomUnit() * 60) + 195;
           data[i] = val;
           data[i + 1] = val;
           data[i + 2] = val;
@@ -915,6 +893,16 @@ export default function ZenGarden() {
     drawCircles(0, 0, grooveColor, 1.4);
   };
 
+  // Redraw after every render and whenever the canvas changes size.
+  useEffect(() => {
+    const handleResize = () => drawCanvas();
+
+    window.addEventListener("resize", handleResize);
+    drawCanvas();
+
+    return () => window.removeEventListener("resize", handleResize);
+  });
+
   // -------------------------------------------------------------
   // HISTORY UTILITY
   // -------------------------------------------------------------
@@ -1054,7 +1042,7 @@ export default function ZenGarden() {
           ...currentStroke,
           points: [...currentStroke.points, { x, y }],
         });
-        if (Math.random() < 0.22) {
+        if (randomUnit() < 0.22) {
           if (currentStroke.brushType === "water") {
             audioRef.current?.playWaterSound();
             triggerVisualRipple(x, y);
@@ -1090,7 +1078,10 @@ export default function ZenGarden() {
   };
 
   // Touch Events (Mobile support)
-  const handleTouchStart = (e: React.TouchEvent, plantId?: string) => {
+  const handleTouchStart = (
+    e: React.TouchEvent | React.MouseEvent,
+    plantId?: string,
+  ) => {
     // If touched a plant
     if (plantId) {
       e.stopPropagation();
@@ -1107,8 +1098,8 @@ export default function ZenGarden() {
       // Instantly center the plant on the pointer to grab from the middle
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect) {
-        const pointerEvent =
-          "touches" in e && e.touches[0] ? e.touches[0] : (e as any);
+        const pointerEvent = "touches" in e ? e.touches[0] : e;
+        if (!pointerEvent) return;
         const x = Math.max(
           0,
           Math.min(1, (pointerEvent.clientX - rect.left) / rect.width),
@@ -1123,6 +1114,8 @@ export default function ZenGarden() {
       }
       return;
     }
+
+    if (!("touches" in e)) return;
 
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -1190,7 +1183,7 @@ export default function ZenGarden() {
           ...currentStroke,
           points: [...currentStroke.points, { x, y }],
         });
-        if (Math.random() < 0.22) {
+        if (randomUnit() < 0.22) {
           if (currentStroke.brushType === "water") {
             audioRef.current?.playWaterSound();
             triggerVisualRipple(x, y);
@@ -1201,22 +1194,6 @@ export default function ZenGarden() {
       }
     }
 
-    if (currentStroke) {
-      const lastPoint = currentStroke.points[currentStroke.points.length - 1];
-      const dx = x - lastPoint.x;
-      const dy = y - lastPoint.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist > 0.006) {
-        setCurrentStroke({
-          ...currentStroke,
-          points: [...currentStroke.points, { x, y }],
-        });
-        if (Math.random() < 0.22) {
-          audioRef.current?.playRakeSound();
-        }
-      }
-    }
   };
 
   // Helper to determine relative scale factors for different emojis
@@ -1259,30 +1236,22 @@ export default function ZenGarden() {
   // -------------------------------------------------------------
   const plantEmojiAt = (x: number, y: number) => {
     let emoji = selectedEmoji;
-    let catId = "flora";
-
     if (randomMode) {
       const activeCat =
         EMOJI_CATEGORIES.find((c) => c.id === activeTab) || EMOJI_CATEGORIES[0];
       emoji =
-        activeCat.emojis[Math.floor(Math.random() * activeCat.emojis.length)];
-      catId = activeCat.id;
-    } else {
-      const matchedCat = EMOJI_CATEGORIES.find((c) =>
-        c.emojis.includes(selectedEmoji),
-      );
-      if (matchedCat) catId = matchedCat.id;
+        activeCat.emojis[Math.floor(randomUnit() * activeCat.emojis.length)];
     }
 
     // Add natural scale variation (+/- 15%) for more variety
-    const scaleVariation = 0.85 + Math.random() * 0.3;
+    const scaleVariation = 0.85 + randomUnit() * 0.3;
 
     const newPlant: Plant = {
-      id: Math.random().toString(),
+      id: createRandomId(),
       x,
       y,
       type: emoji,
-      rotation: Math.floor(Math.random() * 32) - 16, // -16 to +16 deg
+      rotation: Math.floor(randomUnit() * 32) - 16, // -16 to +16 deg
       scale: emojiSize * getEmojiScaleFactor(emoji) * scaleVariation,
     };
 
@@ -1295,7 +1264,7 @@ export default function ZenGarden() {
     triggerVisualRipple(x, y);
 
     // Ripples are only drawn manually in this version
-    let updatedRipples = ripples;
+    const updatedRipples = ripples;
 
     saveToHistory(updatedPlants, strokes, updatedRipples);
   };
@@ -1315,7 +1284,7 @@ export default function ZenGarden() {
   };
 
   const triggerVisualRipple = (x: number, y: number) => {
-    const ripId = Math.random().toString();
+    const ripId = createRandomId();
     setVisualRipples((prev) => [...prev, { id: ripId, x, y }]);
     setTimeout(() => {
       setVisualRipples((prev) => prev.filter((r) => r.id !== ripId));
@@ -1388,7 +1357,7 @@ export default function ZenGarden() {
       document.body.removeChild(element);
       
       showToast("Layout text file downloaded!");
-    } catch (e) {
+    } catch {
       showToast("Failed to export garden.");
     }
   };
@@ -1397,29 +1366,39 @@ export default function ZenGarden() {
   const importLayoutFromString = (code: string) => {
     try {
       const decoded = decodeURIComponent(escape(atob(code.trim())));
-      const data = JSON.parse(decoded);
+      const data = JSON.parse(decoded) as ImportedGarden;
+      const importedPlants = Array.isArray(data.plants) ? data.plants : [];
 
-      const parsedPlants = (data.plants || []).map((p: any) => ({
-        id: p.id || Math.random().toString(),
-        x: Number(p.x) || 0.5,
-        y: Number(p.y) || 0.5,
-        type: String(p.type || "🌱"),
-        rotation: Number(p.rotation) || 0,
-        scale: Number(p.scale) || 1.2,
-      }));
+      const parsedPlants = importedPlants.map((value): Plant => {
+        const p =
+          typeof value === "object" && value !== null
+            ? (value as Record<string, unknown>)
+            : {};
+        return {
+          id: typeof p.id === "string" ? p.id : createRandomId(),
+          x: Number(p.x) || 0.5,
+          y: Number(p.y) || 0.5,
+          type: String(p.type || "🌱"),
+          rotation: Number(p.rotation) || 0,
+          scale: Number(p.scale) || 1.2,
+        };
+      });
+
+      const importedStrokes = Array.isArray(data.strokes) ? data.strokes : [];
+      const importedRipples = Array.isArray(data.ripples) ? data.ripples : [];
 
       setPlants(parsedPlants);
-      setStrokes(data.strokes || []);
-      setRipples(data.ripples || []);
+      setStrokes(importedStrokes);
+      setRipples(importedRipples);
       if (data.theme) setSelectedTheme(data.theme);
 
-      saveToHistory(parsedPlants, data.strokes || [], data.ripples || []);
+      saveToHistory(parsedPlants, importedStrokes, importedRipples);
       audioRef.current?.playPlantSound();
       audioRef.current?.playChime();
       setShowImportDialog(false);
       setImportString("");
       showToast("Garden loaded successfully!");
-    } catch (e) {
+    } catch {
       showToast("Invalid code or file format.");
     }
   };
@@ -1467,7 +1446,7 @@ export default function ZenGarden() {
 
     try {
       const dataUrl = canvas.toDataURL("image/png");
-      const filename = `my-zen-garden-${Date.now()}.png`;
+      const filename = createExportFileName();
       setPreviewFileName(filename);
       setPreviewImage(dataUrl);
       showToast("Preparing image preview...");
@@ -1665,7 +1644,7 @@ export default function ZenGarden() {
                   onMouseDown={(e) => {
                     if (typeof window !== "undefined") {
                       if (!isRakeOrWater) {
-                        handleTouchStart(e as any, plant.id);
+                        handleTouchStart(e, plant.id);
                       }
                     }
                   }}
@@ -1943,7 +1922,7 @@ export default function ZenGarden() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="absolute right-0 top-0 bottom-0 w-full max-w-[280px] sm:max-w-xs bg-emerald-50/95 dark:bg-emerald-900/90 text-emerald-950 dark:text-emerald-50 border-l border-emerald-200/60 dark:border-emerald-700/60 backdrop-blur-lg shadow-2xl p-4 sm:p-6 z-50 overflow-y-auto flex flex-col gap-4 sm:gap-6"
+              className="absolute right-0 top-0 bottom-0 w-full max-w-70 sm:max-w-xs bg-emerald-50/95 dark:bg-emerald-900/90 text-emerald-950 dark:text-emerald-50 border-l border-emerald-200/60 dark:border-emerald-700/60 backdrop-blur-lg shadow-2xl p-4 sm:p-6 z-50 overflow-y-auto flex flex-col gap-4 sm:gap-6"
             >
               <div className="flex justify-between items-center pb-4 border-b border-emerald-200/60 dark:border-emerald-700/60">
                 <h2 className="text-lg font-serif font-semibold flex items-center gap-2 text-emerald-800 dark:text-emerald-200">
