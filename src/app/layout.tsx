@@ -109,7 +109,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${silkscreen.variable} antialiased`}
       >
         {children}
-        <Analytics />
+        {process.env.VERCEL ? <Analytics /> : null}
       </body>
     </html>
   );

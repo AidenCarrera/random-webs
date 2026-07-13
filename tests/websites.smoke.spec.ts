@@ -29,7 +29,11 @@ test.describe("registered website smoke tests", () => {
 
       page.on("console", (message) => {
         if (message.type() === "error") {
-          consoleErrors.push(message.text());
+          const location = message.location();
+          const source = location.url
+            ? ` (${location.url}:${location.lineNumber}:${location.columnNumber})`
+            : "";
+          consoleErrors.push(`${message.text()}${source}`);
         }
       });
       page.on("pageerror", (error) => {

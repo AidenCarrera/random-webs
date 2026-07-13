@@ -5,6 +5,7 @@ type Options = {
   baseUrl?: string;
   changedOnly: boolean;
   playwrightArgs: string[];
+  production: boolean;
 };
 
 function requireValue(args: string[], index: number, option: string) {
@@ -21,6 +22,7 @@ function parseOptions(args: string[]): Options {
   const options: Options = {
     changedOnly: false,
     playwrightArgs: [],
+    production: false,
   };
 
   for (let index = 0; index < args.length; index += 1) {
@@ -28,6 +30,11 @@ function parseOptions(args: string[]): Options {
 
     if (argument === "--changed") {
       options.changedOnly = true;
+      continue;
+    }
+
+    if (argument === "--production") {
+      options.production = true;
       continue;
     }
 
@@ -50,13 +57,42 @@ function parseOptions(args: string[]): Options {
     options.baseUrl = parsedBaseUrl.toString();
   }
 
+  if (options.baseUrl && options.production) {
+    throw new Error(
+      "--production cannot be combined with --base-url because external servers are not built locally.",
+    );
+  }
+
   return options;
+}
+
+function runProductionBuild() {
+  const require = createRequire(import.meta.url);
+  const nextCli = require.resolve("next/dist/bin/next");
+  const result = spawnSync(process.execPath, [nextCli, "build"], {
+    stdio: "inherit",
+    windowsHide: true,
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    throw new Error(`Production build exited with status ${result.status}.`);
+  }
 }
 
 function main() {
   const options = parseOptions(process.argv.slice(2));
+
+  if (options.production) {
+    runProductionBuild();
+  }
+
   const require = createRequire(import.meta.url);
   const playwrightCli = require.resolve("@playwright/test/cli");
+  const smokePort = process.env.SMOKE_PORT ?? "3100";
   const result = spawnSync(
     process.execPath,
     [playwrightCli, "test", ...options.playwrightArgs],
@@ -65,6 +101,9 @@ function main() {
         ...process.env,
         SMOKE_BASE_URL: options.baseUrl ?? process.env.SMOKE_BASE_URL,
         SMOKE_CHANGED_ONLY: options.changedOnly ? "true" : "false",
+        SMOKE_SERVER_COMMAND: options.production
+          ? `pnpm start --hostname 127.0.0.1 --port ${smokePort}`
+          : process.env.SMOKE_SERVER_COMMAND,
       },
       stdio: "inherit",
       windowsHide: true,

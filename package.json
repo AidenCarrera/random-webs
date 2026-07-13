@@ -15,6 +15,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint",
     "test:smoke": "node scripts/test-smoke.ts",
+    "test:smoke:production": "node scripts/test-smoke.ts --production",
     "typecheck": "tsc --noEmit",
     "open:websites": "node scripts/open-websites.ts",
     "normalize:lofi": "node scripts/normalize-audio-lufs.ts",
