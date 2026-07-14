@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, RotateCcw, Volume2, VolumeX, Award } from "lucide-react";
+import { Heart, Volume2, VolumeX, Award } from "lucide-react";
 
 // --- Types ---
 type PetStatus = "IDLE" | "EATING" | "SLEEPING" | "PLAYING" | "DEAD";
@@ -767,40 +767,8 @@ export default function StylePet() {
             </div>
           </div>
 
-          {/* Device Controls (Feed, Pet, Clean, Sleep, Customize buttons) */}
-          <div className="w-full grid grid-cols-4 gap-2 mt-6 px-1">
-            <button
-              onClick={handleFeed}
-              disabled={status === "DEAD" || status === "SLEEPING"}
-              className="flex flex-col items-center gap-1 rounded-xl border border-[#404649] bg-[#565c5f] py-1.5 text-[9px] font-black uppercase text-[#f2f3ef] shadow-[0_2px_0_#363c3f,inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-[#4d5356] active:translate-y-0.5 active:shadow-none disabled:translate-y-0 disabled:opacity-30 disabled:shadow-[0_2px_0_#363c3f]"
-            >
-              <span>Feed</span>
-            </button>
-            <button
-              onClick={handlePlay}
-              disabled={status === "DEAD" || status === "SLEEPING"}
-              className="flex flex-col items-center gap-1 rounded-xl border border-[#404649] bg-[#565c5f] py-1.5 text-[9px] font-black uppercase text-[#f2f3ef] shadow-[0_2px_0_#363c3f,inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-[#4d5356] active:translate-y-0.5 active:shadow-none disabled:translate-y-0 disabled:opacity-30 disabled:shadow-[0_2px_0_#363c3f]"
-            >
-              <span>Pet</span>
-            </button>
-            <button
-              onClick={handleClean}
-              disabled={status === "DEAD" || status === "SLEEPING"}
-              className="flex flex-col items-center gap-1 rounded-xl border border-[#404649] bg-[#565c5f] py-1.5 text-[9px] font-black uppercase text-[#f2f3ef] shadow-[0_2px_0_#363c3f,inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-[#4d5356] active:translate-y-0.5 active:shadow-none disabled:translate-y-0 disabled:opacity-30 disabled:shadow-[0_2px_0_#363c3f]"
-            >
-              <span>Clean</span>
-            </button>
-            <button
-              onClick={toggleSleep}
-              disabled={status === "DEAD"}
-              className="flex flex-col items-center gap-1 rounded-xl border border-[#404649] bg-[#565c5f] py-1.5 text-[9px] font-black uppercase text-[#f2f3ef] shadow-[0_2px_0_#363c3f,inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-[#4d5356] active:translate-y-0.5 active:shadow-none disabled:translate-y-0 disabled:opacity-30 disabled:shadow-[0_2px_0_#363c3f]"
-            >
-              <span>{status === "SLEEPING" ? "Wake" : "Sleep"}</span>
-            </button>
-          </div>
-
-          {/* Console Physical Buttons (Styling controls / menu navigation) */}
-          <div className="mt-8 flex w-full items-center justify-between px-2 max-[420px]:scale-[0.82]">
+          {/* Console Physical Buttons */}
+          <div className="mt-16 flex w-full items-center justify-between px-2 max-[420px]:scale-[0.82]">
             {/* D-Pad Layout */}
             <div className="relative w-28 h-28 flex items-center justify-center shrink-0">
               {/* Center connector */}
@@ -808,15 +776,18 @@ export default function StylePet() {
               {/* Up Button */}
               <button
                 onClick={() => {
-                  synth.playSelect();
                   if (currentMenu === "STYLE") {
+                    synth.playSelect();
                     setSelectedStyleIndex((prev) => (prev - 1 + 3) % 3);
                   } else {
-                    setCurrentMenu((prev) =>
-                      prev === "STATS" ? "NONE" : "STATS",
-                    );
+                    handleClean();
                   }
                 }}
+                aria-label={
+                  currentMenu === "STYLE"
+                    ? "Previous style category"
+                    : "Clean pet"
+                }
                 className="absolute top-0 flex h-11 w-8 items-center justify-center rounded-t bg-[#303638] shadow-[inset_0_2px_0_rgba(255,255,255,0.13)] transition-colors hover:bg-[#282e30] active:translate-y-px active:shadow-none"
               >
                 <div className="w-0 h-0 border-l-5 border-l-transparent border-r-5 border-r-transparent border-b-7 border-b-zinc-400" />
@@ -824,13 +795,20 @@ export default function StylePet() {
               {/* Down Button */}
               <button
                 onClick={() => {
-                  synth.playSelect();
                   if (currentMenu === "STYLE") {
+                    synth.playSelect();
                     setSelectedStyleIndex((prev) => (prev + 1) % 3);
                   } else {
-                    setCurrentMenu("NONE");
+                    toggleSleep();
                   }
                 }}
+                aria-label={
+                  currentMenu === "STYLE"
+                    ? "Next style category"
+                    : status === "SLEEPING"
+                      ? "Wake pet"
+                      : "Put pet to sleep"
+                }
                 className="absolute bottom-0 flex h-11 w-8 items-center justify-center rounded-b bg-[#303638] shadow-[inset_0_-2px_0_rgba(0,0,0,0.32)] transition-colors hover:bg-[#282e30] active:translate-y-px active:shadow-none"
               >
                 <div className="w-0 h-0 border-l-5 border-l-transparent border-r-5 border-r-transparent border-t-7 border-t-zinc-400" />
@@ -846,6 +824,11 @@ export default function StylePet() {
                     cycleHat(-1);
                   }
                 }}
+                aria-label={
+                  currentMenu === "STYLE"
+                    ? "Previous style option"
+                    : "Previous hat"
+                }
                 className="absolute left-0 flex h-8 w-11 items-center justify-center rounded-l bg-[#303638] shadow-[inset_2px_0_0_rgba(255,255,255,0.13)] transition-colors hover:bg-[#282e30] active:translate-x-px active:shadow-none"
               >
                 <div className="w-0 h-0 border-t-5 border-t-transparent border-b-5 border-b-transparent border-r-7 border-r-zinc-400" />
@@ -861,6 +844,11 @@ export default function StylePet() {
                     cycleAccessory(1);
                   }
                 }}
+                aria-label={
+                  currentMenu === "STYLE"
+                    ? "Next style option"
+                    : "Next accessory"
+                }
                 className="absolute right-0 flex h-8 w-11 items-center justify-center rounded-r bg-[#303638] shadow-[inset_-2px_0_0_rgba(0,0,0,0.32)] transition-colors hover:bg-[#282e30] active:translate-x-px active:shadow-none"
               >
                 <div className="w-0 h-0 border-t-5 border-t-transparent border-b-5 border-b-transparent border-l-7 border-l-zinc-400" />
@@ -875,45 +863,46 @@ export default function StylePet() {
                     ▲▼ - SELECT
                   </span>
                   <span className="text-[#7b2946]">◀▶ - CHANGE</span>
-                  <span className="text-[#686d6d]">▼ - CLOSE</span>
+                  <span className="text-[#686d6d]">SELECT - CLOSE</span>
                 </>
+              ) : status === "DEAD" ? (
+                <span className="text-[#7b2946]">START - REVIVE</span>
               ) : (
                 <>
-                  <span>▲ - VITALS</span>
+                  <span>▲ - CLEAN</span>
                   <span>◀ - HATS</span>
                   <span>▶ - ACCESSORIES</span>
-                  <span>▼ - CLOSE</span>
+                  <span>▼ - {status === "SLEEPING" ? "WAKE" : "SLEEP"}</span>
                 </>
               )}
             </div>
 
-            {/* Tactile Action Buttons (A & B style) */}
+            {/* Tactile X and Y action buttons */}
             <div className="flex gap-4 shrink-0 rotate-[-25deg] -translate-y-2 mr-2">
               <div className="flex flex-col items-center gap-1">
                 <button
-                  onClick={() => cycleSkin()}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-[#93425f] text-sm font-bold text-[#f5e8ed] shadow-[0_4px_0_#65263e,inset_0_2px_4px_rgba(255,255,255,0.24)] transition-all hover:bg-[#a44c6a] active:translate-y-1 active:shadow-none"
+                  onClick={handleFeed}
+                  disabled={status === "DEAD" || status === "SLEEPING"}
+                  aria-label="Feed pet"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-[#93425f] text-sm font-bold text-[#f5e8ed] shadow-[0_4px_0_#65263e,inset_0_2px_4px_rgba(255,255,255,0.24)] transition-all hover:bg-[#a44c6a] active:translate-y-1 active:shadow-none disabled:translate-y-0 disabled:opacity-40"
                 >
                   X
                 </button>
                 <span className="text-[9px] font-bold tracking-wider text-[#505556]">
-                  SKIN
+                  FEED
                 </span>
               </div>
               <div className="flex flex-col items-center gap-1">
                 <button
-                  onClick={() => {
-                    synth.playSelect();
-                    setCurrentMenu((prev) =>
-                      prev === "STYLE" ? "NONE" : "STYLE",
-                    );
-                  }}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-[#93425f] text-sm font-bold text-[#f5e8ed] shadow-[0_4px_0_#65263e,inset_0_2px_4px_rgba(255,255,255,0.24)] transition-all hover:bg-[#a44c6a] active:translate-y-1 active:shadow-none"
+                  onClick={handlePlay}
+                  disabled={status === "DEAD" || status === "SLEEPING"}
+                  aria-label="Pet companion"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-[#93425f] text-sm font-bold text-[#f5e8ed] shadow-[0_4px_0_#65263e,inset_0_2px_4px_rgba(255,255,255,0.24)] transition-all hover:bg-[#a44c6a] active:translate-y-1 active:shadow-none disabled:translate-y-0 disabled:opacity-40"
                 >
                   Y
                 </button>
                 <span className="text-[9px] font-bold tracking-wider text-[#505556]">
-                  STYLE
+                  PET
                 </span>
               </div>
             </div>
@@ -921,17 +910,6 @@ export default function StylePet() {
 
           {/* Lower hardware row */}
           <div className="relative mt-10 flex min-h-14 w-full items-center px-4">
-            {/* Small Reset Button */}
-            {status === "DEAD" && (
-              <button
-                onClick={handleReset}
-                className="flex items-center gap-1.5 px-3 py-1 bg-red-950 hover:bg-red-900 border border-red-800 text-red-400 hover:text-red-300 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-md transition-all active:scale-95"
-              >
-                <RotateCcw size={10} />
-                <span>Revive</span>
-              </button>
-            )}
-
             {/* Select and Start controls */}
             <div className="absolute left-1/2 top-0 flex -translate-x-1/2 -rotate-[12deg] gap-3">
               <div className="flex flex-col items-center gap-1.5">
@@ -952,12 +930,18 @@ export default function StylePet() {
               <div className="flex flex-col items-center gap-1.5">
                 <button
                   onClick={() => {
-                    synth.playSelect();
-                    setCurrentMenu((prev) =>
-                      prev === "STATS" ? "NONE" : "STATS",
-                    );
+                    if (status === "DEAD") {
+                      handleReset();
+                    } else {
+                      synth.playSelect();
+                      setCurrentMenu((prev) =>
+                        prev === "STATS" ? "NONE" : "STATS",
+                      );
+                    }
                   }}
-                  aria-label="Start vitals menu"
+                  aria-label={
+                    status === "DEAD" ? "Revive pet" : "Start vitals menu"
+                  }
                   className="h-4 w-12 rounded-full border border-[#454b4d] bg-[#565c5f] shadow-[0_2px_0_#3d4345,inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-[#4d5356] active:translate-y-0.5 active:shadow-none"
                 />
                 <span className="text-[8px] font-bold tracking-wider text-[#505556]">
