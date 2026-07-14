@@ -6,6 +6,8 @@ import {
   Play,
   RotateCcw,
   SlidersHorizontal,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 import {
@@ -19,7 +21,7 @@ import {
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { downloadBlob } from "@/lib/canvasExport";
 
-import { FluidEngine, type FluidEngineStats } from "./fluidEngine";
+import { FluidEngine } from "./fluidEngine";
 import styles from "./styles.module.css";
 
 const DEFAULT_ITERATIONS = 24;
@@ -62,24 +64,25 @@ const getServerTouchCapabilitySnapshot = () => false;
 
 const makePhotoName = () => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  return `fluid-field-${timestamp}.png`;
+  return `fluid-simulation-${timestamp}.png`;
 };
 
 export default function FluidSimulationPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const engineRef = useRef<FluidEngine | null>(null);
   const feedbackTimerRef = useRef<number | null>(null);
   const previewUrlRef = useRef<string | null>(null);
 
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false);
   const [solverIterations, setSolverIterations] = useState(DEFAULT_ITERATIONS);
   const [particleCount, setParticleCount] = useState(DEFAULT_PARTICLES);
   const [force, setForce] = useState(DEFAULT_FORCE);
   const [paused, setPaused] = useState(false);
+  const [musicEnabled, setMusicEnabled] = useState(true);
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
   const [snapshot, setSnapshot] = useState<FluidSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<FluidEngineStats | null>(null);
   const isTouchDevice = useSyncExternalStore(
     subscribeToTouchCapability,
     getTouchCapabilitySnapshot,
@@ -101,7 +104,6 @@ export default function FluidSimulationPage() {
         solverIterations: DEFAULT_ITERATIONS,
         particleCount: DEFAULT_PARTICLES,
         force: DEFAULT_FORCE,
-        onStats: setStats,
       });
     } catch (caughtError) {
       const message =
@@ -148,6 +150,27 @@ export default function FluidSimulationPage() {
     [],
   );
 
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    audio.volume = 0.34;
+    if (musicEnabled) {
+      void audio.play().catch(() => {
+        // Browsers can require the first pointer gesture before playing audio.
+      });
+    } else {
+      audio.pause();
+    }
+
+    return () => audio.pause();
+  }, [musicEnabled]);
+
+  const startMusic = useCallback(() => {
+    if (!musicEnabled) return;
+    void audioRef.current?.play().catch(() => {});
+  }, [musicEnabled]);
+
   const handleIterations = (value: number) => {
     setSolverIterations(value);
     engineRef.current?.setSolverIterations(value);
@@ -169,6 +192,10 @@ export default function FluidSimulationPage() {
       engineRef.current?.setPaused(next);
       return next;
     });
+  };
+
+  const toggleMusic = () => {
+    setMusicEnabled((current) => !current);
   };
 
   const createSnapshot = useCallback(async () => {
@@ -225,8 +252,8 @@ export default function FluidSimulationPage() {
       if (canShareFile) {
         await navigator.share({
           files: [pngFile],
-          title: "Fluid Field",
-          text: "Save this GPU fluid snapshot.",
+          title: "Fluid Simulation",
+          text: "Save this fluid simulation snapshot.",
         });
         return;
       }
@@ -242,6 +269,7 @@ export default function FluidSimulationPage() {
     event.preventDefault();
     const bounds = event.currentTarget.getBoundingClientRect();
     if (mode === "down") {
+      startMusic();
       event.currentTarget.setPointerCapture(event.pointerId);
       engineRef.current?.pointerDown(event.clientX, event.clientY, bounds);
     } else {
@@ -267,7 +295,13 @@ export default function FluidSimulationPage() {
   return (
     <>
       <main className={styles.root}>
-        <h1 className={styles.srOnly}>GPU Fluid Field</h1>
+        <h1 className={styles.srOnly}>Fluid Simulation</h1>
+        <audio
+          ref={audioRef}
+          src="/fluid-simulation/ethereal.mp3"
+          loop
+          preload="auto"
+        />
         <canvas
           ref={canvasRef}
           className={styles.canvas}
@@ -282,16 +316,7 @@ export default function FluidSimulationPage() {
         {panelOpen ? (
           <aside className={styles.panel} aria-label="Fluid settings">
             <div className={styles.panelHeader}>
-              <div>
-                <p className={styles.panelTitle}>Fluid field</p>
-                <p className={styles.performance}>
-                  {error
-                    ? "GPU unavailable"
-                    : stats
-                      ? `${stats.fps} FPS · ${stats.simulationWidth}×${stats.simulationHeight}`
-                      : "Starting GPU solver"}
-                </p>
-              </div>
+              <p className={styles.panelTitle}>Fluid Simulation</p>
               <button
                 type="button"
                 className={styles.iconButton}
@@ -302,13 +327,75 @@ export default function FluidSimulationPage() {
               </button>
             </div>
 
+            {!error ? (
+              <div
+                className={styles.utilityActions}
+                aria-label="Simulation controls"
+              >
+                <button
+                  type="button"
+                  onClick={() => engineRef.current?.reset()}
+                  aria-label="Reset simulation"
+                  title="Reset simulation"
+                >
+                  <RotateCcw aria-hidden="true" />
+                  <span>Reset</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={togglePause}
+                  aria-label={paused ? "Resume simulation" : "Pause simulation"}
+                  aria-pressed={paused}
+                  title={paused ? "Resume simulation" : "Pause simulation"}
+                >
+                  {paused ? (
+                    <Play aria-hidden="true" />
+                  ) : (
+                    <Pause aria-hidden="true" />
+                  )}
+                  <span>{paused ? "Resume" : "Pause"}</span>
+                </button>
+                <button
+                  type="button"
+                  className={styles.musicButton}
+                  onClick={toggleMusic}
+                  aria-label={musicEnabled ? "Mute music" : "Play music"}
+                  aria-pressed={musicEnabled}
+                  title={musicEnabled ? "Mute music" : "Play music"}
+                >
+                  {musicEnabled ? (
+                    <Volume2 aria-hidden="true" />
+                  ) : (
+                    <VolumeX aria-hidden="true" />
+                  )}
+                  <span>Music</span>
+                </button>
+              </div>
+            ) : null}
+
             {error ? (
               <p className={styles.errorMessage}>{error}</p>
             ) : (
               <>
+                <div className={styles.selectRow}>
+                  <label htmlFor="particle-count">Particles</label>
+                  <select
+                    id="particle-count"
+                    value={particleCount}
+                    onChange={(event) =>
+                      handleParticleCount(Number(event.currentTarget.value))
+                    }
+                  >
+                    <option value={131_072}>131K</option>
+                    <option value={262_144}>262K</option>
+                    <option value={524_288}>524K</option>
+                    <option value={1_048_576}>1.05M</option>
+                  </select>
+                </div>
+
                 <div className={styles.controlGroup}>
                   <div className={styles.controlLabel}>
-                    <label htmlFor="solver-iterations">Solver iterations</label>
+                    <label htmlFor="solver-iterations">Iterations</label>
                     <output htmlFor="solver-iterations">
                       {solverIterations}
                     </output>
@@ -346,26 +433,6 @@ export default function FluidSimulationPage() {
                   />
                 </div>
 
-                <div className={styles.selectRow}>
-                  <label htmlFor="particle-count">Particles</label>
-                  <select
-                    id="particle-count"
-                    value={particleCount}
-                    onChange={(event) =>
-                      handleParticleCount(Number(event.currentTarget.value))
-                    }
-                  >
-                    <option value={131_072}>131K</option>
-                    <option value={262_144}>262K</option>
-                    <option value={524_288}>524K</option>
-                    <option value={1_048_576}>1.05M</option>
-                  </select>
-                </div>
-
-                <p className={styles.instruction}>
-                  Drag anywhere to pull the current through the particles.
-                </p>
-
                 <button
                   type="button"
                   className={styles.photoButton}
@@ -375,24 +442,6 @@ export default function FluidSimulationPage() {
                   <Download aria-hidden="true" />
                   <span>{captureLabel}</span>
                 </button>
-
-                <div className={styles.secondaryActions}>
-                  <button
-                    type="button"
-                    onClick={() => engineRef.current?.reset()}
-                  >
-                    <RotateCcw aria-hidden="true" />
-                    Reset
-                  </button>
-                  <button type="button" onClick={togglePause}>
-                    {paused ? (
-                      <Play aria-hidden="true" />
-                    ) : (
-                      <Pause aria-hidden="true" />
-                    )}
-                    {paused ? "Resume" : "Pause"}
-                  </button>
-                </div>
               </>
             )}
 
@@ -408,7 +457,10 @@ export default function FluidSimulationPage() {
           <button
             type="button"
             className={styles.settingsButton}
-            onClick={() => setPanelOpen(true)}
+            onClick={() => {
+              setPanelOpen(true);
+              startMusic();
+            }}
             aria-label="Open fluid settings"
           >
             <SlidersHorizontal aria-hidden="true" />
@@ -421,22 +473,22 @@ export default function FluidSimulationPage() {
         <ExportPreviewModal
           description={
             isTouchDevice
-              ? "Save the PNG to your device or share Fluid Field with others."
-              : "Your PNG downloaded automatically. Download it again or share Fluid Field."
+              ? "Save the PNG to your device or share Fluid Simulation with others."
+              : "Your PNG downloaded automatically. Download it again or share Fluid Simulation."
           }
-          emailBody="Shape your own GPU particle flow with Fluid Field:"
-          emailSubject="Fluid Field snapshot"
-          facebookHashtag="#FluidField"
+          emailBody="Shape your own particle flow with Fluid Simulation:"
+          emailSubject="Fluid Simulation snapshot"
+          facebookHashtag="#FluidSimulation"
           fileName={snapshot.fileName}
-          imageAlt="Fluid Field particle snapshot"
+          imageAlt="Fluid Simulation particle snapshot"
           imageSrc={snapshot.imageSrc}
           isTouchDevice={isTouchDevice}
           onClose={closePreview}
           onSaveImage={saveSnapshot}
-          shareHeading="Share Fluid Field"
+          shareHeading="Share Fluid Simulation"
           shareUrl={shareUrl}
-          socialTitle="Shape a GPU particle flow with Fluid Field."
-          title="Fluid snapshot"
+          socialTitle="Shape a glowing particle flow with Fluid Simulation."
+          title="Fluid Simulation snapshot"
         />
       ) : null}
     </>

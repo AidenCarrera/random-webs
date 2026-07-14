@@ -133,13 +133,13 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/fluid-simulation",
-    title: "Fluid Field",
-    blurb: "Particles moving through fluid.",
-    accent: "from-teal-200/80 via-emerald-300/70 to-cyan-500/70",
+    title: "Fluid Simulation",
+    blurb: "Stir a field of glowing particles.",
+    accent: "from-fuchsia-300/80 via-violet-400/70 to-cyan-400/75",
     metadata: {
-      title: "Fluid Field - GPU Particle Simulation",
+      title: "Fluid Simulation - Interactive WebGL 2 Particles",
       description:
-        "Stir a GPU-accelerated particle fluid, tune the pressure solver and flow force, then capture the field as an image.",
+        "Swirl through a colorful WebGL 2 fluid simulation, shape glowing particles with your pointer, and save your favorite moment.",
     },
   },
   {
