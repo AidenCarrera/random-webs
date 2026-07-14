@@ -23,3 +23,17 @@
   background-size: 300% 100%;
   animation: gradient-cycle 10s linear infinite;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .root,
+  .root * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .root :global(.rolling-grid) {
+    animation: none !important;
+  }
+}
