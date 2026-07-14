@@ -285,57 +285,25 @@ export default function StylePet() {
   const colors = SKIN_COLORS[skin];
 
   return (
-    <div className="min-h-screen bg-[#111216] flex flex-col items-center justify-center p-6 select-none font-mono text-zinc-300 relative overflow-hidden">
-      {/* Soft background grid pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.02] pointer-events-none"
-        style={{
-          backgroundImage: `
-            linear-gradient(to right, #fff 1px, transparent 1px),
-            linear-gradient(to bottom, #fff 1px, transparent 1px)
-          `,
-          backgroundSize: "24px 24px",
-        }}
-      />
-
+    <div className="min-h-[100dvh] bg-[#172a33] flex flex-col items-center justify-center p-4 sm:p-6 select-none font-mono text-zinc-300 relative overflow-hidden">
       {/* Main Console Container */}
-      <div className="relative flex flex-col items-center">
+      <div className="relative z-10 flex w-full flex-col items-center">
         {/* Device Outer Frame */}
-        <div className="relative bg-zinc-800 rounded-[50px] p-8 pb-14 w-105 md:w-125 shadow-[0_30px_70px_rgba(0,0,0,0.85),inset_0_4px_10px_rgba(255,255,255,0.1),inset_0_-8px_16px_rgba(0,0,0,0.6)] border-4 border-zinc-700/80 flex flex-col items-center animate-fade-in">
-          {/* Status LEDs & Brand top edge */}
-          <div className="w-full flex items-center justify-between px-6 mb-4">
-            {/* Status lights */}
-            <div className="flex gap-2">
-              <div
-                className={`w-2.5 h-2.5 rounded-full border border-black/40 transition-all duration-300 ${status === "DEAD" ? "bg-red-500 shadow-[0_0_8px_#ef4444]" : "bg-zinc-950"}`}
-                title="Fault LED"
-              />
-              <div
-                className={`w-2.5 h-2.5 rounded-full border border-black/40 transition-all duration-300 ${status === "SLEEPING" ? "bg-purple-500 shadow-[0_0_8px_#a855f7]" : "bg-zinc-950"}`}
-                title="Sleeping LED"
-              />
-              <div
-                className={`w-2.5 h-2.5 rounded-full border border-black/40 transition-all duration-300 ${status === "PLAYING" || status === "EATING" ? "bg-green-500 shadow-[0_0_8px_#22c55e]" : "bg-green-600/20"}`}
-                title="Activity LED"
-              />
-            </div>
-            {/* Brand text */}
-            <div className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500">
-              Style-Pet.V2
-            </div>
-            {/* Sound indicator */}
-            <button
-              onClick={toggleMute}
-              className="p-1 rounded hover:bg-zinc-700/50 text-zinc-500 hover:text-zinc-300 active:scale-95 transition-all"
-            >
-              {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-            </button>
-          </div>
+        <div className="relative flex w-[min(100%,420px)] flex-col items-center rounded-[50px] border-4 border-[#8f928d] bg-[#c8cac5] p-6 pb-16 pt-16 shadow-[0_30px_70px_rgba(8,24,31,0.5),inset_0_4px_8px_rgba(255,255,255,0.75),inset_0_-8px_14px_rgba(85,90,88,0.28)] animate-fade-in sm:p-8 sm:pb-[72px] sm:pt-16 md:w-125">
+          {/* Sound control */}
+          <button
+            onClick={toggleMute}
+            aria-label={isMuted ? "Turn sound on" : "Mute sound"}
+            title={isMuted ? "Turn sound on" : "Mute sound"}
+            className="absolute right-6 top-4 rounded-lg border border-[#9da09b] bg-[#b8bab5] p-1.5 text-[#4e5354] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition-colors hover:bg-[#afb2ad] hover:text-[#242829] active:translate-y-px sm:right-8"
+          >
+            {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+          </button>
 
           {/* Handheld LCD Screen Area */}
           <div
-            className="relative w-full aspect-square bg-[#87977a] rounded-2xl border-solid border-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.4),0_2px_4px_rgba(255,255,255,0.05)] overflow-hidden flex flex-col p-4 text-zinc-900"
-            style={{ borderWidth: "10px" }}
+            className="relative aspect-[11/10] w-full overflow-hidden rounded-2xl border-solid border-[#676b69] bg-[#87977a] p-4 text-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.32),0_2px_4px_rgba(255,255,255,0.3)] flex flex-col"
+            style={{ borderWidth: "18px 26px" }}
           >
             {/* CRT Screen scanline layer */}
             <div
@@ -492,7 +460,7 @@ export default function StylePet() {
                         }
                       : { duration: 0.5, repeat: 4, ease: "easeInOut" }
                 }
-                className="relative w-44 h-44 flex items-center justify-center"
+                className="relative flex h-40 w-40 items-center justify-center sm:h-44 sm:w-44"
               >
                 {/* SVG Character Model with pixel-perfect shapes */}
                 <svg
@@ -804,39 +772,39 @@ export default function StylePet() {
             <button
               onClick={handleFeed}
               disabled={status === "DEAD" || status === "SLEEPING"}
-              className="flex flex-col items-center gap-1 py-1.5 rounded-xl bg-zinc-700/80 hover:bg-zinc-700 active:scale-95 text-[9px] font-black uppercase text-zinc-100 border border-zinc-600 disabled:opacity-30 disabled:scale-100 transition-all shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+              className="flex flex-col items-center gap-1 rounded-xl border border-[#404649] bg-[#565c5f] py-1.5 text-[9px] font-black uppercase text-[#f2f3ef] shadow-[0_2px_0_#363c3f,inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-[#4d5356] active:translate-y-0.5 active:shadow-none disabled:translate-y-0 disabled:opacity-30 disabled:shadow-[0_2px_0_#363c3f]"
             >
               <span>Feed</span>
             </button>
             <button
               onClick={handlePlay}
               disabled={status === "DEAD" || status === "SLEEPING"}
-              className="flex flex-col items-center gap-1 py-1.5 rounded-xl bg-zinc-700/80 hover:bg-zinc-700 active:scale-95 text-[9px] font-black uppercase text-zinc-100 border border-zinc-600 disabled:opacity-30 disabled:scale-100 transition-all shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+              className="flex flex-col items-center gap-1 rounded-xl border border-[#404649] bg-[#565c5f] py-1.5 text-[9px] font-black uppercase text-[#f2f3ef] shadow-[0_2px_0_#363c3f,inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-[#4d5356] active:translate-y-0.5 active:shadow-none disabled:translate-y-0 disabled:opacity-30 disabled:shadow-[0_2px_0_#363c3f]"
             >
               <span>Pet</span>
             </button>
             <button
               onClick={handleClean}
               disabled={status === "DEAD" || status === "SLEEPING"}
-              className="flex flex-col items-center gap-1 py-1.5 rounded-xl bg-zinc-700/80 hover:bg-zinc-700 active:scale-95 text-[9px] font-black uppercase text-zinc-100 border border-zinc-600 disabled:opacity-30 disabled:scale-100 transition-all shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+              className="flex flex-col items-center gap-1 rounded-xl border border-[#404649] bg-[#565c5f] py-1.5 text-[9px] font-black uppercase text-[#f2f3ef] shadow-[0_2px_0_#363c3f,inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-[#4d5356] active:translate-y-0.5 active:shadow-none disabled:translate-y-0 disabled:opacity-30 disabled:shadow-[0_2px_0_#363c3f]"
             >
               <span>Clean</span>
             </button>
             <button
               onClick={toggleSleep}
               disabled={status === "DEAD"}
-              className="flex flex-col items-center gap-1 py-1.5 rounded-xl bg-zinc-700/80 hover:bg-zinc-700 active:scale-95 text-[9px] font-black uppercase text-zinc-100 border border-zinc-600 disabled:opacity-30 disabled:scale-100 transition-all shadow-[0_2px_4px_rgba(0,0,0,0.2)]"
+              className="flex flex-col items-center gap-1 rounded-xl border border-[#404649] bg-[#565c5f] py-1.5 text-[9px] font-black uppercase text-[#f2f3ef] shadow-[0_2px_0_#363c3f,inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-[#4d5356] active:translate-y-0.5 active:shadow-none disabled:translate-y-0 disabled:opacity-30 disabled:shadow-[0_2px_0_#363c3f]"
             >
               <span>{status === "SLEEPING" ? "Wake" : "Sleep"}</span>
             </button>
           </div>
 
           {/* Console Physical Buttons (Styling controls / menu navigation) */}
-          <div className="w-full flex items-center justify-between mt-8 px-2">
+          <div className="mt-8 flex w-full items-center justify-between px-2 max-[420px]:scale-[0.82]">
             {/* D-Pad Layout */}
             <div className="relative w-28 h-28 flex items-center justify-center shrink-0">
               {/* Center connector */}
-              <div className="absolute w-8 h-8 bg-zinc-900 rounded" />
+              <div className="absolute h-8 w-8 rounded bg-[#303638]" />
               {/* Up Button */}
               <button
                 onClick={() => {
@@ -849,7 +817,7 @@ export default function StylePet() {
                     );
                   }
                 }}
-                className="absolute top-0 w-8 h-11 bg-zinc-900 hover:bg-zinc-950 rounded-t shadow-[inset_0_2px_0_rgba(255,255,255,0.1)] active:translate-y-px active:shadow-none flex items-center justify-center"
+                className="absolute top-0 flex h-11 w-8 items-center justify-center rounded-t bg-[#303638] shadow-[inset_0_2px_0_rgba(255,255,255,0.13)] transition-colors hover:bg-[#282e30] active:translate-y-px active:shadow-none"
               >
                 <div className="w-0 h-0 border-l-5 border-l-transparent border-r-5 border-r-transparent border-b-7 border-b-zinc-400" />
               </button>
@@ -863,7 +831,7 @@ export default function StylePet() {
                     setCurrentMenu("NONE");
                   }
                 }}
-                className="absolute bottom-0 w-8 h-11 bg-zinc-900 hover:bg-zinc-950 rounded-b shadow-[inset_0_-2px_0_rgba(0,0,0,0.4)] active:translate-y-px active:shadow-none flex items-center justify-center"
+                className="absolute bottom-0 flex h-11 w-8 items-center justify-center rounded-b bg-[#303638] shadow-[inset_0_-2px_0_rgba(0,0,0,0.32)] transition-colors hover:bg-[#282e30] active:translate-y-px active:shadow-none"
               >
                 <div className="w-0 h-0 border-l-5 border-l-transparent border-r-5 border-r-transparent border-t-7 border-t-zinc-400" />
               </button>
@@ -878,7 +846,7 @@ export default function StylePet() {
                     cycleHat(-1);
                   }
                 }}
-                className="absolute left-0 w-11 h-8 bg-zinc-900 hover:bg-zinc-950 rounded-l shadow-[inset_2px_0_0_rgba(255,255,255,0.1)] active:translate-x-px active:shadow-none flex items-center justify-center"
+                className="absolute left-0 flex h-8 w-11 items-center justify-center rounded-l bg-[#303638] shadow-[inset_2px_0_0_rgba(255,255,255,0.13)] transition-colors hover:bg-[#282e30] active:translate-x-px active:shadow-none"
               >
                 <div className="w-0 h-0 border-t-5 border-t-transparent border-b-5 border-b-transparent border-r-7 border-r-zinc-400" />
               </button>
@@ -893,21 +861,21 @@ export default function StylePet() {
                     cycleAccessory(1);
                   }
                 }}
-                className="absolute right-0 w-11 h-8 bg-zinc-900 hover:bg-zinc-950 rounded-r shadow-[inset_-2px_0_0_rgba(0,0,0,0.4)] active:translate-x-px active:shadow-none flex items-center justify-center"
+                className="absolute right-0 flex h-8 w-11 items-center justify-center rounded-r bg-[#303638] shadow-[inset_-2px_0_0_rgba(0,0,0,0.32)] transition-colors hover:bg-[#282e30] active:translate-x-px active:shadow-none"
               >
                 <div className="w-0 h-0 border-t-5 border-t-transparent border-b-5 border-b-transparent border-l-7 border-l-zinc-400" />
               </button>
             </div>
 
             {/* Menu Labels */}
-            <div className="flex flex-col items-center gap-1 text-[9px] text-zinc-500 font-bold uppercase tracking-wider min-w-25 text-center">
+            <div className="flex min-w-25 flex-col items-center gap-1 text-center text-[9px] font-bold uppercase tracking-wider text-[#505556]">
               {currentMenu === "STYLE" ? (
                 <>
-                  <span className="text-cyan-500 animate-pulse">
+                  <span className="animate-pulse text-[#7b2946]">
                     ▲▼ - SELECT
                   </span>
-                  <span className="text-cyan-500">◀▶ - CHANGE</span>
-                  <span className="text-zinc-600">▼ - CLOSE</span>
+                  <span className="text-[#7b2946]">◀▶ - CHANGE</span>
+                  <span className="text-[#686d6d]">▼ - CLOSE</span>
                 </>
               ) : (
                 <>
@@ -923,44 +891,36 @@ export default function StylePet() {
             <div className="flex gap-4 shrink-0 rotate-[-25deg] -translate-y-2 mr-2">
               <div className="flex flex-col items-center gap-1">
                 <button
+                  onClick={() => cycleSkin()}
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-[#93425f] text-sm font-bold text-[#f5e8ed] shadow-[0_4px_0_#65263e,inset_0_2px_4px_rgba(255,255,255,0.24)] transition-all hover:bg-[#a44c6a] active:translate-y-1 active:shadow-none"
+                >
+                  X
+                </button>
+                <span className="text-[9px] font-bold tracking-wider text-[#505556]">
+                  SKIN
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <button
                   onClick={() => {
                     synth.playSelect();
                     setCurrentMenu((prev) =>
                       prev === "STYLE" ? "NONE" : "STYLE",
                     );
                   }}
-                  className="w-12 h-12 rounded-full bg-cyan-600 hover:bg-cyan-500 shadow-[0_4px_0_#0891b2,inset_0_2px_4px_rgba(255,255,255,0.2)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center text-sm font-bold text-cyan-950"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-[#93425f] text-sm font-bold text-[#f5e8ed] shadow-[0_4px_0_#65263e,inset_0_2px_4px_rgba(255,255,255,0.24)] transition-all hover:bg-[#a44c6a] active:translate-y-1 active:shadow-none"
                 >
                   Y
                 </button>
-                <span className="text-[9px] font-bold text-zinc-500 tracking-wider">
+                <span className="text-[9px] font-bold tracking-wider text-[#505556]">
                   STYLE
-                </span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <button
-                  onClick={() => cycleSkin()}
-                  className="w-12 h-12 rounded-full bg-pink-600 hover:bg-pink-500 shadow-[0_4px_0_#db2777,inset_0_2px_4px_rgba(255,255,255,0.2)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center text-sm font-bold text-pink-950"
-                >
-                  X
-                </button>
-                <span className="text-[9px] font-bold text-zinc-500 tracking-wider">
-                  SKIN
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Reset button nested in speaker slits */}
-          <div className="w-full flex justify-between items-center mt-10 px-4">
-            {/* Grill slits */}
-            <div className="flex gap-1">
-              <div className="w-1.5 h-6 bg-zinc-950/40 rounded-full" />
-              <div className="w-1.5 h-6 bg-zinc-950/40 rounded-full" />
-              <div className="w-1.5 h-6 bg-zinc-950/40 rounded-full" />
-              <div className="w-1.5 h-6 bg-zinc-950/40 rounded-full" />
-            </div>
-
+          {/* Lower hardware row */}
+          <div className="relative mt-10 flex min-h-14 w-full items-center px-4">
             {/* Small Reset Button */}
             {status === "DEAD" && (
               <button
@@ -971,6 +931,53 @@ export default function StylePet() {
                 <span>Revive</span>
               </button>
             )}
+
+            {/* Select and Start controls */}
+            <div className="absolute left-1/2 top-0 flex -translate-x-1/2 -rotate-[12deg] gap-3">
+              <div className="flex flex-col items-center gap-1.5">
+                <button
+                  onClick={() => {
+                    synth.playSelect();
+                    setCurrentMenu((prev) =>
+                      prev === "STYLE" ? "NONE" : "STYLE",
+                    );
+                  }}
+                  aria-label="Select style menu"
+                  className="h-4 w-12 rounded-full border border-[#454b4d] bg-[#565c5f] shadow-[0_2px_0_#3d4345,inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-[#4d5356] active:translate-y-0.5 active:shadow-none"
+                />
+                <span className="text-[8px] font-bold tracking-wider text-[#505556]">
+                  SELECT
+                </span>
+              </div>
+              <div className="flex flex-col items-center gap-1.5">
+                <button
+                  onClick={() => {
+                    synth.playSelect();
+                    setCurrentMenu((prev) =>
+                      prev === "STATS" ? "NONE" : "STATS",
+                    );
+                  }}
+                  aria-label="Start vitals menu"
+                  className="h-4 w-12 rounded-full border border-[#454b4d] bg-[#565c5f] shadow-[0_2px_0_#3d4345,inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-[#4d5356] active:translate-y-0.5 active:shadow-none"
+                />
+                <span className="text-[8px] font-bold tracking-wider text-[#505556]">
+                  START
+                </span>
+              </div>
+            </div>
+
+            {/* Game Boy-style angled speaker grille */}
+            <div
+              aria-hidden="true"
+              className="ml-auto flex -rotate-[28deg] gap-2"
+            >
+              <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
+              <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
+              <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
+              <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
+              <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
+              <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
+            </div>
           </div>
         </div>
       </div>
