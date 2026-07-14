@@ -216,7 +216,7 @@
 }
 
 .selectRow select {
-  min-width: 82px;
+  min-width: 112px;
   height: 34px;
   padding: 0 28px 0 10px;
   border: 1px solid rgba(116, 110, 151, 0.15);

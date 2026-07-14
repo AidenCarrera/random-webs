@@ -21,12 +21,13 @@ import {
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { downloadBlob } from "@/lib/canvasExport";
 
-import { FluidEngine } from "./fluidEngine";
+import { FluidEngine, type FluidColorPreset } from "./fluidEngine";
 import styles from "./styles.module.css";
 
 const DEFAULT_ITERATIONS = 24;
 const DEFAULT_PARTICLES = 262_144;
 const DEFAULT_FORCE = 1;
+const DEFAULT_COLOR_PRESET: FluidColorPreset = "aurora";
 
 type CaptureState = "idle" | "capturing" | "saved" | "error";
 
@@ -78,6 +79,8 @@ export default function FluidSimulationPage() {
   const [solverIterations, setSolverIterations] = useState(DEFAULT_ITERATIONS);
   const [particleCount, setParticleCount] = useState(DEFAULT_PARTICLES);
   const [force, setForce] = useState(DEFAULT_FORCE);
+  const [colorPreset, setColorPreset] =
+    useState<FluidColorPreset>(DEFAULT_COLOR_PRESET);
   const [paused, setPaused] = useState(false);
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
@@ -104,6 +107,7 @@ export default function FluidSimulationPage() {
         solverIterations: DEFAULT_ITERATIONS,
         particleCount: DEFAULT_PARTICLES,
         force: DEFAULT_FORCE,
+        colorPreset: DEFAULT_COLOR_PRESET,
       });
     } catch (caughtError) {
       const message =
@@ -186,6 +190,11 @@ export default function FluidSimulationPage() {
     engineRef.current?.setForce(value);
   };
 
+  const handleColorPreset = (preset: FluidColorPreset) => {
+    setColorPreset(preset);
+    engineRef.current?.setColorPreset(preset);
+  };
+
   const togglePause = () => {
     setPaused((current) => {
       const next = !current;
@@ -264,14 +273,20 @@ export default function FluidSimulationPage() {
 
   const updatePointer = (
     event: React.PointerEvent<HTMLCanvasElement>,
-    mode: "down" | "move",
+    phase: "down" | "move",
   ) => {
     event.preventDefault();
     const bounds = event.currentTarget.getBoundingClientRect();
-    if (mode === "down") {
+    if (phase === "down") {
+      if (event.button !== 0 && event.button !== 2) return;
       startMusic();
       event.currentTarget.setPointerCapture(event.pointerId);
-      engineRef.current?.pointerDown(event.clientX, event.clientY, bounds);
+      engineRef.current?.pointerDown(
+        event.clientX,
+        event.clientY,
+        bounds,
+        event.button === 2 ? "attract" : "stir",
+      );
     } else {
       engineRef.current?.pointerMove(event.clientX, event.clientY, bounds);
     }
@@ -305,7 +320,7 @@ export default function FluidSimulationPage() {
         <canvas
           ref={canvasRef}
           className={styles.canvas}
-          aria-label="Interactive GPU particle fluid. Drag across the canvas to stir the flow."
+          aria-label="Interactive GPU particle fluid. Left-drag to stir the flow and right-drag to attract particles."
           onPointerDown={(event) => updatePointer(event, "down")}
           onPointerMove={(event) => updatePointer(event, "move")}
           onPointerUp={releasePointer}
@@ -390,6 +405,27 @@ export default function FluidSimulationPage() {
                     <option value={262_144}>262K</option>
                     <option value={524_288}>524K</option>
                     <option value={1_048_576}>1.05M</option>
+                  </select>
+                </div>
+
+                <div className={styles.selectRow}>
+                  <label htmlFor="color-preset">Color</label>
+                  <select
+                    id="color-preset"
+                    value={colorPreset}
+                    onChange={(event) =>
+                      handleColorPreset(
+                        event.currentTarget.value as FluidColorPreset,
+                      )
+                    }
+                  >
+                    <option value="aurora">Aurora</option>
+                    <option value="rainbow">Rainbow</option>
+                    <option value="ocean">Ocean</option>
+                    <option value="fire">Fire</option>
+                    <option value="acid">Acid</option>
+                    <option value="lavender">Lavender</option>
+                    <option value="monochrome">Monochrome</option>
                   </select>
                 </div>
 

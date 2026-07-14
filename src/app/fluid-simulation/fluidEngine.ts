@@ -31,10 +31,154 @@ export type FluidEngineStats = {
   renderer: string;
 };
 
+export type FluidColorPreset =
+  "aurora" | "rainbow" | "ocean" | "fire" | "acid" | "lavender" | "monochrome";
+
+export type FluidPointerMode = "stir" | "attract";
+
+type Rgb = readonly [number, number, number];
+
+type FluidPalette = {
+  dye: readonly [Rgb, Rgb, Rgb, Rgb, Rgb];
+  particles: readonly [Rgb, Rgb, Rgb, Rgb, Rgb];
+  background: Rgb;
+  current: Rgb;
+};
+
+const COLOR_PALETTES: Record<FluidColorPreset, FluidPalette> = {
+  aurora: {
+    dye: [
+      [0.68, 0.012, 0.49],
+      [0.45, 0.022, 0.94],
+      [0.025, 0.24, 0.86],
+      [0.1, 0.66, 0.92],
+      [0.9, 0.94, 1],
+    ],
+    particles: [
+      [0.48, 0.012, 0.41],
+      [0.33, 0.022, 0.82],
+      [0.02, 0.25, 0.88],
+      [0.09, 0.62, 0.94],
+      [0.9, 0.95, 1],
+    ],
+    background: [0.003, 0.004, 0.012],
+    current: [0.018, 0.02, 0.078],
+  },
+  rainbow: {
+    dye: [
+      [1, 0.025, 0.18],
+      [1, 0.18, 0.015],
+      [0.98, 0.92, 0.015],
+      [0.015, 0.92, 0.72],
+      [0.78, 0.24, 1],
+    ],
+    particles: [
+      [0.96, 0.015, 0.16],
+      [1, 0.16, 0.01],
+      [0.94, 0.86, 0.01],
+      [0.015, 0.88, 0.68],
+      [0.76, 0.2, 1],
+    ],
+    background: [0.006, 0.003, 0.012],
+    current: [0.055, 0.018, 0.09],
+  },
+  ocean: {
+    dye: [
+      [0.015, 0.12, 0.62],
+      [0.015, 0.38, 0.94],
+      [0.01, 0.7, 1],
+      [0.13, 0.98, 0.92],
+      [0.88, 1, 1],
+    ],
+    particles: [
+      [0.01, 0.08, 0.44],
+      [0.015, 0.3, 0.82],
+      [0.01, 0.64, 1],
+      [0.12, 0.92, 0.88],
+      [0.88, 1, 1],
+    ],
+    background: [0.001, 0.008, 0.018],
+    current: [0.005, 0.055, 0.11],
+  },
+  fire: {
+    dye: [
+      [0.68, 0.008, 0.08],
+      [0.96, 0.045, 0.025],
+      [1, 0.26, 0.015],
+      [1, 0.68, 0.04],
+      [1, 0.98, 0.78],
+    ],
+    particles: [
+      [0.5, 0.005, 0.055],
+      [0.82, 0.025, 0.015],
+      [1, 0.2, 0.01],
+      [1, 0.62, 0.025],
+      [1, 0.98, 0.78],
+    ],
+    background: [0.012, 0.002, 0.003],
+    current: [0.1, 0.012, 0.004],
+  },
+  acid: {
+    dye: [
+      [0.22, 0.38, 0.01],
+      [0.015, 0.68, 0.12],
+      [0.01, 0.98, 0.38],
+      [0.1, 1, 0.86],
+      [0.9, 1, 0.8],
+    ],
+    particles: [
+      [0.14, 0.28, 0.005],
+      [0.01, 0.54, 0.08],
+      [0.01, 0.9, 0.3],
+      [0.08, 0.98, 0.78],
+      [0.9, 1, 0.8],
+    ],
+    background: [0.002, 0.009, 0.004],
+    current: [0.008, 0.09, 0.03],
+  },
+  lavender: {
+    dye: [
+      [0.72, 0.012, 0.56],
+      [0.52, 0.02, 1],
+      [0.26, 0.08, 1],
+      [0.34, 0.48, 1],
+      [0.95, 0.86, 1],
+    ],
+    particles: [
+      [0.52, 0.012, 0.46],
+      [0.38, 0.02, 0.88],
+      [0.2, 0.08, 1],
+      [0.3, 0.5, 1],
+      [0.95, 0.88, 1],
+    ],
+    background: [0.003, 0.004, 0.012],
+    current: [0.045, 0.016, 0.1],
+  },
+  monochrome: {
+    dye: [
+      [0.15, 0.18, 0.26],
+      [0.3, 0.36, 0.5],
+      [0.52, 0.62, 0.76],
+      [0.76, 0.86, 0.94],
+      [1, 1, 1],
+    ],
+    particles: [
+      [0.11, 0.14, 0.2],
+      [0.25, 0.3, 0.42],
+      [0.48, 0.58, 0.72],
+      [0.74, 0.84, 0.92],
+      [1, 1, 1],
+    ],
+    background: [0.003, 0.004, 0.007],
+    current: [0.035, 0.045, 0.065],
+  },
+};
+
 export type FluidEngineOptions = {
   solverIterations: number;
   particleCount: number;
   force: number;
+  colorPreset?: FluidColorPreset;
   paused?: boolean;
   onStats?: (stats: FluidEngineStats) => void;
 };
@@ -218,6 +362,11 @@ uniform vec2 u_previousPointer;
 uniform float u_dt;
 uniform float u_aspect;
 uniform float u_active;
+uniform vec3 u_color0;
+uniform vec3 u_color1;
+uniform vec3 u_color2;
+uniform vec3 u_color3;
+uniform vec3 u_color4;
 out vec4 outColor;
 
 float distanceToSegment(vec2 point, vec2 start, vec2 end, out float projection) {
@@ -239,15 +388,10 @@ void main() {
     float radius = 0.022;
     float falloff = exp(-distanceFromStroke * distanceFromStroke / (radius * radius));
     float speed = clamp(length(u_pointer - u_previousPointer) / max(u_dt, 0.008) * 0.45, 0.0, 1.0);
-    vec3 magenta = vec3(0.68, 0.015, 0.46);
-    vec3 violet = vec3(0.42, 0.025, 0.92);
-    vec3 blue = vec3(0.015, 0.30, 1.0);
-    vec3 cyan = vec3(0.03, 0.90, 1.0);
-    vec3 crest = vec3(0.90, 0.98, 1.0);
-    vec3 ink = mix(magenta, violet, smoothstep(0.12, 0.88, u_pointer.x));
-    ink = mix(ink, blue, smoothstep(0.12, 0.52, speed));
-    ink = mix(ink, cyan, smoothstep(0.46, 0.84, speed));
-    ink = mix(ink, crest, pow(speed, 5.0) * 0.72);
+    vec3 ink = mix(u_color0, u_color1, smoothstep(0.12, 0.88, u_pointer.x));
+    ink = mix(ink, u_color2, smoothstep(0.12, 0.52, speed));
+    ink = mix(ink, u_color3, smoothstep(0.46, 0.84, speed));
+    ink = mix(ink, u_color4, pow(speed, 5.0) * 0.72);
     dye += ink * falloff * mix(0.35, 1.0, projection);
   }
 
@@ -262,6 +406,9 @@ in vec2 v_uv;
 uniform sampler2D u_particles;
 uniform sampler2D u_velocity;
 uniform float u_dt;
+uniform vec2 u_attractor;
+uniform float u_attracting;
+uniform float u_aspect;
 out vec4 outColor;
 
 ${BILINEAR_GLSL}
@@ -274,6 +421,24 @@ void main() {
 
   float drag = 1.0 - exp(-u_dt * 11.0);
   velocity += (fluidVelocity - velocity) * drag;
+
+  if (u_attracting > 0.5) {
+    vec2 offset = u_attractor - position;
+    vec2 aspectOffset = vec2(offset.x * u_aspect, offset.y);
+    float distanceFromAttractor = max(length(aspectOffset), 0.002);
+    vec2 direction = vec2(
+      aspectOffset.x / u_aspect,
+      aspectOffset.y
+    ) / distanceFromAttractor;
+    float nearPull = exp(
+      -distanceFromAttractor * distanceFromAttractor / 0.22
+    );
+    velocity += direction * (0.08 + nearPull * 2.3) * u_dt;
+
+    float speed = length(velocity);
+    if (speed > 1.8) velocity *= 1.8 / speed;
+  }
+
   position += velocity * u_dt;
 
   if (position.x < 0.001) {
@@ -302,6 +467,8 @@ precision highp float;
 in vec2 v_uv;
 uniform sampler2D u_dye;
 uniform sampler2D u_velocity;
+uniform vec3 u_background;
+uniform vec3 u_currentColor;
 out vec4 outColor;
 
 ${BILINEAR_GLSL}
@@ -315,8 +482,8 @@ void main() {
   float speed = length(sampleBilinear(u_velocity, v_uv).xy);
   float vignette = 1.0 - 0.28 * smoothstep(0.24, 0.78, distance(v_uv, vec2(0.5)));
   float grain = (noise(gl_FragCoord.xy) - 0.5) * 0.006;
-  vec3 base = vec3(0.003, 0.004, 0.012);
-  vec3 current = vec3(0.012, 0.025, 0.09) * min(speed * 2.4, 1.0);
+  vec3 base = u_background;
+  vec3 current = u_currentColor * min(speed * 2.4, 1.0);
   vec3 color = (base + current + dye * 0.44) * vignette + grain;
   outColor = vec4(max(color, vec3(0.0)), 1.0);
 }
@@ -347,6 +514,11 @@ precision highp float;
 
 in float v_energy;
 in vec2 v_position;
+uniform vec3 u_color0;
+uniform vec3 u_color1;
+uniform vec3 u_color2;
+uniform vec3 u_color3;
+uniform vec3 u_color4;
 out vec4 outColor;
 
 void main() {
@@ -355,15 +527,10 @@ void main() {
   float core = 1.0 - smoothstep(0.08, 0.34, radius);
   float halo = exp(-radius * radius * 2.1) * edge;
 
-  vec3 magenta = vec3(0.48, 0.015, 0.38);
-  vec3 violet = vec3(0.30, 0.025, 0.78);
-  vec3 blue = vec3(0.015, 0.32, 1.0);
-  vec3 cyan = vec3(0.04, 0.88, 1.0);
-  vec3 crest = vec3(0.90, 0.98, 1.0);
-  vec3 color = mix(magenta, violet, v_position.x);
-  color = mix(color, blue, smoothstep(0.10, 0.48, v_energy));
-  color = mix(color, cyan, smoothstep(0.42, 0.82, v_energy));
-  color = mix(color, crest, pow(v_energy, 4.0) * 0.76);
+  vec3 color = mix(u_color0, u_color1, v_position.x);
+  color = mix(color, u_color2, smoothstep(0.10, 0.48, v_energy));
+  color = mix(color, u_color3, smoothstep(0.42, 0.82, v_energy));
+  color = mix(color, u_color4, pow(v_energy, 4.0) * 0.76);
 
   float coreAlpha = core * mix(0.28, 0.96, v_energy);
   float glowAlpha = halo * mix(0.035, 0.38, pow(v_energy, 0.7));
@@ -410,6 +577,7 @@ export class FluidEngine {
   private solverIterations: number;
   private particleCount: number;
   private force: number;
+  private palette: FluidPalette;
   private paused: boolean;
   private particleTextureSide = 0;
   private simulationWidth = 0;
@@ -426,6 +594,7 @@ export class FluidEngine {
 
   private pointer = {
     active: false,
+    attracting: false,
     x: 0.5,
     y: 0.5,
     previousX: 0.5,
@@ -438,6 +607,7 @@ export class FluidEngine {
     this.solverIterations = options.solverIterations;
     this.particleCount = options.particleCount;
     this.force = options.force;
+    this.palette = COLOR_PALETTES[options.colorPreset ?? "aurora"];
     this.paused = options.paused ?? false;
 
     const gl = canvas.getContext("webgl2", {
@@ -572,6 +742,10 @@ export class FluidEngine {
     this.force = Math.max(0.1, force);
   }
 
+  setColorPreset(preset: FluidColorPreset) {
+    this.palette = COLOR_PALETTES[preset];
+  }
+
   setParticleCount(count: number) {
     const nextCount = Math.max(1024, Math.round(count));
     if (nextCount === this.particleCount) return;
@@ -590,9 +764,15 @@ export class FluidEngine {
     this.seedParticles();
   }
 
-  pointerDown(clientX: number, clientY: number, bounds: DOMRect) {
+  pointerDown(
+    clientX: number,
+    clientY: number,
+    bounds: DOMRect,
+    mode: FluidPointerMode = "stir",
+  ) {
     const point = this.normalizePointer(clientX, clientY, bounds);
     this.pointer.active = true;
+    this.pointer.attracting = mode === "attract";
     this.pointer.x = point.x;
     this.pointer.y = point.y;
     this.pointer.previousX = point.x;
@@ -608,6 +788,7 @@ export class FluidEngine {
 
   pointerUp() {
     this.pointer.active = false;
+    this.pointer.attracting = false;
   }
 
   async capture(): Promise<Blob> {
@@ -723,7 +904,7 @@ export class FluidEngine {
         );
         gl.uniform1f(
           this.uniform(program, "u_active"),
-          this.pointer.active ? 1 : 0,
+          this.pointer.active && !this.pointer.attracting ? 1 : 0,
         );
       },
     );
@@ -789,8 +970,9 @@ export class FluidEngine {
         );
         gl.uniform1f(
           this.uniform(program, "u_active"),
-          this.pointer.active ? 1 : 0,
+          this.pointer.active && !this.pointer.attracting ? 1 : 0,
         );
+        this.bindPalette(program, this.palette.dye);
       },
     );
     swap(dye);
@@ -821,6 +1003,19 @@ export class FluidEngine {
         this.bindTexture(program, "u_particles", particles.read.texture, 0);
         this.bindTexture(program, "u_velocity", velocity.read.texture, 1);
         gl.uniform1f(this.uniform(program, "u_dt"), dt);
+        gl.uniform2f(
+          this.uniform(program, "u_attractor"),
+          this.pointer.x,
+          this.pointer.y,
+        );
+        gl.uniform1f(
+          this.uniform(program, "u_attracting"),
+          this.pointer.active && this.pointer.attracting ? 1 : 0,
+        );
+        gl.uniform1f(
+          this.uniform(program, "u_aspect"),
+          this.simulationWidth / this.simulationHeight,
+        );
       },
     );
     swap(particles);
@@ -838,6 +1033,14 @@ export class FluidEngine {
       (program) => {
         this.bindTexture(program, "u_dye", this.dye!.read.texture, 0);
         this.bindTexture(program, "u_velocity", this.velocity!.read.texture, 1);
+        gl.uniform3f(
+          this.uniform(program, "u_background"),
+          ...this.palette.background,
+        );
+        gl.uniform3f(
+          this.uniform(program, "u_currentColor"),
+          ...this.palette.current,
+        );
       },
     );
 
@@ -855,6 +1058,7 @@ export class FluidEngine {
       this.uniform(this.particleProgram, "u_pointSize"),
       Math.min(2.15, Math.max(1.15, this.pixelRatio * 1.05)),
     );
+    this.bindPalette(this.particleProgram, this.palette.particles);
     gl.enable(gl.BLEND);
     gl.blendEquation(gl.FUNC_ADD);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
@@ -1101,6 +1305,15 @@ export class FluidEngine {
     gl.activeTexture(gl.TEXTURE0 + unit);
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.uniform1i(this.uniform(program, name), unit);
+  }
+
+  private bindPalette(
+    program: ProgramHandle,
+    colors: FluidPalette["particles"],
+  ) {
+    colors.forEach((color, index) => {
+      this.gl.uniform3f(this.uniform(program, `u_color${index}`), ...color);
+    });
   }
 
   private uniform(program: ProgramHandle, name: string) {
