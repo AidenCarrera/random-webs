@@ -7,7 +7,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { useReducedMotion } from "framer-motion";
+import { motion, useDragControls, useReducedMotion } from "framer-motion";
 import {
   Bomb,
   BrickWall,
@@ -22,6 +22,9 @@ import {
   Fuel,
   Gauge,
   Gem,
+  GripHorizontal,
+  Maximize2,
+  Minimize2,
   Mountain,
   Pause,
   Play,
@@ -105,14 +108,20 @@ type ToastState = {
   tone: "success" | "error";
 };
 
+type PanelTab = "elements" | "settings" | "statistics";
+
 export default function FallingSandPage() {
   const reduceMotion = useReducedMotion();
   const canvasHandle = useRef<FallingSandCanvasHandle>(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
   const toastTimer = useRef<number | null>(null);
   const [material, setMaterial] = useState(Material.SAND);
   const [brushSize, setBrushSize] = useState(5);
-  const [speed, setSpeed] = useState(1);
+  const [speed, setSpeed] = useState(2);
   const [paused, setPaused] = useState(false);
+  const [activeTab, setActiveTab] = useState<PanelTab>("elements");
+  const [panelMinimized, setPanelMinimized] = useState(false);
   const [ready, setReady] = useState(false);
   const [showCanvasHint, setShowCanvasHint] = useState(true);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -161,13 +170,11 @@ export default function FallingSandPage() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        event.target instanceof HTMLInputElement ||
-        event.target instanceof HTMLButtonElement
-      ) {
+      if (event.target instanceof HTMLInputElement) {
         return;
       }
       if (event.code === "Space") {
+        if (event.target instanceof HTMLButtonElement) return;
         event.preventDefault();
         setPaused((current) => !current);
         return;
@@ -254,69 +261,7 @@ export default function FallingSandPage() {
   return (
     <>
       <main className={styles.root}>
-        <header className={styles.topbar}>
-          <div className={styles.brand}>
-            <div className={styles.brandMark} aria-hidden="true">
-              <CircleDot size={18} strokeWidth={1.8} />
-            </div>
-            <div>
-              <h1>Falling Sand</h1>
-            </div>
-          </div>
-
-          <div className={styles.actions} aria-label="Creation controls">
-            <button type="button" onClick={saveCreation} title="Save creation">
-              <Save size={17} strokeWidth={1.8} />
-              <span>Save</span>
-            </button>
-            <button type="button" onClick={loadCreation} title="Load creation">
-              <FolderOpen size={17} strokeWidth={1.8} />
-              <span>Load</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => canvasHandle.current?.reset()}
-              title="Reset demo"
-            >
-              <RotateCcw size={17} strokeWidth={1.8} />
-              <span>Reset</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => canvasHandle.current?.clear()}
-              title="Clear world"
-            >
-              <Trash2 size={17} strokeWidth={1.8} />
-              <span>Clear</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPaused((current) => !current)}
-              aria-pressed={simulationPaused}
-              title={
-                simulationPaused ? "Resume simulation" : "Pause simulation"
-              }
-            >
-              {simulationPaused ? (
-                <Play size={17} strokeWidth={1.8} />
-              ) : (
-                <Pause size={17} strokeWidth={1.8} />
-              )}
-              <span>{simulationPaused ? "Play" : "Pause"}</span>
-            </button>
-            <button
-              type="button"
-              className={styles.exportButton}
-              onClick={exportCreation}
-              title="Download PNG"
-            >
-              <Camera size={17} strokeWidth={1.8} />
-              <span>Download PNG</span>
-            </button>
-          </div>
-        </header>
-
-        <div className={styles.workspace}>
+        <div className={styles.workspace} ref={workspaceRef}>
           <section
             className={styles.worldPanel}
             aria-label="Falling sand world"
@@ -339,6 +284,101 @@ export default function FallingSandPage() {
               </div>
             ) : null}
 
+            <div className={styles.canvasChrome}>
+              <div className={`${styles.brand} ${styles.glassSurface}`}>
+                <div className={styles.brandMark} aria-hidden="true">
+                  <CircleDot size={19} strokeWidth={2.1} />
+                </div>
+                <h1>Falling Sand</h1>
+              </div>
+
+              <div
+                className={`${styles.playbackControls} ${styles.glassSurface}`}
+                aria-label="Playback controls"
+              >
+                <button
+                  type="button"
+                  onClick={() => setPaused((current) => !current)}
+                  aria-pressed={simulationPaused}
+                  title={
+                    simulationPaused ? "Resume simulation" : "Pause simulation"
+                  }
+                >
+                  {simulationPaused ? (
+                    <Play size={18} strokeWidth={2.1} />
+                  ) : (
+                    <Pause size={18} strokeWidth={2.1} />
+                  )}
+                  <span>{simulationPaused ? "Play" : "Pause"}</span>
+                </button>
+
+                <div className={styles.speedDock} aria-label="Simulation speed">
+                  <Gauge size={17} strokeWidth={2.2} aria-hidden="true" />
+                  {[0.5, 1, 2, 4].map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={
+                        speed === value ? styles.speedActive : undefined
+                      }
+                      onClick={() => setSpeed(value)}
+                      aria-pressed={speed === value}
+                      aria-label={`${value}× speed`}
+                    >
+                      {value}×
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                className={`${styles.actions} ${styles.glassSurface}`}
+                aria-label="Creation controls"
+              >
+                <button
+                  type="button"
+                  onClick={() => canvasHandle.current?.reset()}
+                  title="Reset demo"
+                >
+                  <RotateCcw size={18} strokeWidth={2.1} />
+                  <span>Reset</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => canvasHandle.current?.clear()}
+                  title="Clear world"
+                >
+                  <Trash2 size={18} strokeWidth={2.1} />
+                  <span>Clear</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={saveCreation}
+                  title="Save creation"
+                >
+                  <Save size={18} strokeWidth={2.1} />
+                  <span>Save</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={loadCreation}
+                  title="Load creation"
+                >
+                  <FolderOpen size={18} strokeWidth={2.1} />
+                  <span>Load</span>
+                </button>
+                <button
+                  type="button"
+                  className={styles.exportButton}
+                  onClick={exportCreation}
+                  title="Download PNG"
+                >
+                  <Camera size={18} strokeWidth={2.1} />
+                  <span>Download PNG</span>
+                </button>
+              </div>
+            </div>
+
             {showCanvasHint ? (
               <div className={styles.canvasHint}>
                 <span>
@@ -356,104 +396,186 @@ export default function FallingSandPage() {
             ) : null}
           </section>
 
-          <aside className={styles.controlPanel} aria-label="Sandbox tools">
-            <section className={styles.materialSection}>
-              <div className={styles.sectionHeading}>
-                <div>
-                  <h2>Materials</h2>
-                  <p>{selectedMaterial.description}</p>
-                </div>
-              </div>
+          <motion.aside
+            className={`${styles.controlPanel} ${styles.glassSurface} ${
+              panelMinimized ? styles.panelMinimized : ""
+            }`}
+            aria-label="Sandbox tools"
+            drag={isTouchDevice ? false : true}
+            dragConstraints={workspaceRef}
+            dragControls={dragControls}
+            dragElastic={0}
+            dragListener={false}
+            dragMomentum={false}
+          >
+            <div
+              className={styles.panelHeader}
+              onPointerDown={(event) => {
+                if ((event.target as HTMLElement).closest("button")) return;
+                dragControls.start(event);
+              }}
+            >
+              <GripHorizontal size={19} strokeWidth={2.2} aria-hidden="true" />
+              <span>Toolbox</span>
+              <button
+                type="button"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={() => setPanelMinimized((current) => !current)}
+                aria-label={
+                  panelMinimized
+                    ? "Restore control panel"
+                    : "Minimize control panel"
+                }
+                title={
+                  panelMinimized
+                    ? "Restore control panel"
+                    : "Minimize control panel"
+                }
+              >
+                {panelMinimized ? (
+                  <Maximize2 size={17} strokeWidth={2.2} />
+                ) : (
+                  <Minimize2 size={17} strokeWidth={2.2} />
+                )}
+              </button>
+            </div>
 
-              <div className={styles.materialGrid}>
-                {DRAWABLE_MATERIALS.map((item) => {
-                  const Icon = MATERIAL_ICONS[item.id];
-                  const selected = item.id === material;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={selected ? styles.materialActive : undefined}
-                      onClick={() => setMaterial(item.id)}
-                      aria-pressed={selected}
-                      title={
-                        item.shortcut
-                          ? `${item.name} (${item.shortcut})`
-                          : item.name
-                      }
-                    >
-                      <span
-                        className={styles.materialIcon}
-                        style={
-                          {
-                            "--material-color": item.color,
-                          } as React.CSSProperties
-                        }
+            {!panelMinimized ? (
+              <>
+                <div
+                  className={styles.panelTabs}
+                  role="tablist"
+                  aria-label="Toolbox views"
+                >
+                  {(["elements", "settings", "statistics"] as PanelTab[]).map(
+                    (tab) => (
+                      <button
+                        key={tab}
+                        type="button"
+                        role="tab"
+                        aria-selected={activeTab === tab}
+                        aria-controls={`panel-${tab}`}
+                        id={`tab-${tab}`}
+                        onClick={() => setActiveTab(tab)}
                       >
-                        <Icon size={21} strokeWidth={2.25} />
-                      </span>
-                      <span>{item.name}</span>
-                      {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section className={styles.physicsSection}>
-              <div className={styles.rangeHeading}>
-                <label htmlFor="sand-brush-size">
-                  <Brush size={18} strokeWidth={2.2} />
-                  Brush size
-                </label>
-                <output htmlFor="sand-brush-size">{brushSize}</output>
-              </div>
-              <input
-                id="sand-brush-size"
-                className={styles.range}
-                type="range"
-                min="1"
-                max="14"
-                step="1"
-                value={brushSize}
-                onChange={(event) => setBrushSize(Number(event.target.value))}
-              />
-
-              <div className={styles.speedControl}>
-                <div className={styles.speedLabel}>
-                  <Gauge size={18} strokeWidth={2.2} />
-                  <span>Simulation speed</span>
+                        {tab[0].toUpperCase() + tab.slice(1)}
+                      </button>
+                    ),
+                  )}
                 </div>
-                <div className={styles.segmented}>
-                  {[0.5, 1, 2].map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      className={
-                        speed === value ? styles.segmentActive : undefined
-                      }
-                      onClick={() => setSpeed(value)}
-                      aria-pressed={speed === value}
+
+                <div className={styles.panelBody}>
+                  {activeTab === "elements" ? (
+                    <section
+                      id="panel-elements"
+                      role="tabpanel"
+                      aria-labelledby="tab-elements"
+                      className={styles.materialSection}
                     >
-                      {value}×
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </section>
+                      <div className={styles.sectionHeading}>
+                        <div>
+                          <h2>Elements</h2>
+                          <p>{selectedMaterial.description}</p>
+                        </div>
+                      </div>
 
-            <section className={styles.readout} aria-label="World statistics">
-              <div>
-                <span>Active cells</span>
-                <strong>{stats.active.toLocaleString("en-US")}</strong>
-              </div>
-              <div>
-                <span>World grid</span>
-                <strong>{stats.cells.toLocaleString("en-US")}</strong>
-              </div>
-              <p>Space pauses. Number keys switch materials.</p>
-            </section>
-          </aside>
+                      <div className={styles.materialGrid}>
+                        {DRAWABLE_MATERIALS.map((item) => {
+                          const Icon = MATERIAL_ICONS[item.id];
+                          const selected = item.id === material;
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              className={
+                                selected ? styles.materialActive : undefined
+                              }
+                              onClick={() => setMaterial(item.id)}
+                              aria-pressed={selected}
+                              style={
+                                {
+                                  "--material-color": item.color,
+                                } as React.CSSProperties
+                              }
+                              title={
+                                item.shortcut
+                                  ? `${item.name} (${item.shortcut})`
+                                  : item.name
+                              }
+                            >
+                              <span className={styles.materialIcon}>
+                                <Icon size={21} strokeWidth={2.25} />
+                              </span>
+                              <span>{item.name}</span>
+                              {item.shortcut ? (
+                                <kbd>{item.shortcut}</kbd>
+                              ) : null}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ) : null}
+
+                  {activeTab === "settings" ? (
+                    <section
+                      id="panel-settings"
+                      role="tabpanel"
+                      aria-labelledby="tab-settings"
+                      className={styles.physicsSection}
+                    >
+                      <div className={styles.rangeHeading}>
+                        <label htmlFor="sand-brush-size">
+                          <Brush size={18} strokeWidth={2.2} />
+                          Brush size
+                        </label>
+                        <output htmlFor="sand-brush-size">{brushSize}</output>
+                      </div>
+                      <input
+                        id="sand-brush-size"
+                        className={styles.range}
+                        type="range"
+                        min="1"
+                        max="14"
+                        step="1"
+                        value={brushSize}
+                        onChange={(event) =>
+                          setBrushSize(Number(event.target.value))
+                        }
+                      />
+                      <p className={styles.settingsNote}>
+                        Scroll over the canvas to resize. Right-click erases.
+                      </p>
+                    </section>
+                  ) : null}
+
+                  {activeTab === "statistics" ? (
+                    <section
+                      id="panel-statistics"
+                      role="tabpanel"
+                      aria-labelledby="tab-statistics"
+                      className={styles.readout}
+                      aria-label="World statistics"
+                    >
+                      <div>
+                        <span>Active cells</span>
+                        <strong>{stats.active.toLocaleString("en-US")}</strong>
+                      </div>
+                      <div>
+                        <span>World grid</span>
+                        <strong>{stats.cells.toLocaleString("en-US")}</strong>
+                      </div>
+                      <div>
+                        <span>Frame rate</span>
+                        <strong>{stats.fps || 0}</strong>
+                      </div>
+                      <p>Space pauses. Number keys switch materials.</p>
+                    </section>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
+          </motion.aside>
         </div>
 
         {toast ? (
