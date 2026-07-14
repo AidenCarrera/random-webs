@@ -23,7 +23,7 @@ import { FluidEngine, type FluidEngineStats } from "./fluidEngine";
 import styles from "./styles.module.css";
 
 const DEFAULT_ITERATIONS = 24;
-const DEFAULT_PARTICLES = 131_072;
+const DEFAULT_PARTICLES = 262_144;
 const DEFAULT_FORCE = 1;
 
 type CaptureState = "idle" | "capturing" | "saved" | "error";
@@ -355,9 +355,10 @@ export default function FluidSimulationPage() {
                       handleParticleCount(Number(event.currentTarget.value))
                     }
                   >
-                    <option value={65_536}>65K</option>
                     <option value={131_072}>131K</option>
                     <option value={262_144}>262K</option>
+                    <option value={524_288}>524K</option>
+                    <option value={1_048_576}>1.05M</option>
                   </select>
                 </div>
 

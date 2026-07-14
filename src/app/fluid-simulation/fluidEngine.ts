@@ -239,10 +239,15 @@ void main() {
     float radius = 0.022;
     float falloff = exp(-distanceFromStroke * distanceFromStroke / (radius * radius));
     float speed = clamp(length(u_pointer - u_previousPointer) / max(u_dt, 0.008) * 0.45, 0.0, 1.0);
-    vec3 deep = vec3(0.018, 0.12, 0.13);
-    vec3 bright = vec3(0.18, 0.88, 0.75);
-    vec3 crest = vec3(0.83, 0.96, 0.90);
-    vec3 ink = mix(mix(deep, bright, speed), crest, pow(speed, 4.0) * 0.62);
+    vec3 magenta = vec3(0.68, 0.015, 0.46);
+    vec3 violet = vec3(0.42, 0.025, 0.92);
+    vec3 blue = vec3(0.015, 0.30, 1.0);
+    vec3 cyan = vec3(0.03, 0.90, 1.0);
+    vec3 crest = vec3(0.90, 0.98, 1.0);
+    vec3 ink = mix(magenta, violet, smoothstep(0.12, 0.88, u_pointer.x));
+    ink = mix(ink, blue, smoothstep(0.12, 0.52, speed));
+    ink = mix(ink, cyan, smoothstep(0.46, 0.84, speed));
+    ink = mix(ink, crest, pow(speed, 5.0) * 0.72);
     dye += ink * falloff * mix(0.35, 1.0, projection);
   }
 
@@ -310,9 +315,9 @@ void main() {
   float speed = length(sampleBilinear(u_velocity, v_uv).xy);
   float vignette = 1.0 - 0.28 * smoothstep(0.24, 0.78, distance(v_uv, vec2(0.5)));
   float grain = (noise(gl_FragCoord.xy) - 0.5) * 0.006;
-  vec3 base = vec3(0.004, 0.008, 0.009);
-  vec3 current = vec3(0.006, 0.035, 0.036) * min(speed * 2.2, 1.0);
-  vec3 color = (base + current + dye * 0.34) * vignette + grain;
+  vec3 base = vec3(0.003, 0.004, 0.012);
+  vec3 current = vec3(0.012, 0.025, 0.09) * min(speed * 2.4, 1.0);
+  vec3 color = (base + current + dye * 0.44) * vignette + grain;
   outColor = vec4(max(color, vec3(0.0)), 1.0);
 }
 `;
@@ -322,15 +327,17 @@ precision highp float;
 
 uniform sampler2D u_particles;
 uniform float u_pointSize;
-out float v_speed;
+out float v_energy;
+out vec2 v_position;
 
 void main() {
   ivec2 size = textureSize(u_particles, 0);
   int x = gl_VertexID % size.x;
   int y = gl_VertexID / size.x;
   vec4 particle = texelFetch(u_particles, ivec2(x, y), 0);
-  v_speed = length(particle.zw);
-  gl_PointSize = u_pointSize;
+  v_energy = clamp(length(particle.zw) * 5.4, 0.0, 1.0);
+  v_position = particle.xy;
+  gl_PointSize = mix(u_pointSize, u_pointSize * 3.4, pow(v_energy, 0.72));
   gl_Position = vec4(particle.xy * 2.0 - 1.0, 0.0, 1.0);
 }
 `;
@@ -338,18 +345,29 @@ void main() {
 const PARTICLE_FRAGMENT = `#version 300 es
 precision highp float;
 
-in float v_speed;
+in float v_energy;
+in vec2 v_position;
 out vec4 outColor;
 
 void main() {
-  float distanceFromCenter = distance(gl_PointCoord, vec2(0.5));
-  float edge = 1.0 - smoothstep(0.30, 0.52, distanceFromCenter);
-  float energy = clamp(v_speed * 5.2, 0.0, 1.0);
-  vec3 resting = vec3(0.075, 0.22, 0.22);
-  vec3 moving = vec3(0.12, 0.78, 0.67);
-  vec3 crest = vec3(0.84, 0.97, 0.91);
-  vec3 color = mix(mix(resting, moving, energy), crest, pow(energy, 3.5) * 0.72);
-  float alpha = mix(0.34, 0.92, energy) * edge;
+  float radius = distance(gl_PointCoord, vec2(0.5)) * 2.0;
+  float edge = 1.0 - smoothstep(1.05, 1.40, radius);
+  float core = 1.0 - smoothstep(0.08, 0.34, radius);
+  float halo = exp(-radius * radius * 2.1) * edge;
+
+  vec3 magenta = vec3(0.48, 0.015, 0.38);
+  vec3 violet = vec3(0.30, 0.025, 0.78);
+  vec3 blue = vec3(0.015, 0.32, 1.0);
+  vec3 cyan = vec3(0.04, 0.88, 1.0);
+  vec3 crest = vec3(0.90, 0.98, 1.0);
+  vec3 color = mix(magenta, violet, v_position.x);
+  color = mix(color, blue, smoothstep(0.10, 0.48, v_energy));
+  color = mix(color, cyan, smoothstep(0.42, 0.82, v_energy));
+  color = mix(color, crest, pow(v_energy, 4.0) * 0.76);
+
+  float coreAlpha = core * mix(0.28, 0.96, v_energy);
+  float glowAlpha = halo * mix(0.035, 0.38, pow(v_energy, 0.7));
+  float alpha = (coreAlpha + glowAlpha) * edge;
   outColor = vec4(color, alpha);
 }
 `;
@@ -948,10 +966,12 @@ export class FluidEngine {
         velocityData[index + 2] = 0;
         velocityData[index + 3] = 1;
 
-        const mist = Math.min(speed * 0.28, 0.035);
-        dyeData[index] = mist * 0.25;
-        dyeData[index + 1] = mist * 0.9;
-        dyeData[index + 2] = mist * 0.78;
+        const mist = Math.min(speed * 0.34, 0.045);
+        const direction =
+          0.5 + 0.5 * Math.sin(Math.atan2(velocityY, velocityX) * 2);
+        dyeData[index] = mist * (0.75 + direction * 0.72);
+        dyeData[index + 1] = mist * (0.12 + (1 - direction) * 0.42);
+        dyeData[index + 2] = mist * (1.35 + direction * 0.5);
         dyeData[index + 3] = 1;
       }
     }
