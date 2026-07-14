@@ -132,6 +132,17 @@ export const WEBSITES: WebsiteEntry[] = [
     },
   },
   {
+    path: "/fluid-simulation",
+    title: "Fluid Field",
+    blurb: "Particles moving through fluid.",
+    accent: "from-teal-200/80 via-emerald-300/70 to-cyan-500/70",
+    metadata: {
+      title: "Fluid Field - GPU Particle Simulation",
+      description:
+        "Stir a GPU-accelerated particle fluid, tune the pressure solver and flow force, then capture the field as an image.",
+    },
+  },
+  {
     path: "/fractal-explorer",
     title: "Fractal Explorer",
     blurb: "Infinite geometric patterns.",
