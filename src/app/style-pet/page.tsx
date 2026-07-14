@@ -1,14 +1,68 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Volume2, VolumeX, Award } from "lucide-react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { Award } from "lucide-react";
 
 // --- Types ---
-type PetStatus = "IDLE" | "EATING" | "SLEEPING" | "PLAYING" | "DEAD";
-type SkinColor = "cyber-cyan" | "neon-pink" | "golden-orange" | "slime-green";
-type HatStyle = "NONE" | "COWBOY" | "CROWN" | "WIZARD" | "BOW";
-type AccessoryStyle = "NONE" | "SHADES" | "BOWTIE" | "HALO";
+type PetStatus =
+  "IDLE" | "EATING" | "SLEEPING" | "PLAYING" | "CLEANING" | "DEAD";
+type SkinColor =
+  | "cyber-cyan"
+  | "neon-pink"
+  | "gameboy-olive"
+  | "golden-orange"
+  | "ocean-blue"
+  | "slime-green"
+  | "lavender"
+  | "peach"
+  | "moon-gray"
+  | "berry-purple";
+type HatStyle =
+  | "NONE"
+  | "COWBOY"
+  | "BEANIE"
+  | "CROWN"
+  | "PARTY"
+  | "WIZARD"
+  | "FLOWER"
+  | "BOW"
+  | "TOPHAT"
+  | "CHEF"
+  | "PIRATE"
+  | "SPACE";
+type AccessoryStyle =
+  | "NONE"
+  | "SHADES"
+  | "SCARF"
+  | "BOWTIE"
+  | "MONOCLE"
+  | "HALO"
+  | "HEADPHONES"
+  | "WINGS"
+  | "MUSTACHE"
+  | "EARRINGS";
+type CarePace = "COZY" | "NORMAL" | "ACTIVE";
+type BackgroundColor = "BLUE" | "FOREST" | "BURGUNDY" | "CHARCOAL" | "PLUM";
+type Menu = "NONE" | "STYLE" | "SETTINGS";
+
+type SavedProgress = {
+  version: 1;
+  hunger: number;
+  happiness: number;
+  energy: number;
+  cleanliness: number;
+  level: number;
+  exp: number;
+  status: PetStatus;
+  skin: SkinColor;
+  hat: HatStyle;
+  accessory: AccessoryStyle;
+  isMuted: boolean;
+  petName: string;
+  carePace: CarePace;
+  backgroundColor: BackgroundColor;
+};
 
 type WindowWithWebkitAudio = Window &
   typeof globalThis & {
@@ -21,8 +75,164 @@ const SKIN_COLORS: Record<
 > = {
   "cyber-cyan": { base: "#06b6d4", dark: "#0891b2", light: "#22d3ee" },
   "neon-pink": { base: "#ec4899", dark: "#db2777", light: "#f472b6" },
+  "gameboy-olive": { base: "#8da45e", dark: "#657a42", light: "#b6c779" },
   "golden-orange": { base: "#f97316", dark: "#ea580c", light: "#fb923c" },
+  "ocean-blue": { base: "#3b82b5", dark: "#285f89", light: "#67a9cf" },
   "slime-green": { base: "#22c55e", dark: "#16a34a", light: "#4ade80" },
+  lavender: { base: "#9b87c7", dark: "#7562a4", light: "#c0afe0" },
+  peach: { base: "#e99472", dark: "#bf684c", light: "#f3b49a" },
+  "moon-gray": { base: "#9aa3a1", dark: "#6c7675", light: "#c3cac5" },
+  "berry-purple": { base: "#8f4f83", dark: "#66375e", light: "#bd79ae" },
+};
+
+const SKIN_LABELS: Record<SkinColor, string> = {
+  "cyber-cyan": "CYAN",
+  "neon-pink": "PINK",
+  "gameboy-olive": "OLIVE",
+  "golden-orange": "ORANGE",
+  "ocean-blue": "OCEAN",
+  "slime-green": "GREEN",
+  lavender: "LAVENDER",
+  peach: "PEACH",
+  "moon-gray": "MOON GRAY",
+  "berry-purple": "BERRY",
+};
+
+const SKIN_OPTIONS: SkinColor[] = [
+  "cyber-cyan",
+  "neon-pink",
+  "gameboy-olive",
+  "golden-orange",
+  "ocean-blue",
+  "slime-green",
+  "lavender",
+  "peach",
+  "moon-gray",
+  "berry-purple",
+];
+
+const HAT_OPTIONS: HatStyle[] = [
+  "NONE",
+  "COWBOY",
+  "BEANIE",
+  "CROWN",
+  "PARTY",
+  "WIZARD",
+  "FLOWER",
+  "BOW",
+  "TOPHAT",
+  "CHEF",
+  "PIRATE",
+  "SPACE",
+];
+
+const ACCESSORY_OPTIONS: AccessoryStyle[] = [
+  "NONE",
+  "SHADES",
+  "SCARF",
+  "BOWTIE",
+  "MONOCLE",
+  "HALO",
+  "HEADPHONES",
+  "WINGS",
+  "MUSTACHE",
+  "EARRINGS",
+];
+
+const PET_STATUSES: PetStatus[] = [
+  "IDLE",
+  "EATING",
+  "SLEEPING",
+  "PLAYING",
+  "CLEANING",
+  "DEAD",
+];
+
+const SKIN_UNLOCK_LEVELS: Record<SkinColor, number> = {
+  "cyber-cyan": 1,
+  "neon-pink": 1,
+  "gameboy-olive": 1,
+  "golden-orange": 2,
+  "ocean-blue": 2,
+  "slime-green": 3,
+  lavender: 3,
+  peach: 4,
+  "moon-gray": 4,
+  "berry-purple": 5,
+};
+
+const HAT_UNLOCK_LEVELS: Record<HatStyle, number> = {
+  NONE: 1,
+  COWBOY: 1,
+  BEANIE: 1,
+  CROWN: 2,
+  PARTY: 2,
+  WIZARD: 3,
+  FLOWER: 3,
+  BOW: 4,
+  TOPHAT: 4,
+  CHEF: 5,
+  PIRATE: 5,
+  SPACE: 6,
+};
+
+const ACCESSORY_UNLOCK_LEVELS: Record<AccessoryStyle, number> = {
+  NONE: 1,
+  SHADES: 1,
+  SCARF: 1,
+  BOWTIE: 2,
+  MONOCLE: 2,
+  HALO: 3,
+  HEADPHONES: 3,
+  WINGS: 4,
+  MUSTACHE: 4,
+  EARRINGS: 5,
+};
+
+const LEVEL_REWARDS: Record<number, string> = {
+  2: "OCEAN SET",
+  3: "MAGIC SET",
+  4: "ROYAL SET",
+  5: "CHEF + PIRATE SET",
+  6: "SPACE HAT",
+};
+
+const SAVED_PROGRESS_KEY = "style-pet-progress-v1";
+
+const includesOption = <T extends string>(
+  options: readonly T[],
+  value: unknown,
+): value is T => typeof value === "string" && options.includes(value as T);
+
+const readSavedNumber = (
+  value: unknown,
+  fallback: number,
+  minimum: number,
+  maximum: number,
+) =>
+  typeof value === "number" && Number.isFinite(value)
+    ? Math.min(maximum, Math.max(minimum, value))
+    : fallback;
+
+const CARE_PACES: CarePace[] = ["COZY", "NORMAL", "ACTIVE"];
+const BACKGROUND_OPTIONS: BackgroundColor[] = [
+  "BLUE",
+  "FOREST",
+  "BURGUNDY",
+  "CHARCOAL",
+  "PLUM",
+];
+const BACKGROUND_COLORS: Record<BackgroundColor, string> = {
+  BLUE: "#172a33",
+  FOREST: "#20342b",
+  BURGUNDY: "#3a2229",
+  CHARCOAL: "#242a2c",
+  PLUM: "#35283a",
+};
+const CARE_PACE_INTERVALS: Record<CarePace, number> = {
+  COZY: 10000,
+  NORMAL: 7500,
+  ACTIVE: 5000,
 };
 
 // --- Web Audio 8-bit Retro Sound Generator ---
@@ -102,6 +312,8 @@ class AudioSynth {
 const synth = new AudioSynth();
 
 export default function StylePet() {
+  const reduceMotion = useReducedMotion();
+
   // Stats
   const [hunger, setHunger] = useState(70);
   const [happiness, setHappiness] = useState(80);
@@ -119,12 +331,22 @@ export default function StylePet() {
   const [petName, setPetName] = useState("CYBER-KITY");
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("CYBER-KITY");
+  const [hasLoadedSave, setHasLoadedSave] = useState(false);
+  const saveFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Progression
+  const [screenMessage, setScreenMessage] = useState<{
+    id: number;
+    text: string;
+  } | null>(null);
 
   // Menu toggles
-  const [currentMenu, setCurrentMenu] = useState<"NONE" | "STYLE" | "STATS">(
-    "NONE",
-  );
+  const [currentMenu, setCurrentMenu] = useState<Menu>("NONE");
   const [selectedStyleIndex, setSelectedStyleIndex] = useState(0); // 0 = SKIN, 1 = HAT, 2 = ACC
+  const [selectedSettingIndex, setSelectedSettingIndex] = useState(0);
+  const [carePace, setCarePace] = useState<CarePace>("NORMAL");
+  const [backgroundColor, setBackgroundColor] =
+    useState<BackgroundColor>("BLUE");
 
   // Zzz sleep floaters
   const [sleepBubbles, setSleepBubbles] = useState<
@@ -138,51 +360,318 @@ export default function StylePet() {
     synth.playSelect();
   };
 
-  // Level Up / Exp logic
-  const gainExp = useCallback(
-    (amount: number) => {
-      setExp((prev) => {
-        const next = prev + amount;
-        const needed = level * 100;
-        if (next >= needed) {
-          setLevel((l) => l + 1);
-          synth.playLevelUp();
-          return next - needed;
-        }
-        return next;
-      });
+  const showMessage = useCallback((text: string) => {
+    setScreenMessage((previous) => ({
+      id: (previous?.id ?? 0) + 1,
+      text,
+    }));
+  }, []);
+
+  const gainExp = useCallback((amount: number) => {
+    setExp((previous) => previous + amount);
+  }, []);
+
+  const awardCare = useCallback(
+    (baseExp: number, currentNeed: number) => {
+      const needBonus = Math.min(
+        15,
+        Math.floor(Math.max(0, 100 - currentNeed) / 20) * 3,
+      );
+      const earnedExp = baseExp + needBonus;
+
+      gainExp(earnedExp);
+      showMessage(
+        needBonus > 0 ? `+${earnedExp} XP | NEED BONUS` : `+${earnedExp} XP`,
+      );
     },
-    [level],
+    [gainExp, showMessage],
   );
+
+  const restoreProgress = useCallback((saved: Partial<SavedProgress>) => {
+    if (saved.version !== 1) return false;
+
+    const savedLevel = readSavedNumber(saved.level, 1, 1, 999);
+    const savedStatus = includesOption(PET_STATUSES, saved.status)
+      ? saved.status === "EATING" ||
+        saved.status === "PLAYING" ||
+        saved.status === "CLEANING"
+        ? "IDLE"
+        : saved.status
+      : "IDLE";
+    const savedSkin =
+      includesOption(SKIN_OPTIONS, saved.skin) &&
+      SKIN_UNLOCK_LEVELS[saved.skin] <= savedLevel
+        ? saved.skin
+        : "cyber-cyan";
+    const savedHat =
+      includesOption(HAT_OPTIONS, saved.hat) &&
+      HAT_UNLOCK_LEVELS[saved.hat] <= savedLevel
+        ? saved.hat
+        : "NONE";
+    const savedAccessory =
+      includesOption(ACCESSORY_OPTIONS, saved.accessory) &&
+      ACCESSORY_UNLOCK_LEVELS[saved.accessory] <= savedLevel
+        ? saved.accessory
+        : "NONE";
+    const savedName =
+      typeof saved.petName === "string"
+        ? saved.petName.toUpperCase().slice(0, 10) || "BABY"
+        : "CYBER-KITY";
+    const savedPace = includesOption(CARE_PACES, saved.carePace)
+      ? saved.carePace
+      : "NORMAL";
+    const savedBackground = includesOption(
+      BACKGROUND_OPTIONS,
+      saved.backgroundColor,
+    )
+      ? saved.backgroundColor
+      : "BLUE";
+    const savedMuted = saved.isMuted === true;
+
+    setHunger(readSavedNumber(saved.hunger, 70, 0, 100));
+    setHappiness(readSavedNumber(saved.happiness, 80, 0, 100));
+    setEnergy(readSavedNumber(saved.energy, 90, 0, 100));
+    setCleanliness(readSavedNumber(saved.cleanliness, 85, 0, 100));
+    setLevel(savedLevel);
+    setExp(readSavedNumber(saved.exp, 0, 0, 999999));
+    setStatus(savedStatus);
+    setSkin(savedSkin);
+    setHat(savedHat);
+    setAccessory(savedAccessory);
+    setIsMuted(savedMuted);
+    setPetName(savedName);
+    setTempName(savedName);
+    setCarePace(savedPace);
+    setBackgroundColor(savedBackground);
+    synth.muted = savedMuted;
+    return true;
+  }, []);
+
+  const createSavedProgress = useCallback(
+    (): SavedProgress => ({
+      version: 1,
+      hunger,
+      happiness,
+      energy,
+      cleanliness,
+      level,
+      exp,
+      status:
+        status === "EATING" || status === "PLAYING" || status === "CLEANING"
+          ? "IDLE"
+          : status,
+      skin,
+      hat,
+      accessory,
+      isMuted,
+      petName,
+      carePace,
+      backgroundColor,
+    }),
+    [
+      accessory,
+      backgroundColor,
+      carePace,
+      cleanliness,
+      energy,
+      exp,
+      happiness,
+      hat,
+      hunger,
+      isMuted,
+      level,
+      petName,
+      skin,
+      status,
+    ],
+  );
+
+  const exportSave = useCallback(() => {
+    const saveBlob = new Blob(
+      [JSON.stringify(createSavedProgress(), null, 2)],
+      { type: "application/json" },
+    );
+    const saveUrl = URL.createObjectURL(saveBlob);
+    const downloadLink = document.createElement("a");
+    downloadLink.href = saveUrl;
+    downloadLink.download = "style-pet-save.json";
+    downloadLink.click();
+    URL.revokeObjectURL(saveUrl);
+    setCurrentMenu("NONE");
+    showMessage("SAVE EXPORTED");
+  }, [createSavedProgress, showMessage]);
+
+  const handleImportSave = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      event.target.value = "";
+      if (!file) return;
+
+      try {
+        const saved = JSON.parse(await file.text()) as Partial<SavedProgress>;
+        if (!restoreProgress(saved))
+          throw new Error("Unsupported save version");
+        setHasLoadedSave(true);
+        setCurrentMenu("NONE");
+        showMessage("SAVE LOADED");
+      } catch (error) {
+        console.warn("Could not load selected Style Pet save:", error);
+        setCurrentMenu("NONE");
+        showMessage("INVALID SAVE");
+      }
+    },
+    [restoreProgress, showMessage],
+  );
+
+  const adjustSetting = (direction: number) => {
+    if (selectedSettingIndex === 0) {
+      toggleMute();
+      return;
+    }
+
+    if (selectedSettingIndex === 1) {
+      synth.playSelect();
+      const paceIndex = CARE_PACES.indexOf(carePace);
+      const nextPace =
+        CARE_PACES[
+          (paceIndex + direction + CARE_PACES.length) % CARE_PACES.length
+        ];
+      setCarePace(nextPace);
+      return;
+    }
+
+    if (selectedSettingIndex === 2) {
+      synth.playSelect();
+      const backgroundIndex = BACKGROUND_OPTIONS.indexOf(backgroundColor);
+      const nextBackground =
+        BACKGROUND_OPTIONS[
+          (backgroundIndex + direction + BACKGROUND_OPTIONS.length) %
+            BACKGROUND_OPTIONS.length
+        ];
+      setBackgroundColor(nextBackground);
+      return;
+    }
+
+    synth.playSelect();
+    if (selectedSettingIndex === 3) exportSave();
+    if (selectedSettingIndex === 4) saveFileInputRef.current?.click();
+  };
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      try {
+        const rawProgress = window.localStorage.getItem(SAVED_PROGRESS_KEY);
+        if (!rawProgress) {
+          setHasLoadedSave(true);
+          return;
+        }
+
+        const saved = JSON.parse(rawProgress) as Partial<SavedProgress>;
+        if (!restoreProgress(saved)) {
+          setHasLoadedSave(true);
+          return;
+        }
+        setHasLoadedSave(true);
+        showMessage("PROGRESS LOADED");
+      } catch (error) {
+        console.warn("Could not restore Style Pet progress:", error);
+        setHasLoadedSave(true);
+      }
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [restoreProgress, showMessage]);
+
+  useEffect(() => {
+    if (!hasLoadedSave) return;
+
+    const timeout = setTimeout(() => {
+      try {
+        window.localStorage.setItem(
+          SAVED_PROGRESS_KEY,
+          JSON.stringify(createSavedProgress()),
+        );
+      } catch (error) {
+        console.warn("Could not save Style Pet progress:", error);
+      }
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [createSavedProgress, hasLoadedSave]);
+
+  useEffect(() => {
+    if (!screenMessage) return;
+    const timeout = setTimeout(() => setScreenMessage(null), 2200);
+    return () => clearTimeout(timeout);
+  }, [screenMessage]);
+
+  useEffect(() => {
+    const needed = level * 100;
+    if (exp < needed) return;
+
+    const frame = requestAnimationFrame(() => {
+      const nextLevel = level + 1;
+      const reward = LEVEL_REWARDS[nextLevel];
+
+      setExp((previous) => Math.max(0, previous - needed));
+      setLevel(nextLevel);
+      setHunger((previous) => Math.min(100, previous + 15));
+      setHappiness((previous) => Math.min(100, previous + 15));
+      setEnergy((previous) => Math.min(100, previous + 15));
+      setCleanliness((previous) => Math.min(100, previous + 15));
+      showMessage(
+        reward
+          ? `LEVEL ${nextLevel} | ${reward}`
+          : `LEVEL ${nextLevel} | NEEDS BOOSTED`,
+      );
+      synth.playLevelUp();
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [exp, level, showMessage]);
 
   // --- Actions ---
   const handleFeed = () => {
     if (status === "DEAD" || status === "SLEEPING") return;
+    if (hunger >= 95) {
+      showMessage("NOT HUNGRY");
+      return;
+    }
     synth.playFeed();
     setStatus("EATING");
     setHunger((h) => Math.min(100, h + 25));
     setCleanliness((c) => Math.max(0, c - 10));
-    gainExp(15);
+    awardCare(15, hunger);
     setTimeout(() => setStatus("IDLE"), 2200);
   };
 
   const handlePlay = () => {
     if (status === "DEAD" || status === "SLEEPING") return;
+    if (happiness >= 95) {
+      showMessage("FEELS LOVED");
+      return;
+    }
     synth.playPet();
     setStatus("PLAYING");
     setHappiness((h) => Math.min(100, h + 25));
     setEnergy((e) => Math.max(0, e - 15));
-    gainExp(20);
+    awardCare(20, happiness);
     setTimeout(() => setStatus("IDLE"), 2200);
   };
 
   const handleClean = () => {
     if (status === "DEAD" || status === "SLEEPING") return;
+    if (cleanliness >= 98) {
+      showMessage("ALREADY CLEAN");
+      return;
+    }
     synth.beep(650, "triangle", 0.1);
     setTimeout(() => synth.beep(750, "triangle", 0.1), 80);
+    setStatus("CLEANING");
     setCleanliness(100);
     setHappiness((h) => Math.min(100, h + 5));
-    gainExp(10);
+    awardCare(10, cleanliness);
+    setTimeout(() => setStatus("IDLE"), 1300);
   };
 
   const toggleSleep = () => {
@@ -192,9 +681,14 @@ export default function StylePet() {
       setStatus("IDLE");
       setSleepBubbles([]);
     } else {
+      if (energy >= 98) {
+        showMessage("ENERGY FULL");
+        return;
+      }
       synth.playSleep();
       setStatus("SLEEPING");
       setCurrentMenu("NONE");
+      awardCare(12, energy);
     }
   };
 
@@ -208,8 +702,11 @@ export default function StylePet() {
     setExp(0);
     setStatus("IDLE");
     setSleepBubbles([]);
+    setSkin("cyber-cyan");
     setHat("NONE");
     setAccessory("NONE");
+    setCurrentMenu("NONE");
+    showMessage("NEW PET READY");
   };
 
   // --- Real-time Loop (Stat decays) ---
@@ -229,10 +726,10 @@ export default function StylePet() {
         setEnergy((e) => Math.max(0, e - 1.5));
         setCleanliness((c) => Math.max(0, c - 2));
       }
-    }, 4500);
+    }, CARE_PACE_INTERVALS[carePace]);
 
     return () => clearInterval(interval);
-  }, [status]);
+  }, [carePace, status]);
 
   // Handle death condition
   useEffect(() => {
@@ -261,48 +758,89 @@ export default function StylePet() {
   // Customization rotation helpers
   const cycleSkin = (dir = 1) => {
     synth.playSelect();
-    const keys = Object.keys(SKIN_COLORS) as SkinColor[];
+    const keys = SKIN_OPTIONS.filter(
+      (option) => SKIN_UNLOCK_LEVELS[option] <= level,
+    );
     const next = keys[(keys.indexOf(skin) + dir + keys.length) % keys.length];
     setSkin(next);
   };
 
   const cycleHat = (dir = 1) => {
     synth.playSelect();
-    const hats: HatStyle[] = ["NONE", "COWBOY", "CROWN", "WIZARD", "BOW"];
+    const hats = HAT_OPTIONS.filter(
+      (option) => HAT_UNLOCK_LEVELS[option] <= level,
+    );
     const next = hats[(hats.indexOf(hat) + dir + hats.length) % hats.length];
     setHat(next);
   };
 
   const cycleAccessory = (dir = 1) => {
     synth.playSelect();
-    const accs: AccessoryStyle[] = ["NONE", "SHADES", "BOWTIE", "HALO"];
+    const accs = ACCESSORY_OPTIONS.filter(
+      (option) => ACCESSORY_UNLOCK_LEVELS[option] <= level,
+    );
     const next =
       accs[(accs.indexOf(accessory) + dir + accs.length) % accs.length];
     setAccessory(next);
   };
 
+  const handleActionButton = () => {
+    if (currentMenu === "SETTINGS") {
+      adjustSetting(1);
+      return;
+    }
+
+    if (currentMenu === "STYLE") {
+      if (selectedStyleIndex === 0) cycleSkin(1);
+      else if (selectedStyleIndex === 1) cycleHat(1);
+      else cycleAccessory(1);
+      return;
+    }
+
+    if (status === "DEAD") handleReset();
+    else handleFeed();
+  };
+
+  const handleCancelButton = () => {
+    if (currentMenu !== "NONE") {
+      synth.playSelect();
+      setCurrentMenu("NONE");
+      return;
+    }
+
+    handlePlay();
+  };
+
   // Render customizable pet vector shapes (Clean crisp pixel art styling)
   const colors = SKIN_COLORS[skin];
+  const statItems = [
+    { label: "FOOD", value: hunger },
+    { label: "JOY", value: happiness },
+    { label: "ENERGY", value: energy },
+    { label: "CLEAN", value: cleanliness },
+  ];
 
   return (
-    <div className="min-h-[100dvh] bg-[#172a33] flex flex-col items-center justify-center p-4 sm:p-6 select-none font-mono text-zinc-300 relative overflow-hidden">
+    <div
+      className="relative flex min-h-dvh select-none flex-col items-center justify-center overflow-hidden p-4 font-mono text-zinc-300 transition-colors duration-300 sm:p-6"
+      style={{ backgroundColor: BACKGROUND_COLORS[backgroundColor] }}
+    >
+      <input
+        ref={saveFileInputRef}
+        type="file"
+        accept=".json,application/json"
+        onChange={handleImportSave}
+        className="hidden"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
       {/* Main Console Container */}
       <div className="relative z-10 flex w-full flex-col items-center">
         {/* Device Outer Frame */}
-        <div className="relative flex w-[min(100%,420px)] flex-col items-center rounded-[50px] border-4 border-[#8f928d] bg-[#c8cac5] p-6 pb-16 pt-16 shadow-[0_30px_70px_rgba(8,24,31,0.5),inset_0_4px_8px_rgba(255,255,255,0.75),inset_0_-8px_14px_rgba(85,90,88,0.28)] animate-fade-in sm:p-8 sm:pb-[72px] sm:pt-16 md:w-125">
-          {/* Sound control */}
-          <button
-            onClick={toggleMute}
-            aria-label={isMuted ? "Turn sound on" : "Mute sound"}
-            title={isMuted ? "Turn sound on" : "Mute sound"}
-            className="absolute right-6 top-4 rounded-lg border border-[#9da09b] bg-[#b8bab5] p-1.5 text-[#4e5354] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition-colors hover:bg-[#afb2ad] hover:text-[#242829] active:translate-y-px sm:right-8"
-          >
-            {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-          </button>
-
+        <div className="relative flex w-[min(100%,420px)] flex-col items-center rounded-[50px] border-4 border-[#8f928d] bg-[#c8cac5] p-6 pb-16 pt-16 shadow-[0_30px_70px_rgba(8,24,31,0.5),inset_0_4px_8px_rgba(255,255,255,0.75),inset_0_-8px_14px_rgba(85,90,88,0.28)] animate-fade-in sm:p-8 sm:pb-18 sm:pt-16 md:w-125">
           {/* Handheld LCD Screen Area */}
           <div
-            className="relative aspect-[11/10] w-full overflow-hidden rounded-2xl border-solid border-[#676b69] bg-[#87977a] p-4 text-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.32),0_2px_4px_rgba(255,255,255,0.3)] flex flex-col"
+            className="relative aspect-11/10 w-full overflow-hidden rounded-2xl border-solid border-[#676b69] bg-[#87977a] p-4 text-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.32),0_2px_4px_rgba(255,255,255,0.3)] flex flex-col"
             style={{ borderWidth: "18px 26px" }}
           >
             {/* CRT Screen scanline layer */}
@@ -327,7 +865,7 @@ export default function StylePet() {
             <div className="flex justify-between items-center text-[10px] font-bold border-b border-zinc-800/20 pb-1.5 z-10">
               <div className="flex items-center gap-1">
                 <Award size={10} />
-                <span>LVL {level}</span>
+                <span>LEVEL {level}</span>
               </div>
               <div className="relative">
                 {isEditingName ? (
@@ -365,12 +903,12 @@ export default function StylePet() {
                 )}
               </div>
               <div className="text-[9px] tabular-nums font-medium tracking-tight">
-                XP: {exp}/{level * 100}
+                XP {Math.floor(exp)}/{level * 100}
               </div>
             </div>
 
             {/* Dynamic Zzz particles for sleeping */}
-            {status === "SLEEPING" && (
+            {status === "SLEEPING" && !reduceMotion && (
               <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
                 <AnimatePresence>
                   {sleepBubbles.map((bubble) => (
@@ -412,56 +950,105 @@ export default function StylePet() {
             />
 
             {/* Main Visual Display */}
-            <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+            <div className="relative z-10 flex flex-1 flex-col items-center justify-center pb-7">
               <motion.div
                 animate={
-                  status === "DEAD"
-                    ? { y: [0, 4, 0], rotate: [0, -10, -10] }
-                    : status === "SLEEPING"
-                      ? { y: [0, 2, 0], scaleY: [1, 0.95, 1], rotate: 0 }
-                      : status === "EATING"
-                        ? {
-                            scaleY: [1, 0.9, 1.1, 1],
-                            y: [0, 4, -4, 0],
-                            rotate: 0,
-                          }
-                        : status === "PLAYING"
+                  reduceMotion
+                    ? { y: 0, scaleY: 1, rotate: 0 }
+                    : status === "DEAD"
+                      ? { y: [0, 4, 0], rotate: [0, -10, -10] }
+                      : status === "SLEEPING"
+                        ? { y: [0, 2, 0], scaleY: [1, 0.95, 1], rotate: 0 }
+                        : status === "EATING"
                           ? {
-                              y: [0, -35, 0],
-                              rotate: [0, 15, -15, 0],
-                              scaleY: [0.85, 1.1, 0.9, 1],
+                              scaleY: [1, 0.9, 1.1, 1],
+                              y: [0, 4, -4, 0],
+                              rotate: 0,
                             }
-                          : { y: [0, -3, 0], scaleY: [1, 0.97, 1], rotate: 0 }
+                          : status === "PLAYING"
+                            ? {
+                                y: [0, -35, 0],
+                                rotate: [0, 15, -15, 0],
+                                scaleY: [0.85, 1.1, 0.9, 1],
+                              }
+                            : status === "CLEANING"
+                              ? {
+                                  y: [0, -3, 1, -2, 0],
+                                  rotate: [0, -5, 5, -3, 0],
+                                  scaleY: [1, 0.95, 1.04, 0.98, 1],
+                                }
+                              : {
+                                  y: [0, -3, 0],
+                                  scaleY: [1, 0.97, 1],
+                                  rotate: 0,
+                                }
                 }
                 transition={
-                  status === "SLEEPING"
-                    ? {
-                        y: { duration: 2, repeat: Infinity, ease: "easeInOut" },
-                        scaleY: {
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                        },
-                        rotate: { duration: 0.3 },
-                      }
-                    : status === "IDLE"
+                  reduceMotion
+                    ? { duration: 0 }
+                    : status === "SLEEPING"
                       ? {
                           y: {
-                            duration: 1.5,
+                            duration: 2,
                             repeat: Infinity,
                             ease: "easeInOut",
                           },
                           scaleY: {
-                            duration: 1.5,
+                            duration: 2,
                             repeat: Infinity,
                             ease: "easeInOut",
                           },
                           rotate: { duration: 0.3 },
                         }
-                      : { duration: 0.5, repeat: 4, ease: "easeInOut" }
+                      : status === "IDLE"
+                        ? {
+                            y: {
+                              duration: 1.5,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            },
+                            scaleY: {
+                              duration: 1.5,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            },
+                            rotate: { duration: 0.3 },
+                          }
+                        : { duration: 0.5, repeat: 4, ease: "easeInOut" }
                 }
                 className="relative flex h-40 w-40 items-center justify-center sm:h-44 sm:w-44"
               >
+                {status === "CLEANING" && !reduceMotion && (
+                  <div
+                    className="pointer-events-none absolute inset-0 z-20"
+                    aria-hidden="true"
+                  >
+                    {[
+                      { left: "17%", top: "26%", delay: 0 },
+                      { left: "74%", top: "36%", delay: 0.14 },
+                      { left: "24%", top: "67%", delay: 0.28 },
+                      { left: "70%", top: "70%", delay: 0.4 },
+                    ].map((bubble, index) => (
+                      <motion.span
+                        key={index}
+                        className="absolute h-3 w-3 rounded-full border-2 border-zinc-100/80 bg-white/30"
+                        style={{ left: bubble.left, top: bubble.top }}
+                        initial={{ opacity: 0, scale: 0.4, y: 4 }}
+                        animate={{
+                          opacity: [0, 1, 0],
+                          scale: [0.4, 1, 1.25],
+                          y: [4, -8, -16],
+                        }}
+                        transition={{
+                          duration: 0.75,
+                          delay: bubble.delay,
+                          repeat: 1,
+                          ease: "easeOut",
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
                 {/* SVG Character Model with pixel-perfect shapes */}
                 <svg
                   viewBox="0 0 32 32"
@@ -479,6 +1066,29 @@ export default function StylePet() {
                       stroke="#fef08a"
                       strokeWidth="1"
                     />
+                  )}
+
+                  {/* Accessories rendered behind the pet */}
+                  {accessory === "WINGS" && (
+                    <path
+                      d="M 7 14 h -3 v 2 h -2 v 5 h 2 v 2 h 4 v -3 h 2 v -4 h -3 z M 25 14 h 3 v 2 h 2 v 5 h -2 v 2 h -4 v -3 h -2 v -4 h 3 z"
+                      fill="#d8dde0"
+                      stroke="#677277"
+                      strokeWidth="0.7"
+                    />
+                  )}
+
+                  {accessory === "HEADPHONES" && (
+                    <>
+                      <path
+                        d="M 7 14 v -3 q 0 -7 9 -7 q 9 0 9 7 v 3"
+                        fill="none"
+                        stroke="#263238"
+                        strokeWidth="2"
+                      />
+                      <rect x="5" y="12" width="4" height="7" fill="#47545a" />
+                      <rect x="23" y="12" width="4" height="7" fill="#47545a" />
+                    </>
                   )}
 
                   {/* Ear back details */}
@@ -607,6 +1217,14 @@ export default function StylePet() {
                     />
                   )}
 
+                  {/* Accessory: Scarf */}
+                  {accessory === "SCARF" && (
+                    <path
+                      d="M 9 21 h 14 v 3 h -5 v 5 h -3 v -5 h -6 z"
+                      fill="#b84655"
+                    />
+                  )}
+
                   {/* Accessory: Bowtie */}
                   {accessory === "BOWTIE" && (
                     <path
@@ -615,11 +1233,55 @@ export default function StylePet() {
                     />
                   )}
 
+                  {/* Accessory: Monocle */}
+                  {accessory === "MONOCLE" && (
+                    <>
+                      <circle
+                        cx="21.5"
+                        cy="13"
+                        r="3"
+                        fill="none"
+                        stroke="#554a2b"
+                        strokeWidth="1"
+                      />
+                      <path
+                        d="M 24 15 l 1 7"
+                        fill="none"
+                        stroke="#554a2b"
+                        strokeWidth="0.8"
+                      />
+                    </>
+                  )}
+
+                  {/* Accessory: Mustache */}
+                  {accessory === "MUSTACHE" && (
+                    <path
+                      d="M 16 18 q -2 -3 -6 0 q 2 3 6 1 q 4 2 6 -1 q -4 -3 -6 0 z"
+                      fill="#3b2b25"
+                    />
+                  )}
+
+                  {/* Accessory: Earrings */}
+                  {accessory === "EARRINGS" && (
+                    <>
+                      <circle cx="7" cy="17" r="1.2" fill="#e8c75b" />
+                      <circle cx="25" cy="17" r="1.2" fill="#e8c75b" />
+                    </>
+                  )}
+
                   {/* Hat: Cowboy */}
                   {hat === "COWBOY" && (
                     <path
                       d="M 7 8 h 18 v 2 h -18 z M 9 5 h 14 v 3 h -14 z M 12 2 h 8 v 3 h -8 z"
                       fill="#78350f"
+                    />
+                  )}
+
+                  {/* Hat: Beanie */}
+                  {hat === "BEANIE" && (
+                    <path
+                      d="M 8 7 h 16 v 3 h -16 z M 10 4 h 12 v 3 h -12 z M 15 2 h 3 v 2 h -3 z"
+                      fill="#5d6b76"
                     />
                   )}
 
@@ -631,12 +1293,32 @@ export default function StylePet() {
                     />
                   )}
 
+                  {/* Hat: Party */}
+                  {hat === "PARTY" && (
+                    <>
+                      <path d="M 10 8 l 6 -8 l 6 8 z" fill="#cc526d" />
+                      <rect x="9" y="8" width="14" height="2" fill="#e6c45a" />
+                      <circle cx="16" cy="1" r="1.2" fill="#e6c45a" />
+                    </>
+                  )}
+
                   {/* Hat: Wizard */}
                   {hat === "WIZARD" && (
                     <path
                       d="M 7 7 h 18 v 2 h -18 z M 9 5 h 14 v 2 h -14 z M 12 2 h 8 v 3 h -8 z"
                       fill="#4f46e5"
                     />
+                  )}
+
+                  {/* Hat: Flower */}
+                  {hat === "FLOWER" && (
+                    <>
+                      <circle cx="20" cy="6" r="2" fill="#d76a89" />
+                      <circle cx="24" cy="6" r="2" fill="#d76a89" />
+                      <circle cx="22" cy="4" r="2" fill="#d76a89" />
+                      <circle cx="22" cy="8" r="2" fill="#d76a89" />
+                      <circle cx="22" cy="6" r="1.4" fill="#e7c45f" />
+                    </>
                   )}
 
                   {/* Hat: Bow */}
@@ -646,18 +1328,57 @@ export default function StylePet() {
                       fill="#ec4899"
                     />
                   )}
+
+                  {/* Hat: Top hat */}
+                  {hat === "TOPHAT" && (
+                    <path
+                      d="M 7 8 h 18 v 2 h -18 z M 11 1 h 10 v 7 h -10 z M 11 6 h 10 v 2 h -10 z"
+                      fill="#293136"
+                    />
+                  )}
+
+                  {/* Hat: Chef */}
+                  {hat === "CHEF" && (
+                    <path
+                      d="M 9 8 h 14 v 2 h -14 z M 10 4 h 12 v 4 h -12 z M 10 4 q 0 -4 4 -3 q 2 -2 4 0 q 4 -1 4 3 z"
+                      fill="#e8e9e2"
+                      stroke="#78807d"
+                      strokeWidth="0.5"
+                    />
+                  )}
+
+                  {/* Hat: Pirate */}
+                  {hat === "PIRATE" && (
+                    <>
+                      <path
+                        d="M 7 8 h 18 v 2 h -18 z M 9 5 q 7 -5 14 0 v 3 h -14 z"
+                        fill="#30373a"
+                      />
+                      <path d="M 14 4 h 4 v 1 h -4 z" fill="#d5d8d2" />
+                    </>
+                  )}
+
+                  {/* Hat: Space helmet */}
+                  {hat === "SPACE" && (
+                    <>
+                      <path
+                        d="M 8 9 v -2 q 0 -7 8 -7 q 8 0 8 7 v 2"
+                        fill="#9aa7ad"
+                        stroke="#536168"
+                        strokeWidth="1"
+                      />
+                      <path d="M 10 6 h 12 v 3 h -12 z" fill="#52788a" />
+                    </>
+                  )}
                 </svg>
               </motion.div>
             </div>
 
             {/* Custom interactive dashboard overlays inside screen */}
             {currentMenu === "STYLE" && (
-              <div className="absolute inset-x-2 bottom-2 bg-zinc-900/95 text-[9px] rounded-lg p-2.5 flex flex-col gap-1 border border-zinc-800 text-zinc-300 z-30">
-                <div className="font-bold tracking-wider text-center text-zinc-400 border-b border-zinc-800/60 pb-0.5 uppercase mb-1.5 flex justify-between px-1">
+              <div className="absolute inset-x-2 bottom-9.5 z-30 flex flex-col gap-1 rounded-lg border border-zinc-800 bg-zinc-900/95 p-2.5 text-[9px] text-zinc-300">
+                <div className="mb-1.5 border-b border-zinc-800/60 px-1 pb-0.5 text-center font-bold uppercase tracking-wider text-zinc-400">
                   <span>STYLE CUSTOMIZER</span>
-                  <span className="text-zinc-500 font-mono select-none">
-                    ▲▼ Select
-                  </span>
                 </div>
 
                 {/* Skin item */}
@@ -668,16 +1389,9 @@ export default function StylePet() {
                     <span
                       className={`w-1.5 h-1.5 rounded-full ${selectedStyleIndex === 0 ? "bg-cyan-400 animate-pulse" : "bg-transparent"}`}
                     />
-                    <span>SKIN COLOR</span>
+                    <span>PET COLOR</span>
                   </span>
-                  <span>
-                    {skin
-                      .replace("cyber-", "")
-                      .replace("neon-", "")
-                      .replace("slime-", "")
-                      .replace("golden-", "")
-                      .toUpperCase()}
-                  </span>
+                  <span>{SKIN_LABELS[skin]}</span>
                 </div>
 
                 {/* Hat item */}
@@ -705,65 +1419,105 @@ export default function StylePet() {
                   </span>
                   <span>{accessory}</span>
                 </div>
-              </div>
-            )}
 
-            {currentMenu === "STATS" && (
-              <div className="absolute inset-x-2 bottom-2 bg-zinc-900/95 text-[9px] rounded-lg p-2.5 flex flex-col gap-1.5 border border-zinc-800 text-zinc-300 z-30">
-                <div className="font-bold tracking-wider text-center text-zinc-400 border-b border-zinc-800 pb-0.5 uppercase">
-                  DETAILED Vitals
-                </div>
-                <div className="grid grid-cols-2 gap-2 pt-1 font-mono">
-                  <div className="flex flex-col">
-                    <span>HUNGER: {hunger}%</span>
-                    <div className="w-full h-1 bg-zinc-800 rounded-full mt-0.5 overflow-hidden">
-                      <div
-                        className="h-full bg-orange-500"
-                        style={{ width: `${hunger}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col">
-                    <span>HAPPINESS: {happiness}%</span>
-                    <div className="w-full h-1 bg-zinc-800 rounded-full mt-0.5 overflow-hidden">
-                      <div
-                        className="h-full bg-pink-500"
-                        style={{ width: `${happiness}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col">
-                    <span>ENERGY: {energy}%</span>
-                    <div className="w-full h-1 bg-zinc-800 rounded-full mt-0.5 overflow-hidden">
-                      <div
-                        className="h-full bg-cyan-500"
-                        style={{ width: `${energy}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col">
-                    <span>HYGIENE: {cleanliness}%</span>
-                    <div className="w-full h-1 bg-zinc-800 rounded-full mt-0.5 overflow-hidden">
-                      <div
-                        className="h-full bg-green-500"
-                        style={{ width: `${cleanliness}%` }}
-                      />
-                    </div>
-                  </div>
+                <div className="mt-1 border-t border-zinc-800/60 px-1 pt-1 text-center text-[8px] text-zinc-500">
+                  {LEVEL_REWARDS[level + 1]
+                    ? `NEXT L${level + 1}: ${LEVEL_REWARDS[level + 1]}`
+                    : "ALL GEAR UNLOCKED"}
                 </div>
               </div>
             )}
 
-            {/* Quick status bar (always visible icons on left/right edges) */}
-            <div className="absolute bottom-2 inset-x-3 flex justify-between items-center z-10 opacity-75 font-black text-[9px]">
-              <div className="flex gap-1.5 items-center">
-                <Heart size={10} className="fill-zinc-800 stroke-zinc-800" />
-                <span>{happiness}%</span>
+            {currentMenu === "SETTINGS" && (
+              <div className="absolute inset-x-2 bottom-9.5 z-30 flex flex-col gap-0.5 rounded-lg border border-zinc-800 bg-zinc-900/95 p-2 text-[9px] text-zinc-300">
+                <div className="mb-0.5 border-b border-zinc-800/60 px-1 pb-1 font-bold uppercase tracking-wider text-zinc-400">
+                  <span>SETTINGS</span>
+                </div>
+                <div
+                  className={`flex items-center justify-between rounded px-2 py-0.5 ${selectedSettingIndex === 0 ? "bg-zinc-700/70 font-bold text-[#b8c8a9]" : "text-zinc-400"}`}
+                >
+                  <span>SOUND</span>
+                  <span>{isMuted ? "OFF" : "ON"}</span>
+                </div>
+                <div
+                  className={`flex items-center justify-between rounded px-2 py-0.5 ${selectedSettingIndex === 1 ? "bg-zinc-700/70 font-bold text-[#b8c8a9]" : "text-zinc-400"}`}
+                >
+                  <span>CARE PACE</span>
+                  <span>{carePace}</span>
+                </div>
+                <div
+                  className={`flex items-center justify-between rounded px-2 py-0.5 ${selectedSettingIndex === 2 ? "bg-zinc-700/70 font-bold text-[#b8c8a9]" : "text-zinc-400"}`}
+                >
+                  <span>BACKGROUND</span>
+                  <span>{backgroundColor}</span>
+                </div>
+                <div
+                  className={`flex items-center justify-between rounded px-2 py-0.5 ${selectedSettingIndex === 3 ? "bg-zinc-700/70 font-bold text-[#b8c8a9]" : "text-zinc-400"}`}
+                >
+                  <span>EXPORT SAVE</span>
+                  <span>RUN</span>
+                </div>
+                <div
+                  className={`flex items-center justify-between rounded px-2 py-0.5 ${selectedSettingIndex === 4 ? "bg-zinc-700/70 font-bold text-[#b8c8a9]" : "text-zinc-400"}`}
+                >
+                  <span>LOAD SAVE</span>
+                  <span>RUN</span>
+                </div>
               </div>
-              <div className="flex gap-1.5 items-center">
-                <span>{hunger}%</span>
-                <div className="w-1.5 h-1.5 bg-zinc-800 rounded-full" />
-              </div>
+            )}
+
+            <AnimatePresence mode="wait">
+              {screenMessage && currentMenu === "NONE" && (
+                <motion.div
+                  key={screenMessage.id}
+                  initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
+                  className="pointer-events-none absolute inset-x-4 bottom-10 z-20 text-center text-[8px] font-black tracking-wide text-zinc-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.2)]"
+                >
+                  {screenMessage.text}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* All four needs remain visible at the bottom of the LCD. */}
+            <div
+              className="absolute inset-x-2 bottom-2 z-20 grid grid-cols-4 gap-2"
+              aria-label="Pet needs"
+              role="group"
+            >
+              {statItems.map((item) => {
+                const roundedValue = Math.round(item.value);
+
+                return (
+                  <div
+                    key={item.label}
+                    className="min-w-0 text-zinc-900"
+                    aria-label={item.label}
+                    aria-valuemax={100}
+                    aria-valuemin={0}
+                    aria-valuenow={roundedValue}
+                    role="meter"
+                  >
+                    <div className="flex items-baseline justify-between gap-0.5">
+                      <span className="truncate text-[7px] font-black">
+                        {item.label}
+                      </span>
+                      <span className="text-[8px] font-black tabular-nums">
+                        {roundedValue}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 grid grid-cols-5 gap-px">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <span
+                          key={index}
+                          className={`h-1 ${roundedValue >= (index + 1) * 20 ? "bg-zinc-900" : "bg-zinc-900/20"}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -779,6 +1533,11 @@ export default function StylePet() {
                   if (currentMenu === "STYLE") {
                     synth.playSelect();
                     setSelectedStyleIndex((prev) => (prev - 1 + 3) % 3);
+                  } else if (currentMenu === "SETTINGS") {
+                    synth.playSelect();
+                    setSelectedSettingIndex((previous) =>
+                      previous === 0 ? 4 : previous - 1,
+                    );
                   } else {
                     handleClean();
                   }
@@ -786,7 +1545,9 @@ export default function StylePet() {
                 aria-label={
                   currentMenu === "STYLE"
                     ? "Previous style category"
-                    : "Clean pet"
+                    : currentMenu === "SETTINGS"
+                      ? "Previous setting"
+                      : "Clean pet"
                 }
                 className="absolute top-0 flex h-11 w-8 items-center justify-center rounded-t bg-[#303638] shadow-[inset_0_2px_0_rgba(255,255,255,0.13)] transition-colors hover:bg-[#282e30] active:translate-y-px active:shadow-none"
               >
@@ -798,6 +1559,9 @@ export default function StylePet() {
                   if (currentMenu === "STYLE") {
                     synth.playSelect();
                     setSelectedStyleIndex((prev) => (prev + 1) % 3);
+                  } else if (currentMenu === "SETTINGS") {
+                    synth.playSelect();
+                    setSelectedSettingIndex((previous) => (previous + 1) % 5);
                   } else {
                     toggleSleep();
                   }
@@ -805,9 +1569,11 @@ export default function StylePet() {
                 aria-label={
                   currentMenu === "STYLE"
                     ? "Next style category"
-                    : status === "SLEEPING"
-                      ? "Wake pet"
-                      : "Put pet to sleep"
+                    : currentMenu === "SETTINGS"
+                      ? "Next setting"
+                      : status === "SLEEPING"
+                        ? "Wake pet"
+                        : "Put pet to sleep"
                 }
                 className="absolute bottom-0 flex h-11 w-8 items-center justify-center rounded-b bg-[#303638] shadow-[inset_0_-2px_0_rgba(0,0,0,0.32)] transition-colors hover:bg-[#282e30] active:translate-y-px active:shadow-none"
               >
@@ -816,7 +1582,9 @@ export default function StylePet() {
               {/* Left Button */}
               <button
                 onClick={() => {
-                  if (currentMenu === "STYLE") {
+                  if (currentMenu === "SETTINGS") {
+                    if (selectedSettingIndex <= 2) adjustSetting(-1);
+                  } else if (currentMenu === "STYLE") {
                     if (selectedStyleIndex === 0) cycleSkin(-1);
                     else if (selectedStyleIndex === 1) cycleHat(-1);
                     else if (selectedStyleIndex === 2) cycleAccessory(-1);
@@ -827,7 +1595,9 @@ export default function StylePet() {
                 aria-label={
                   currentMenu === "STYLE"
                     ? "Previous style option"
-                    : "Previous hat"
+                    : currentMenu === "SETTINGS"
+                      ? "Previous setting value"
+                      : "Previous hat"
                 }
                 className="absolute left-0 flex h-8 w-11 items-center justify-center rounded-l bg-[#303638] shadow-[inset_2px_0_0_rgba(255,255,255,0.13)] transition-colors hover:bg-[#282e30] active:translate-x-px active:shadow-none"
               >
@@ -836,7 +1606,9 @@ export default function StylePet() {
               {/* Right Button */}
               <button
                 onClick={() => {
-                  if (currentMenu === "STYLE") {
+                  if (currentMenu === "SETTINGS") {
+                    if (selectedSettingIndex <= 2) adjustSetting(1);
+                  } else if (currentMenu === "STYLE") {
                     if (selectedStyleIndex === 0) cycleSkin(1);
                     else if (selectedStyleIndex === 1) cycleHat(1);
                     else if (selectedStyleIndex === 2) cycleAccessory(1);
@@ -847,7 +1619,9 @@ export default function StylePet() {
                 aria-label={
                   currentMenu === "STYLE"
                     ? "Next style option"
-                    : "Next accessory"
+                    : currentMenu === "SETTINGS"
+                      ? "Next setting value"
+                      : "Next accessory"
                 }
                 className="absolute right-0 flex h-8 w-11 items-center justify-center rounded-r bg-[#303638] shadow-[inset_-2px_0_0_rgba(0,0,0,0.32)] transition-colors hover:bg-[#282e30] active:translate-x-px active:shadow-none"
               >
@@ -862,11 +1636,20 @@ export default function StylePet() {
                   <span className="animate-pulse text-[#7b2946]">
                     ▲▼ - SELECT
                   </span>
-                  <span className="text-[#7b2946]">◀▶ - CHANGE</span>
-                  <span className="text-[#686d6d]">SELECT - CLOSE</span>
+                  <span className="text-[#7b2946]">A / ◀▶ - CHANGE</span>
+                  <span className="text-[#686d6d]">B - CLOSE</span>
+                </>
+              ) : currentMenu === "SETTINGS" ? (
+                <>
+                  <span className="text-[#7b2946]">▲▼ - SELECT</span>
+                  <span className="text-[#7b2946]">A - CHANGE / RUN</span>
+                  <span className="text-[#686d6d]">B - BACK</span>
                 </>
               ) : status === "DEAD" ? (
-                <span className="text-[#7b2946]">START - REVIVE</span>
+                <>
+                  <span className="text-[#7b2946]">A - REVIVE</span>
+                  <span>START - SETTINGS</span>
+                </>
               ) : (
                 <>
                   <span>▲ - CLEAN</span>
@@ -877,32 +1660,49 @@ export default function StylePet() {
               )}
             </div>
 
-            {/* Tactile X and Y action buttons */}
+            {/* Tactile B and A action buttons */}
             <div className="flex gap-4 shrink-0 rotate-[-25deg] -translate-y-2 mr-2">
               <div className="flex flex-col items-center gap-1">
                 <button
-                  onClick={handleFeed}
-                  disabled={status === "DEAD" || status === "SLEEPING"}
-                  aria-label="Feed pet"
+                  onClick={handleCancelButton}
+                  disabled={
+                    currentMenu === "NONE" &&
+                    (status === "DEAD" || status === "SLEEPING")
+                  }
+                  aria-label={
+                    currentMenu === "NONE" ? "Pet companion" : "Close menu"
+                  }
                   className="flex h-12 w-12 items-center justify-center rounded-full bg-[#93425f] text-sm font-bold text-[#f5e8ed] shadow-[0_4px_0_#65263e,inset_0_2px_4px_rgba(255,255,255,0.24)] transition-all hover:bg-[#a44c6a] active:translate-y-1 active:shadow-none disabled:translate-y-0 disabled:opacity-40"
                 >
-                  X
+                  B
                 </button>
                 <span className="text-[9px] font-bold tracking-wider text-[#505556]">
-                  FEED
+                  {currentMenu === "NONE" ? "PET" : "BACK"}
                 </span>
               </div>
               <div className="flex flex-col items-center gap-1">
                 <button
-                  onClick={handlePlay}
-                  disabled={status === "DEAD" || status === "SLEEPING"}
-                  aria-label="Pet companion"
+                  onClick={handleActionButton}
+                  disabled={currentMenu === "NONE" && status === "SLEEPING"}
+                  aria-label={
+                    currentMenu === "SETTINGS"
+                      ? "Use selected setting"
+                      : currentMenu === "STYLE"
+                        ? "Change selected style"
+                        : status === "DEAD"
+                          ? "Revive pet"
+                          : "Feed pet"
+                  }
                   className="flex h-12 w-12 items-center justify-center rounded-full bg-[#93425f] text-sm font-bold text-[#f5e8ed] shadow-[0_4px_0_#65263e,inset_0_2px_4px_rgba(255,255,255,0.24)] transition-all hover:bg-[#a44c6a] active:translate-y-1 active:shadow-none disabled:translate-y-0 disabled:opacity-40"
                 >
-                  Y
+                  A
                 </button>
                 <span className="text-[9px] font-bold tracking-wider text-[#505556]">
-                  PET
+                  {currentMenu === "NONE"
+                    ? status === "DEAD"
+                      ? "REVIVE"
+                      : "FEED"
+                    : "ACTION"}
                 </span>
               </div>
             </div>
@@ -911,7 +1711,7 @@ export default function StylePet() {
           {/* Lower hardware row */}
           <div className="relative mt-10 flex min-h-14 w-full items-center px-4">
             {/* Select and Start controls */}
-            <div className="absolute left-1/2 top-0 flex -translate-x-1/2 -rotate-[12deg] gap-3">
+            <div className="absolute left-1/2 top-0 flex -translate-x-1/2 -rotate-12 gap-3">
               <div className="flex flex-col items-center gap-1.5">
                 <button
                   onClick={() => {
@@ -930,18 +1730,12 @@ export default function StylePet() {
               <div className="flex flex-col items-center gap-1.5">
                 <button
                   onClick={() => {
-                    if (status === "DEAD") {
-                      handleReset();
-                    } else {
-                      synth.playSelect();
-                      setCurrentMenu((prev) =>
-                        prev === "STATS" ? "NONE" : "STATS",
-                      );
-                    }
+                    synth.playSelect();
+                    setCurrentMenu((previous) =>
+                      previous === "SETTINGS" ? "NONE" : "SETTINGS",
+                    );
                   }}
-                  aria-label={
-                    status === "DEAD" ? "Revive pet" : "Start vitals menu"
-                  }
+                  aria-label="Start settings menu"
                   className="h-4 w-12 rounded-full border border-[#454b4d] bg-[#565c5f] shadow-[0_2px_0_#3d4345,inset_0_1px_0_rgba(255,255,255,0.16)] transition-all hover:bg-[#4d5356] active:translate-y-0.5 active:shadow-none"
                 />
                 <span className="text-[8px] font-bold tracking-wider text-[#505556]">
@@ -953,7 +1747,7 @@ export default function StylePet() {
             {/* Game Boy-style angled speaker grille */}
             <div
               aria-hidden="true"
-              className="ml-auto flex -rotate-[28deg] gap-2"
+              className="ml-auto flex rotate-[-28deg] gap-2"
             >
               <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
               <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
