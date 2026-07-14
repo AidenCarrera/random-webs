@@ -132,6 +132,17 @@ export const WEBSITES: WebsiteEntry[] = [
     },
   },
   {
+    path: "/fluid-simulation",
+    title: "Fluid Simulation",
+    blurb: "Stir a field of glowing particles.",
+    accent: "from-fuchsia-300/80 via-violet-400/70 to-cyan-400/75",
+    metadata: {
+      title: "Fluid Simulation - Interactive WebGL 2 Particles",
+      description:
+        "Swirl through a colorful WebGL 2 fluid simulation, shape glowing particles with your pointer, and save your favorite moment.",
+    },
+  },
+  {
     path: "/fractal-explorer",
     title: "Fractal Explorer",
     blurb: "Infinite geometric patterns.",
