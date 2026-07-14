@@ -110,6 +110,17 @@ export const WEBSITES: WebsiteEntry[] = [
     },
   },
   {
+    path: "/falling-sand",
+    title: "Falling Sand",
+    blurb: "A reactive particle sandbox.",
+    accent: "from-amber-200/80 via-orange-300/70 to-red-500/70",
+    metadata: {
+      title: "Falling Sand - Interactive Particle Sandbox",
+      description:
+        "Draw with sand, water, fire, lava, plants, acid, and reactive materials in a real-time physics sandbox, then save, load, export, and share your world.",
+    },
+  },
+  {
     path: "/focus-timer",
     title: "Focus Timer",
     blurb: "A countdown for deep work.",
