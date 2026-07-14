@@ -26,12 +26,17 @@ test.describe("Falling Sand interactions", () => {
     );
     await expect(page.getByRole("tab", { name: "Settings" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Statistics" })).toBeVisible();
+    await page.getByRole("tab", { name: "Statistics" }).click();
+    await expect(
+      page.getByText("Material types").locator("..").locator("strong"),
+    ).toHaveText("4");
+    await page.getByRole("tab", { name: "Elements" }).click();
     await expect(
       page.getByRole("button", { name: "0.5× speed" }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: "1× speed" })).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "2× speed" }),
+      page.getByRole("button", { name: "1× speed" }),
     ).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByRole("button", { name: "4× speed" })).toBeVisible();
 
@@ -134,6 +139,22 @@ test.describe("Falling Sand interactions", () => {
     await page.mouse.wheel(0, -100);
     await page.getByRole("tab", { name: "Settings" }).click();
     await expect(page.locator('output[for="sand-brush-size"]')).toHaveText("6");
+    await expect(
+      page.getByRole("checkbox", { name: /Right-click erases/ }),
+    ).toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: /Pause while drawing/ }),
+    ).not.toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: /Pause in background/ }),
+    ).toBeChecked();
+    await expect(
+      page.getByRole("checkbox", { name: /Auto-save world/ }),
+    ).not.toBeChecked();
+
+    await page.getByRole("checkbox", { name: /Display frame rate/ }).check();
+    await expect(page.getByText(/^\d+ FPS$/)).toBeVisible();
+
     await canvas.hover();
     await page.mouse.wheel(0, 100);
     await expect(page.locator('output[for="sand-brush-size"]')).toHaveText("5");
@@ -148,7 +169,15 @@ test.describe("Falling Sand interactions", () => {
     await page.getByRole("tab", { name: "Statistics" }).click();
     await expect(page.getByText("Active cells")).toBeVisible();
     await expect(page.getByText("World grid")).toBeVisible();
-    await expect(page.getByText("Frame rate")).toBeVisible();
+    await expect(page.getByText("Empty cells")).toBeVisible();
+    await expect(page.getByText("World coverage")).toBeVisible();
+    await expect(page.getByText("Material types")).toBeVisible();
+    await expect(page.getByText("Selected element")).toBeVisible();
+    await expect(page.getByText("Playback speed")).toBeVisible();
+    await expect(page.getByText("Frame rate", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByText("Space pauses. Number keys switch materials."),
+    ).toHaveCount(0);
 
     await page.getByRole("button", { name: "Pause" }).click();
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible();

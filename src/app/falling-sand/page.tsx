@@ -110,6 +110,37 @@ type ToastState = {
 
 type PanelTab = "elements" | "settings" | "statistics";
 
+type SettingToggleProps = {
+  checked: boolean;
+  description: string;
+  label: string;
+  onChange: (checked: boolean) => void;
+};
+
+function SettingToggle({
+  checked,
+  description,
+  label,
+  onChange,
+}: SettingToggleProps) {
+  return (
+    <label className={styles.settingToggle}>
+      <span className={styles.settingCopy}>
+        <strong>{label}</strong>
+        <span>{description}</span>
+      </span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+      <span className={styles.toggleTrack} aria-hidden="true">
+        <span />
+      </span>
+    </label>
+  );
+}
+
 export default function FallingSandPage() {
   const reduceMotion = useReducedMotion();
   const canvasHandle = useRef<FallingSandCanvasHandle>(null);
@@ -118,18 +149,24 @@ export default function FallingSandPage() {
   const toastTimer = useRef<number | null>(null);
   const [material, setMaterial] = useState(Material.SAND);
   const [brushSize, setBrushSize] = useState(5);
-  const [speed, setSpeed] = useState(2);
+  const [speed, setSpeed] = useState(1);
   const [paused, setPaused] = useState(false);
   const [activeTab, setActiveTab] = useState<PanelTab>("elements");
   const [panelMinimized, setPanelMinimized] = useState(false);
   const [ready, setReady] = useState(false);
   const [showCanvasHint, setShowCanvasHint] = useState(true);
+  const [displayFrameRate, setDisplayFrameRate] = useState(false);
+  const [rightClickErases, setRightClickErases] = useState(true);
+  const [pauseWhileDrawing, setPauseWhileDrawing] = useState(false);
+  const [autoPauseWhenHidden, setAutoPauseWhenHidden] = useState(true);
+  const [autoSave, setAutoSave] = useState(false);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [snapshot, setSnapshot] = useState<FallingSandSnapshot | null>(null);
   const [stats, setStats] = useState<SandWorldStats>({
     cells: 0,
     active: 0,
     fps: 0,
+    materialCounts: Array<number>(Material.STEAM + 1).fill(0),
   });
   const simulationPaused = paused || Boolean(reduceMotion);
   const isTouchDevice = useSyncExternalStore(
@@ -185,6 +222,18 @@ export default function FallingSandPage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  useEffect(() => {
+    if (!autoSave || !ready) return;
+    const saveQuietly = () => {
+      try {
+        const serialized = canvasHandle.current?.serialize();
+        if (serialized) localStorage.setItem(STORAGE_KEY, serialized);
+      } catch {}
+    };
+    const interval = window.setInterval(saveQuietly, 15_000);
+    return () => window.clearInterval(interval);
+  }, [autoSave, ready]);
 
   const saveCreation = () => {
     try {
@@ -258,6 +307,14 @@ export default function FallingSandPage() {
     } catch {}
   };
 
+  const emptyCells = Math.max(0, stats.cells - stats.active);
+  const coverage = stats.cells
+    ? `${((stats.active / stats.cells) * 100).toFixed(1)}%`
+    : "0.0%";
+  const materialVariety = stats.materialCounts
+    .slice(1)
+    .filter((count) => count > 0).length;
+
   return (
     <>
       <main className={styles.root}>
@@ -268,10 +325,13 @@ export default function FallingSandPage() {
           >
             <FallingSandCanvas
               ref={canvasHandle}
+              autoPauseWhenHidden={autoPauseWhenHidden}
               brushSize={brushSize}
               material={material}
               onBrushSizeChange={setBrushSize}
+              pauseWhileDrawing={pauseWhileDrawing}
               paused={simulationPaused}
+              rightClickErases={rightClickErases}
               speed={speed}
               onReady={() => setReady(true)}
               onStats={setStats}
@@ -378,6 +438,15 @@ export default function FallingSandPage() {
                 </button>
               </div>
             </div>
+
+            {displayFrameRate ? (
+              <div
+                className={`${styles.fpsOverlay} ${styles.glassSurface}`}
+                role="status"
+              >
+                {stats.fps || 0} FPS
+              </div>
+            ) : null}
 
             {showCanvasHint ? (
               <div className={styles.canvasHint}>
@@ -524,28 +593,72 @@ export default function FallingSandPage() {
                       aria-labelledby="tab-settings"
                       className={styles.physicsSection}
                     >
-                      <div className={styles.rangeHeading}>
-                        <label htmlFor="sand-brush-size">
-                          <Brush size={18} strokeWidth={2.2} />
-                          Brush size
-                        </label>
-                        <output htmlFor="sand-brush-size">{brushSize}</output>
+                      <div className={styles.settingsGroup}>
+                        <h3>Drawing</h3>
+                        <div className={styles.rangeHeading}>
+                          <label htmlFor="sand-brush-size">
+                            <Brush size={18} strokeWidth={2.2} />
+                            Brush size
+                          </label>
+                          <output htmlFor="sand-brush-size">{brushSize}</output>
+                        </div>
+                        <input
+                          id="sand-brush-size"
+                          className={styles.range}
+                          type="range"
+                          min="1"
+                          max="14"
+                          step="1"
+                          value={brushSize}
+                          onChange={(event) =>
+                            setBrushSize(Number(event.target.value))
+                          }
+                        />
+                        <SettingToggle
+                          checked={rightClickErases}
+                          description="Hold the secondary pointer button to erase."
+                          label="Right-click erases"
+                          onChange={setRightClickErases}
+                        />
+                        <SettingToggle
+                          checked={pauseWhileDrawing}
+                          description="Hold particles still until the stroke ends."
+                          label="Pause while drawing"
+                          onChange={setPauseWhileDrawing}
+                        />
                       </div>
-                      <input
-                        id="sand-brush-size"
-                        className={styles.range}
-                        type="range"
-                        min="1"
-                        max="14"
-                        step="1"
-                        value={brushSize}
-                        onChange={(event) =>
-                          setBrushSize(Number(event.target.value))
-                        }
-                      />
-                      <p className={styles.settingsNote}>
-                        Scroll over the canvas to resize. Right-click erases.
-                      </p>
+
+                      <div className={styles.settingsGroup}>
+                        <h3>Display</h3>
+                        <SettingToggle
+                          checked={displayFrameRate}
+                          description="Show live rendering performance on the canvas."
+                          label="Display frame rate"
+                          onChange={setDisplayFrameRate}
+                        />
+                        <SettingToggle
+                          checked={showCanvasHint}
+                          description="Keep the drawing instructions visible."
+                          label="Drawing tips"
+                          onChange={setShowCanvasHint}
+                        />
+                      </div>
+
+                      <div className={styles.settingsGroup}>
+                        <h3>Simulation</h3>
+                        <SettingToggle
+                          checked={autoPauseWhenHidden}
+                          description="Stop physics when this browser tab is hidden."
+                          label="Pause in background"
+                          onChange={setAutoPauseWhenHidden}
+                        />
+                        <SettingToggle
+                          checked={autoSave}
+                          description="Store the current world every 15 seconds."
+                          label="Auto-save world"
+                          onChange={setAutoSave}
+                        />
+                      </div>
                     </section>
                   ) : null}
 
@@ -566,10 +679,31 @@ export default function FallingSandPage() {
                         <strong>{stats.cells.toLocaleString("en-US")}</strong>
                       </div>
                       <div>
-                        <span>Frame rate</span>
-                        <strong>{stats.fps || 0}</strong>
+                        <span>Empty cells</span>
+                        <strong>{emptyCells.toLocaleString("en-US")}</strong>
                       </div>
-                      <p>Space pauses. Number keys switch materials.</p>
+                      <div>
+                        <span>World coverage</span>
+                        <strong>{coverage}</strong>
+                      </div>
+                      <div>
+                        <span>Material types</span>
+                        <strong>{materialVariety}</strong>
+                      </div>
+                      <div>
+                        <span>Selected element</span>
+                        <strong className={styles.readoutText}>
+                          {selectedMaterial.name}
+                        </strong>
+                      </div>
+                      <div>
+                        <span>Brush size</span>
+                        <strong>{brushSize}</strong>
+                      </div>
+                      <div>
+                        <span>Playback speed</span>
+                        <strong>{speed}×</strong>
+                      </div>
                     </section>
                   ) : null}
                 </div>

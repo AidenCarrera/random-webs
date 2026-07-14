@@ -22,12 +22,15 @@ export type FallingSandCanvasHandle = {
 };
 
 type FallingSandCanvasProps = {
+  autoPauseWhenHidden: boolean;
   brushSize: number;
   material: Material;
   onBrushSizeChange?: (size: number) => void;
   onReady?: () => void;
   onStats?: (stats: SandWorldStats) => void;
+  pauseWhileDrawing: boolean;
   paused: boolean;
+  rightClickErases: boolean;
   speed: number;
 };
 
@@ -49,7 +52,18 @@ export const FallingSandCanvas = forwardRef<
   FallingSandCanvasHandle,
   FallingSandCanvasProps
 >(function FallingSandCanvas(
-  { brushSize, material, onBrushSizeChange, onReady, onStats, paused, speed },
+  {
+    autoPauseWhenHidden,
+    brushSize,
+    material,
+    onBrushSizeChange,
+    onReady,
+    onStats,
+    pauseWhileDrawing,
+    paused,
+    rightClickErases,
+    speed,
+  },
   ref,
 ) {
   const shellRef = useRef<HTMLDivElement>(null);
@@ -58,7 +72,10 @@ export const FallingSandCanvas = forwardRef<
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
   const materialRef = useRef(material);
   const brushSizeRef = useRef(brushSize);
+  const autoPauseWhenHiddenRef = useRef(autoPauseWhenHidden);
+  const pauseWhileDrawingRef = useRef(pauseWhileDrawing);
   const pausedRef = useRef(paused);
+  const rightClickErasesRef = useRef(rightClickErases);
   const speedRef = useRef(speed);
   const onBrushSizeChangeRef = useRef(onBrushSizeChange);
   const onStatsRef = useRef(onStats);
@@ -66,6 +83,11 @@ export const FallingSandCanvas = forwardRef<
   const drawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const readyRef = useRef(false);
+  const documentHiddenRef = useRef(false);
+
+  useEffect(() => {
+    autoPauseWhenHiddenRef.current = autoPauseWhenHidden;
+  }, [autoPauseWhenHidden]);
 
   useEffect(() => {
     materialRef.current = material;
@@ -78,6 +100,14 @@ export const FallingSandCanvas = forwardRef<
   useEffect(() => {
     pausedRef.current = paused;
   }, [paused]);
+
+  useEffect(() => {
+    pauseWhileDrawingRef.current = pauseWhileDrawing;
+  }, [pauseWhileDrawing]);
+
+  useEffect(() => {
+    rightClickErasesRef.current = rightClickErases;
+  }, [rightClickErases]);
 
   useEffect(() => {
     speedRef.current = speed;
@@ -212,6 +242,11 @@ export const FallingSandCanvas = forwardRef<
     let accumulator = 0;
     let renderedFrames = 0;
     let statsStartedAt = lastTime;
+    const handleVisibilityChange = () => {
+      documentHiddenRef.current = document.hidden;
+    };
+    handleVisibilityChange();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     const resize = (width: number, height: number) => {
       const dimensions = getWorldDimensions(width, height);
@@ -253,7 +288,10 @@ export const FallingSandCanvas = forwardRef<
       const elapsed = Math.min(50, now - lastTime);
       lastTime = now;
       const engine = engineRef.current;
-      if (engine && !pausedRef.current) {
+      const drawingPause = pauseWhileDrawingRef.current && drawingRef.current;
+      const hiddenPause =
+        autoPauseWhenHiddenRef.current && documentHiddenRef.current;
+      if (engine && !pausedRef.current && !drawingPause && !hiddenPause) {
         accumulator += (elapsed / (1000 / 60)) * speedRef.current;
         let iterations = 0;
         while (accumulator >= 1 && iterations < 4) {
@@ -267,10 +305,13 @@ export const FallingSandCanvas = forwardRef<
         renderedFrames += 1;
         if (now - statsStartedAt >= 650) {
           const duration = now - statsStartedAt;
+          const materialCounts = engine.getMaterialCounts();
           onStatsRef.current?.({
             cells: engine.width * engine.height,
-            active: engine.getActiveCount(),
+            active:
+              engine.width * engine.height - materialCounts[Material.EMPTY],
             fps: Math.round((renderedFrames * 1000) / duration),
+            materialCounts,
           });
           renderedFrames = 0;
           statsStartedAt = now;
@@ -283,6 +324,7 @@ export const FallingSandCanvas = forwardRef<
     return () => {
       cancelAnimationFrame(animationFrame);
       resizeObserver.disconnect();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       contextRef.current = null;
       engineRef.current = null;
       readyRef.current = false;
@@ -316,6 +358,7 @@ export const FallingSandCanvas = forwardRef<
     const point = getPoint(event);
     const engine = engineRef.current;
     if (!point || !engine) return;
+    if (event.buttons === 2 && !rightClickErasesRef.current) return;
     const selected = event.buttons === 2 ? Material.EMPTY : materialRef.current;
     const previous = lastPointRef.current ?? point;
     engine.paintLine(
@@ -336,7 +379,9 @@ export const FallingSandCanvas = forwardRef<
         ref={canvasRef}
         className={styles.canvas}
         aria-label="Interactive falling sand simulation. Draw materials with a pointer or touch."
-        onContextMenu={(event) => event.preventDefault()}
+        onContextMenu={(event) => {
+          if (rightClickErasesRef.current) event.preventDefault();
+        }}
         onWheel={(event) => {
           event.preventDefault();
           if (event.deltaY === 0) return;
@@ -347,6 +392,7 @@ export const FallingSandCanvas = forwardRef<
           onBrushSizeChangeRef.current?.(nextSize);
         }}
         onPointerDown={(event) => {
+          if (event.button === 2 && !rightClickErasesRef.current) return;
           drawingRef.current = true;
           lastPointRef.current = null;
           event.currentTarget.setPointerCapture(event.pointerId);

@@ -122,6 +122,7 @@ export type SandWorldStats = {
   cells: number;
   active: number;
   fps: number;
+  materialCounts: number[];
 };
 
 type SerializedWorld = {
@@ -766,10 +767,6 @@ export class FallingSandEngine {
         this.assign(this.index(x, y), Material.SAND);
       }
     }
-
-    for (let x = Math.floor(this.width * 0.19); x < this.width * 0.31; x += 2) {
-      this.assign(this.index(x, waterTop - 1), Material.PLANT);
-    }
   }
 
   resize(width: number, height: number) {
@@ -836,12 +833,10 @@ export class FallingSandEngine {
     context.putImageData(this.imageData, 0, 0);
   }
 
-  getActiveCount() {
-    let active = 0;
-    for (const material of this.cells) {
-      if (material !== Material.EMPTY) active += 1;
-    }
-    return active;
+  getMaterialCounts() {
+    const counts = Array<number>(Material.STEAM + 1).fill(0);
+    for (const material of this.cells) counts[material] += 1;
+    return counts;
   }
 
   serialize() {
