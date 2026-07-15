@@ -16,7 +16,7 @@ export function TimelineControls({
   onTimeScaleChange,
 }: Props) {
   return (
-    <div className="order-4 relative z-40 -mt-1 mb-4 flex max-w-full flex-wrap items-center justify-center gap-4 rounded-[1.75rem] border border-white/10 bg-black/50 px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md md:absolute md:bottom-6 md:left-1/2 md:mb-0 md:mt-0 md:-translate-x-1/2 md:flex-nowrap md:gap-5 md:rounded-full md:px-6">
+    <div className="order-5 relative z-40 -mt-1 mb-4 flex max-w-full flex-wrap items-center justify-center gap-4 rounded-[1.75rem] border border-white/10 bg-black/50 px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-md md:absolute md:bottom-6 md:left-1/2 md:mb-0 md:mt-0 md:-translate-x-1/2 md:flex-nowrap md:gap-5 md:rounded-full md:px-6">
       <button
         onClick={onTogglePause}
         className="p-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition-all hover:scale-105 group cursor-pointer"
