@@ -374,14 +374,14 @@ export const WEBSITES: WebsiteEntry[] = [
     },
   },
   {
-    path: "/text-encrypt",
-    title: "Text Encrypt",
-    blurb: "Encrypt a message.",
+    path: "/text-converter",
+    title: "Text Converter",
+    blurb: "Convert text formats.",
     accent: "from-teal-200/80 via-emerald-300/70 to-cyan-500/70",
     metadata: {
-      title: "Text Encrypt - Convert Text to Secret Codes",
+      title: "Text Converter - Create secret messages",
       description:
-        "Transform text into binary, hexadecimal, Caesar-shifted, Base64, Atbash, and ROT13 or ROT47 output with adjustable settings and one-click copying.",
+        "Convert text between common encodings and explore classic ciphers. Designed for learning and experimentation.",
     },
   },
   {
