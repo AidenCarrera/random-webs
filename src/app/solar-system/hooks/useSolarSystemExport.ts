@@ -35,9 +35,7 @@ export function useSolarSystemExport({
 }: Options) {
   // Export Modal state
   const [exportImage, setExportImage] = useState<string | null>(null);
-  const [exportFileName, setExportFileName] = useState(
-    "helios-solar-system.png",
-  );
+  const [exportFileName, setExportFileName] = useState("solar-system.png");
   const [isExporting, setIsExporting] = useState(false);
   const [isGeneratingPng, setIsGeneratingPng] = useState(false);
 
@@ -575,7 +573,7 @@ export function useSolarSystemExport({
       const imageUrl = await captureSolarSystem();
       if (!imageUrl) return;
 
-      setExportFileName(`helios-solar-system-${Date.now()}.png`);
+      setExportFileName(`solar-system-${Date.now()}.png`);
       setExportImage(imageUrl);
       setIsExporting(true);
     } finally {
@@ -613,7 +611,7 @@ export function useSolarSystemExport({
       if (canShareFile) {
         await navigator.share({
           files: [pngFile],
-          title: "Helios Solar System",
+          title: "Solar System Creator",
           text: "Save this solar system snapshot.",
         });
         return;

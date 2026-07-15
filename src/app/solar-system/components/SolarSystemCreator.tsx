@@ -143,8 +143,8 @@ export function SolarSystemCreator() {
         <ExportPreviewModal
           imageSrc={exportImage}
           fileName={exportFileName}
-          imageAlt="Helios Solar System Export"
-          title="Helios System Snapshot"
+          imageAlt="Solar System Creator Export"
+          title="Solar System Snapshot"
           description="Capture of your custom simulated celestial alignment."
           isTouchDevice={
             typeof window !== "undefined" &&
