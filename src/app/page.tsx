@@ -65,7 +65,10 @@ export default function Home() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-linear-to-b from-black via-zinc-950 to-zinc-950 text-white">
       <section className="relative mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6 py-20 sm:px-8 lg:px-12">
-        <div className="flex w-full items-center justify-center">
+        <div className="flex w-full flex-col items-center justify-center gap-8">
+          <h1 className="text-center text-xl font-black uppercase tracking-[0.32em] text-white sm:text-2xl">
+            Random Webs
+          </h1>
           <button
             onClick={visitRandomWebsite}
             disabled={loading}
