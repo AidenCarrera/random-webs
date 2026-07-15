@@ -86,7 +86,7 @@ export default function Home() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {WEBSITES.map((website, index) => {
                 const isRevealed =
-                  !isMounted || revealedWebsites.includes(website.path);
+                  isMounted && revealedWebsites.includes(website.path);
                 const isRevealedClient =
                   isMounted && revealedWebsites.includes(website.path);
 

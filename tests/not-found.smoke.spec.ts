@@ -7,16 +7,12 @@ const storageKey = "random-webs-revealed-websites";
 test("404 random discovery unlocks its destination on the home page", async ({
   page,
 }) => {
-  await page.addInitScript(
-    (key) => window.localStorage.removeItem(key),
-    storageKey,
-  );
-
   const response = await page.goto("/this-route-does-not-exist", {
     waitUntil: "domcontentloaded",
   });
 
   expect(response?.status()).toBe(404);
+  await page.evaluate((key) => window.localStorage.removeItem(key), storageKey);
   await expect(page.getByRole("heading", { name: "404" })).toBeVisible();
   await expect(page.getByText("This page could not be found.")).toBeVisible();
   await expect(
