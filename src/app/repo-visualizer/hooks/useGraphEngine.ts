@@ -19,7 +19,7 @@ import { BASE_EVENT_DELAY } from "../constants";
 
 export function useGraphEngine(dataset: Dataset) {
   const [cursor, setCursor] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [graphStats, setGraphStats] = useState<GraphStats>({
     files: 0,
@@ -222,6 +222,7 @@ export function useGraphEngine(dataset: Dataset) {
     activeNodeIdsRef.current.clear();
     previousCursorRef.current = 0;
     const frame = requestAnimationFrame(() => {
+      setIsPlaying(false);
       setCursor(0);
       setGraphStats(countGraph(graphRef.current));
     });

@@ -24,6 +24,16 @@ import { Legend } from "./components/Legend";
 import { Header } from "./components/Header";
 import { RepoLoader } from "./components/RepoLoader";
 import { CommitOverlay } from "./components/CommitOverlay";
+import { RepositoryLoadingState } from "./components/RepositoryLoadingState";
+
+function StatValueSkeleton({ width = "w-12" }: { width?: string }) {
+  return (
+    <span
+      className={`block h-4 ${width} animate-pulse rounded bg-white/10 motion-reduce:animate-none`}
+      aria-hidden="true"
+    />
+  );
+}
 
 export default function GithubHistoryVisualizerPage() {
   const {
@@ -34,6 +44,7 @@ export default function GithubHistoryVisualizerPage() {
     setGithubToken,
     commitLimit,
     setCommitLimit,
+    isInitializingDataset,
     isLoadingRepository,
     repositoryError,
     handleRepositoryLoad,
@@ -68,7 +79,15 @@ export default function GithubHistoryVisualizerPage() {
   const [isRepositorySwitcherOpen, setIsRepositorySwitcherOpen] =
     useState(false);
   const [isSidebarScrolling, setIsSidebarScrolling] = useState(false);
+  const [readyDatasetId, setReadyDatasetId] = useState<string | null>(null);
   const sidebarScrollTimeoutRef = useRef<number | null>(null);
+  const isDatasetLoading = isInitializingDataset || isLoadingRepository;
+  const isDatasetReady = !isDatasetLoading && dataset.events.length > 0;
+  const isVisualizationReady = isDatasetReady && readyDatasetId === dataset.id;
+
+  useEffect(() => {
+    if (isDatasetLoading) setIsPlaying(false);
+  }, [isDatasetLoading, setIsPlaying]);
 
   const toggleFullscreen = async () => {
     const element = containerRef.current;
@@ -91,6 +110,17 @@ export default function GithubHistoryVisualizerPage() {
   }, [fitGraph]);
 
   useEffect(() => {
+    if (!isDatasetReady) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      handleFitGraph();
+      setReadyDatasetId(dataset.id);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [dataset.id, handleFitGraph, isDatasetReady]);
+
+  useEffect(() => {
     const timeout = window.setTimeout(handleFitGraph, 300);
     return () => window.clearTimeout(timeout);
   }, [handleFitGraph, isSidebarCollapsed]);
@@ -107,18 +137,18 @@ export default function GithubHistoryVisualizerPage() {
         return;
       }
 
-      if (event.code === "Space") {
+      if (event.code === "Space" && isDatasetReady) {
         event.preventDefault();
         setIsPlaying((playing) => !playing);
-      } else if (event.key === "ArrowRight") {
+      } else if (event.key === "ArrowRight" && isDatasetReady) {
         event.preventDefault();
         setIsPlaying(false);
         setCursor((value) => Math.min(dataset.events.length, value + 1));
-      } else if (event.key === "ArrowLeft") {
+      } else if (event.key === "ArrowLeft" && isDatasetReady) {
         event.preventDefault();
         setIsPlaying(false);
         setCursor((value) => Math.max(0, value - 1));
-      } else if (event.key.toLowerCase() === "r") {
+      } else if (event.key.toLowerCase() === "r" && isDatasetReady) {
         event.preventDefault();
         setIsPlaying(false);
         setCursor(0);
@@ -136,7 +166,13 @@ export default function GithubHistoryVisualizerPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [changeZoom, dataset.events.length, setCursor, setIsPlaying]);
+  }, [
+    changeZoom,
+    dataset.events.length,
+    isDatasetReady,
+    setCursor,
+    setIsPlaying,
+  ]);
 
   const handleSidebarScroll = () => {
     setIsSidebarScrolling(true);
@@ -206,43 +242,67 @@ export default function GithubHistoryVisualizerPage() {
             <p className="px-1 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
               Repository stats
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div
+              className="grid grid-cols-2 gap-2"
+              aria-busy={isDatasetLoading}
+              aria-label={
+                isDatasetLoading
+                  ? "Repository statistics loading"
+                  : "Repository statistics"
+              }
+            >
               <div className="rounded-xl border border-white/5 bg-white/4 p-2.5">
                 <span className="flex items-center gap-1.5 text-[10px] text-slate-500 mb-1">
                   <Files className="size-3.5" /> Files
                 </span>
-                <span className="font-mono text-sm font-bold text-slate-200">
-                  {graphStats.files}
-                </span>
+                {isDatasetLoading ? (
+                  <StatValueSkeleton />
+                ) : (
+                  <span className="font-mono text-sm font-bold text-slate-200">
+                    {graphStats.files}
+                  </span>
+                )}
               </div>
               <div className="rounded-xl border border-white/5 bg-white/4 p-2.5">
                 <span className="flex items-center gap-1.5 text-[10px] text-slate-500 mb-1">
                   <FolderTree className="size-3.5" /> Folders
                 </span>
-                <span className="font-mono text-sm font-bold text-slate-200">
-                  {graphStats.directories}
-                </span>
+                {isDatasetLoading ? (
+                  <StatValueSkeleton />
+                ) : (
+                  <span className="font-mono text-sm font-bold text-slate-200">
+                    {graphStats.directories}
+                  </span>
+                )}
               </div>
               <div className="rounded-xl border border-white/5 bg-white/4 p-2.5">
                 <span className="flex items-center gap-1.5 text-[10px] text-slate-500 mb-1">
                   <Users className="size-3.5" /> Authors
                 </span>
-                <span className="font-mono text-sm font-bold text-slate-200">
-                  {timelineStats.authors}
-                </span>
+                {isDatasetLoading ? (
+                  <StatValueSkeleton />
+                ) : (
+                  <span className="font-mono text-sm font-bold text-slate-200">
+                    {timelineStats.authors}
+                  </span>
+                )}
               </div>
               <div className="rounded-xl border border-white/5 bg-white/4 p-2.5">
                 <span className="flex items-center gap-1.5 text-[10px] text-slate-500 mb-1">
                   Changes
                 </span>
-                <div className="flex items-center gap-1 font-mono text-xs font-bold">
-                  <span className="text-emerald-400">
-                    +{timelineStats.additions.toLocaleString()}
-                  </span>
-                  <span className="text-rose-400">
-                    -{timelineStats.deletions.toLocaleString()}
-                  </span>
-                </div>
+                {isDatasetLoading ? (
+                  <StatValueSkeleton width="w-20" />
+                ) : (
+                  <div className="flex items-center gap-1 font-mono text-xs font-bold">
+                    <span className="text-emerald-400">
+                      +{timelineStats.additions.toLocaleString()}
+                    </span>
+                    <span className="text-rose-400">
+                      -{timelineStats.deletions.toLocaleString()}
+                    </span>
+                  </div>
+                )}
               </div>
               <div
                 className="col-span-2 rounded-xl border border-white/5 bg-white/4 p-2.5"
@@ -251,12 +311,16 @@ export default function GithubHistoryVisualizerPage() {
                 <span className="flex items-center gap-1.5 text-[10px] text-slate-500 mb-1">
                   <FileText className="size-3.5" /> Total lines
                 </span>
-                <span className="font-mono text-sm font-bold text-slate-200">
-                  {Math.max(
-                    0,
-                    timelineStats.additions - timelineStats.deletions,
-                  ).toLocaleString()}
-                </span>
+                {isDatasetLoading ? (
+                  <StatValueSkeleton width="w-16" />
+                ) : (
+                  <span className="font-mono text-sm font-bold text-slate-200">
+                    {Math.max(
+                      0,
+                      timelineStats.additions - timelineStats.deletions,
+                    ).toLocaleString()}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -269,7 +333,7 @@ export default function GithubHistoryVisualizerPage() {
           </div>
 
           <Legend graphRef={graphRef} />
-          <CommitOverlay currentEvent={currentEvent} />
+          {!isDatasetLoading && <CommitOverlay currentEvent={currentEvent} />}
         </div>
       </div>
 
@@ -292,6 +356,8 @@ export default function GithubHistoryVisualizerPage() {
         />
 
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(3,6,14,0.28),transparent_24%,transparent_72%,rgba(3,6,14,0.48))]" />
+
+        {!isVisualizationReady && <RepositoryLoadingState />}
 
         {/* Zoom & Fullscreen Controls */}
         <div className="pointer-events-none absolute right-3 top-3 z-10 hidden flex-col gap-2 sm:right-5 sm:top-5 lg:flex">
@@ -331,6 +397,7 @@ export default function GithubHistoryVisualizerPage() {
           setIsPlaying={setIsPlaying}
           speed={speed}
           setSpeed={setSpeed}
+          isReady={isVisualizationReady}
         />
       </div>
 

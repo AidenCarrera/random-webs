@@ -16,6 +16,7 @@ import { MAX_TREE_FILES } from "../constants";
 
 export function useGithubLoader() {
   const [dataset, setDataset] = useState<Dataset>(() => createDemoDataset());
+  const [isInitializingDataset, setIsInitializingDataset] = useState(true);
   const [repositoryInput, setRepositoryInput] = useState("");
   const [githubToken, setGithubToken] = useState("");
   const [commitLimit, setCommitLimit] = useState(30);
@@ -43,6 +44,9 @@ export function useGithubLoader() {
       })
       .catch(() => {
         // Fallback createDemoDataset is already loaded by default
+      })
+      .finally(() => {
+        setIsInitializingDataset(false);
       });
   }, []);
 
@@ -252,6 +256,7 @@ export function useGithubLoader() {
     setGithubToken,
     commitLimit,
     setCommitLimit,
+    isInitializingDataset,
     isLoadingRepository,
     repositoryError,
     handleRepositoryLoad,
