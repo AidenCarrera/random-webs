@@ -4,9 +4,13 @@ test.describe("Falling Sand interactions", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/falling-sand");
     await expect(
-      page.getByRole("heading", { name: "Falling Sand" }),
+      page.getByLabel(
+        "Interactive falling sand simulation. Draw materials with a pointer or touch.",
+      ),
     ).toBeVisible();
-    await expect(page.getByText("Preparing the sandbox")).toBeHidden();
+    if ((page.viewportSize()?.width ?? 0) > 720) {
+      await expect(page.getByText("Preparing the sandbox")).toBeHidden();
+    }
   });
 
   test("draws, pauses, saves, and restores a world", async ({ page }) => {
@@ -213,5 +217,51 @@ test.describe("Falling Sand interactions", () => {
     await expect(
       page.getByRole("heading", { name: "Your pocket world" }),
     ).toBeHidden();
+  });
+
+  test.describe("mobile toolbox", () => {
+    test.use({
+      hasTouch: true,
+      isMobile: true,
+      viewport: { width: 390, height: 844 },
+    });
+
+    test("starts minimized and can be restored", async ({ page }) => {
+      const restoreButton = page.getByRole("button", {
+        name: "Restore control panel",
+      });
+
+      await expect(restoreButton).toBeVisible();
+      await expect(restoreButton).toHaveAttribute("aria-expanded", "false");
+      await expect(page.getByRole("tab", { name: "Elements" })).toBeHidden();
+      await expect(page.locator("[data-sand-brand-mark]")).toBeHidden();
+
+      const controlBar = await page
+        .locator("[data-sand-control-bar]")
+        .boundingBox();
+      const playbackControls = await page
+        .getByLabel("Playback controls")
+        .boundingBox();
+      const creationControls = await page
+        .getByLabel("Creation controls")
+        .boundingBox();
+      expect(controlBar?.x).toBeLessThan(10);
+      expect(controlBar?.width).toBeGreaterThan(370);
+      expect(controlBar?.height).toBeLessThan(50);
+      expect(playbackControls?.y).toBe(creationControls?.y);
+      expect(playbackControls?.width).toBeGreaterThan(180);
+      expect(creationControls?.width).toBeGreaterThan(180);
+
+      const minimizedToolbox = await page
+        .getByLabel("Sandbox tools")
+        .boundingBox();
+      expect(minimizedToolbox?.height).toBeLessThan(52);
+
+      await restoreButton.click();
+      await expect(page.getByRole("tab", { name: "Elements" })).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Minimize control panel" }),
+      ).toHaveAttribute("aria-expanded", "true");
+    });
   });
 });

@@ -51,6 +51,7 @@ import { DRAWABLE_MATERIALS, Material, type SandWorldStats } from "./engine";
 import styles from "./styles.module.css";
 
 const STORAGE_KEY = "random-webs:falling-sand:world";
+const MOBILE_VIEWPORT_QUERY = "(max-width: 720px)";
 
 const MATERIAL_ICONS: Record<Material, LucideIcon> = {
   [Material.EMPTY]: Eraser,
@@ -90,6 +91,16 @@ function getTouchCapabilitySnapshot() {
   );
 }
 
+function subscribeToMobileViewport(onStoreChange: () => void) {
+  const mediaQuery = window.matchMedia(MOBILE_VIEWPORT_QUERY);
+  mediaQuery.addEventListener("change", onStoreChange);
+  return () => mediaQuery.removeEventListener("change", onStoreChange);
+}
+
+function getMobileViewportSnapshot() {
+  return window.matchMedia(MOBILE_VIEWPORT_QUERY).matches;
+}
+
 function subscribeToLocation(onStoreChange: () => void) {
   window.addEventListener("hashchange", onStoreChange);
   window.addEventListener("popstate", onStoreChange);
@@ -102,6 +113,7 @@ function subscribeToLocation(onStoreChange: () => void) {
 const getShareUrlSnapshot = () => window.location.href;
 const getServerShareUrlSnapshot = () => "";
 const getServerTouchCapabilitySnapshot = () => false;
+const getServerMobileViewportSnapshot = () => false;
 
 type ToastState = {
   message: string;
@@ -152,7 +164,9 @@ export default function FallingSandPage() {
   const [speed, setSpeed] = useState(1);
   const [paused, setPaused] = useState(false);
   const [activeTab, setActiveTab] = useState<PanelTab>("elements");
-  const [panelMinimized, setPanelMinimized] = useState(false);
+  const [panelMinimizedOverride, setPanelMinimizedOverride] = useState<
+    boolean | null
+  >(null);
   const [ready, setReady] = useState(false);
   const [showCanvasHint, setShowCanvasHint] = useState(true);
   const [displayFrameRate, setDisplayFrameRate] = useState(false);
@@ -174,11 +188,17 @@ export default function FallingSandPage() {
     getTouchCapabilitySnapshot,
     getServerTouchCapabilitySnapshot,
   );
+  const isMobileViewport = useSyncExternalStore(
+    subscribeToMobileViewport,
+    getMobileViewportSnapshot,
+    getServerMobileViewportSnapshot,
+  );
   const shareUrl = useSyncExternalStore(
     subscribeToLocation,
     getShareUrlSnapshot,
     getServerShareUrlSnapshot,
   );
+  const panelMinimized = panelMinimizedOverride ?? isMobileViewport;
 
   const selectedMaterial =
     DRAWABLE_MATERIALS.find((item) => item.id === material) ??
@@ -346,96 +366,110 @@ export default function FallingSandPage() {
 
             <div className={styles.canvasChrome}>
               <div className={`${styles.brand} ${styles.glassSurface}`}>
-                <div className={styles.brandMark} aria-hidden="true">
+                <div
+                  className={styles.brandMark}
+                  aria-hidden="true"
+                  data-sand-brand-mark
+                >
                   <CircleDot size={19} strokeWidth={2.1} />
                 </div>
                 <h1>Falling Sand</h1>
               </div>
 
               <div
-                className={`${styles.playbackControls} ${styles.glassSurface}`}
-                aria-label="Playback controls"
+                className={`${styles.controlCluster} ${styles.glassSurface}`}
+                data-sand-control-bar
               >
-                <button
-                  type="button"
-                  onClick={() => setPaused((current) => !current)}
-                  aria-pressed={simulationPaused}
-                  title={
-                    simulationPaused ? "Resume simulation" : "Pause simulation"
-                  }
+                <div
+                  className={`${styles.playbackControls} ${styles.glassSurface}`}
+                  aria-label="Playback controls"
                 >
-                  {simulationPaused ? (
-                    <Play size={18} strokeWidth={2.1} />
-                  ) : (
-                    <Pause size={18} strokeWidth={2.1} />
-                  )}
-                  <span>{simulationPaused ? "Play" : "Pause"}</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaused((current) => !current)}
+                    aria-pressed={simulationPaused}
+                    title={
+                      simulationPaused
+                        ? "Resume simulation"
+                        : "Pause simulation"
+                    }
+                  >
+                    {simulationPaused ? (
+                      <Play size={18} strokeWidth={2.1} />
+                    ) : (
+                      <Pause size={18} strokeWidth={2.1} />
+                    )}
+                    <span>{simulationPaused ? "Play" : "Pause"}</span>
+                  </button>
 
-                <div className={styles.speedDock} aria-label="Simulation speed">
-                  <Gauge size={17} strokeWidth={2.2} aria-hidden="true" />
-                  {[0.5, 1, 2, 4].map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      className={
-                        speed === value ? styles.speedActive : undefined
-                      }
-                      onClick={() => setSpeed(value)}
-                      aria-pressed={speed === value}
-                      aria-label={`${value}× speed`}
-                    >
-                      {value}×
-                    </button>
-                  ))}
+                  <div
+                    className={styles.speedDock}
+                    aria-label="Simulation speed"
+                  >
+                    <Gauge size={17} strokeWidth={2.2} aria-hidden="true" />
+                    {[0.5, 1, 2, 4].map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={
+                          speed === value ? styles.speedActive : undefined
+                        }
+                        onClick={() => setSpeed(value)}
+                        aria-pressed={speed === value}
+                        aria-label={`${value}× speed`}
+                      >
+                        {value}×
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div
-                className={`${styles.actions} ${styles.glassSurface}`}
-                aria-label="Creation controls"
-              >
-                <button
-                  type="button"
-                  onClick={() => canvasHandle.current?.reset()}
-                  title="Reset demo"
+                <div
+                  className={`${styles.actions} ${styles.glassSurface}`}
+                  aria-label="Creation controls"
                 >
-                  <RotateCcw size={18} strokeWidth={2.1} />
-                  <span>Reset</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => canvasHandle.current?.clear()}
-                  title="Clear world"
-                >
-                  <Trash2 size={18} strokeWidth={2.1} />
-                  <span>Clear</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={saveCreation}
-                  title="Save creation"
-                >
-                  <Save size={18} strokeWidth={2.1} />
-                  <span>Save</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={loadCreation}
-                  title="Load creation"
-                >
-                  <FolderOpen size={18} strokeWidth={2.1} />
-                  <span>Load</span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.exportButton}
-                  onClick={exportCreation}
-                  title="Download PNG"
-                >
-                  <Camera size={18} strokeWidth={2.1} />
-                  <span>Download PNG</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => canvasHandle.current?.reset()}
+                    title="Reset demo"
+                  >
+                    <RotateCcw size={18} strokeWidth={2.1} />
+                    <span>Reset</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => canvasHandle.current?.clear()}
+                    title="Clear world"
+                  >
+                    <Trash2 size={18} strokeWidth={2.1} />
+                    <span>Clear</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={saveCreation}
+                    title="Save creation"
+                  >
+                    <Save size={18} strokeWidth={2.1} />
+                    <span>Save</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={loadCreation}
+                    title="Load creation"
+                  >
+                    <FolderOpen size={18} strokeWidth={2.1} />
+                    <span>Load</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.exportButton}
+                    onClick={exportCreation}
+                    title="Download PNG"
+                  >
+                    <Camera size={18} strokeWidth={2.1} />
+                    <span>Download PNG</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -489,7 +523,8 @@ export default function FallingSandPage() {
               <button
                 type="button"
                 onPointerDown={(event) => event.stopPropagation()}
-                onClick={() => setPanelMinimized((current) => !current)}
+                onClick={() => setPanelMinimizedOverride(!panelMinimized)}
+                aria-expanded={!panelMinimized}
                 aria-label={
                   panelMinimized
                     ? "Restore control panel"
