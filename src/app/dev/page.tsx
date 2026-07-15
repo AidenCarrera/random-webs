@@ -4,6 +4,9 @@ import { DeveloperGate } from "./DeveloperGate";
 
 export const metadata: Metadata = {
   title: "Developer Websites Index",
+  alternates: {
+    canonical: "/dev",
+  },
   robots: {
     index: false,
     follow: false,
