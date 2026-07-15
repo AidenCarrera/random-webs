@@ -72,7 +72,7 @@ export default function MagicEightBall() {
   };
 
   return (
-    <div
+    <main
       className={`${styles.root} min-h-screen bg-[#07070a] text-[#b4b4b8] flex flex-col items-center justify-center p-4 relative overflow-hidden font-serif select-none`}
       style={{
         backgroundImage:
@@ -179,6 +179,6 @@ export default function MagicEightBall() {
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }

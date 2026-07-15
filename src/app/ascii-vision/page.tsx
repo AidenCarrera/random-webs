@@ -182,7 +182,7 @@ export default function AsciiCamera() {
   };
 
   return (
-    <div
+    <main
       className={`${styles.root} ascii-shell min-h-screen bg-black font-mono flex flex-col items-center justify-center px-2 py-2 overflow-hidden select-none sm:p-4`}
       style={
         {
@@ -401,6 +401,6 @@ export default function AsciiCamera() {
           title="ASCII snapshot"
         />
       ) : null}
-    </div>
+    </main>
   );
 }

@@ -61,5 +61,9 @@ export default async function Page() {
     })
     .filter((alarm) => ALLOWED_ALARMS.has(alarm.name));
 
-  return <LofiPixelStudyClient initialTracks={tracks} initialAlarms={alarms} />;
+  return (
+    <main>
+      <LofiPixelStudyClient initialTracks={tracks} initialAlarms={alarms} />
+    </main>
+  );
 }

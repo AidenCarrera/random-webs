@@ -205,7 +205,7 @@ export default function MinimalMono() {
   };
 
   return (
-    <div
+    <main
       ref={containerRef}
       className="min-h-screen flex flex-col items-center justify-center font-mono relative overflow-hidden transition-colors will-change-[background]"
       style={{ background: "black" }}
@@ -300,6 +300,6 @@ export default function MinimalMono() {
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

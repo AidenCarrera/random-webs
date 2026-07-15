@@ -225,7 +225,7 @@ export default function MatrixRain() {
   };
 
   return (
-    <div
+    <main
       onPointerDown={advanceHacking}
       className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black px-4 pt-24 pb-36 font-mono touch-manipulation select-none md:px-6 md:pt-10 md:pb-24"
     >
@@ -336,6 +336,6 @@ export default function MatrixRain() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }

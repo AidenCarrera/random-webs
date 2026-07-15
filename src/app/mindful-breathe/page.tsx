@@ -81,7 +81,7 @@ export default function MindfulBreathePage() {
   }, [hasWelcomed, musicEnabled]);
 
   return (
-    <div
+    <main
       className={`min-h-screen w-full bg-linear-to-br ${palette.background} flex flex-col items-center justify-center py-10 px-6 transition-all duration-1000 relative overflow-hidden select-none`}
     >
       <audio
@@ -227,6 +227,6 @@ export default function MindfulBreathePage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

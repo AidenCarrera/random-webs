@@ -175,7 +175,7 @@ export default function StickyNotes() {
   };
 
   return (
-    <div
+    <main
       className="min-h-screen bg-[#dccbb4] relative overflow-hidden select-none"
       ref={constraintsRef}
       onMouseDown={(e) => {
@@ -288,7 +288,7 @@ export default function StickyNotes() {
             showIds={showIds}
           />
         ))}
-    </div>
+    </main>
   );
 }
 

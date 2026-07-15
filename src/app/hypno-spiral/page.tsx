@@ -377,7 +377,7 @@ export default function HypnoSpiral() {
   };
 
   return (
-    <div
+    <main
       className="fixed inset-0 overflow-hidden bg-black text-white select-none"
       style={{ touchAction: "none" }}
     >
@@ -529,6 +529,6 @@ export default function HypnoSpiral() {
           </div>
         </div>
       ) : null}
-    </div>
+    </main>
   );
 }

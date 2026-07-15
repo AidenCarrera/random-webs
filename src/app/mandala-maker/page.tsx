@@ -332,7 +332,7 @@ export default function MandalaMaker() {
   };
 
   return (
-    <div
+    <main
       className={`${styles.root} mandala-page relative flex h-dvh w-full items-center justify-center overflow-hidden bg-neutral-950 font-sans`}
     >
       <canvas
@@ -577,6 +577,6 @@ export default function MandalaMaker() {
           title="Mandala snapshot"
         />
       ) : null}
-    </div>
+    </main>
   );
 }

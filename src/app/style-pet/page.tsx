@@ -821,7 +821,7 @@ export default function StylePet() {
   ];
 
   return (
-    <div
+    <main
       className="relative flex min-h-dvh select-none flex-col items-center justify-center overflow-hidden p-4 font-mono text-zinc-300 transition-colors duration-300 sm:p-6"
       style={{ backgroundColor: BACKGROUND_COLORS[backgroundColor] }}
     >
@@ -1759,6 +1759,6 @@ export default function StylePet() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

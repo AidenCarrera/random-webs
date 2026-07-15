@@ -153,7 +153,7 @@ export default function EncodedMessage() {
       : "STATUS: ?????";
 
   return (
-    <div className="min-h-screen bg-[#111] text-white flex flex-col items-center justify-start gap-8 p-8 overflow-y-auto pt-16">
+    <main className="min-h-screen bg-[#111] text-white flex flex-col items-center justify-start gap-8 p-8 overflow-y-auto pt-16">
       <div className="flex flex-col gap-0 text-center shrink-0">
         <p className="text-gray-500 font-mono text-sm mb-8">HOVER TO DECRYPT</p>
         <ScrambleText
@@ -192,6 +192,6 @@ export default function EncodedMessage() {
         />
         <ScrambleText text={statusText} className="text-xl text-blue-500" />
       </div>
-    </div>
+    </main>
   );
 }

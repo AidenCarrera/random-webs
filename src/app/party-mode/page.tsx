@@ -60,7 +60,7 @@ export default function PartyMode() {
   };
 
   return (
-    <div
+    <main
       className={`${styles.root} min-h-screen bg-linear-to-t from-yellow-300 to-orange-400 flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ${
         isPartying ? "animate-party-bg" : ""
       }`}
@@ -119,6 +119,6 @@ export default function PartyMode() {
       <p className="mt-8 text-white font-bold opacity-80 animate-bounce">
         Click for a party!
       </p>
-    </div>
+    </main>
   );
 }

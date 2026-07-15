@@ -156,7 +156,7 @@ export default function ParticleCollider() {
   };
 
   return (
-    <div
+    <main
       className={`${styles.root} relative min-h-screen overflow-hidden bg-[#0a0a14] cursor-crosshair select-none touch-none`}
     >
       <canvas
@@ -243,6 +243,6 @@ export default function ParticleCollider() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

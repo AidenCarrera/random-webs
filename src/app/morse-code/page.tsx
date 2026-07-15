@@ -48,7 +48,7 @@ export default function MorseTelegraph() {
   } = useTelegraph();
 
   return (
-    <div
+    <main
       className={`min-h-screen bg-[#2a2320] text-[#d4b483] ${courierPrime.className} flex flex-col lg:flex-row items-center justify-center gap-8 p-4 lg:p-12 relative`}
     >
       <div className="max-w-3xl w-full bg-[#1e1815] border-8 border-[#8b5a2b] p-8 rounded-lg shadow-[0_0_50px_rgba(0,0,0,0.8)] relative overflow-hidden flex flex-col gap-8">
@@ -186,6 +186,6 @@ export default function MorseTelegraph() {
       {showCheatSheet && (
         <CheatSheet onClose={() => setShowCheatSheet(false)} />
       )}
-    </div>
+    </main>
   );
 }

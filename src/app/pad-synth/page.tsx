@@ -272,7 +272,7 @@ export default function PadSynth() {
   };
 
   return (
-    <div
+    <main
       className={`${styles.root} min-h-screen bg-[#e0e5ec] text-slate-600 font-sans flex items-center justify-center p-3 sm:p-6 select-none transition-opacity duration-150 ${
         stylesReady ? "opacity-100" : "opacity-0"
       }`}
@@ -481,6 +481,6 @@ export default function PadSynth() {
           })}
         </div>
       </div>
-    </div>
+    </main>
   );
 }

@@ -1,5 +1,9 @@
 import { ZenGardenClient } from "./components/ZenGardenClient";
 
 export default function ZenGardenPage() {
-  return <ZenGardenClient />;
+  return (
+    <main>
+      <ZenGardenClient />
+    </main>
+  );
 }

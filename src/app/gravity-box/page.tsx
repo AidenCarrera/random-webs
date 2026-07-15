@@ -454,7 +454,7 @@ export default function GravityBox() {
     toolbarHeight,
   );
   return (
-    <div
+    <main
       ref={sceneRef}
       className={`${styles.root} fixed inset-0 overflow-hidden bg-[#0f172a] text-white`}
       style={{ backgroundColor: "#0f172a" }}
@@ -597,6 +597,6 @@ export default function GravityBox() {
           />
         </div>
       </div>
-    </div>
+    </main>
   );
 }

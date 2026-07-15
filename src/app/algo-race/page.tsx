@@ -435,7 +435,7 @@ export default function AlgoRacePage() {
   const raceComplete = orderedStats.length === SORT_NAMES.length;
 
   return (
-    <div className="min-h-screen bg-[#f0f2f5] px-2 py-2 text-[#333] sm:px-3 sm:py-3 md:h-screen md:overflow-hidden md:px-8 xl:px-16">
+    <main className="min-h-screen bg-[#f0f2f5] px-2 py-2 text-[#333] sm:px-3 sm:py-3 md:h-screen md:overflow-hidden md:px-8 xl:px-16">
       <div className="mx-auto flex h-full max-w-360 flex-col gap-3 md:gap-4">
         <header className="flex flex-col gap-2 border-b-2 border-slate-300 pb-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="text-center sm:text-left">
@@ -594,7 +594,7 @@ export default function AlgoRacePage() {
           </section>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 

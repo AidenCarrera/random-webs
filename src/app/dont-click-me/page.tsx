@@ -263,7 +263,7 @@ export default function DontClickMe() {
   const isYielding = phase === "yielding";
 
   return (
-    <div
+    <main
       ref={containerRef}
       className="relative flex h-dvh select-none flex-col items-center justify-center overflow-hidden bg-black text-white"
     >
@@ -325,6 +325,6 @@ export default function DontClickMe() {
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
