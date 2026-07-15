@@ -83,10 +83,13 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative mx-auto flex min-h-screen max-w-7xl items-start px-6 pb-20 sm:px-8 lg:px-12">
+      <section className="relative mx-auto flex min-h-screen max-w-7xl items-start px-3 pb-20 sm:px-8 lg:px-12">
         <div className="relative w-full pt-8">
-          <div className="relative rounded-4xl border border-white/6 bg-white/1.5 p-4 shadow-[0_12px_28px_rgba(0,0,0,0.2)]">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="relative rounded-4xl border border-white/6 bg-white/1.5 p-2 shadow-[0_12px_28px_rgba(0,0,0,0.2)] sm:p-4">
+            <div
+              className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4"
+              data-website-grid
+            >
               {WEBSITES.map((website, index) => {
                 const isRevealed =
                   isMounted && revealedWebsites.includes(website.path);
@@ -94,19 +97,19 @@ export default function Home() {
                   isMounted && revealedWebsites.includes(website.path);
 
                 const cardClassName = isRevealedClient
-                  ? "group relative overflow-hidden rounded-[1.6rem] border border-white/8 bg-zinc-950 p-4 text-left text-zinc-100 shadow-[0_8px_18px_rgba(0,0,0,0.22)] transition-colors duration-300"
-                  : "relative overflow-hidden rounded-[1.6rem] border border-white/7 bg-black p-4 text-left text-white/90 shadow-[0_8px_18px_rgba(0,0,0,0.2)]";
+                  ? "group relative overflow-hidden rounded-[1.25rem] border border-white/8 bg-zinc-950 p-2 text-left text-zinc-100 shadow-[0_8px_18px_rgba(0,0,0,0.22)] transition-colors duration-300 sm:rounded-[1.6rem] sm:p-4"
+                  : "relative overflow-hidden rounded-[1.25rem] border border-white/7 bg-black p-2 text-left text-white/90 shadow-[0_8px_18px_rgba(0,0,0,0.2)] sm:rounded-[1.6rem] sm:p-4";
                 const innerClassName = isRevealedClient
-                  ? "relative min-h-32 rounded-[1.2rem] bg-zinc-950 p-4"
-                  : "relative min-h-32 rounded-[1.2rem] bg-black p-4";
+                  ? "relative min-h-28 rounded-[0.95rem] bg-zinc-950 p-2.5 sm:min-h-32 sm:rounded-[1.2rem] sm:p-4"
+                  : "relative min-h-28 rounded-[0.95rem] bg-black p-2.5 sm:min-h-32 sm:rounded-[1.2rem] sm:p-4";
 
                 const cardContent = (
                   <div className={innerClassName}>
                     <h2
                       className={
                         isRevealedClient
-                          ? "text-xl font-black uppercase tracking-[0.08em] text-zinc-100"
-                          : "text-xl font-black uppercase tracking-[0.22em] text-white/95"
+                          ? "text-sm font-black uppercase tracking-[0.04em] text-zinc-100 sm:text-xl sm:tracking-[0.08em]"
+                          : "text-sm font-black uppercase tracking-[0.1em] text-white/95 sm:text-xl sm:tracking-[0.22em]"
                       }
                     >
                       {isRevealed ? website.title : maskText(website.title)}
@@ -114,8 +117,8 @@ export default function Home() {
                     <p
                       className={
                         isRevealed
-                          ? "mt-3 max-w-56 text-sm leading-6 text-zinc-400"
-                          : "mt-3 max-w-56 text-sm leading-6 text-white/55"
+                          ? "mt-2 max-w-56 text-xs leading-5 text-zinc-400 sm:mt-3 sm:text-sm sm:leading-6"
+                          : "mt-2 max-w-56 text-xs leading-5 text-white/55 sm:mt-3 sm:text-sm sm:leading-6"
                       }
                     >
                       {isRevealed ? website.blurb : maskText(website.blurb)}

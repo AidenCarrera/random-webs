@@ -2,7 +2,10 @@ import { expect, test } from "@playwright/test";
 
 import { WEBSITES } from "../src/lib/websites.ts";
 
-test.use({ javaScriptEnabled: false });
+test.use({
+  javaScriptEnabled: false,
+  viewport: { width: 390, height: 844 },
+});
 
 test("home page server render masks website names and descriptions", async ({
   page,
@@ -18,4 +21,11 @@ test("home page server render masks website names and descriptions", async ({
   await expect(page.locator("h2").first().locator("~ p")).toHaveText(
     maskedBlurb,
   );
+
+  const mobileColumnCount = await page
+    .locator("[data-website-grid]")
+    .evaluate(
+      (grid) => getComputedStyle(grid).gridTemplateColumns.split(" ").length,
+    );
+  expect(mobileColumnCount).toBe(2);
 });
