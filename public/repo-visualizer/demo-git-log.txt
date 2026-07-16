@@ -1,4 +1,4 @@
-﻿commit f483c1528faae3c3c842fd83af581d16f6f875d5
+commit f483c1528faae3c3c842fd83af581d16f6f875d5
 Author: Aiden Carrera <aiden.carrera05@gmail.com>
 Date:   2025-12-11T00:39:32-06:00
 
@@ -749,7 +749,7 @@ Date:   2026-07-04T15:42:15-05:00
 
     Expand tarot cards with detailed reveal modal
     
-    Replaces the simplified tarot dataset with full card interpretations and adds per-card metadata (element, astrology, symbols) to support deeper readings. The card UI now includes a Details action that opens a styled modal overlay showing each cardΓÇÖs short meaning, full mystical interpretation, and symbolic breakdown, along with spacing and layout refinements for the page header/cards and cleanup of unused icon usage.
+    Replaces the simplified tarot dataset with full card interpretations and adds per-card metadata (element, astrology, symbols) to support deeper readings. The card UI now includes a Details action that opens a styled modal overlay showing each card’s short meaning, full mystical interpretation, and symbolic breakdown, along with spacing and layout refinements for the page header/cards and cleanup of unused icon usage.
 
 339	37	src/app/arcana-tarot/page.tsx
 
@@ -902,7 +902,7 @@ Date:   2026-07-05T16:32:26-05:00
 38	10	src/app/sticky-notes/page.tsx
 18	7	src/app/text-scramble/page.tsx
 
-commit 5682052812cb78c0b39d89a6a14eae4d2506c5a7
+commit 5682052812cb78c0b39d89a6a14eae4d2506c5a7 (origin/fix)
 Author: Aiden Carrera <aiden.carrera05@gmail.com>
 Date:   2026-07-05T17:08:44-05:00
 
@@ -931,7 +931,7 @@ Date:   2026-07-06T18:57:43-05:00
 
     Add Fractal Explorer page and route
     
-    Introduce a new interactive Fractal Explorer at src/app/fractal-explorer/page.tsx. Implements a progressive CPU renderer (fast preview ΓåÆ striped full-res), Mandelbrot/Julia modes, mini Julia preview, palettes, landmarks fly-to, zoom/pan interactions, settings UI, export PNG, and an optional Tone.js-based audio sonification engine (loaded dynamically to avoid SSR issues). Also updates src/app/page.tsx to expose the new "/fractal-explorer" route.
+    Introduce a new interactive Fractal Explorer at src/app/fractal-explorer/page.tsx. Implements a progressive CPU renderer (fast preview → striped full-res), Mandelbrot/Julia modes, mini Julia preview, palettes, landmarks fly-to, zoom/pan interactions, settings UI, export PNG, and an optional Tone.js-based audio sonification engine (loaded dynamically to avoid SSR issues). Also updates src/app/page.tsx to expose the new "/fractal-explorer" route.
 
 1654	0	src/app/fractal-explorer/page.tsx
 3	0	src/app/page.tsx
@@ -1183,7 +1183,7 @@ Date:   2026-07-07T14:19:34-05:00
 
     Add timer alarms, settings, and UI updates
     
-    Move caf├⌐ backgrounds into backgrounds/ and add two alarm MP3s. Load music and alarm files in page.tsx and pass initialAlarms to the client. LofiPixelStudyClient now supports alarm selection, preview, and plays the chosen alarm when the timer finishes. Persist user preferences (background, volume, toggles, selected alarm, timer) to localStorage. Add a Settings panel (retro filter, vignette, scene preview, timer chime, minimized timer display) plus responsive and layout tweaks (portrait scaling, UI rearrangements) and minor refactors (remove unused useRouter).
+    Move café backgrounds into backgrounds/ and add two alarm MP3s. Load music and alarm files in page.tsx and pass initialAlarms to the client. LofiPixelStudyClient now supports alarm selection, preview, and plays the chosen alarm when the timer finishes. Persist user preferences (background, volume, toggles, selected alarm, timer) to localStorage. Add a Settings panel (retro filter, vignette, scene preview, timer chime, minimized timer display) plus responsive and layout tweaks (portrait scaling, UI rearrangements) and minor refactors (remove unused useRouter).
 
 -	-	public/lofi-pixel-study/alarms/Bedside Clock.mp3
 -	-	public/lofi-pixel-study/alarms/Beep Alarm.mp3
@@ -1545,7 +1545,7 @@ Date:   2026-07-09T20:26:50-05:00
 59	1	src/app/solar-system/page.tsx
  create mode 100644 src/app/solar-system/ThreeSolarSystem.tsx
 
-commit bb3f26bdd103d2bfb73763ea4bb294c8879c111c
+commit bb3f26bdd103d2bfb73763ea4bb294c8879c111c (origin/solar-system)
 Author: Aiden Carrera <aiden.carrera05@gmail.com>
 Date:   2026-07-09T20:41:30-05:00
 
@@ -1565,3 +1565,1782 @@ Date:   2026-07-09T20:56:25-05:00
 
 51	10	src/app/solar-system/ThreeSolarSystem.tsx
 239	192	src/app/solar-system/page.tsx
+
+commit df063436f900b7212d79ad4d62a82e105734af89
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T23:23:12-05:00
+
+    Add repository visualizer
+    
+    Adds a new `/repo-visualizer` experience with GitHub and local log loading, an animated commit graph, timeline playback controls, and repo stats/legend panels. Also updates the developer gate UI and registers the new route in the shared website list.
+
+1567	0	public/repo-visualizer/demo-git-log.txt
+16	20	src/app/dev/DeveloperGate.tsx
+75	0	src/app/repo-visualizer/components/CommitOverlay.tsx
+757	0	src/app/repo-visualizer/components/GraphCanvas.tsx
+53	0	src/app/repo-visualizer/components/Header.tsx
+126	0	src/app/repo-visualizer/components/Legend.tsx
+202	0	src/app/repo-visualizer/components/RepoLoader.tsx
+165	0	src/app/repo-visualizer/components/Toolbar.tsx
+345	0	src/app/repo-visualizer/constants.ts
+261	0	src/app/repo-visualizer/hooks/useGithubLoader.ts
+277	0	src/app/repo-visualizer/hooks/useGraphEngine.ts
+327	0	src/app/repo-visualizer/page.tsx
+148	0	src/app/repo-visualizer/types.ts
+330	0	src/app/repo-visualizer/utils/common.ts
+100	0	src/app/repo-visualizer/utils/github.ts
+232	0	src/app/repo-visualizer/utils/graph.ts
+6	0	src/lib/websites.ts
+ create mode 100644 public/repo-visualizer/demo-git-log.txt
+ create mode 100644 src/app/repo-visualizer/components/CommitOverlay.tsx
+ create mode 100644 src/app/repo-visualizer/components/GraphCanvas.tsx
+ create mode 100644 src/app/repo-visualizer/components/Header.tsx
+ create mode 100644 src/app/repo-visualizer/components/Legend.tsx
+ create mode 100644 src/app/repo-visualizer/components/RepoLoader.tsx
+ create mode 100644 src/app/repo-visualizer/components/Toolbar.tsx
+ create mode 100644 src/app/repo-visualizer/constants.ts
+ create mode 100644 src/app/repo-visualizer/hooks/useGithubLoader.ts
+ create mode 100644 src/app/repo-visualizer/hooks/useGraphEngine.ts
+ create mode 100644 src/app/repo-visualizer/page.tsx
+ create mode 100644 src/app/repo-visualizer/types.ts
+ create mode 100644 src/app/repo-visualizer/utils/common.ts
+ create mode 100644 src/app/repo-visualizer/utils/github.ts
+ create mode 100644 src/app/repo-visualizer/utils/graph.ts
+
+commit 75bfadd87322e04a6c87c64256ef90828aff65d7
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-09T23:37:31-05:00
+
+    Add pinch-to-zoom and responsive UI tweaks
+    
+    Add multi-touch pinch-to-zoom handling to GraphCanvas (track touch points, compute midpoint, adjust camera zoom/position, clamp zoom). Improve initial zoom on portrait phones in useGraphEngine. Adjust Toolbar and repo visualizer layout classes for better responsive behavior (wrapping, reordered speed buttons, hide zoom controls on small screens, scrollbar tweaks) and tweak sidebar toggle positioning. Add dynamic height for the solar-system viewport on mobile to keep correct layout.
+
+55	0	src/app/repo-visualizer/components/GraphCanvas.tsx
+3	3	src/app/repo-visualizer/components/Toolbar.tsx
+3	1	src/app/repo-visualizer/hooks/useGraphEngine.ts
+4	4	src/app/repo-visualizer/page.tsx
+8	1	src/app/solar-system/page.tsx
+
+commit e8f58688380bff6f35d0d68dcceaef2389641638
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T00:05:04-05:00
+
+    Refactor emoji rain UI and animation logic
+    
+    Reorganized the page into typed, reusable pieces by introducing shared constants, utility helpers, a memoized range control, and a dedicated `useCanvasRain` hook for canvas rendering. This simplifies state flow, improves readability, and keeps animation settings in sync without extra render churn.
+    
+    The update also streamlines category selection/hold-to-mix behavior, unifies rainbow/theme styling decisions, and modernizes layout markup for the controls/header while preserving the existing emoji rain experience.
+
+386	463	src/app/emoji-rain/page.tsx
+
+commit 1fa80641b8d5f94392acaf104bc5ead6b6e772db
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T00:14:47-05:00
+
+    Refactor evasive button behavior and rendering
+    
+    Reworked `dont-click-me` page logic into clearer, reusable helpers with centralized config, clamped movement bounds, pointer-based proximity detection, cooldown handling, and explicit yield timer cleanup. Also optimized static-canvas drawing reuse, tightened style/class consistency, added `type="button"`, and updated button copy/styling to match the yielding state logic.
+
+242	129	src/app/dont-click-me/page.tsx
+
+commit 51a6853a7eeea4f5bba014085ada59a888eb1a25 (origin/refactor, refactor)
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T00:19:29-05:00
+
+    Refactor click speed test into typed components
+    
+    Reworked the page into smaller reusable UI components and introduced stronger typing for durations, records, milestones, and saved progress. The update also centralizes constants/config, improves localStorage hydration/persistence flow, and tightens run lifecycle logic (start/reset/end handling, CPS computation, pace reconciliation, and history rendering) while keeping the existing feature set intact.
+
+417	433	src/app/click-speed-test/page.tsx
+
+commit 30bfd2671e542bd87aed49d50c2e6f61c0b8f35b
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T03:30:11-05:00
+
+    Refactor audio, visualizers, and UI polish
+    
+    Refactor the polyrhythm visualizer for better audio stability, timing reliability, code organization, and visual quality. Improve playback lifecycle handling to prevent pops and race conditions, modernize the UI and shared utilities, and refine Three.js rendering, resizing, animation, and resource cleanup.
+
+576	614	src/app/polyrhythm-visualizer/page.tsx
+
+commit 69cafd65413904417444bc75a358532ee92390f0
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T03:48:40-05:00
+
+    Add interactive lava lamp page
+    
+    Introduce a new client-side lava lamp page at src/app/lava-lamp/page.tsx. Implements a canvas-based animated lava lamp with physics-driven blobs, multiple presets (ember, lagoon, orchid, honey), color pickers, pause/reset/fullscreen controls, pointer interaction (drag/heating), and responsive styling. Uses an offscreen buffer for efficient lava rendering, utility color/geometry helpers, and accessible controls.
+
+1339	0	src/app/lava-lamp/page.tsx
+6	0	src/lib/websites.ts
+ create mode 100644 src/app/lava-lamp/page.tsx
+
+commit 87ce447fd2ecf2ebd80bea3b1b88852721daf91f
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T03:50:10-05:00
+
+    Use h-13/w-13 utilities for button sizing
+    
+    Replace hard-coded h-[3.25rem]/w-[3.25rem] and px-[1.125rem] Tailwind classes with h-13, w-13 and px-4.5 for controls in src/app/gravity-box/page.tsx. Updates add/remove/throw/shake buttons to use consistent utility sizes and simplify classnames for responsiveness.
+
+4	4	src/app/gravity-box/page.tsx
+
+commit 5920b9670457583292e52d98aa9c979832f7d5c0
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T04:07:21-05:00
+
+    Refine lava lamp color handling
+    
+    Separate the lamp's visual colors from its physics preset so custom bubble/liquid colors no longer affect blob behavior. The page now derives background tones from the selected colors, keeps physics state stable per preset, adjusts blob counts when presets change, and updates the color controls and glow rendering to match the new model.
+
+128	77	src/app/lava-lamp/page.tsx
+
+commit f23d5bc4b2610b00befc392374df905408a65caa
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T04:34:04-05:00
+
+    Migrate to Tailwind CSS and improve landscape mobile
+    
+    Convert styling from CSS to Tailwind utility classes for better maintainability. Improve responsive design by detecting landscape mobile (width > height && height < 500) and adjusting padding accordingly. Move background gradient into inline styles via pageStyle memo. Remove hardcoded canvas style assignments and simplify responsive breakpoints.
+
+67	231	src/app/lava-lamp/page.tsx
+
+commit 17d67e46e92d8c47190862714a1769982ae001c9
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T04:37:06-05:00
+
+    Format repo visualizer JSX and normalize minus
+    
+    Reformat src/app/repo-visualizer/page.tsx for readability (multi-line imports, JSX wrapping, aria/title formatting) and replace Unicode minus (−) with ASCII hyphen (-) in deletion counts and keyboard hint to avoid rendering/inconsistency issues.
+
+37	8	src/app/repo-visualizer/page.tsx
+
+commit c9d43822f508958826aeab069db09c645657174b
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T04:38:41-05:00
+
+    Add Google site verification file
+    
+    Add public/googleff47323238421f88.html containing the Google site verification token to enable ownership verification for the site.
+
+1	0	public/googleff47323238421f88.html
+ create mode 100644 public/googleff47323238421f88.html
+
+commit 1a7726b19b1c5c3fe6f270761b01a464c95baac9
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T05:09:10-05:00
+
+    Add Morse telegraph hook, lib, and cheat sheet
+    
+    Introduce a complete Morse telegraph feature: add src/app/morse-code/lib/morse.ts (MORSE_CODE and REVERSE_MORSE_CODE), src/app/morse-code/hooks/useTelegraph.ts (audio, transmit, manual tap decoding using Tone.js) and src/app/morse-code/components/CheatSheet.tsx (UI reference). Refactor page.tsx to use the new hook and component, improve UI/fonts, add Clear button, toggleable cheat sheet, transmit/stop controls, and visual/audio feedback (light bulb and synth).
+
+62	0	src/app/morse-code/components/CheatSheet.tsx
+139	0	src/app/morse-code/hooks/useTelegraph.ts
+44	0	src/app/morse-code/lib/morse.ts
+54	283	src/app/morse-code/page.tsx
+ create mode 100644 src/app/morse-code/components/CheatSheet.tsx
+ create mode 100644 src/app/morse-code/hooks/useTelegraph.ts
+ create mode 100644 src/app/morse-code/lib/morse.ts
+
+commit f8a3c65136a4dce5e5b7b4bfceec45a598aba19b
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T05:23:05-05:00
+
+    Use timestamps for click tracking and pacing
+    
+    Replace numeric click counters with timestamp-based tracking to compute per-second pace more reliably. Add startTimeRef and clickTimestampsRef, bucket click timestamps per second to build paceData, and persist that into history and result logic. Update scaleValues to accept undefined/null and handle empty input. Reset timestamps and startTime on clear, set startTime when starting a test, and push timestamps on clicks. Minor UI tweak: add shrink-0 to the main button and show the previous run while a test is active.
+
+49	39	src/app/click-speed-test/page.tsx
+
+commit b58037ab1fbe3b57bb39e7ad3b975c94782bdc1c
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T12:54:27-05:00
+
+    Tighten lava lamp control layout
+    
+    Adjust the lava lamp page’s stage and control bar sizing for a slightly denser layout, including narrower stage width, smaller button padding, and updated color/icon control dimensions.
+
+9	9	src/app/lava-lamp/page.tsx
+
+commit 21b3bd254b641455d08c58c124ece5e6a78506a5
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T16:31:44-05:00
+
+    Add multi-kit sampling and 808 piano roll
+    
+    Add runtime-discovered 808, EDM, House, and Trap sample packs with global and per-track kit selection. Introduce sample-based playback, a dedicated bass channel with 808 or synth fallback, and an interactive bass piano roll integrated with sequencing and presets. Also rename the rim track to perc, include bass in the mixer, add right-click step erasing, and normalize default track volumes.
+
+-	-	public/beat-maker/808/808.wav
+-	-	public/beat-maker/808/clap.wav
+-	-	public/beat-maker/808/cowbell.wav
+-	-	public/beat-maker/808/cy7500.wav
+-	-	public/beat-maker/808/hi-hat.wav
+-	-	public/beat-maker/808/kick.wav
+-	-	public/beat-maker/808/open-hat.wav
+-	-	public/beat-maker/808/perc.wav
+-	-	public/beat-maker/808/ride.wav
+-	-	public/beat-maker/808/snare.wav
+-	-	public/beat-maker/EDM/808.wav
+-	-	public/beat-maker/EDM/clap.wav
+-	-	public/beat-maker/EDM/cowbell.wav
+-	-	public/beat-maker/EDM/hi-hat.wav
+-	-	public/beat-maker/EDM/kick.wav
+-	-	public/beat-maker/EDM/open-hat.wav
+-	-	public/beat-maker/EDM/perc.wav
+-	-	public/beat-maker/EDM/ride.wav
+-	-	public/beat-maker/EDM/snare.wav
+-	-	public/beat-maker/House/808.wav
+-	-	public/beat-maker/House/clap.wav
+-	-	public/beat-maker/House/cowbell.wav
+-	-	public/beat-maker/House/hi-hat.wav
+-	-	public/beat-maker/House/kick.wav
+-	-	public/beat-maker/House/open-hat.wav
+-	-	public/beat-maker/House/perc.wav
+-	-	public/beat-maker/House/ride.wav
+-	-	public/beat-maker/House/snare.wav
+-	-	public/beat-maker/Trap/808.wav
+-	-	public/beat-maker/Trap/clap.wav
+-	-	public/beat-maker/Trap/cowbell.wav
+-	-	public/beat-maker/Trap/hi-hat.wav
+-	-	public/beat-maker/Trap/kick.wav
+-	-	public/beat-maker/Trap/open-hat.wav
+-	-	public/beat-maker/Trap/perc.wav
+-	-	public/beat-maker/Trap/ride.wav
+-	-	public/beat-maker/Trap/snare.wav
+50	0	src/app/api/beat-maker/kits/route.ts
+736	67	src/app/beat-maker/page.tsx
+54	11	src/app/beat-maker/presets.ts
+ create mode 100644 public/beat-maker/808/808.wav
+ create mode 100644 public/beat-maker/808/clap.wav
+ create mode 100644 public/beat-maker/808/cowbell.wav
+ create mode 100644 public/beat-maker/808/cy7500.wav
+ create mode 100644 public/beat-maker/808/hi-hat.wav
+ create mode 100644 public/beat-maker/808/kick.wav
+ create mode 100644 public/beat-maker/808/open-hat.wav
+ create mode 100644 public/beat-maker/808/perc.wav
+ create mode 100644 public/beat-maker/808/ride.wav
+ create mode 100644 public/beat-maker/808/snare.wav
+ create mode 100644 public/beat-maker/EDM/808.wav
+ create mode 100644 public/beat-maker/EDM/clap.wav
+ create mode 100644 public/beat-maker/EDM/cowbell.wav
+ create mode 100644 public/beat-maker/EDM/hi-hat.wav
+ create mode 100644 public/beat-maker/EDM/kick.wav
+ create mode 100644 public/beat-maker/EDM/open-hat.wav
+ create mode 100644 public/beat-maker/EDM/perc.wav
+ create mode 100644 public/beat-maker/EDM/ride.wav
+ create mode 100644 public/beat-maker/EDM/snare.wav
+ create mode 100644 public/beat-maker/House/808.wav
+ create mode 100644 public/beat-maker/House/clap.wav
+ create mode 100644 public/beat-maker/House/cowbell.wav
+ create mode 100644 public/beat-maker/House/hi-hat.wav
+ create mode 100644 public/beat-maker/House/kick.wav
+ create mode 100644 public/beat-maker/House/open-hat.wav
+ create mode 100644 public/beat-maker/House/perc.wav
+ create mode 100644 public/beat-maker/House/ride.wav
+ create mode 100644 public/beat-maker/House/snare.wav
+ create mode 100644 public/beat-maker/Trap/808.wav
+ create mode 100644 public/beat-maker/Trap/clap.wav
+ create mode 100644 public/beat-maker/Trap/cowbell.wav
+ create mode 100644 public/beat-maker/Trap/hi-hat.wav
+ create mode 100644 public/beat-maker/Trap/kick.wav
+ create mode 100644 public/beat-maker/Trap/open-hat.wav
+ create mode 100644 public/beat-maker/Trap/perc.wav
+ create mode 100644 public/beat-maker/Trap/ride.wav
+ create mode 100644 public/beat-maker/Trap/snare.wav
+ create mode 100644 src/app/api/beat-maker/kits/route.ts
+
+commit 095a731ef818a2be0aed9949d2534b1c0d11baac
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T16:51:22-05:00
+
+    Use Tone.Context in AudioEngine with async init
+    
+    Move from global Tone usage to a context-backed AudioEngine: add mount/init/initialize/dispose lifecycle, generation guarding, and context-aware node creation (Channels, Meters, Players, Synths, Filters). Add bass distortion, context-driven transport helpers (setTempo, setSwing, createSequence, scheduleDraw, now, toggleTransport) and avoid concurrent transport toggles. Update BeatMaker to hold an engine ref, mount/init/dispose the engine, resume context instead of Tone.start, improve keyboard handling, and add a preview callback to BassPianoRoll (used on double-click).
+
+198	72	src/app/beat-maker/page.tsx
+
+commit 6ab1548d8ab92f0dd2e3e5f2bb860c9a0610bfbe
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T18:00:19-05:00
+
+    Add beat-maker studio and audio engine
+    
+    Introduce a full Studio 808 feature set: add modular UI components (StudioToolbar, SequencerGrid, BassPianoRoll, Mixer, MixerChannelStrip, VerticalFader, BeatMakerStudio), a controller hook (use-beat-maker-controller), Tone.js-based AudioEngine, constants and types. Refactors page.tsx to render BeatMakerStudio. Adds sample kit loading, transport/sequence handling, mixer meters, bass sequencing, track/preset management and touch/drag interactions. Also includes a small preset tweak (kick pattern correction) in presets.ts. This splits the previous monolithic page into reusable parts and centralizes audio/state logic.
+
+262	0	src/app/beat-maker/components/bass-piano-roll.tsx
+84	0	src/app/beat-maker/components/beat-maker-studio.tsx
+147	0	src/app/beat-maker/components/mixer-channel-strip.tsx
+133	0	src/app/beat-maker/components/mixer.tsx
+180	0	src/app/beat-maker/components/sequencer-grid.tsx
+224	0	src/app/beat-maker/components/studio-toolbar.tsx
+53	0	src/app/beat-maker/components/vertical-fader.tsx
+155	0	src/app/beat-maker/constants.ts
+495	0	src/app/beat-maker/hooks/use-beat-maker-controller.ts
+573	0	src/app/beat-maker/lib/audio-engine.ts
+3	1881	src/app/beat-maker/page.tsx
+1	1	src/app/beat-maker/presets.ts
+24	0	src/app/beat-maker/types.ts
+ create mode 100644 src/app/beat-maker/components/bass-piano-roll.tsx
+ create mode 100644 src/app/beat-maker/components/beat-maker-studio.tsx
+ create mode 100644 src/app/beat-maker/components/mixer-channel-strip.tsx
+ create mode 100644 src/app/beat-maker/components/mixer.tsx
+ create mode 100644 src/app/beat-maker/components/sequencer-grid.tsx
+ create mode 100644 src/app/beat-maker/components/studio-toolbar.tsx
+ create mode 100644 src/app/beat-maker/components/vertical-fader.tsx
+ create mode 100644 src/app/beat-maker/constants.ts
+ create mode 100644 src/app/beat-maker/hooks/use-beat-maker-controller.ts
+ create mode 100644 src/app/beat-maker/lib/audio-engine.ts
+ create mode 100644 src/app/beat-maker/types.ts
+
+commit 841697bca337651600d998eb1b82b044d9f01b0c
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T18:43:16-05:00
+
+    Add SEO metadata and layout files for all routes
+    
+    Generate metadata-rich layout.tsx files for all website routes with OpenGraph, Twitter cards, and canonical URLs. Add robots.txt and sitemap generation for improved search engine indexing. Centralize site URL configuration and fix hydration issue on home page.
+
+2	1	package.json
+212	0	scripts/generate-layouts.ts
+35	0	src/app/algo-race/layout.tsx
+35	0	src/app/arcana-tarot/layout.tsx
+35	0	src/app/ascii-vision/layout.tsx
+35	0	src/app/beat-maker/layout.tsx
+35	0	src/app/click-speed-test/layout.tsx
+35	0	src/app/dont-click-me/layout.tsx
+35	0	src/app/emoji-rain/layout.tsx
+35	0	src/app/focus-timer/layout.tsx
+35	0	src/app/fractal-explorer/layout.tsx
+35	0	src/app/gravity-box/layout.tsx
+35	0	src/app/hypno-spiral/layout.tsx
+35	0	src/app/lava-lamp/layout.tsx
+3	2	src/app/layout.tsx
+28	1	src/app/lofi-pixel-study/page.tsx
+35	0	src/app/magic-8-ball/layout.tsx
+35	0	src/app/mandala-maker/layout.tsx
+35	0	src/app/matrix-rain/layout.tsx
+35	0	src/app/mindful-breathe/layout.tsx
+35	0	src/app/morse-code/layout.tsx
+35	0	src/app/olo-terminal/layout.tsx
+35	0	src/app/pad-synth/layout.tsx
+8	4	src/app/page.tsx
+35	0	src/app/particle-collider/layout.tsx
+35	0	src/app/party-mode/layout.tsx
+35	0	src/app/pixel-art/layout.tsx
+35	0	src/app/polyrhythm-visualizer/layout.tsx
+35	0	src/app/repo-visualizer/layout.tsx
+13	0	src/app/robots.ts
+23	0	src/app/sitemap.ts
+35	0	src/app/solar-system/layout.tsx
+35	0	src/app/sticky-notes/layout.tsx
+35	0	src/app/style-pet/layout.tsx
+35	0	src/app/submit-to-void/layout.tsx
+35	0	src/app/text-decrypt/layout.tsx
+35	0	src/app/text-encrypt/layout.tsx
+35	0	src/app/typing-racer/layout.tsx
+35	0	src/app/zen-garden/layout.tsx
+2	0	src/lib/websites.ts
+ create mode 100644 scripts/generate-layouts.ts
+ create mode 100644 src/app/algo-race/layout.tsx
+ create mode 100644 src/app/arcana-tarot/layout.tsx
+ create mode 100644 src/app/ascii-vision/layout.tsx
+ create mode 100644 src/app/beat-maker/layout.tsx
+ create mode 100644 src/app/click-speed-test/layout.tsx
+ create mode 100644 src/app/dont-click-me/layout.tsx
+ create mode 100644 src/app/emoji-rain/layout.tsx
+ create mode 100644 src/app/focus-timer/layout.tsx
+ create mode 100644 src/app/fractal-explorer/layout.tsx
+ create mode 100644 src/app/gravity-box/layout.tsx
+ create mode 100644 src/app/hypno-spiral/layout.tsx
+ create mode 100644 src/app/lava-lamp/layout.tsx
+ create mode 100644 src/app/magic-8-ball/layout.tsx
+ create mode 100644 src/app/mandala-maker/layout.tsx
+ create mode 100644 src/app/matrix-rain/layout.tsx
+ create mode 100644 src/app/mindful-breathe/layout.tsx
+ create mode 100644 src/app/morse-code/layout.tsx
+ create mode 100644 src/app/olo-terminal/layout.tsx
+ create mode 100644 src/app/pad-synth/layout.tsx
+ create mode 100644 src/app/particle-collider/layout.tsx
+ create mode 100644 src/app/party-mode/layout.tsx
+ create mode 100644 src/app/pixel-art/layout.tsx
+ create mode 100644 src/app/polyrhythm-visualizer/layout.tsx
+ create mode 100644 src/app/repo-visualizer/layout.tsx
+ create mode 100644 src/app/robots.ts
+ create mode 100644 src/app/sitemap.ts
+ create mode 100644 src/app/solar-system/layout.tsx
+ create mode 100644 src/app/sticky-notes/layout.tsx
+ create mode 100644 src/app/style-pet/layout.tsx
+ create mode 100644 src/app/submit-to-void/layout.tsx
+ create mode 100644 src/app/text-decrypt/layout.tsx
+ create mode 100644 src/app/text-encrypt/layout.tsx
+ create mode 100644 src/app/typing-racer/layout.tsx
+ create mode 100644 src/app/zen-garden/layout.tsx
+
+commit 3f1b18035029b61751af1c2fad3f7e471f83a845
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-10T18:49:30-05:00
+
+    Refactor results display logic with displayData hook
+    
+    Consolidate display logic into a single useMemo hook that handles three states: active test (live data), completed test (final result), and no active result (latest from history). Add livePace calculation to properly track per-second click data during active tests. Simplifies JSX by centralizing conditional rendering logic.
+
+77	10	src/app/click-speed-test/page.tsx
+
+commit d6499e23d9114e375705e631f8bace5670fdb5eb
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-11T16:40:39-05:00
+
+    Refresh metadata and rename encoded page
+    
+    Reworked generated page metadata across many app routes with richer SEO-focused titles/descriptions and updated Open Graph/Twitter fields, including generator updates to sort routes and prefer rich titles. Renamed `/text-decrypt` to `/encoded-message` (with new layout metadata and page component rename) and updated the websites registry accordingly. Also included small UX/consistency fixes in interactive pages, such as early-click handling in Don't Click Me, Typing Racer high score key migration/branding text updates, and minor copy/formatting cleanups.
+
+106	72	scripts/generate-layouts.ts
+7	7	src/app/algo-race/layout.tsx
+7	7	src/app/arcana-tarot/layout.tsx
+24	24	src/app/arcana-tarot/page.tsx
+7	7	src/app/ascii-vision/layout.tsx
+7	7	src/app/beat-maker/layout.tsx
+4	4	src/app/click-speed-test/layout.tsx
+7	7	src/app/dont-click-me/layout.tsx
+16	2	src/app/dont-click-me/page.tsx
+7	7	src/app/emoji-rain/layout.tsx
+35	0	src/app/encoded-message/layout.tsx
+1	1	src/app/{text-decrypt => encoded-message}/page.tsx
+4	4	src/app/focus-timer/layout.tsx
+7	7	src/app/fractal-explorer/layout.tsx
+7	7	src/app/gravity-box/layout.tsx
+7	7	src/app/hypno-spiral/layout.tsx
+2	2	src/app/hypno-spiral/page.tsx
+7	7	src/app/lava-lamp/layout.tsx
+7	7	src/app/magic-8-ball/layout.tsx
+7	7	src/app/mandala-maker/layout.tsx
+7	7	src/app/matrix-rain/layout.tsx
+7	7	src/app/mindful-breathe/layout.tsx
+7	7	src/app/morse-code/layout.tsx
+7	7	src/app/olo-terminal/layout.tsx
+5	5	src/app/olo-terminal/page.tsx
+7	7	src/app/pad-synth/layout.tsx
+7	7	src/app/particle-collider/layout.tsx
+7	7	src/app/party-mode/layout.tsx
+7	7	src/app/pixel-art/layout.tsx
+7	7	src/app/polyrhythm-visualizer/layout.tsx
+7	7	src/app/repo-visualizer/layout.tsx
+7	7	src/app/solar-system/layout.tsx
+7	7	src/app/sticky-notes/layout.tsx
+7	7	src/app/style-pet/layout.tsx
+4	4	src/app/style-pet/page.tsx
+7	7	src/app/submit-to-void/layout.tsx
+26	13	src/app/submit-to-void/page.tsx
+0	35	src/app/text-decrypt/layout.tsx
+7	7	src/app/text-encrypt/layout.tsx
+7	7	src/app/typing-racer/layout.tsx
+23	13	src/app/typing-racer/page.tsx
+7	7	src/app/zen-garden/layout.tsx
+12	12	src/lib/websites.ts
+ create mode 100644 src/app/encoded-message/layout.tsx
+ rename src/app/{text-decrypt => encoded-message}/page.tsx (99%)
+ delete mode 100644 src/app/text-decrypt/layout.tsx
+
+commit 84df64da2583989df001848ba4b84ba290d40e18
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-11T16:59:54-05:00
+
+    Force sitemap to be static
+    
+    Mark the sitemap route as `force-static` so Next.js generates it at build time instead of treating it as dynamic.
+
+2	0	src/app/sitemap.ts
+
+commit 147dc86e53f285723dc8d26ac9213e48c0164cad
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-11T17:06:02-05:00
+
+    Add Vercel Analytics to app layout
+    
+    Adds `@vercel/analytics` as a dependency and mounts `Analytics` in the root layout so site traffic tracking is enabled globally.
+
+1	0	package.json
+37	0	pnpm-lock.yaml
+2	0	src/app/layout.tsx
+
+commit 1c4bd95e6c74168f1929d01c8fc414fcb38f296d
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-11T17:44:44-05:00
+
+    Refine fractal explorer UI
+    
+    Polish the fractal explorer with a refreshed glassmorphism layout, palette gradient previews, and custom scrollbar styling. Also adds touch pinch-zoom handling and raises the default iteration depth for sharper rendering.
+
+282	112	src/app/fractal-explorer/page.tsx
+29	0	src/app/globals.css
+
+commit 98bf372cf0b2e7661813e676529156346edcb8c9
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-11T18:30:02-05:00
+
+    Extract route styles from globals
+    
+    Moves page-specific animations, sliders, and UI styles out of `globals.css` into route-scoped CSS files, and imports them where needed. This keeps shared globals leaner and makes the per-page styling easier to maintain.
+
+1	0	src/app/fractal-explorer/page.tsx
+28	0	src/app/fractal-explorer/styles.css
+0	313	src/app/globals.css
+1	0	src/app/gravity-box/page.tsx
+47	0	src/app/gravity-box/styles.css
+2	1	src/app/magic-8-ball/page.tsx
+16	0	src/app/magic-8-ball/styles.css
+1	0	src/app/mandala-maker/page.tsx
+77	0	src/app/mandala-maker/styles.css
+1	0	src/app/party-mode/page.tsx
+59	0	src/app/party-mode/styles.css
+1	0	src/app/pixel-art/page.tsx
+80	0	src/app/pixel-art/styles.css
+ create mode 100644 src/app/fractal-explorer/styles.css
+ create mode 100644 src/app/gravity-box/styles.css
+ create mode 100644 src/app/magic-8-ball/styles.css
+ create mode 100644 src/app/mandala-maker/styles.css
+ create mode 100644 src/app/party-mode/styles.css
+ create mode 100644 src/app/pixel-art/styles.css
+
+commit d545e80e3a3b9b08987fa52194d0604cb0bdeb06
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-11T18:40:52-05:00
+
+    Add ambient audio to solar system
+    
+    Adds a looping space ambient track with volume control on the solar system page. Also switches the Three.js animation loop to `Timer` for more reliable delta updates.
+
+-	-	public/solar-system/space-ambient.mp3
+7	5	src/app/solar-system/ThreeSolarSystem.tsx
+59	0	src/app/solar-system/page.tsx
+ create mode 100644 public/solar-system/space-ambient.mp3
+
+commit 1a75ba06991ef0c5502a6eb58c209e7b23310886
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-11T18:56:55-05:00
+
+    Update solar system textures and timing
+    
+    Remove Venus Atmosphere and Earth Night. Replace Venus with the Venus surface and add dwarf planet textures for Ceres, Eris, Haumea, and Makemake. Also slow the simulation timestep slightly so motion stays consistent with the updated scene.
+
+-	-	public/solar-system/2k_ceres_fictional.jpg
+-	-	public/solar-system/2k_eris_fictional.jpg
+-	-	public/solar-system/2k_haumea_fictional.jpg
+-	-	public/solar-system/2k_makemake_fictional.jpg
+10	6	src/app/solar-system/ThreeSolarSystem.tsx
+45	14	src/app/solar-system/page.tsx
+ create mode 100644 public/solar-system/2k_ceres_fictional.jpg
+ create mode 100644 public/solar-system/2k_eris_fictional.jpg
+ create mode 100644 public/solar-system/2k_haumea_fictional.jpg
+ create mode 100644 public/solar-system/2k_makemake_fictional.jpg
+
+commit fe507ba470a3224bb4a92182b84b0a8d42b5b33a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-11T19:13:18-05:00
+
+    Add frontend design-taste skills and lock
+    
+    Introduce four agent skill manifests: design-taste-frontend (comprehensive frontend design rules, pre-flight checklist, block library and appendices), full-output-enforcement (strict no-truncation/output-completeness policy), gpt-taste (advanced layout/GSAP/randomization directives), and high-end-visual-design (agency-grade visual/motion guidelines). Add skills-lock.json to record sources and hashes. These files standardize AI-driven design guidance and enforce output quality for frontend tasks.
+
+1206	0	.agents/skills/design-taste-frontend/SKILL.md
+49	0	.agents/skills/full-output-enforcement/SKILL.md
+74	0	.agents/skills/gpt-taste/SKILL.md
+98	0	.agents/skills/high-end-visual-design/SKILL.md
+29	0	skills-lock.json
+ create mode 100644 .agents/skills/design-taste-frontend/SKILL.md
+ create mode 100644 .agents/skills/full-output-enforcement/SKILL.md
+ create mode 100644 .agents/skills/gpt-taste/SKILL.md
+ create mode 100644 .agents/skills/high-end-visual-design/SKILL.md
+ create mode 100644 skills-lock.json
+
+commit 6490492756a9f24313f30ea6e75788c4cbe253f5
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-11T19:15:14-05:00
+
+    Refactor initialization and array resizing logic
+    
+    Extracted generateRandomData outside the component to fix useCallback dependency issues. Simplified initialization by using a ref to track initial seeding instead of multiple useEffect hooks. Added changeArraySize helper to properly handle array size changes with reset. This prevents unnecessary rerenders and makes the initialization flow more predictable.
+
+27	33	src/app/algo-race/page.tsx
+
+commit 95c21484ab1d52f3ac529bce06151ac1ec62afaf
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-11T20:33:07-05:00
+
+    Remove shake feature and improve viewport sync
+    
+    Replace shake gesture handling with a viewport ready state. Switch to useLayoutEffect for more reliable viewport synchronization and defer physics initialization until viewport dimensions are properly synced. This ensures the simulation initializes with correct dimensions on first render.
+    
+    Removed:
+    - Device motion event listener and shake feature
+    - enableShake function and related UI button
+    - Shake threshold and cooldown constants
+    
+    Added:
+    - isViewportReady state for proper initialization sequencing
+    - hasSyncedViewportRef to track first viewport sync
+    - useLayoutEffect for viewport sync to run before paint
+    - Background color styling to scene container
+
+132	94	src/app/gravity-box/page.tsx
+5	4	src/app/lava-lamp/page.tsx
+38	17	src/app/lofi-pixel-study/LofiPixelStudyClient.tsx
+
+commit d0306d067149c0ba58823b4a113f3446e444af7d
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-11T20:39:14-05:00
+
+    Persist developer gate unlock state
+    
+    Save the developer gate unlock status to localStorage so users don't need to re-enter the password on every page load. Uses a hydration check to prevent SSR mismatches, and gracefully handles cases where localStorage is unavailable.
+
+20	1	src/app/dev/DeveloperGate.tsx
+
+commit 6f587ba6aa4779b59f7db55421c42259416a4825
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T17:09:17-05:00
+
+    Add PowerShell site-open scripts and UI tweaks
+    
+    Add scripts/Open-AllWebsites.ps1 and scripts/Open-ModifiedWebsites.ps1 and npm scripts (open:all, open:modified) to open site routes in the default browser. Scripts read src/lib/websites.ts for route paths; the modified-sites script detects changed and untracked files via Git. Remove /test.ps1 from .gitignore. Small UI fixes: arcana-tarot page uses full viewport height and centers content; party-mode heading gets improved responsive sizing, spacing, and refined scale animation.
+
+0	1	.gitignore
+2	0	package.json
+30	0	scripts/Open-AllWebsites.ps1
+71	0	scripts/Open-ModifiedWebsites.ps1
+1	1	src/app/arcana-tarot/page.tsx
+2	2	src/app/party-mode/page.tsx
+ create mode 100644 scripts/Open-AllWebsites.ps1
+ create mode 100644 scripts/Open-ModifiedWebsites.ps1
+
+commit e5bd7b5a538bce7f671fea9f1966f590e94fb940
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T17:27:42-05:00
+
+    Update dependencies and downgrade ESLint
+    
+    Update development dependencies to the latest patch releases, downgrade ESLint to v9 for compatibility, and specify the project's pnpm version with a packageManager field.
+
+7	6	package.json
+349	219	pnpm-lock.yaml
+
+commit 114a5ba95781200edbfc65dabf99db5375aeec12
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T18:01:48-05:00
+
+    Add development utility scripts
+    
+    Adds scripts to open all or modified websites during development, updates audio loudness normalization tool, and updates package.json with the new commands.
+
+3	3	package.json
+0	152	scripts/Normalize-AudioLufs.ps1
+0	30	scripts/Open-AllWebsites.ps1
+0	71	scripts/Open-ModifiedWebsites.ps1
+377	0	scripts/normalize-audio-lufs.ts
+212	0	scripts/open-websites.ts
+2	1	tsconfig.json
+ delete mode 100644 scripts/Normalize-AudioLufs.ps1
+ delete mode 100644 scripts/Open-AllWebsites.ps1
+ delete mode 100644 scripts/Open-ModifiedWebsites.ps1
+ create mode 100644 scripts/normalize-audio-lufs.ts
+ create mode 100644 scripts/open-websites.ts
+
+commit 1fa1d90e25a8130750a32510e5117f3ce5424e21
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T18:08:57-05:00
+
+    Refine Lofi Pixel Mobile UI
+
+195	115	src/app/lofi-pixel-study/LofiPixelStudyClient.tsx
+
+commit 3a185701b32d0cdcc94fda96144ac7385b947a19
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T18:09:33-05:00
+
+    Refine Mandala Maker mobile UI
+
+63	21	src/app/mandala-maker/page.tsx
+72	4	src/app/mandala-maker/styles.css
+
+commit 760a87dca155c59a5aa2b020fc6748fe37ccc644
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T18:09:54-05:00
+
+    Add touch controls to 808 piano roll
+
+86	27	src/app/beat-maker/components/bass-piano-roll.tsx
+
+commit 3822c5aa29622e8584a9a61bbfacd663bd8ab127
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T18:10:46-05:00
+
+    Update Submit to Void animation
+
+195	184	src/app/submit-to-void/page.tsx
+
+commit 58cdd0c1f508d89ed1b6a8d6d9a7769a0493a1bc
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T18:17:05-05:00
+
+    Fix lint errors across multiple pages
+    
+    Resolves lint issues across several pages and components with minor code quality and consistency improvements, without changing functionality.
+
+1	1	src/app/arcana-tarot/page.tsx
+36	12	src/app/ascii-vision/page.tsx
+1	1	src/app/beat-maker/components/bass-piano-roll.tsx
+8	9	src/app/beat-maker/hooks/use-beat-maker-controller.ts
+1	2	src/app/submit-to-void/page.tsx
+
+commit a02ca7212f09e7354ae8f352350514c993e52248
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T18:55:54-05:00
+
+    Fix additional lint errors
+    
+    Resolves lint issues across several interactive pages without changing functionality.
+
+77	68	src/app/click-speed-test/page.tsx
+2	2	src/app/dont-click-me/page.tsx
+1	4	src/app/emoji-rain/page.tsx
+1	1	src/app/encoded-message/page.tsx
+6	6	src/app/focus-timer/page.tsx
+105	118	src/app/fractal-explorer/page.tsx
+
+commit ebbc68eb479c7551024a15161f3e00b8a700df96
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T19:08:32-05:00
+
+    Fix additional lint errors
+    
+    Resolves lint issues across several interactive pages without changing functionality.
+
+36	12	src/app/hypno-spiral/page.tsx
+1	3	src/app/lava-lamp/page.tsx
+179	139	src/app/lofi-pixel-study/LofiPixelStudyClient.tsx
+81	52	src/app/mandala-maker/page.tsx
+
+commit daf6be641be0cea82557284f042ab3b15fa105e0
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T19:30:59-05:00
+
+    Fix additional lint errors
+    
+    Resolves lint issues across several interactive pages without changing functionality.
+
+1	1	src/app/mindful-breathe/page.tsx
+1	1	src/app/morse-code/components/CheatSheet.tsx
+2	2	src/app/morse-code/page.tsx
+98	109	src/app/olo-terminal/page.tsx
+3	2	src/app/pad-synth/page.tsx
+13	17	src/app/particle-collider/page.tsx
+25	21	src/app/pixel-art/page.tsx
+8	5	src/app/polyrhythm-visualizer/page.tsx
+
+commit 2f358f6314c9b1649ba64c151953a076818bf938
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T19:45:58-05:00
+
+    Fix additional lint errors
+    
+    Resolves lint issues across several interactive pages without changing functionality.
+
+5	2	src/app/repo-visualizer/components/CommitOverlay.tsx
+34	4	src/app/repo-visualizer/components/Legend.tsx
+1	1	src/app/repo-visualizer/hooks/useGithubLoader.ts
+13	36	src/app/repo-visualizer/hooks/useGraphEngine.ts
+4	4	src/app/repo-visualizer/page.tsx
+4	4	src/app/repo-visualizer/utils/common.ts
+26	11	src/app/solar-system/ThreeSolarSystem.tsx
+73	70	src/app/solar-system/page.tsx
+11	12	src/app/sticky-notes/page.tsx
+20	10	src/app/style-pet/page.tsx
+1	1	src/app/text-encrypt/page.tsx
+25	14	src/app/typing-racer/page.tsx
+
+commit 4d8fa1dac8b833656010ea7e2d46f46500898fcb
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T20:03:51-05:00
+
+    Fix Zen Garden lint errors
+
+99	120	src/app/zen-garden/page.tsx
+
+commit 36502daa52c6e8044620443b12ef4e6ffd565339
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T20:04:15-05:00
+
+    Move type packages to devDependencies
+    
+    Moves TypeScript type packages to devDependencies and updates the lockfile to reflect the dependency changes.
+
+2	2	package.json
+6	6	pnpm-lock.yaml
+
+commit 223679bb35aab230a70737d6f1fa4a2ad4d2740a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T20:47:34-05:00
+
+    Add CI pipeline and repository validation
+    
+    Add a complete CI and quality-check pipeline covering formatting, linting, type checking, website validation, and production builds. Centralize SEO metadata in the website registry, migrate all layouts to a shared metadata helper, simplify layout generation, and add validation to prevent route and metadata drift. Establish a repository-wide formatting baseline and fix existing lint issues uncovered by the new checks.
+
+44	0	.github/workflows/ci.yml
+26	10	.gitignore
+3	0	.prettierignore
+1	1	next.config.ts
+5	1	package.json
+34	232	scripts/generate-layouts.ts
+3	1	scripts/normalize-audio-lufs.ts
+92	0	scripts/validate-websites.ts
+2	30	src/app/algo-race/layout.tsx
+35	44	src/app/algo-race/page.tsx
+2	30	src/app/arcana-tarot/layout.tsx
+296	156	src/app/arcana-tarot/page.tsx
+2	30	src/app/ascii-vision/layout.tsx
+16	7	src/app/ascii-vision/page.tsx
+2	30	src/app/beat-maker/layout.tsx
+2	30	src/app/click-speed-test/layout.tsx
+137	47	src/app/click-speed-test/page.tsx
+12	5	src/app/dev/DeveloperGate.tsx
+2	30	src/app/dont-click-me/layout.tsx
+6	16	src/app/dont-click-me/page.tsx
+2	30	src/app/emoji-rain/layout.tsx
+10	8	src/app/emoji-rain/page.tsx
+2	30	src/app/encoded-message/layout.tsx
+2	30	src/app/focus-timer/layout.tsx
+1	3	src/app/focus-timer/page.tsx
+2	30	src/app/fractal-explorer/layout.tsx
+232	215	src/app/fractal-explorer/page.tsx
+6	2	src/app/globals.css
+2	30	src/app/gravity-box/layout.tsx
+2	30	src/app/hypno-spiral/layout.tsx
+56	22	src/app/hypno-spiral/page.tsx
+2	30	src/app/lava-lamp/layout.tsx
+4	5	src/app/layout.tsx
+15	5	src/app/lofi-pixel-study/LofiPixelStudyClient.tsx
+7	0	src/app/lofi-pixel-study/layout.tsx
+10	41	src/app/lofi-pixel-study/page.tsx
+2	30	src/app/magic-8-ball/layout.tsx
+31	10	src/app/magic-8-ball/styles.css
+2	30	src/app/mandala-maker/layout.tsx
+5	2	src/app/mandala-maker/page.tsx
+2	30	src/app/matrix-rain/layout.tsx
+41	20	src/app/matrix-rain/page.tsx
+2	30	src/app/mindful-breathe/layout.tsx
+1	1	src/app/morse-code/components/CheatSheet.tsx
+2	30	src/app/morse-code/layout.tsx
+3	1	src/app/morse-code/page.tsx
+2	30	src/app/olo-terminal/layout.tsx
+3	3	src/app/olo-terminal/page.tsx
+0	3	src/app/olo-terminal/utils.ts
+2	30	src/app/pad-synth/layout.tsx
+21	15	src/app/page.tsx
+2	30	src/app/particle-collider/layout.tsx
+2	30	src/app/party-mode/layout.tsx
+14	5	src/app/party-mode/styles.css
+2	30	src/app/pixel-art/layout.tsx
+44	14	src/app/pixel-art/page.tsx
+8	2	src/app/pixel-art/styles.css
+2	30	src/app/polyrhythm-visualizer/layout.tsx
+15	4	src/app/repo-visualizer/components/CommitOverlay.tsx
+18	5	src/app/repo-visualizer/components/GraphCanvas.tsx
+18	13	src/app/repo-visualizer/components/Legend.tsx
+50	18	src/app/repo-visualizer/components/RepoLoader.tsx
+1	2	src/app/repo-visualizer/components/Toolbar.tsx
+170	134	src/app/repo-visualizer/hooks/useGraphEngine.ts
+2	30	src/app/repo-visualizer/layout.tsx
+61	16	src/app/repo-visualizer/utils/common.ts
+9	2	src/app/repo-visualizer/utils/github.ts
+2	30	src/app/solar-system/layout.tsx
+4	8	src/app/solar-system/page.tsx
+2	30	src/app/sticky-notes/layout.tsx
+2	30	src/app/style-pet/layout.tsx
+41	15	src/app/style-pet/page.tsx
+2	30	src/app/submit-to-void/layout.tsx
+2	30	src/app/text-encrypt/layout.tsx
+2	30	src/app/typing-racer/layout.tsx
+2	30	src/app/zen-garden/layout.tsx
+29	17	src/app/zen-garden/page.tsx
+47	0	src/lib/websiteMetadata.ts
+171	1	src/lib/websites.ts
+ create mode 100644 .github/workflows/ci.yml
+ create mode 100644 .prettierignore
+ create mode 100644 scripts/validate-websites.ts
+ create mode 100644 src/app/lofi-pixel-study/layout.tsx
+ create mode 100644 src/lib/websiteMetadata.ts
+
+commit b6900975398b256d284a126524fcddf55a38ad2d
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T20:58:33-05:00
+
+    Remove generate-layouts.ts
+
+0	1	package.json
+0	48	scripts/generate-layouts.ts
+ delete mode 100644 scripts/generate-layouts.ts
+
+commit 7f1820312be7dd6d3e020cd36cb87e1bb4cb6a30
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T21:15:32-05:00
+
+    Add automated smoke testing and configuration
+    
+    Introduce an automated Playwright smoke testing pipeline that verifies every registered website loads successfully, has a valid page title, and produces no runtime console errors. Add CI support to run formatting, linting, type checking, website validation, production builds, and smoke tests on every push and pull request. Improve developer tooling with a shared changed-websites utility, enhance the website opening script, add an `.env.example`, update project scripts, and refresh supporting configuration for a more reliable and reproducible development workflow.
+
+5	0	.env.example
+8	0	.github/workflows/ci.yml
+2	0	.prettierignore
+6	0	package.json
+41	0	playwright.config.ts
+44	5	pnpm-lock.yaml
+60	0	scripts/lib/changed-websites.ts
+7	62	scripts/open-websites.ts
+87	0	scripts/test-smoke.ts
+64	0	tests/websites.smoke.spec.ts
+ create mode 100644 .env.example
+ create mode 100644 playwright.config.ts
+ create mode 100644 scripts/lib/changed-websites.ts
+ create mode 100644 scripts/test-smoke.ts
+ create mode 100644 tests/websites.smoke.spec.ts
+
+commit d3a318230d7a26756fabf781a77f36418395bdc8
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T21:26:42-05:00
+
+    Add production smoke testing workflow
+    
+    Adds a production smoke test command that builds, serves, and tests the app in one step. Also skips Vercel Analytics outside production to keep local smoke tests reliable.
+
+1	0	package.json
+39	0	scripts/test-smoke.ts
+1	1	src/app/layout.tsx
+5	1	tests/websites.smoke.spec.ts
+
+commit f554322af9a4e76e68bff7d73024a74533ae5f50
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T22:02:13-05:00
+
+    Refactor Solar System architecture
+    
+    Refactors the Solar System page into a modular feature-based architecture with components, hooks, utilities, and types while preserving behavior. Adds interaction tests and verifies the feature with linting, type checking, Playwright, and production builds.
+
+7	51	src/app/solar-system/ThreeSolarSystem.tsx
+499	0	src/app/solar-system/components/ControlPanel.tsx
+54	0	src/app/solar-system/components/PageChrome.tsx
+288	0	src/app/solar-system/components/PlanetEditorPanel.tsx
+160	0	src/app/solar-system/components/SolarSystemCreator.tsx
+267	0	src/app/solar-system/components/SolarSystemViewport.tsx
+51	0	src/app/solar-system/components/TimelineControls.tsx
+185	0	src/app/solar-system/constants.ts
+44	0	src/app/solar-system/hooks/useAmbientAudio.ts
+73	0	src/app/solar-system/hooks/useDomOrbitAnimation.ts
+170	0	src/app/solar-system/hooks/usePlanetEditor.ts
+638	0	src/app/solar-system/hooks/useSolarSystemExport.ts
+42	0	src/app/solar-system/hooks/useSolarSystemViewport.ts
+1	0	src/app/solar-system/layout.tsx
+3	2224	src/app/solar-system/page.tsx
+37	0	src/app/solar-system/styles.css
+40	0	src/app/solar-system/types.ts
+122	0	src/app/solar-system/utils.ts
+60	0	tests/solar-system.interactions.smoke.spec.ts
+ create mode 100644 src/app/solar-system/components/ControlPanel.tsx
+ create mode 100644 src/app/solar-system/components/PageChrome.tsx
+ create mode 100644 src/app/solar-system/components/PlanetEditorPanel.tsx
+ create mode 100644 src/app/solar-system/components/SolarSystemCreator.tsx
+ create mode 100644 src/app/solar-system/components/SolarSystemViewport.tsx
+ create mode 100644 src/app/solar-system/components/TimelineControls.tsx
+ create mode 100644 src/app/solar-system/constants.ts
+ create mode 100644 src/app/solar-system/hooks/useAmbientAudio.ts
+ create mode 100644 src/app/solar-system/hooks/useDomOrbitAnimation.ts
+ create mode 100644 src/app/solar-system/hooks/usePlanetEditor.ts
+ create mode 100644 src/app/solar-system/hooks/useSolarSystemExport.ts
+ create mode 100644 src/app/solar-system/hooks/useSolarSystemViewport.ts
+ create mode 100644 src/app/solar-system/styles.css
+ create mode 100644 src/app/solar-system/types.ts
+ create mode 100644 src/app/solar-system/utils.ts
+ create mode 100644 tests/solar-system.interactions.smoke.spec.ts
+
+commit 1e7fcdc1ff2a07eb12fea4a63423f4de9825962b
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T22:54:44-05:00
+
+    Refactor Fractal Explorer architecture
+    
+    Refactors the Fractal Explorer page into a modular feature-based architecture with components, hooks, utilities, and types while preserving behavior. Adds interaction tests and verifies the feature with linting, type checking, Playwright, and production builds.
+
+74	0	src/app/fractal-explorer/components/AudioPrompt.tsx
+59	0	src/app/fractal-explorer/components/CoordinatesOverlay.tsx
+54	0	src/app/fractal-explorer/components/FractalCanvas.tsx
+20	0	src/app/fractal-explorer/components/FractalExplorerPage.tsx
+437	0	src/app/fractal-explorer/components/SettingsPanel.tsx
+197	0	src/app/fractal-explorer/constants.ts
+264	0	src/app/fractal-explorer/hooks/useFractalAudio.ts
+619	0	src/app/fractal-explorer/hooks/useFractalExplorer.ts
+484	0	src/app/fractal-explorer/hooks/useFractalRenderer.ts
+3	2403	src/app/fractal-explorer/page.tsx
+38	0	src/app/fractal-explorer/types.ts
+122	0	src/app/fractal-explorer/utils/color.ts
+319	0	src/app/fractal-explorer/utils/webgl.ts
+66	0	tests/fractal-explorer.interactions.smoke.spec.ts
+ create mode 100644 src/app/fractal-explorer/components/AudioPrompt.tsx
+ create mode 100644 src/app/fractal-explorer/components/CoordinatesOverlay.tsx
+ create mode 100644 src/app/fractal-explorer/components/FractalCanvas.tsx
+ create mode 100644 src/app/fractal-explorer/components/FractalExplorerPage.tsx
+ create mode 100644 src/app/fractal-explorer/components/SettingsPanel.tsx
+ create mode 100644 src/app/fractal-explorer/constants.ts
+ create mode 100644 src/app/fractal-explorer/hooks/useFractalAudio.ts
+ create mode 100644 src/app/fractal-explorer/hooks/useFractalExplorer.ts
+ create mode 100644 src/app/fractal-explorer/hooks/useFractalRenderer.ts
+ create mode 100644 src/app/fractal-explorer/types.ts
+ create mode 100644 src/app/fractal-explorer/utils/color.ts
+ create mode 100644 src/app/fractal-explorer/utils/webgl.ts
+ create mode 100644 tests/fractal-explorer.interactions.smoke.spec.ts
+
+commit b2a52c598c5035ea6d960daad2805f082d2be295
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T23:14:25-05:00
+
+    Refactor Olo Terminal architecture
+    
+    Refactors the Olo Terminal page into a modular feature-based architecture with components, hooks, utilities, and types while preserving behavior. Adds interaction tests and verifies the feature with linting, type checking, Playwright, and production builds.
+
+27	0	src/app/olo-terminal/components/boot-screen.tsx
+23	0	src/app/olo-terminal/components/olo-terminal.tsx
+43	0	src/app/olo-terminal/components/panic-screen.tsx
+136	0	src/app/olo-terminal/components/terminal-header.tsx
+55	0	src/app/olo-terminal/components/terminal-input.tsx
+58	0	src/app/olo-terminal/components/terminal-output.tsx
+104	0	src/app/olo-terminal/components/terminal-window.tsx
+42	19	src/app/olo-terminal/{utils.ts => constants.ts}
+11	0	src/app/olo-terminal/hooks/use-auto-scroll.ts
+40	0	src/app/olo-terminal/hooks/use-boot-sequence.ts
+76	0	src/app/olo-terminal/hooks/use-matrix-rain.ts
+19	0	src/app/olo-terminal/hooks/use-session-uptime.ts
+545	0	src/app/olo-terminal/hooks/use-terminal-controller.ts
+19	0	src/app/olo-terminal/lib/browser-info.ts
+679	0	src/app/olo-terminal/lib/commands.ts
+77	0	src/app/olo-terminal/lib/filesystem.ts
+177	0	src/app/olo-terminal/lib/shell.ts
+3	1942	src/app/olo-terminal/page.tsx
+77	0	src/app/olo-terminal/types.ts
+60	0	tests/olo-terminal.interactions.smoke.spec.ts
+ create mode 100644 src/app/olo-terminal/components/boot-screen.tsx
+ create mode 100644 src/app/olo-terminal/components/olo-terminal.tsx
+ create mode 100644 src/app/olo-terminal/components/panic-screen.tsx
+ create mode 100644 src/app/olo-terminal/components/terminal-header.tsx
+ create mode 100644 src/app/olo-terminal/components/terminal-input.tsx
+ create mode 100644 src/app/olo-terminal/components/terminal-output.tsx
+ create mode 100644 src/app/olo-terminal/components/terminal-window.tsx
+ rename src/app/olo-terminal/{utils.ts => constants.ts} (79%)
+ create mode 100644 src/app/olo-terminal/hooks/use-auto-scroll.ts
+ create mode 100644 src/app/olo-terminal/hooks/use-boot-sequence.ts
+ create mode 100644 src/app/olo-terminal/hooks/use-matrix-rain.ts
+ create mode 100644 src/app/olo-terminal/hooks/use-session-uptime.ts
+ create mode 100644 src/app/olo-terminal/hooks/use-terminal-controller.ts
+ create mode 100644 src/app/olo-terminal/lib/browser-info.ts
+ create mode 100644 src/app/olo-terminal/lib/commands.ts
+ create mode 100644 src/app/olo-terminal/lib/filesystem.ts
+ create mode 100644 src/app/olo-terminal/lib/shell.ts
+ create mode 100644 src/app/olo-terminal/types.ts
+ create mode 100644 tests/olo-terminal.interactions.smoke.spec.ts
+
+commit 5de35ea62f46bd10084878c6da14a9cdfa52aa71
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T23:25:33-05:00
+
+    Refactor Zen Garden architecture
+    
+    Refactors the Zen Garden page into a modular feature-based architecture with components, hooks, utilities, and types while preserving behavior. Adds interaction tests and verifies the feature with linting, type checking, Playwright, and production builds.
+
+191	0	src/app/zen-garden/audio.ts
+192	0	src/app/zen-garden/canvas.ts
+122	0	src/app/zen-garden/components/GardenCanvas.tsx
+38	0	src/app/zen-garden/components/GardenExportPreview.tsx
+28	0	src/app/zen-garden/components/GardenTitle.tsx
+94	0	src/app/zen-garden/components/ImportDialog.tsx
+129	0	src/app/zen-garden/components/InteractionDock.tsx
+87	0	src/app/zen-garden/components/QuickToolbar.tsx
+288	0	src/app/zen-garden/components/SettingsPanel.tsx
+20	0	src/app/zen-garden/components/ToastNotification.tsx
+32	0	src/app/zen-garden/components/ZenGardenClient.tsx
+115	0	src/app/zen-garden/constants.ts
+102	0	src/app/zen-garden/hooks/useGardenCanvas.ts
+80	0	src/app/zen-garden/hooks/useGardenHistory.ts
+26	0	src/app/zen-garden/hooks/useTransientToast.ts
+52	0	src/app/zen-garden/hooks/useZenAudio.ts
+546	0	src/app/zen-garden/hooks/useZenGarden.ts
+3	2273	src/app/zen-garden/page.tsx
+137	0	src/app/zen-garden/styles.css
+77	0	src/app/zen-garden/types.ts
+112	0	src/app/zen-garden/utils.ts
+68	0	tests/zen-garden.interactions.smoke.spec.ts
+ create mode 100644 src/app/zen-garden/audio.ts
+ create mode 100644 src/app/zen-garden/canvas.ts
+ create mode 100644 src/app/zen-garden/components/GardenCanvas.tsx
+ create mode 100644 src/app/zen-garden/components/GardenExportPreview.tsx
+ create mode 100644 src/app/zen-garden/components/GardenTitle.tsx
+ create mode 100644 src/app/zen-garden/components/ImportDialog.tsx
+ create mode 100644 src/app/zen-garden/components/InteractionDock.tsx
+ create mode 100644 src/app/zen-garden/components/QuickToolbar.tsx
+ create mode 100644 src/app/zen-garden/components/SettingsPanel.tsx
+ create mode 100644 src/app/zen-garden/components/ToastNotification.tsx
+ create mode 100644 src/app/zen-garden/components/ZenGardenClient.tsx
+ create mode 100644 src/app/zen-garden/constants.ts
+ create mode 100644 src/app/zen-garden/hooks/useGardenCanvas.ts
+ create mode 100644 src/app/zen-garden/hooks/useGardenHistory.ts
+ create mode 100644 src/app/zen-garden/hooks/useTransientToast.ts
+ create mode 100644 src/app/zen-garden/hooks/useZenAudio.ts
+ create mode 100644 src/app/zen-garden/hooks/useZenGarden.ts
+ create mode 100644 src/app/zen-garden/styles.css
+ create mode 100644 src/app/zen-garden/types.ts
+ create mode 100644 src/app/zen-garden/utils.ts
+ create mode 100644 tests/zen-garden.interactions.smoke.spec.ts
+
+commit 5bac27ea25608e96506a7d2e7c97f1816da1f6ec
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-12T23:58:02-05:00
+
+    Self-host fonts and isolate route styles
+    
+    Self-hosts fonts with next/font/local, replaces Google font dependencies, converts route-specific styles to scoped CSS Modules, and keeps cross-platform development tooling aligned. Verified with production builds, repository validation, and the full Playwright test suite.
+
+-	-	public/fonts/cinzel-decorative-400-latin.woff2
+-	-	public/fonts/cinzel-decorative-700-latin.woff2
+-	-	public/fonts/cinzel-decorative-900-latin.woff2
+-	-	public/fonts/courier-prime-400-italic-latin.woff2
+-	-	public/fonts/courier-prime-400-normal-latin.woff2
+-	-	public/fonts/courier-prime-700-italic-latin.woff2
+-	-	public/fonts/courier-prime-700-normal-latin.woff2
+-	-	public/fonts/geist-latin.woff2
+-	-	public/fonts/geist-mono-latin.woff2
+-	-	public/fonts/kalam-400-latin.woff2
+-	-	public/fonts/kalam-700-latin.woff2
+-	-	public/fonts/silkscreen-400-latin.woff2
+-	-	public/fonts/silkscreen-700-latin.woff2
+23	21	src/app/arcana-tarot/page.tsx
+3	213	src/app/ascii-vision/page.tsx
+203	0	src/app/ascii-vision/styles.module.css
+3	22	src/app/emoji-rain/page.tsx
+62	0	src/app/emoji-rain/styles.module.css
+6	2	src/app/fractal-explorer/page.tsx
+5	5	src/app/fractal-explorer/{styles.css => styles.module.css}
+3	2	src/app/gravity-box/page.tsx
+10	12	src/app/gravity-box/{styles.css => styles.module.css}
+3	117	src/app/lava-lamp/page.tsx
+105	0	src/app/lava-lamp/styles.module.css
+21	8	src/app/layout.tsx
+5	151	src/app/lofi-pixel-study/LofiPixelStudyClient.tsx
+167	0	src/app/lofi-pixel-study/styles.module.css
+3	2	src/app/magic-8-ball/page.tsx
+1	1	src/app/magic-8-ball/{styles.css => styles.module.css}
+5	2	src/app/mandala-maker/page.tsx
+34	42	src/app/mandala-maker/{styles.css => styles.module.css}
+13	4	src/app/morse-code/components/CheatSheet.tsx
+25	5	src/app/morse-code/page.tsx
+13	0	src/app/olo-terminal/components/panic-screen.module.css
+5	18	src/app/olo-terminal/components/panic-screen.tsx
+3	0	src/app/olo-terminal/components/terminal-window.module.css
+4	10	src/app/olo-terminal/components/terminal-window.tsx
+3	72	src/app/pad-synth/page.tsx
+66	0	src/app/pad-synth/styles.module.css
+5	43	src/app/particle-collider/page.tsx
+39	0	src/app/particle-collider/styles.module.css
+3	2	src/app/party-mode/page.tsx
+3	3	src/app/party-mode/{styles.css => styles.module.css}
+5	2	src/app/pixel-art/page.tsx
+16	16	src/app/pixel-art/{styles.css => styles.module.css}
+3	24	src/app/polyrhythm-visualizer/page.tsx
+22	0	src/app/polyrhythm-visualizer/styles.module.css
+2	2	src/app/solar-system/layout.tsx
+0	37	src/app/solar-system/styles.css
+37	0	src/app/solar-system/styles.module.css
+16	8	src/app/sticky-notes/page.tsx
+5	44	src/app/text-encrypt/page.tsx
+33	0	src/app/text-encrypt/styles.module.css
+5	34	src/app/typing-racer/page.tsx
+25	0	src/app/typing-racer/styles.module.css
+2	2	src/app/zen-garden/components/ZenGardenClient.tsx
+26	28	src/app/zen-garden/{styles.css => styles.module.css}
+74	0	src/components/ExportPreviewModal.module.css
+16	89	src/components/ExportPreviewModal.tsx
+ create mode 100644 public/fonts/cinzel-decorative-400-latin.woff2
+ create mode 100644 public/fonts/cinzel-decorative-700-latin.woff2
+ create mode 100644 public/fonts/cinzel-decorative-900-latin.woff2
+ create mode 100644 public/fonts/courier-prime-400-italic-latin.woff2
+ create mode 100644 public/fonts/courier-prime-400-normal-latin.woff2
+ create mode 100644 public/fonts/courier-prime-700-italic-latin.woff2
+ create mode 100644 public/fonts/courier-prime-700-normal-latin.woff2
+ create mode 100644 public/fonts/geist-latin.woff2
+ create mode 100644 public/fonts/geist-mono-latin.woff2
+ create mode 100644 public/fonts/kalam-400-latin.woff2
+ create mode 100644 public/fonts/kalam-700-latin.woff2
+ create mode 100644 public/fonts/silkscreen-400-latin.woff2
+ create mode 100644 public/fonts/silkscreen-700-latin.woff2
+ create mode 100644 src/app/ascii-vision/styles.module.css
+ create mode 100644 src/app/emoji-rain/styles.module.css
+ rename src/app/fractal-explorer/{styles.css => styles.module.css} (62%)
+ rename src/app/gravity-box/{styles.css => styles.module.css} (71%)
+ create mode 100644 src/app/lava-lamp/styles.module.css
+ create mode 100644 src/app/lofi-pixel-study/styles.module.css
+ rename src/app/magic-8-ball/{styles.css => styles.module.css} (95%)
+ rename src/app/mandala-maker/{styles.css => styles.module.css} (61%)
+ create mode 100644 src/app/olo-terminal/components/panic-screen.module.css
+ create mode 100644 src/app/olo-terminal/components/terminal-window.module.css
+ create mode 100644 src/app/pad-synth/styles.module.css
+ create mode 100644 src/app/particle-collider/styles.module.css
+ rename src/app/party-mode/{styles.css => styles.module.css} (92%)
+ rename src/app/pixel-art/{styles.css => styles.module.css} (82%)
+ create mode 100644 src/app/polyrhythm-visualizer/styles.module.css
+ delete mode 100644 src/app/solar-system/styles.css
+ create mode 100644 src/app/solar-system/styles.module.css
+ create mode 100644 src/app/text-encrypt/styles.module.css
+ create mode 100644 src/app/typing-racer/styles.module.css
+ rename src/app/zen-garden/{styles.css => styles.module.css} (65%)
+ create mode 100644 src/components/ExportPreviewModal.module.css
+
+commit 945d1e5eb2ca7ec1bf4f7a94ceb0a9703d1827a0
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-13T00:02:07-05:00
+
+    Fix click-speed chart overflow
+    
+    Contains the 30-second results chart, improves tick spacing, and prevents layout overflow.
+
+47	18	src/app/click-speed-test/page.tsx
+
+commit 38ef6908e6d0f0608e9be96bd9628b33522eafc9 (origin/seo, seo)
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-13T03:56:15-05:00
+
+    Update README.md add mobile script
+
+132	34	README.md
+1	0	package.json
+1	1	src/app/lofi-pixel-study/LofiPixelStudyClient.tsx
+
+commit ee389b96a7d21e652fbc8427e8c596ab4d00abd1
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-13T05:40:28-05:00
+
+    Update .env.example
+
+5	1	.env.example
+
+commit 213fbe5363774eca30f07540f0d8c509e32f4f6c
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-13T17:56:35-05:00
+
+    Add Boids Simulator
+    
+    Adds an interactive Boids Simulator with configurable flocking behavior, integrates it into the website registry, and includes Playwright interaction tests.
+
+634	0	src/app/boids-simulator/BoidsCanvas.tsx
+578	0	src/app/boids-simulator/boids-simulator.module.css
+7	0	src/app/boids-simulator/layout.tsx
+381	0	src/app/boids-simulator/page.tsx
+70	0	src/app/boids-simulator/simulator.ts
+11	0	src/lib/websites.ts
+145	0	tests/boids-simulator.interactions.smoke.spec.ts
+ create mode 100644 src/app/boids-simulator/BoidsCanvas.tsx
+ create mode 100644 src/app/boids-simulator/boids-simulator.module.css
+ create mode 100644 src/app/boids-simulator/layout.tsx
+ create mode 100644 src/app/boids-simulator/page.tsx
+ create mode 100644 src/app/boids-simulator/simulator.ts
+ create mode 100644 tests/boids-simulator.interactions.smoke.spec.ts
+
+commit 8d3fb5a0f24f931200eea5b9b0c5820360663828
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-13T18:18:36-05:00
+
+    Update Boids Simulator export and mobile features
+
+66	19	src/app/boids-simulator/BoidsCanvas.tsx
+14	1	src/app/boids-simulator/boids-simulator.module.css
+358	195	src/app/boids-simulator/page.tsx
+16	8	src/components/ExportPreviewModal.tsx
+4	0	src/lib/canvasExport.ts
+44	5	tests/boids-simulator.interactions.smoke.spec.ts
+
+commit cf56700f169228b1c68a89ce1891c60af963a85a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-13T18:23:22-05:00
+
+    Add Boids Simulator frame scale
+
+6	5	src/app/boids-simulator/BoidsCanvas.tsx
+5	0	src/app/boids-simulator/simulator.ts
+10	1	tests/boids-simulator.interactions.smoke.spec.ts
+
+commit 7ad190b23352ad91417b8a3fbd66b5b8e6f6d078
+Merge: ee389b9 cf56700
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-13T18:23:34-05:00
+
+    Merge branch 'new-pages'
+
+commit e224a6e26d88dbc880b2a4dd268ad5618210a503
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-13T21:15:50-05:00
+
+    Add Falling Sand
+    
+    Add an interactive Falling Sand Simulator with materials, integrates it into the website registry, and includes Playwright interaction tests.
+
+372	0	src/app/falling-sand/FallingSandCanvas.tsx
+903	0	src/app/falling-sand/engine.ts
+7	0	src/app/falling-sand/layout.tsx
+496	0	src/app/falling-sand/page.tsx
+797	0	src/app/falling-sand/styles.module.css
+11	0	src/lib/websites.ts
+78	0	tests/falling-sand.interactions.smoke.spec.ts
+ create mode 100644 src/app/falling-sand/FallingSandCanvas.tsx
+ create mode 100644 src/app/falling-sand/engine.ts
+ create mode 100644 src/app/falling-sand/layout.tsx
+ create mode 100644 src/app/falling-sand/page.tsx
+ create mode 100644 src/app/falling-sand/styles.module.css
+ create mode 100644 tests/falling-sand.interactions.smoke.spec.ts
+
+commit 4443ef3b36666a2c0a971ef4717d53ed383e3ccb
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-13T22:33:45-05:00
+
+    Update Falling Sand to glassmorphism UI
+    
+    Convert the toolbox into a draggable floating window. Remove the existing header and replace it with time controls centered at the top and settings controls positioned in the top-right corner.
+
+283	161	src/app/falling-sand/page.tsx
+458	401	src/app/falling-sand/styles.module.css
+110	0	tests/falling-sand.interactions.smoke.spec.ts
+
+commit 95412ec213b39c36f69d01fec0768f28d4ac591f
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-13T23:00:20-05:00
+
+    Add more settings and statistics
+
+50	4	src/app/falling-sand/FallingSandCanvas.tsx
+5	10	src/app/falling-sand/engine.ts
+159	25	src/app/falling-sand/page.tsx
+122	11	src/app/falling-sand/styles.module.css
+31	2	tests/falling-sand.interactions.smoke.spec.ts
+
+commit 94df1556f3e39e6478425bd82b7b3a993fe6d118
+Merge: 7ad190b 95412ec
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-13T23:22:27-05:00
+
+    Merge branch 'new-pages'
+
+commit a1422612907643af2f16f181dda13bd17e27f96e
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-14T00:42:16-05:00
+
+    Add Fluid Simulation
+    
+    Adds a GPU-accelerated fluid simulation with configurable solver settings, high-density particle rendering, PNG export, and responsive controls.
+
+1189	0	src/app/fluid-simulation/fluidEngine.ts
+7	0	src/app/fluid-simulation/layout.tsx
+443	0	src/app/fluid-simulation/page.tsx
+337	0	src/app/fluid-simulation/styles.module.css
+11	0	src/lib/websites.ts
+ create mode 100644 src/app/fluid-simulation/fluidEngine.ts
+ create mode 100644 src/app/fluid-simulation/layout.tsx
+ create mode 100644 src/app/fluid-simulation/page.tsx
+ create mode 100644 src/app/fluid-simulation/styles.module.css
+
+commit a591633b03a426f9724b9a8412b08032d59ab787 (fluid-sim)
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-14T01:05:40-05:00
+
+    Update Fluid Simulation colors
+
+43	23	src/app/fluid-simulation/fluidEngine.ts
+3	2	src/app/fluid-simulation/page.tsx
+
+commit 20044693b5ad003db92e886ce1865c2b6554b084
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-14T03:07:10-05:00
+
+    Improve Fluid Simulation UI
+
+-	-	public/fluid-simulation/ethereal.mp3
+119	67	src/app/fluid-simulation/page.tsx
+92	88	src/app/fluid-simulation/styles.module.css
+5	5	src/lib/websites.ts
+ create mode 100644 public/fluid-simulation/ethereal.mp3
+
+commit 3cb43ab0e95737ed757acb562f6690966df00048
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-14T03:32:00-05:00
+
+    Add color settings for Fluid Simulation
+
+236	23	src/app/fluid-simulation/fluidEngine.ts
+41	5	src/app/fluid-simulation/page.tsx
+1	1	src/app/fluid-simulation/styles.module.css
+
+commit 0b0de819d6dbba35dddb37a778c0a9ffa18979c1
+Merge: 94df155 3cb43ab
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-14T03:35:27-05:00
+
+    Merge branch 'new-pages'
+
+commit b27a3578f749b8edb8753b8b70ee05a46b027411
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-14T14:44:15-05:00
+
+    Update Style Pet UI
+
+91	84	src/app/style-pet/page.tsx
+
+commit b822c395273ee83dafd75c702aa424dc091633b2
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-14T14:51:35-05:00
+
+    Improve Style Pet controls
+
+56	72	src/app/style-pet/page.tsx
+
+commit e7015d587973606cd822e01e6ce9eb3e1689fcc3
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-14T16:20:45-05:00
+
+    Refactor Arcana Tarot
+    
+    Refactor Arcana Tarot into a route-local feature structure with separate components, typed data, hooks, and utilities while keeping the page entrypoint minimal. Isolate reading logic, add reusable Fisher–Yates card drawing, and improve accessibility with keyboard controls, dialog behavior, focus restoration, and status announcements. Preserve all existing content and styling while maintaining static prerendering and passing formatting, lint, type-check, and production build checks.
+
+126	0	src/app/arcana-tarot/components/card-modal.tsx
+91	0	src/app/arcana-tarot/components/card.tsx
+21	0	src/app/arcana-tarot/components/consult-button.tsx
+21	0	src/app/arcana-tarot/components/draw-button.tsx
+13	0	src/app/arcana-tarot/components/header.tsx
+53	0	src/app/arcana-tarot/components/main.tsx
+15	0	src/app/arcana-tarot/components/shuffle-indicator.tsx
+38	0	src/app/arcana-tarot/components/spread.tsx
+139	0	src/app/arcana-tarot/data/cards.ts
+247	0	src/app/arcana-tarot/data/interpretations.ts
+12	0	src/app/arcana-tarot/data/spreads.ts
+19	0	src/app/arcana-tarot/font.ts
+66	0	src/app/arcana-tarot/hooks/use-reading.ts
+3	645	src/app/arcana-tarot/page.tsx
+28	0	src/app/arcana-tarot/types.ts
+36	0	src/app/arcana-tarot/utils/create-reading.ts
+ create mode 100644 src/app/arcana-tarot/components/card-modal.tsx
+ create mode 100644 src/app/arcana-tarot/components/card.tsx
+ create mode 100644 src/app/arcana-tarot/components/consult-button.tsx
+ create mode 100644 src/app/arcana-tarot/components/draw-button.tsx
+ create mode 100644 src/app/arcana-tarot/components/header.tsx
+ create mode 100644 src/app/arcana-tarot/components/main.tsx
+ create mode 100644 src/app/arcana-tarot/components/shuffle-indicator.tsx
+ create mode 100644 src/app/arcana-tarot/components/spread.tsx
+ create mode 100644 src/app/arcana-tarot/data/cards.ts
+ create mode 100644 src/app/arcana-tarot/data/interpretations.ts
+ create mode 100644 src/app/arcana-tarot/data/spreads.ts
+ create mode 100644 src/app/arcana-tarot/font.ts
+ create mode 100644 src/app/arcana-tarot/hooks/use-reading.ts
+ create mode 100644 src/app/arcana-tarot/types.ts
+ create mode 100644 src/app/arcana-tarot/utils/create-reading.ts
+
+commit 09557a58b3fa8ce4418c395902987e5fc634c109
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-14T16:22:20-05:00
+
+    Expand Style Pet progression and customization
+    
+    Adds new unlockable cosmetics, persistent save data, import and export support, background themes, cleaning animations, refined controls, and multiple UI improvements while preserving compatibility with existing saves.
+
+972	178	src/app/style-pet/page.tsx
+
+commit 5d463b79404d8b63956c5d8804714785022fab3f
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-14T16:23:09-05:00
+
+    Refactor Typing Racer architecture
+    
+    Refactors Typing Racer into a modular feature-based architecture with reusable components, hooks, utilities, and typed data. Simplifies file organization, improves accessibility and rendering performance, and streamlines naming while preserving gameplay, scoring, audio, and save behavior.
+
+85	0	src/app/typing-racer/components/active-state.tsx
+45	0	src/app/typing-racer/components/car.tsx
+31	0	src/app/typing-racer/components/countdown-panel.tsx
+23	0	src/app/typing-racer/components/header.tsx
+59	0	src/app/typing-racer/components/input-panel.tsx
+57	0	src/app/typing-racer/components/main.tsx
+70	0	src/app/typing-racer/components/menu.tsx
+38	0	src/app/typing-racer/components/passage-text.tsx
+100	0	src/app/typing-racer/components/racetrack.tsx
+113	0	src/app/typing-racer/components/results.tsx
+71	0	src/app/typing-racer/components/stats-panel.tsx
+10	0	src/app/typing-racer/data/passages.ts
+52	0	src/app/typing-racer/data/race-config.ts
+35	0	src/app/typing-racer/hooks/use-high-score.ts
+192	0	src/app/typing-racer/hooks/use-race.ts
+3	790	src/app/typing-racer/page.tsx
+14	0	src/app/typing-racer/styles.module.css
+26	0	src/app/typing-racer/types.ts
+41	0	src/app/typing-racer/utils/audio.ts
+104	0	src/app/typing-racer/utils/race.ts
+ create mode 100644 src/app/typing-racer/components/active-state.tsx
+ create mode 100644 src/app/typing-racer/components/car.tsx
+ create mode 100644 src/app/typing-racer/components/countdown-panel.tsx
+ create mode 100644 src/app/typing-racer/components/header.tsx
+ create mode 100644 src/app/typing-racer/components/input-panel.tsx
+ create mode 100644 src/app/typing-racer/components/main.tsx
+ create mode 100644 src/app/typing-racer/components/menu.tsx
+ create mode 100644 src/app/typing-racer/components/passage-text.tsx
+ create mode 100644 src/app/typing-racer/components/racetrack.tsx
+ create mode 100644 src/app/typing-racer/components/results.tsx
+ create mode 100644 src/app/typing-racer/components/stats-panel.tsx
+ create mode 100644 src/app/typing-racer/data/passages.ts
+ create mode 100644 src/app/typing-racer/data/race-config.ts
+ create mode 100644 src/app/typing-racer/hooks/use-high-score.ts
+ create mode 100644 src/app/typing-racer/hooks/use-race.ts
+ create mode 100644 src/app/typing-racer/types.ts
+ create mode 100644 src/app/typing-racer/utils/audio.ts
+ create mode 100644 src/app/typing-racer/utils/race.ts
+
+commit af6f44f4c0b14c8052a82cee0cc9d8d16494783c
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T15:17:01-05:00
+
+    Update Text Encrypt to Text Converter
+
+14	0	next.config.ts
+1	1	src/app/{text-encrypt => text-converter}/layout.tsx
+662	0	src/app/text-converter/page.tsx
+141	0	src/app/text-converter/styles.module.css
+0	462	src/app/text-encrypt/page.tsx
+0	33	src/app/text-encrypt/styles.module.css
+5	5	src/lib/websites.ts
+ rename src/app/{text-encrypt => text-converter}/layout.tsx (71%)
+ create mode 100644 src/app/text-converter/page.tsx
+ create mode 100644 src/app/text-converter/styles.module.css
+ delete mode 100644 src/app/text-encrypt/page.tsx
+ delete mode 100644 src/app/text-encrypt/styles.module.css
+
+commit fa28698b04577f16ed6053e21758ceea5fc0900e
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T15:43:52-05:00
+
+    Update 404 page
+
+102	0	src/app/not-found.tsx
+45	0	tests/not-found.smoke.spec.ts
+ create mode 100644 src/app/not-found.tsx
+ create mode 100644 tests/not-found.smoke.spec.ts
+
+commit 3e40792198a6ea91bac2179e3863e91884f9db13
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T15:47:15-05:00
+
+    Update home page to not reveal page names
+
+1	1	src/app/page.tsx
+21	0	tests/home-hydration.smoke.spec.ts
+1	5	tests/not-found.smoke.spec.ts
+ create mode 100644 tests/home-hydration.smoke.spec.ts
+
+commit 72cd88849ad6a09cccd5d359f87494db8f676843
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T16:02:33-05:00
+
+    Add <main> to all pages
+
+2	2	src/app/algo-race/page.tsx
+2	2	src/app/ascii-vision/page.tsx
+5	1	src/app/beat-maker/page.tsx
+2	2	src/app/dont-click-me/page.tsx
+2	2	src/app/encoded-message/page.tsx
+2	2	src/app/focus-timer/page.tsx
+2	2	src/app/fractal-explorer/page.tsx
+2	2	src/app/gravity-box/page.tsx
+2	2	src/app/hypno-spiral/page.tsx
+5	1	src/app/lofi-pixel-study/page.tsx
+2	2	src/app/magic-8-ball/page.tsx
+2	2	src/app/mandala-maker/page.tsx
+2	2	src/app/matrix-rain/page.tsx
+2	2	src/app/mindful-breathe/page.tsx
+2	2	src/app/morse-code/page.tsx
+5	1	src/app/olo-terminal/page.tsx
+2	2	src/app/pad-synth/page.tsx
+2	2	src/app/particle-collider/page.tsx
+2	2	src/app/party-mode/page.tsx
+5	1	src/app/solar-system/page.tsx
+2	2	src/app/sticky-notes/page.tsx
+2	2	src/app/style-pet/page.tsx
+5	1	src/app/typing-racer/page.tsx
+5	1	src/app/zen-garden/page.tsx
+
+commit 9d2fbb94ebd3b68f59492729990be309aa28ad57
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T16:06:56-05:00
+
+    Add title to home page
+
+4	1	src/app/page.tsx
+
+commit 40756d78c704bdd1e42df63ac0b3e1511fcbcd05 (origin/back-arrows, back-arrows)
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T16:13:54-05:00
+
+    Add canonical URLs
+
+3	0	src/app/dev/page.tsx
+3	0	src/app/layout.tsx
+
+commit 50f7e6c2e1100d47856c1d7da06157a2d642452b
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T17:17:45-05:00
+
+    Update mobile Solar System time control UI
+
+1	1	src/app/solar-system/components/SolarSystemViewport.tsx
+1	1	src/app/solar-system/components/TimelineControls.tsx
+
+commit 2f2ee8af2ef084aeb60bd4268ff68c8dd7405657
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T17:27:09-05:00
+
+    Update mobile home page cards UI
+
+14	11	src/app/page.tsx
+11	1	tests/home-hydration.smoke.spec.ts
+
+commit d703b83666831fd0bad74b051bfb4c1c2c69f0ea
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T17:30:02-05:00
+
+    Update Falling Sand mobile UI
+
+116	81	src/app/falling-sand/page.tsx
+45	44	src/app/falling-sand/styles.module.css
+52	2	tests/falling-sand.interactions.smoke.spec.ts
+
+commit 3c53ab70c2f1482f7a3de9d577b8c11808037b9e
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T17:34:49-05:00
+
+    Update Solar System labels
+
+2	2	src/app/solar-system/components/SolarSystemCreator.tsx
+3	5	src/app/solar-system/hooks/useSolarSystemExport.ts
+
+commit 8a2439d5865f2f560958100f36e1322124309114
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T18:55:52-05:00
+
+    Update Repo Visualizer loading
+
+33	0	src/app/repo-visualizer/components/RepositoryLoadingState.tsx
+43	17	src/app/repo-visualizer/components/Toolbar.tsx
+5	0	src/app/repo-visualizer/hooks/useGithubLoader.ts
+2	1	src/app/repo-visualizer/hooks/useGraphEngine.ts
+97	30	src/app/repo-visualizer/page.tsx
+49	0	tests/repo-visualizer.interactions.smoke.spec.ts
+ create mode 100644 src/app/repo-visualizer/components/RepositoryLoadingState.tsx
+ create mode 100644 tests/repo-visualizer.interactions.smoke.spec.ts
+
+commit 9434329bd4728a4f5d773c1a96a79b575cc14b3a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T19:33:24-05:00
+
+    Update Style Pet UI
+
+8	8	src/app/style-pet/page.tsx
+
+commit 682c586db765894df297e0cc6edf0d7c7b17538a
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T19:46:40-05:00
+
+    Update home page loading
+
+13	2	src/app/page.tsx
+
+commit c5398f5a0d45a049ee82b8cf6a9a681cdf2e52c9
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T22:26:24-05:00
+
+    Add fluid tracer rendering and controls
+
+87	9	src/app/fluid-simulation/fluidEngine.ts
+240	6	src/app/fluid-simulation/page.tsx
+9	1	src/app/fluid-simulation/styles.module.css
+137	0	tests/fluid-simulation.interactions.smoke.spec.ts
+ create mode 100644 tests/fluid-simulation.interactions.smoke.spec.ts
+
+commit 8190b16a1cc03bae60fb233425c16f4301178aae
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T23:13:33-05:00
+
+    Remove old demo Git history
+
+0	2	src/app/olo-terminal/constants.ts
+1	1	src/app/page.tsx
+1	1	src/app/repo-visualizer/components/RepoLoader.tsx
+30	8	src/app/repo-visualizer/components/RepositoryLoadingState.tsx
+1	311	src/app/repo-visualizer/constants.ts
+17	9	src/app/repo-visualizer/hooks/useGithubLoader.ts
+7	2	src/app/repo-visualizer/page.tsx
+1	1	src/app/repo-visualizer/types.ts
+2	24	src/app/repo-visualizer/utils/common.ts
+13	10	tests/repo-visualizer.interactions.smoke.spec.ts
+
+commit 030568dc2965ee4eb45923b9cdaa989617fbb089
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-15T23:38:44-05:00
+
+    Refactor Party Mode code
+
+1	1	src/app/olo-terminal/constants.ts
+64	68	src/app/party-mode/page.tsx
+
+commit ef652178ad2a35059829d0ad58caf88793ff39a4
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-16T00:04:13-05:00
+
+    Remove agent skills
+
+0	1206	.agents/skills/design-taste-frontend/SKILL.md
+0	49	.agents/skills/full-output-enforcement/SKILL.md
+0	74	.agents/skills/gpt-taste/SKILL.md
+0	98	.agents/skills/high-end-visual-design/SKILL.md
+ delete mode 100644 .agents/skills/design-taste-frontend/SKILL.md
+ delete mode 100644 .agents/skills/full-output-enforcement/SKILL.md
+ delete mode 100644 .agents/skills/gpt-taste/SKILL.md
+ delete mode 100644 .agents/skills/high-end-visual-design/SKILL.md
+
+commit 53da71c742f7f27813fc61ff64ae9a0b8e6886da
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-16T01:01:37-05:00
+
+    Update Repo Visualizer animation and playback
+
+154	137	src/app/repo-visualizer/components/GraphCanvas.tsx
+10	3	src/app/repo-visualizer/components/Toolbar.tsx
+0	1	src/app/repo-visualizer/constants.ts
+387	126	src/app/repo-visualizer/hooks/useGraphEngine.ts
+3	0	src/app/repo-visualizer/page.tsx
+5	2	src/app/repo-visualizer/types.ts
+58	0	src/app/repo-visualizer/utils/playback.ts
+32	1	tests/repo-visualizer.interactions.smoke.spec.ts
+ create mode 100644 src/app/repo-visualizer/utils/playback.ts
+
+commit aee700a896ecd4fd708b763770689b232b279438
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-16T01:06:33-05:00
+
+    Fix Repo Visualizer file name not displayed
+
+25	29	src/app/repo-visualizer/components/GraphCanvas.tsx
+
+commit 61c5512ce2b9aa26bb3e0a461cd6106957a67609 (HEAD -> main, origin/new-pages, origin/main, origin/HEAD, new-pages)
+Author: Aiden Carrera <aiden.carrera05@gmail.com>
+Date:   2026-07-16T01:17:49-05:00
+
+    Update Repo Visualizer playback controls
+
+0	1	src/app/repo-visualizer/components/Toolbar.tsx
+10	5	src/app/repo-visualizer/page.tsx
+28	0	tests/repo-visualizer.interactions.smoke.spec.ts
