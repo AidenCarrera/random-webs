@@ -66,7 +66,7 @@ export const DRAWABLE_MATERIALS: MaterialDefinition[] = [
     id: Material.LAVA,
     name: "Lava",
     color: "#e84e2c",
-    description: "Heavy molten rock that ignites and cools.",
+    description: "Heavy molten rock that ignites coals.",
     shortcut: "4",
   },
   {
@@ -122,7 +122,7 @@ export const DRAWABLE_MATERIALS: MaterialDefinition[] = [
     id: Material.STEAM,
     name: "Steam",
     color: "#aac3ca",
-    description: "A rising vapor that cools and condenses into water.",
+    description: "Rises to ceilings, slowly drips, then dissipates.",
     shortcut: "S",
   },
   {
@@ -136,14 +136,15 @@ export const DRAWABLE_MATERIALS: MaterialDefinition[] = [
     id: Material.MUD,
     name: "Mud",
     color: "#69533d",
-    description: "A dense slurry that rapidly grows seeds without water.",
+    description: "A wet and dense material that rapidly grows seeds without water.",
     shortcut: "M",
   },
   {
     id: Material.SEED,
     name: "Seed",
     color: "#9b66d1",
-    description: "A purple seed that grows flowers or extends existing plants.",
+    description:
+      "A purple seed that grows flowers or extends existing plants.",
     shortcut: "B",
   },
   {
@@ -416,6 +417,10 @@ const isHeat = (material: Material) =>
 
 const GROWTH_COOLDOWN = 12;
 const GROWTH_SHIFT = 4;
+const SEED_EMBER_FLAG = 1 << 15;
+const SEED_EMBER_RELEASE_LIFE = 42;
+const WOOD_FIRE_FLAG = 1 << 14;
+const FIRE_STATE_FLAGS = SEED_EMBER_FLAG | WOOD_FIRE_FLAG;
 
 const explosionRadius = (material: Material) => {
   switch (material) {
@@ -688,10 +693,18 @@ export class FallingSandEngine {
       this.explode(x, y, radius);
       return;
     }
+    if (material === Material.SEED) {
+      this.assign(index, Material.FIRE, SEED_EMBER_FLAG | (58 + randomInt(20)));
+      this.updated[index] = this.frame;
+      return;
+    }
+    if (material === Material.WOOD) {
+      this.assign(index, Material.FIRE, WOOD_FIRE_FLAG | (105 + randomInt(45)));
+      this.updated[index] = this.frame;
+      return;
+    }
     if (
-      material === Material.WOOD ||
       material === Material.PLANT ||
-      material === Material.SEED ||
       material === Material.FLOWER ||
       material === Material.SPROUT ||
       material === Material.OIL ||
@@ -790,13 +803,13 @@ export class FallingSandEngine {
       }
       if (
         ((material === Material.PLANT ||
+          material === Material.SEED ||
           material === Material.FLOWER ||
           material === Material.SPROUT) &&
-          Math.random() < 0.24) ||
-        (material === Material.SEED && Math.random() < 0.18) ||
-        (material === Material.WOOD && Math.random() < 0.06) ||
-        (material === Material.OIL && Math.random() < 0.42) ||
-        (material === Material.COAL && Math.random() < 0.08) ||
+          Math.random() < 0.21) ||
+        (material === Material.WOOD && Math.random() < 0.05) ||
+        (material === Material.OIL && Math.random() < 0.38) ||
+        (material === Material.COAL && Math.random() < 0.07) ||
         material === Material.FUSE ||
         explosionRadius(material) > 0
       ) {
@@ -804,9 +817,17 @@ export class FallingSandEngine {
       }
     }
 
-    if (this.life[index] === 0) this.life[index] = 35 + randomInt(65);
-    this.life[index] -= 1;
-    if (this.life[index] === 0 || Math.random() < 0.012) {
+    let seedEmber = (this.life[index] & SEED_EMBER_FLAG) !== 0;
+    const woodFire = (this.life[index] & WOOD_FIRE_FLAG) !== 0;
+    let fireLife = this.life[index] & ~FIRE_STATE_FLAGS;
+    if (fireLife === 0) fireLife = 35 + randomInt(65);
+    fireLife -= 1;
+    if (seedEmber && fireLife <= SEED_EMBER_RELEASE_LIFE) seedEmber = false;
+    this.life[index] =
+      fireLife |
+      (seedEmber ? SEED_EMBER_FLAG : 0) |
+      (woodFire ? WOOD_FIRE_FLAG : 0);
+    if (fireLife === 0 || Math.random() < (woodFire ? 0.003 : 0.012)) {
       if (Math.random() < 0.72) {
         this.assign(index, Material.SMOKE, 45 + randomInt(90));
       } else {
@@ -814,7 +835,7 @@ export class FallingSandEngine {
       }
       return;
     }
-    this.tryGasMove(x, y);
+    if (!seedEmber && !woodFire) this.tryGasMove(x, y);
   }
 
   private updateLava(x: number, y: number, index: number) {
@@ -1231,14 +1252,31 @@ export class FallingSandEngine {
   }
 
   private updateGas(x: number, y: number, index: number) {
+    if (this.cells[index] === Material.STEAM) {
+      if (this.life[index] === 0) this.life[index] = 80 + randomInt(100);
+      const materialAbove =
+        y > 0 ? (this.cells[this.index(x, y - 1)] as Material) : Material.EMPTY;
+      const hitCeiling =
+        y === 0 || (materialAbove !== Material.EMPTY && !isGas(materialAbove));
+      if (hitCeiling && Math.random() < 0.006) {
+        this.assign(index, Material.WATER);
+        return;
+      }
+      if (this.frame % 2 === 0) {
+        this.life[index] -= 1;
+        if (this.life[index] === 0) {
+          this.erase(index);
+          return;
+        }
+      }
+      this.tryGasMove(x, y);
+      return;
+    }
+
     if (this.life[index] === 0) this.life[index] = 80 + randomInt(100);
     this.life[index] -= 1;
     if (this.life[index] === 0) {
-      if (this.cells[index] === Material.STEAM && Math.random() < 0.55) {
-        this.assign(index, Material.WATER);
-      } else {
-        this.erase(index);
-      }
+      this.erase(index);
       return;
     }
     this.tryGasMove(x, y);
@@ -1342,6 +1380,12 @@ export class FallingSandEngine {
         if (dx * dx + dy * dy > radiusSquared) continue;
         if (material !== Material.EMPTY && Math.random() < 0.08) continue;
         const index = this.index(x, y);
+        if (
+          material === Material.FIRE &&
+          this.cells[index] !== Material.EMPTY
+        ) {
+          continue;
+        }
         const life =
           material === Material.FIRE
             ? 40 + randomInt(65)
