@@ -837,7 +837,7 @@ export default function StylePet() {
       {/* Main Console Container */}
       <div className="relative z-10 flex w-full flex-col items-center">
         {/* Device Outer Frame */}
-        <div className="relative flex w-[min(100%,420px)] flex-col items-center rounded-[50px] border-4 border-[#8f928d] bg-[#c8cac5] p-6 pb-16 pt-16 shadow-[0_30px_70px_rgba(8,24,31,0.5),inset_0_4px_8px_rgba(255,255,255,0.75),inset_0_-8px_14px_rgba(85,90,88,0.28)] animate-fade-in sm:p-8 sm:pb-18 sm:pt-16 md:w-125">
+        <div className="relative flex w-[min(100%,420px)] flex-col items-center rounded-[50px] border-4 border-[#8f928d] bg-[#bfc1bb] p-6 pb-16 pt-16 shadow-[0_30px_70px_rgba(8,24,31,0.5),inset_0_4px_8px_rgba(255,255,255,0.75),inset_0_-8px_14px_rgba(85,90,88,0.28)] animate-fade-in sm:p-8 sm:pb-18 sm:pt-16 md:w-125">
           {/* Handheld LCD Screen Area */}
           <div
             className="relative aspect-11/10 w-full overflow-hidden rounded-2xl border-solid border-[#676b69] bg-[#87977a] p-4 text-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.32),0_2px_4px_rgba(255,255,255,0.3)] flex flex-col"
@@ -1747,14 +1747,14 @@ export default function StylePet() {
             {/* Game Boy-style angled speaker grille */}
             <div
               aria-hidden="true"
-              className="ml-auto flex rotate-[-28deg] gap-2"
+              className="ml-auto translate-x-2 translate-y-4 flex rotate-[-28deg] gap-2.5"
             >
-              <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
-              <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
-              <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
-              <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
-              <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
-              <div className="h-9 w-1.5 rounded-full bg-[#777d7a]/70" />
+              <div className="h-16 w-2 rounded-full bg-[#777d7a]/70" />
+              <div className="h-16 w-2 rounded-full bg-[#777d7a]/70" />
+              <div className="h-16 w-2 rounded-full bg-[#777d7a]/70" />
+              <div className="h-16 w-2 rounded-full bg-[#777d7a]/70" />
+              <div className="h-16 w-2 rounded-full bg-[#777d7a]/70" />
+              <div className="h-16 w-2 rounded-full bg-[#777d7a]/70" />
             </div>
           </div>
         </div>
