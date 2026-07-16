@@ -1,101 +1,76 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { Activity, Music } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import * as Tone from "tone";
-import { Music, Activity } from "lucide-react";
 
 import styles from "./styles.module.css";
 
+const createScale = (notes: readonly string[]) =>
+  Array.from({ length: 16 }, (_, index) => {
+    const octave = 4 + Math.floor(index / notes.length);
+    return `${notes[index % notes.length]}${octave}`;
+  });
+
 const SCALES = {
-  Major: [
-    "C4",
-    "D4",
-    "E4",
-    "F4",
-    "G4",
-    "A4",
-    "B4",
-    "C5",
-    "D5",
-    "E5",
-    "F5",
-    "G5",
-    "A5",
-    "B5",
-    "C6",
-    "D6",
-  ],
-  Minor: [
-    "C4",
-    "D4",
-    "Eb4",
-    "F4",
-    "G4",
-    "Ab4",
-    "Bb4",
-    "C5",
-    "D5",
-    "Eb5",
-    "F5",
-    "G5",
-    "Ab5",
-    "Bb5",
-    "C6",
-    "D6",
-  ],
-  Pentatonic: [
-    "C4",
-    "D4",
-    "E4",
-    "G4",
-    "A4",
-    "C5",
-    "D5",
-    "E5",
-    "G5",
-    "A5",
-    "C6",
-    "D6",
-    "E6",
-    "G6",
-    "A6",
-    "C7",
-  ],
-  Blues: [
-    "C4",
-    "Eb4",
-    "F4",
-    "Gb4",
-    "G4",
-    "Bb4",
-    "C5",
-    "Eb5",
-    "F5",
-    "Gb5",
-    "G5",
-    "Bb5",
-    "C6",
-    "Eb6",
-    "F6",
-    "Gb6",
-  ],
+  Major: createScale(["C", "D", "E", "F", "G", "A", "B"]),
+  Minor: createScale(["C", "D", "Eb", "F", "G", "Ab", "Bb"]),
+  Pentatonic: createScale(["C", "D", "E", "G", "A"]),
+  Blues: createScale(["C", "Eb", "F", "Gb", "G", "Bb"]),
 };
 
 const DEFAULT_REVERB_AMT = 0.2;
 const DEFAULT_DELAY_AMT = 0.05;
 
+const OSCILLATOR_TYPES = ["sine", "triangle", "square", "sawtooth"] as const;
+type OscillatorType = (typeof OSCILLATOR_TYPES)[number];
+
+const OSCILLATOR_VOLUME_OFFSETS: Record<OscillatorType, number> = {
+  sine: 3,
+  triangle: 5,
+  square: -2,
+  sawtooth: 0,
+};
+
+const OSCILLATOR_ACTIVE_CLASSES: Record<OscillatorType, string> = {
+  sine: "bg-blue-500 text-white shadow-[inset_3px_3px_6px_#2563eb,inset_-3px_-3px_6px_#60a5fa]",
+  triangle:
+    "bg-emerald-500 text-white shadow-[inset_3px_3px_6px_#059669,inset_-3px_-3px_6px_#34d399]",
+  square:
+    "bg-amber-500 text-white shadow-[inset_3px_3px_6px_#d97706,inset_-3px_-3px_6px_#fbbf24]",
+  sawtooth:
+    "bg-red-500 text-white shadow-[inset_3px_3px_6px_#dc2626,inset_-3px_-3px_6px_#f87171]",
+};
+
+const NOTE_COLOR_CLASSES: Record<
+  OscillatorType,
+  readonly [active: string, hover: string]
+> = {
+  sine: ["text-blue-500", "hover:text-blue-400"],
+  triangle: ["text-emerald-500", "hover:text-emerald-400"],
+  square: ["text-amber-500", "hover:text-amber-400"],
+  sawtooth: ["text-red-500", "hover:text-red-400"],
+};
+
+const DELAY_TIMES = ["16n", "8n", "4n"] as const;
+type DelayTime = (typeof DELAY_TIMES)[number];
+
+const DELAY_TIME_LABELS: Record<DelayTime, string> = {
+  "16n": "1/16",
+  "8n": "1/8",
+  "4n": "1/4",
+};
+
 export default function PadSynth() {
   const [isReady, setIsReady] = useState(false);
   const [activeNote, setActiveNote] = useState<string | null>(null);
   const [volume, setVolume] = useState(-10);
-  const [oscType, setOscType] = useState<
-    "sine" | "triangle" | "square" | "sawtooth"
-  >("triangle");
+  const [oscType, setOscType] = useState<OscillatorType>("triangle");
   const [currentScale, setCurrentScale] =
     useState<keyof typeof SCALES>("Major");
   const [reverbAmt, setReverbAmt] = useState(DEFAULT_REVERB_AMT);
   const [delayAmt, setDelayAmt] = useState(DEFAULT_DELAY_AMT);
-  const [delayTime, setDelayTime] = useState<"16n" | "8n" | "4n">("8n");
+  const [delayTime, setDelayTime] = useState<DelayTime>("8n");
   const [stylesReady, setStylesReady] = useState(false);
 
   const synthRef = useRef<Tone.PolySynth | null>(null);
@@ -160,16 +135,7 @@ export default function PadSynth() {
       },
     }).connect(delay);
 
-    const volOffset =
-      oscType === "sine"
-        ? 3
-        : oscType === "triangle"
-          ? 5
-          : oscType === "square"
-            ? -2
-            : 0;
-
-    synth.volume.value = volume + volOffset;
+    synth.volume.value = volume + OSCILLATOR_VOLUME_OFFSETS[oscType];
     synthRef.current = synth;
     setIsReady(true);
   };
@@ -208,37 +174,16 @@ export default function PadSynth() {
     setVolume(val);
 
     if (synthRef.current) {
-      const offset =
-        oscType === "sine"
-          ? 3
-          : oscType === "triangle"
-            ? 5
-            : oscType === "square"
-              ? -2
-              : 0;
-
-      synthRef.current.volume.value = val + offset;
+      synthRef.current.volume.value = val + OSCILLATOR_VOLUME_OFFSETS[oscType];
     }
   };
 
-  const handleOscChange = (
-    type: "sine" | "triangle" | "square" | "sawtooth",
-  ) => {
+  const handleOscChange = (type: OscillatorType) => {
     setOscType(type);
 
     if (synthRef.current) {
       synthRef.current.set({ oscillator: { type } });
-
-      const offset =
-        type === "sine"
-          ? 3
-          : type === "triangle"
-            ? 5
-            : type === "square"
-              ? -2
-              : 0;
-
-      synthRef.current.volume.value = volume + offset;
+      synthRef.current.volume.value = volume + OSCILLATOR_VOLUME_OFFSETS[type];
     }
   };
 
@@ -259,10 +204,9 @@ export default function PadSynth() {
   };
 
   const toggleDelayTime = () => {
-    const options: ("16n" | "8n" | "4n")[] = ["16n", "8n", "4n"];
-    const currentIndex = options.indexOf(delayTime);
-    const nextIndex = (currentIndex + 1) % options.length;
-    const nextTime = options[nextIndex];
+    const currentIndex = DELAY_TIMES.indexOf(delayTime);
+    const nextIndex = (currentIndex + 1) % DELAY_TIMES.length;
+    const nextTime = DELAY_TIMES[nextIndex];
 
     setDelayTime(nextTime);
 
@@ -270,6 +214,8 @@ export default function PadSynth() {
       delayRef.current.delayTime.value = nextTime;
     }
   };
+
+  const [activeNoteColor, hoverNoteColor] = NOTE_COLOR_CLASSES[oscType];
 
   return (
     <main
@@ -335,36 +281,19 @@ export default function PadSynth() {
               Waveform
             </label>
             <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              {["sine", "triangle", "square", "sawtooth"].map((type) => {
-                const activeClasses =
-                  {
-                    sine: "bg-blue-500 text-white shadow-[inset_3px_3px_6px_#2563eb,inset_-3px_-3px_6px_#60a5fa]",
-                    triangle:
-                      "bg-emerald-500 text-white shadow-[inset_3px_3px_6px_#059669,inset_-3px_-3px_6px_#34d399]",
-                    square:
-                      "bg-amber-500 text-white shadow-[inset_3px_3px_6px_#d97706,inset_-3px_-3px_6px_#fbbf24]",
-                    sawtooth:
-                      "bg-red-500 text-white shadow-[inset_3px_3px_6px_#dc2626,inset_-3px_-3px_6px_#f87171]",
-                  }[type] || "";
-
-                return (
-                  <button
-                    key={type}
-                    onClick={() =>
-                      handleOscChange(
-                        type as "sine" | "triangle" | "square" | "sawtooth",
-                      )
-                    }
-                    className={`py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold capitalize transition-all duration-200 ${
-                      oscType === type
-                        ? activeClasses
-                        : "shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] hover:-translate-y-0.5"
-                    }`}
-                  >
-                    {type}
-                  </button>
-                );
-              })}
+              {OSCILLATOR_TYPES.map((type) => (
+                <button
+                  key={type}
+                  onClick={() => handleOscChange(type)}
+                  className={`py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold capitalize transition-all duration-200 ${
+                    oscType === type
+                      ? OSCILLATOR_ACTIVE_CLASSES[type]
+                      : "shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] hover:-translate-y-0.5"
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -409,11 +338,7 @@ export default function PadSynth() {
                     className="bg-[#e0e5ec] shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] active:shadow-[inset_2px_2px_5px_#bebebe,inset_-2px_-2px_5px_#ffffff] px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] hover:text-blue-500 transition-all font-mono"
                     title="Toggle Delay Time"
                   >
-                    {delayTime === "16n"
-                      ? "1/16"
-                      : delayTime === "8n"
-                        ? "1/8"
-                        : "1/4"}
+                    {DELAY_TIME_LABELS[delayTime]}
                   </button>
                 </span>
                 <span>{Math.round(delayAmt * 100)}%</span>
@@ -438,47 +363,34 @@ export default function PadSynth() {
             handleTouchMove(e);
           }}
         >
-          {SCALES[currentScale].map((note) => {
-            const colorClasses = {
-              sine: "text-blue-500 hover:text-blue-400",
-              triangle: "text-emerald-500 hover:text-emerald-400",
-              square: "text-amber-500 hover:text-amber-400",
-              sawtooth: "text-red-500 hover:text-red-400",
-            }[oscType];
-
-            const activeColor = colorClasses.split(" ")[0];
-
-            return (
-              <button
-                key={note}
-                data-note={note}
-                onMouseDown={() => {
-                  isMouseDown.current = true;
-                  playNote(note);
-                }}
-                onMouseEnter={() => {
-                  if (isMouseDown.current) playNote(note);
-                }}
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  playNote(note);
-                }}
-                className={`
+          {SCALES[currentScale].map((note) => (
+            <button
+              key={note}
+              data-note={note}
+              onMouseDown={() => {
+                isMouseDown.current = true;
+                playNote(note);
+              }}
+              onMouseEnter={() => {
+                if (isMouseDown.current) playNote(note);
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                playNote(note);
+              }}
+              className={`
                   aspect-square rounded-xl sm:rounded-2xl md:rounded-3xl flex items-center justify-center
                   text-sm sm:text-lg font-bold transition-all duration-150 touch-none select-none
                   ${
                     activeNote === note
-                      ? `shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] ${activeColor} scale-95`
-                      : `shadow-[8px_8px_16px_#bebebe,-8px_-8px_16px_#ffffff] text-slate-500 ${
-                          colorClasses.split(" ")[1]
-                        } active:scale-95`
+                      ? `shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] ${activeNoteColor} scale-95`
+                      : `shadow-[8px_8px_16px_#bebebe,-8px_-8px_16px_#ffffff] text-slate-500 ${hoverNoteColor} active:scale-95`
                   }
                 `}
-              >
-                {note}
-              </button>
-            );
-          })}
+            >
+              {note}
+            </button>
+          ))}
         </div>
       </div>
     </main>
