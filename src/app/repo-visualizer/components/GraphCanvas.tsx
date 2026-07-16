@@ -309,35 +309,31 @@ export function GraphCanvas({
           }
         }
 
-        const shouldLabel =
-          node.kind === "root" ||
-          active ||
-          (camera.zoom > 0.72 &&
-            node.kind === "directory" &&
-            node.depth <= 2) ||
-          (camera.zoom > 1.08 && node.kind === "file" && node.depth <= 3);
-
-        if (shouldLabel) {
-          const fontSize = node.kind === "root" ? 12 : active ? 11 : 10;
-          context.font = `${node.kind === "root" || active ? 600 : 500} ${fontSize}px ui-monospace, SFMono-Regular, Menlo, monospace`;
-          context.textAlign = "center";
-          context.textBaseline = "top";
-          context.shadowColor = "rgba(0,0,0,0.85)";
-          context.shadowBlur = 6;
-          context.fillStyle = node.deleted
-            ? "#fda4af"
-            : active
-              ? "#f8fafc"
-              : "#aab7cf";
-          context.globalAlpha = active
-            ? Math.min(1, node.displayAlpha)
-            : Math.min(0.9, node.displayAlpha);
-          context.fillText(
-            node.kind === "root" ? dataset.name.split(" / ")[0] : node.name,
-            position.x,
-            position.y + radius + 7,
-          );
-        }
+        const fontSize = node.kind === "root" ? 12 : active ? 11 : 10;
+        const isFile = node.kind === "file";
+        const labelDirection = worldPosition.x >= 0 ? 1 : -1;
+        context.font = `${node.kind === "root" || active ? 600 : 500} ${fontSize}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+        context.textAlign = isFile
+          ? labelDirection > 0
+            ? "left"
+            : "right"
+          : "center";
+        context.textBaseline = isFile ? "middle" : "top";
+        context.shadowColor = "rgba(0,0,0,0.85)";
+        context.shadowBlur = 6;
+        context.fillStyle = node.deleted
+          ? "#fda4af"
+          : active
+            ? "#f8fafc"
+            : "#aab7cf";
+        context.globalAlpha = active
+          ? Math.min(1, node.displayAlpha)
+          : Math.min(0.9, node.displayAlpha);
+        context.fillText(
+          node.kind === "root" ? dataset.name.split(" / ")[0] : node.name,
+          isFile ? position.x + labelDirection * (radius + 5) : position.x,
+          isFile ? position.y : position.y + radius + 7,
+        );
 
         context.restore();
       }
