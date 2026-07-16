@@ -52,7 +52,19 @@ test.describe("Falling Sand interactions", () => {
       "Oil (9)",
       "Salt (0)",
     ]);
-    expect(materialTitles.slice(18, 23)).toEqual([
+    expect(materialTitles.slice(10, 20)).toEqual([
+      "Ice (I)",
+      "Steam (S)",
+      "Dirt (D)",
+      "Mud (M)",
+      "Seed (B)",
+      "Snow (N)",
+      "Coal (C)",
+      "Metal (H)",
+      "Glass (V)",
+      "Methane (A)",
+    ]);
+    expect(materialTitles.slice(20, 25)).toEqual([
       "Powder (G)",
       "Fuse (F)",
       "TNT (T)",
@@ -195,6 +207,8 @@ test.describe("Falling Sand interactions", () => {
       "Glass",
       "Snow",
       "Methane",
+      "Steam",
+      "Seed",
       "TNT",
       "Nitro",
       "C4",
@@ -206,6 +220,19 @@ test.describe("Falling Sand interactions", () => {
     }
     await expect(page.getByRole("button", { name: "Firework" })).toHaveCount(0);
     await expect(page.getByText("G", { exact: true })).toHaveCount(1);
+    await page.keyboard.press("s");
+    await expect(page.getByRole("button", { name: "Steam" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await page.keyboard.press("b");
+    const seed = page.getByRole("button", { name: "Seed" });
+    await expect(seed).toHaveAttribute("aria-pressed", "true");
+    expect(
+      await seed.evaluate((element) =>
+        getComputedStyle(element).getPropertyValue("--material-color").trim(),
+      ),
+    ).toBe("#9b66d1");
     await page.keyboard.press("x");
     await expect(page.getByRole("button", { name: "C4" })).toHaveAttribute(
       "aria-pressed",

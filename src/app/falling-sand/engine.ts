@@ -25,9 +25,12 @@ export enum Material {
   NITRO = 23,
   C4 = 24,
   FUSE = 25,
+  SEED = 26,
+  FLOWER = 27,
+  SPROUT = 28,
 }
 
-export const MATERIAL_COUNT = Material.FUSE + 1;
+export const MATERIAL_COUNT = Material.SPROUT + 1;
 
 export type MaterialDefinition = {
   id: Material;
@@ -116,6 +119,13 @@ export const DRAWABLE_MATERIALS: MaterialDefinition[] = [
     shortcut: "I",
   },
   {
+    id: Material.STEAM,
+    name: "Steam",
+    color: "#aac3ca",
+    description: "A rising vapor that cools and condenses into water.",
+    shortcut: "S",
+  },
+  {
     id: Material.DIRT,
     name: "Dirt",
     color: "#8f6945",
@@ -126,8 +136,15 @@ export const DRAWABLE_MATERIALS: MaterialDefinition[] = [
     id: Material.MUD,
     name: "Mud",
     color: "#69533d",
-    description: "A dense slurry that slowly flows and dries near heat.",
+    description: "A dense slurry that rapidly grows seeds without water.",
     shortcut: "M",
+  },
+  {
+    id: Material.SEED,
+    name: "Seed",
+    color: "#9b66d1",
+    description: "A purple seed that grows flowers or extends existing plants.",
+    shortcut: "B",
   },
   {
     id: Material.SNOW,
@@ -358,6 +375,23 @@ const PALETTES: ReadonlyArray<
     [204, 153, 82],
     [245, 143, 43],
   ],
+  [
+    [155, 102, 209],
+    [124, 77, 180],
+    [184, 133, 225],
+  ],
+  [
+    [236, 103, 140],
+    [181, 105, 214],
+    [241, 185, 70],
+    [106, 181, 229],
+    [238, 126, 79],
+  ],
+  [
+    [116, 188, 91],
+    [83, 155, 68],
+    [145, 207, 105],
+  ],
 ];
 
 const LIQUID_DENSITY: Partial<Record<Material, number>> = {
@@ -379,6 +413,9 @@ const isGas = (material: Material) =>
 
 const isHeat = (material: Material) =>
   material === Material.FIRE || material === Material.LAVA;
+
+const GROWTH_COOLDOWN = 12;
+const GROWTH_SHIFT = 4;
 
 const explosionRadius = (material: Material) => {
   switch (material) {
@@ -600,6 +637,43 @@ export class FallingSandEngine {
     return result;
   }
 
+  private findNearby(
+    centerX: number,
+    centerY: number,
+    radius: number,
+    material: Material,
+  ) {
+    for (let y = centerY - radius; y <= centerY + radius; y += 1) {
+      for (let x = centerX - radius; x <= centerX + radius; x += 1) {
+        if (!this.inBounds(x, y)) continue;
+        const index = this.index(x, y);
+        if (this.cells[index] === material) return index;
+      }
+    }
+    return undefined;
+  }
+
+  private removeNearbySeeds(
+    centerX: number,
+    centerY: number,
+    radius: number,
+    except?: number,
+  ) {
+    const radiusSquared = radius * radius;
+    for (let y = centerY - radius; y <= centerY + radius; y += 1) {
+      for (let x = centerX - radius; x <= centerX + radius; x += 1) {
+        if (!this.inBounds(x, y)) continue;
+        const dx = x - centerX;
+        const dy = y - centerY;
+        if (dx * dx + dy * dy > radiusSquared) continue;
+        const target = this.index(x, y);
+        if (target === except || this.cells[target] !== Material.SEED) continue;
+        this.erase(target);
+        this.updated[target] = this.frame;
+      }
+    }
+  }
+
   private ignite(index: number) {
     const material = this.cells[index] as Material;
     if (material === Material.FUSE) {
@@ -617,6 +691,9 @@ export class FallingSandEngine {
     if (
       material === Material.WOOD ||
       material === Material.PLANT ||
+      material === Material.SEED ||
+      material === Material.FLOWER ||
+      material === Material.SPROUT ||
       material === Material.OIL ||
       material === Material.COAL
     ) {
@@ -712,7 +789,11 @@ export class FallingSandEngine {
         return;
       }
       if (
-        (material === Material.PLANT && Math.random() < 0.24) ||
+        ((material === Material.PLANT ||
+          material === Material.FLOWER ||
+          material === Material.SPROUT) &&
+          Math.random() < 0.24) ||
+        (material === Material.SEED && Math.random() < 0.18) ||
         (material === Material.WOOD && Math.random() < 0.06) ||
         (material === Material.OIL && Math.random() < 0.42) ||
         (material === Material.COAL && Math.random() < 0.08) ||
@@ -754,6 +835,9 @@ export class FallingSandEngine {
       if (
         material === Material.WOOD ||
         material === Material.PLANT ||
+        material === Material.SEED ||
+        material === Material.FLOWER ||
+        material === Material.SPROUT ||
         material === Material.OIL ||
         material === Material.COAL ||
         material === Material.FUSE ||
@@ -829,6 +913,148 @@ export class FallingSandEngine {
       if (water !== undefined) this.erase(water);
     }
     this.updated[index] = this.frame;
+  }
+
+  private updateSeed(x: number, y: number, index: number) {
+    const soilY = y + 1;
+    const soil = this.inBounds(x, soilY)
+      ? (this.cells[this.index(x, soilY)] as Material)
+      : Material.EMPTY;
+    const water = this.findNearby(x, y, 1, Material.WATER);
+    const touchingPlant = this.neighbors(x, y).some((neighbor) => {
+      const material = this.cells[neighbor] as Material;
+      return (
+        material === Material.PLANT ||
+        material === Material.FLOWER ||
+        material === Material.SPROUT
+      );
+    });
+    const germinationTicks = touchingPlant
+      ? 28
+      : soil === Material.MUD
+        ? 28
+        : soil === Material.DIRT
+          ? 55
+          : water !== undefined
+            ? 110
+            : 0;
+
+    if (germinationTicks === 0) {
+      this.life[index] = 0;
+      this.tryPowderMove(x, y);
+      return;
+    }
+
+    this.life[index] += 1;
+    if (this.life[index] < germinationTicks) {
+      if (!touchingPlant && soil !== Material.MUD && soil !== Material.DIRT) {
+        this.tryPowderMove(x, y);
+      }
+      return;
+    }
+
+    if (touchingPlant) {
+      const extraHeight = 10 + randomInt(9);
+      this.removeNearbySeeds(x, y, 1, index);
+      this.assign(
+        index,
+        Material.SPROUT,
+        (extraHeight << GROWTH_SHIFT) | GROWTH_COOLDOWN,
+      );
+      this.updated[index] = this.frame;
+      return;
+    }
+
+    const firstStemY = y - 1;
+    if (!this.inBounds(x, firstStemY)) return;
+    if (this.cells[this.index(x, firstStemY)] !== Material.EMPTY) return;
+
+    const targetHeight = 10 + randomInt(9);
+    const tip = this.index(x, firstStemY);
+    this.removeNearbySeeds(x, y, 2, index);
+    this.assign(index, Material.PLANT);
+    this.assign(
+      tip,
+      Material.SPROUT,
+      ((targetHeight - 1) << GROWTH_SHIFT) | GROWTH_COOLDOWN,
+    );
+    this.updated[index] = this.frame;
+    this.updated[tip] = this.frame;
+    if (water !== undefined && Math.random() < 0.22) this.erase(water);
+  }
+
+  private updateSprout(x: number, y: number, index: number) {
+    const remaining = this.life[index] >> GROWTH_SHIFT;
+    const cooldown = this.life[index] & 0x0f;
+    if (cooldown > 0) {
+      this.life[index] -= 1;
+      return;
+    }
+
+    if (remaining === 0) {
+      this.assign(index, Material.FLOWER);
+      return;
+    }
+
+    const targetY = y - 1;
+    if (!this.inBounds(x, targetY)) {
+      this.assign(index, Material.FLOWER);
+      return;
+    }
+
+    let nextX = x;
+    if (remaining % 3 === 0) {
+      const drift = Math.random() < 0.5 ? -1 : 1;
+      const driftX = x + drift;
+      if (
+        this.inBounds(driftX, targetY) &&
+        this.cells[this.index(driftX, targetY)] === Material.EMPTY
+      ) {
+        nextX = driftX;
+      }
+    }
+
+    let target = this.index(nextX, targetY);
+    if (this.cells[target] === Material.SEED) this.erase(target);
+    if (this.cells[target] !== Material.EMPTY && nextX !== x) {
+      nextX = x;
+      target = this.index(nextX, targetY);
+      if (this.cells[target] === Material.SEED) this.erase(target);
+    }
+    if (this.cells[target] !== Material.EMPTY) {
+      this.assign(index, Material.FLOWER);
+      return;
+    }
+
+    this.assign(index, Material.PLANT);
+    this.assign(
+      target,
+      Material.SPROUT,
+      ((remaining - 1) << GROWTH_SHIFT) | GROWTH_COOLDOWN,
+    );
+    this.updated[index] = this.frame;
+    this.updated[target] = this.frame;
+    this.removeNearbySeeds(nextX, targetY, 1);
+
+    if (remaining > 2 && remaining % 3 === 0) {
+      const branchDirection = remaining % 2 === 0 ? -1 : 1;
+      const branchLength = 2 + randomInt(3);
+      let branchTip: number | undefined;
+      for (let branchStep = 1; branchStep <= branchLength; branchStep += 1) {
+        const branchX = nextX + branchDirection * branchStep;
+        const branchY = targetY + Math.floor(branchStep / 2);
+        if (!this.inBounds(branchX, branchY)) break;
+        const branch = this.index(branchX, branchY);
+        if (this.cells[branch] !== Material.EMPTY) break;
+        this.assign(branch, Material.PLANT);
+        this.updated[branch] = this.frame;
+        branchTip = branch;
+      }
+      if (branchTip !== undefined) {
+        this.assign(branchTip, Material.FLOWER);
+        this.updated[branchTip] = this.frame;
+      }
+    }
   }
 
   private updateIce(x: number, y: number, index: number) {
@@ -934,6 +1160,9 @@ export class FallingSandEngine {
         return (
           material === Material.WOOD ||
           material === Material.PLANT ||
+          material === Material.SEED ||
+          material === Material.FLOWER ||
+          material === Material.SPROUT ||
           material === Material.OIL ||
           material === Material.COAL ||
           material === Material.FUSE ||
@@ -1046,6 +1275,12 @@ export class FallingSandEngine {
               break;
             case Material.SNOW:
               this.updateSnow(x, y, index);
+              break;
+            case Material.SEED:
+              this.updateSeed(x, y, index);
+              break;
+            case Material.SPROUT:
+              this.updateSprout(x, y, index);
               break;
             case Material.FUSE:
               this.updateFuse(x, y, index);

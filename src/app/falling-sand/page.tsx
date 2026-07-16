@@ -85,6 +85,9 @@ const MATERIAL_ICONS: Record<Material, LucideIcon> = {
   [Material.NITRO]: FlaskConical,
   [Material.C4]: Bomb,
   [Material.FUSE]: Fuel,
+  [Material.SEED]: Sprout,
+  [Material.FLOWER]: Sprout,
+  [Material.SPROUT]: Sprout,
 };
 
 const KEYBOARD_MATERIALS = new Map(
