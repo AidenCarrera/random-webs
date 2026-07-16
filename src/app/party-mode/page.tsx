@@ -1,62 +1,76 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import confetti from "canvas-confetti";
-import { Sparkles } from "lucide-react";
 
 import styles from "./styles.module.css";
 
+const PARTY_DURATION = 5_000;
+const PARTY_RESET_DELAY = 5_500;
+const PARTY_EMOJIS = ["🎈", "🎉", "🥳", "✨", "🎁", "🍰", "🍾", "🥂"];
+
+const FLOATING_EMOJIS = Array.from({ length: 28 }, (_, index) => ({
+  emoji: PARTY_EMOJIS[index % PARTY_EMOJIS.length],
+  style: {
+    left: `${((index * 37) % 94) + 3}%`,
+    animationDelay: `${index * 0.12}s`,
+    animationDuration: `${3.6 + (index % 3) * 0.9}s`,
+    fontSize: `${32 + (index % 4) * 12}px`,
+  },
+}));
+
+const randomInRange = (min: number, max: number) =>
+  Math.random() * (max - min) + min;
+
 export default function PartyMode() {
   const [isPartying, setIsPartying] = useState(false);
-  const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const resetTimeoutRef = useRef<number>(null);
+  const confettiIntervalsRef = useRef(new Set<number>());
 
-  const fireConfetti = () => {
+  useEffect(() => {
+    const intervals = confettiIntervalsRef.current;
+
+    return () => {
+      if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
+      intervals.forEach(clearInterval);
+    };
+  }, []);
+
+  const celebrate = () => {
     setIsPartying(true);
+    if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
+    resetTimeoutRef.current = window.setTimeout(
+      () => setIsPartying(false),
+      PARTY_RESET_DELAY,
+    );
 
-    // Reset party state after confetti ends, extending if user clicks again
-    if (resetTimeoutRef.current) {
-      clearTimeout(resetTimeoutRef.current);
-    }
+    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
-    resetTimeoutRef.current = setTimeout(() => {
-      setIsPartying(false);
-    }, 5500);
-
-    const duration = 5 * 1000;
-    const animationEnd = Date.now() + duration;
+    const animationEnd = Date.now() + PARTY_DURATION;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-    const randomInRange = (min: number, max: number) =>
-      Math.random() * (max - min) + min;
-
-    const interval: NodeJS.Timeout = setInterval(function () {
+    const interval = window.setInterval(() => {
       const timeLeft = animationEnd - Date.now();
 
       if (timeLeft <= 0) {
-        return clearInterval(interval);
+        clearInterval(interval);
+        confettiIntervalsRef.current.delete(interval);
+        return;
       }
 
-      const particleCount = 50 * (timeLeft / duration);
-
-      confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-      });
-      confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
+      const particleCount = 50 * (timeLeft / PARTY_DURATION);
+      [0.1, 0.7].forEach((minX) => {
+        confetti({
+          ...defaults,
+          particleCount,
+          origin: {
+            x: randomInRange(minX, minX + 0.2),
+            y: Math.random() - 0.2,
+          },
+        });
       });
     }, 250);
-  };
 
-  const bigBang = () => {
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-    });
+    confettiIntervalsRef.current.add(interval);
   };
 
   return (
@@ -67,31 +81,17 @@ export default function PartyMode() {
     >
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/confetti.png')] opacity-20 pointer-events-none" />
 
-      {/* Floating Party Emojis */}
       {isPartying && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
-          {Array.from({ length: 28 }).map((_, i) => {
-            const emojis = ["🎈", "🎉", "🥳", "✨", "🎁", "🍰", "🍾", "🥂"];
-            const left = ((i * 37) % 94) + 3;
-            const delay = i * 0.12 + "s";
-            const duration = 3.6 + (i % 3) * 0.9 + "s";
-            const emoji = emojis[i % emojis.length];
-            const size = 32 + (i % 4) * 12 + "px";
-            return (
-              <div
-                key={i}
-                className="absolute bottom-0 translate-y-full animate-float-up pointer-events-none"
-                style={{
-                  left: `${left}%`,
-                  animationDelay: delay,
-                  animationDuration: duration,
-                  fontSize: size,
-                }}
-              >
-                {emoji}
-              </div>
-            );
-          })}
+          {FLOATING_EMOJIS.map(({ emoji, style }, index) => (
+            <div
+              key={index}
+              className="absolute bottom-0 translate-y-full animate-float-up"
+              style={style}
+            >
+              {emoji}
+            </div>
+          ))}
         </div>
       )}
 
@@ -104,14 +104,10 @@ export default function PartyMode() {
       </h1>
 
       <button
-        onClick={() => {
-          bigBang();
-          fireConfetti();
-        }}
-        className="group relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden text-sm font-medium rounded-lg group bg-linear-to-br from-pink-500 to-orange-400 hover:text-white focus:ring-4 focus:outline-none focus:ring-pink-200"
+        onClick={celebrate}
+        className="relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden rounded-lg bg-linear-to-br from-pink-500 to-orange-400 focus:ring-4 focus:outline-none focus:ring-pink-200"
       >
-        <span className="relative flex items-center gap-4 px-12 py-6 transition-all ease-in duration-75 bg-white rounded-md text-2xl font-bold uppercase text-orange-500">
-          <Sparkles className="w-8 h-8 animate-spin-slow" />
+        <span className="flex px-12 py-6 bg-white rounded-md text-2xl font-bold uppercase text-orange-500">
           CELEBRATE
         </span>
       </button>

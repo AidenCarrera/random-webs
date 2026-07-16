@@ -231,7 +231,7 @@ export const JOKES = [
 export const FORTUNES = [
   "You will soon build a startup that lobbies Congress.",
   "You will spend two hours fixing a one-line typo.",
-  "You will ask AI for a simple function and receive an full stack application.",
+  "You will ask AI for a simple function and receive a full stack application.",
   "There is a 100% chance of rain. Matrix code rain, that is.",
   "Your next side project will actually get finished.",
   "A late-night idea will become your favorite creation.",
