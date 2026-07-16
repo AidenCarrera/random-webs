@@ -139,7 +139,6 @@ export function Toolbar({
                 value={cursor}
                 disabled={!isReady}
                 onChange={(event) => {
-                  setIsPlaying(false);
                   setCursor(Number(event.target.value));
                 }}
                 className="relative block h-3.5 w-full cursor-pointer appearance-none rounded-full bg-transparent outline-none focus:outline-none focus:ring-0 disabled:cursor-wait

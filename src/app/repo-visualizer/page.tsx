@@ -129,10 +129,13 @@ export default function GithubHistoryVisualizerPage() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
+      const isTextInput =
+        target instanceof HTMLInputElement &&
+        !["button", "checkbox", "radio", "range"].includes(target.type);
       if (
-        target?.tagName === "INPUT" ||
-        target?.tagName === "TEXTAREA" ||
-        target?.tagName === "SELECT" ||
+        isTextInput ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
         target?.isContentEditable
       ) {
         return;
@@ -140,6 +143,7 @@ export default function GithubHistoryVisualizerPage() {
 
       if (event.code === "Space" && isDatasetReady) {
         event.preventDefault();
+        if (event.repeat) return;
         setIsPlaying((playing) => !playing);
       } else if (event.key === "ArrowRight" && isDatasetReady) {
         event.preventDefault();
@@ -165,8 +169,9 @@ export default function GithubHistoryVisualizerPage() {
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () =>
+      window.removeEventListener("keydown", handleKeyDown, { capture: true });
   }, [
     changeZoom,
     dataset.events.length,

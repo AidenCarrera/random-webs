@@ -80,4 +80,32 @@ test.describe("Repository Visualizer loading and playback", () => {
     const resumedFrame = await canvas.screenshot();
     expect(resumedFrame.equals(heldFrame)).toBe(false);
   });
+
+  test("continues playing after the timeline is scrubbed", async ({ page }) => {
+    await page.goto("/repo-visualizer", { waitUntil: "domcontentloaded" });
+
+    await page.getByRole("button", { name: "Start playback" }).click();
+    const timeline = page.getByRole("slider", { name: "Commit timeline" });
+    const pauseButton = page.getByRole("button", { name: "Pause playback" });
+
+    await timeline.fill("12");
+    await expect(timeline).toHaveValue("12");
+    await expect(pauseButton).toBeVisible();
+
+    await timeline.press("Space");
+    await expect(
+      page.getByRole("button", { name: "Start playback" }),
+    ).toBeVisible();
+    await timeline.press("Space");
+    await expect(pauseButton).toBeVisible();
+
+    await timeline.fill("3");
+    await expect(timeline).toHaveValue("3");
+    await expect(pauseButton).toBeVisible();
+    await expect
+      .poll(async () => Number(await timeline.inputValue()), {
+        timeout: 3_000,
+      })
+      .toBeGreaterThan(3);
+  });
 });
