@@ -130,4 +130,26 @@ test.describe("Repository Visualizer loading and playback", () => {
       page.getByRole("button", { name: "Start playback" }),
     ).toBeVisible({ timeout: 5_000 });
   });
+
+  test("opens the shared export modal without downloading immediately", async ({
+    page,
+  }) => {
+    let downloadStarted = false;
+    page.on("download", () => {
+      downloadStarted = true;
+    });
+
+    await page.goto("/repo-visualizer", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: "Download PNG" }).click();
+
+    await expect(
+      page.getByRole("heading", { name: "Repository visualization" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Download PNG" }),
+    ).toBeVisible();
+    await expect(page.getByText("Share this visualization")).toBeVisible();
+    await page.waitForTimeout(150);
+    expect(downloadStarted).toBe(false);
+  });
 });

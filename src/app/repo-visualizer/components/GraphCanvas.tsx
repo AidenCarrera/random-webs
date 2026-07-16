@@ -10,6 +10,8 @@ import { deterministicUnit, initials } from "../utils/common";
 import { assignTreeLayout } from "../utils/graph";
 import { STATUS_COLORS, ROOT_ID } from "../constants";
 
+const MIN_LABEL_ZOOM = 0.8;
+
 type GraphCanvasProps = {
   dataset: Dataset;
   graphRef: MutableRefObject<Map<string, GraphNode>>;
@@ -309,31 +311,33 @@ export function GraphCanvas({
           }
         }
 
-        const fontSize = node.kind === "root" ? 12 : active ? 11 : 10;
-        const isFile = node.kind === "file";
-        const labelDirection = worldPosition.x >= 0 ? 1 : -1;
-        context.font = `${node.kind === "root" || active ? 600 : 500} ${fontSize}px ui-monospace, SFMono-Regular, Menlo, monospace`;
-        context.textAlign = isFile
-          ? labelDirection > 0
-            ? "left"
-            : "right"
-          : "center";
-        context.textBaseline = isFile ? "middle" : "top";
-        context.shadowColor = "rgba(0,0,0,0.85)";
-        context.shadowBlur = 6;
-        context.fillStyle = node.deleted
-          ? "#fda4af"
-          : active
-            ? "#f8fafc"
-            : "#aab7cf";
-        context.globalAlpha = active
-          ? Math.min(1, node.displayAlpha)
-          : Math.min(0.9, node.displayAlpha);
-        context.fillText(
-          node.kind === "root" ? dataset.name.split(" / ")[0] : node.name,
-          isFile ? position.x + labelDirection * (radius + 5) : position.x,
-          isFile ? position.y : position.y + radius + 7,
-        );
+        if (camera.zoom >= MIN_LABEL_ZOOM) {
+          const fontSize = node.kind === "root" ? 12 : active ? 11 : 10;
+          const isFile = node.kind === "file";
+          const labelDirection = worldPosition.x >= 0 ? 1 : -1;
+          context.font = `${node.kind === "root" || active ? 600 : 500} ${fontSize}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+          context.textAlign = isFile
+            ? labelDirection > 0
+              ? "left"
+              : "right"
+            : "center";
+          context.textBaseline = isFile ? "middle" : "top";
+          context.shadowColor = "rgba(0,0,0,0.85)";
+          context.shadowBlur = 6;
+          context.fillStyle = node.deleted
+            ? "#fda4af"
+            : active
+              ? "#f8fafc"
+              : "#aab7cf";
+          context.globalAlpha = active
+            ? Math.min(1, node.displayAlpha)
+            : Math.min(0.9, node.displayAlpha);
+          context.fillText(
+            node.kind === "root" ? dataset.name.split(" / ")[0] : node.name,
+            isFile ? position.x + labelDirection * (radius + 5) : position.x,
+            isFile ? position.y : position.y + radius + 7,
+          );
+        }
 
         context.restore();
       }
@@ -481,23 +485,25 @@ export function GraphCanvas({
         context.arc(0, 0, avatarRadius + 1, 0, Math.PI * 2);
         context.stroke();
 
-        context.font = "600 10px ui-sans-serif, system-ui, sans-serif";
-        const label = author.login ? `@${author.login}` : author.name;
-        const textWidth = context.measureText(label).width;
-        const labelWidth = textWidth + 16;
-        const labelHeight = 22;
-        const labelX = -labelWidth / 2;
-        const labelY = avatarRadius + 8;
+        if (camera.zoom >= MIN_LABEL_ZOOM) {
+          context.font = "600 10px ui-sans-serif, system-ui, sans-serif";
+          const label = author.login ? `@${author.login}` : author.name;
+          const textWidth = context.measureText(label).width;
+          const labelWidth = textWidth + 16;
+          const labelHeight = 22;
+          const labelX = -labelWidth / 2;
+          const labelY = avatarRadius + 8;
 
-        drawRoundedRect(labelX, labelY, labelWidth, labelHeight, 8);
-        context.fillStyle = "rgba(6, 10, 20, 0.86)";
-        context.fill();
-        context.strokeStyle = "rgba(148, 163, 184, 0.22)";
-        context.stroke();
-        context.fillStyle = "#dbe4f5";
-        context.textAlign = "center";
-        context.textBaseline = "middle";
-        context.fillText(label, 0, labelY + labelHeight / 2 + 0.5);
+          drawRoundedRect(labelX, labelY, labelWidth, labelHeight, 8);
+          context.fillStyle = "rgba(6, 10, 20, 0.86)";
+          context.fill();
+          context.strokeStyle = "rgba(148, 163, 184, 0.22)";
+          context.stroke();
+          context.fillStyle = "#dbe4f5";
+          context.textAlign = "center";
+          context.textBaseline = "middle";
+          context.fillText(label, 0, labelY + labelHeight / 2 + 0.5);
+        }
 
         context.restore();
       }

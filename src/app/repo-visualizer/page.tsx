@@ -1,9 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  Download,
   ZoomIn,
   ZoomOut,
   Maximize2,
@@ -16,6 +23,8 @@ import {
   Users,
 } from "lucide-react";
 
+import { ExportPreviewModal } from "@/components/ExportPreviewModal";
+import { canvasToBlob, downloadBlob } from "@/lib/canvasExport";
 import { useGithubLoader } from "./hooks/useGithubLoader";
 import { useGraphEngine } from "./hooks/useGraphEngine";
 import { GraphCanvas } from "./components/GraphCanvas";
@@ -33,6 +42,47 @@ function StatValueSkeleton({ width = "w-12" }: { width?: string }) {
       aria-hidden="true"
     />
   );
+}
+
+type ExportSnapshot = {
+  blob: Blob;
+  fileName: string;
+  imageSrc: string;
+};
+
+function subscribeToTouchCapability(onStoreChange: () => void) {
+  const mediaQuery = window.matchMedia("(pointer: coarse)");
+  mediaQuery.addEventListener("change", onStoreChange);
+  return () => mediaQuery.removeEventListener("change", onStoreChange);
+}
+
+function getTouchCapabilitySnapshot() {
+  return (
+    window.matchMedia("(pointer: coarse)").matches ||
+    navigator.maxTouchPoints > 0
+  );
+}
+
+function subscribeToLocation(onStoreChange: () => void) {
+  window.addEventListener("hashchange", onStoreChange);
+  window.addEventListener("popstate", onStoreChange);
+  return () => {
+    window.removeEventListener("hashchange", onStoreChange);
+    window.removeEventListener("popstate", onStoreChange);
+  };
+}
+
+const getShareUrlSnapshot = () => window.location.href;
+const getServerShareUrlSnapshot = () => "";
+const getServerTouchCapabilitySnapshot = () => false;
+
+function createExportFileName(datasetName: string) {
+  const repositoryName = datasetName.split(" / ").at(-1) ?? datasetName;
+  const slug = repositoryName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `${slug || "repository"}-history-${Date.now()}.png`;
 }
 
 export default function GithubHistoryVisualizerPage() {
@@ -75,16 +125,38 @@ export default function GithubHistoryVisualizerPage() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const visualizationRef = useRef<HTMLDivElement>(null);
+  const exportUrlRef = useRef<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isRepositorySwitcherOpen, setIsRepositorySwitcherOpen] =
     useState(false);
   const [isSidebarScrolling, setIsSidebarScrolling] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportSnapshot, setExportSnapshot] = useState<ExportSnapshot | null>(
+    null,
+  );
   const [readyDatasetId, setReadyDatasetId] = useState<string | null>(null);
   const sidebarScrollTimeoutRef = useRef<number | null>(null);
   const isDatasetLoading = isInitializingDataset || isLoadingRepository;
   const isDatasetReady = !isDatasetLoading && dataset.events.length > 0;
   const isVisualizationReady = isDatasetReady && readyDatasetId === dataset.id;
+  const isTouchDevice = useSyncExternalStore(
+    subscribeToTouchCapability,
+    getTouchCapabilitySnapshot,
+    getServerTouchCapabilitySnapshot,
+  );
+  const shareUrl = useSyncExternalStore(
+    subscribeToLocation,
+    getShareUrlSnapshot,
+    getServerShareUrlSnapshot,
+  );
+
+  useEffect(
+    () => () => {
+      if (exportUrlRef.current) URL.revokeObjectURL(exportUrlRef.current);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (isDatasetLoading) setIsPlaying(false);
@@ -109,6 +181,59 @@ export default function GithubHistoryVisualizerPage() {
       );
     }
   }, [fitGraph]);
+
+  const closeExport = () => {
+    if (exportUrlRef.current) URL.revokeObjectURL(exportUrlRef.current);
+    exportUrlRef.current = null;
+    setExportSnapshot(null);
+  };
+
+  const handleExport = async () => {
+    const canvas = visualizationRef.current?.querySelector("canvas");
+    if (!canvas || !isVisualizationReady || isExporting) return;
+
+    setIsExporting(true);
+    try {
+      const blob = await canvasToBlob(canvas);
+      if (exportUrlRef.current) URL.revokeObjectURL(exportUrlRef.current);
+
+      const imageSrc = URL.createObjectURL(blob);
+      exportUrlRef.current = imageSrc;
+      setExportSnapshot({
+        blob,
+        fileName: createExportFileName(dataset.name),
+        imageSrc,
+      });
+    } catch {
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const saveExport = async () => {
+    if (!exportSnapshot) return;
+
+    try {
+      const pngFile = new File([exportSnapshot.blob], exportSnapshot.fileName, {
+        type: "image/png",
+      });
+      const canShareFile =
+        "share" in navigator &&
+        "canShare" in navigator &&
+        navigator.canShare({ files: [pngFile] });
+
+      if (canShareFile) {
+        await navigator.share({
+          files: [pngFile],
+          title: "Repository History Visualizer",
+          text: `Repository history visualization for ${dataset.name}.`,
+        });
+        return;
+      }
+
+      downloadBlob(exportSnapshot.blob, exportSnapshot.fileName);
+    } catch {}
+  };
 
   useEffect(() => {
     if (!isDatasetReady) return;
@@ -372,8 +497,30 @@ export default function GithubHistoryVisualizerPage() {
           />
         )}
 
+        <button
+          type="button"
+          onClick={() => void handleExport()}
+          disabled={!isVisualizationReady || isExporting}
+          className="pointer-events-auto absolute right-3 top-3 z-10 grid size-10 place-items-center rounded-xl border border-white/10 bg-slate-950/70 text-slate-300 shadow-lg backdrop-blur-xl transition hover:bg-white/8 hover:text-white disabled:cursor-wait disabled:opacity-40 lg:hidden"
+          aria-label="Download PNG"
+          title="Export and share PNG"
+        >
+          <Download className="size-4" />
+        </button>
+
         {/* Zoom & Fullscreen Controls */}
         <div className="pointer-events-none absolute right-3 top-3 z-10 hidden flex-col gap-2 sm:right-5 sm:top-5 lg:flex">
+          <button
+            type="button"
+            onClick={() => void handleExport()}
+            disabled={!isVisualizationReady || isExporting}
+            className="pointer-events-auto grid size-9 place-items-center rounded-xl border border-white/10 bg-slate-950/70 text-slate-400 shadow-lg backdrop-blur-xl transition hover:bg-white/8 hover:text-white disabled:cursor-wait disabled:opacity-40"
+            aria-label="Download PNG"
+            title="Export and share PNG"
+          >
+            <Download className="size-4" />
+          </button>
+
           <button
             type="button"
             onClick={() => changeZoom(1.18)}
@@ -431,6 +578,25 @@ export default function GithubHistoryVisualizerPage() {
           <ChevronLeft className="size-4" />
         )}
       </button>
+
+      {exportSnapshot ? (
+        <ExportPreviewModal
+          description="Preview your repository visualization, then download the PNG or share the visualizer."
+          emailBody={`Explore the repository history for ${dataset.name}:`}
+          emailSubject="Repository history visualization"
+          facebookHashtag="#RepositoryVisualization"
+          fileName={exportSnapshot.fileName}
+          imageAlt={`Repository history visualization for ${dataset.name}`}
+          imageSrc={exportSnapshot.imageSrc}
+          isTouchDevice={isTouchDevice}
+          onClose={closeExport}
+          onSaveImage={saveExport}
+          shareHeading="Share this visualization"
+          shareUrl={shareUrl}
+          socialTitle={`Explore the repository history for ${dataset.name}.`}
+          title="Repository visualization"
+        />
+      ) : null}
     </main>
   );
 }
