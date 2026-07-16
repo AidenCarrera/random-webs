@@ -26,3 +26,33 @@
   background: rgba(221, 214, 254, 0.48);
   background-clip: padding-box;
 }
+
+/* Keep the native palette menu in the explorer's dark theme. Without an
+   explicit color scheme, some browsers render a light popup behind the
+   select's inherited light text. */
+.root :global(.fractal-palette-select) {
+  color-scheme: dark;
+  border-color: rgba(196, 181, 253, 0.24);
+  background-color: #111225;
+  color: #f4f4f5;
+}
+
+.root :global(.fractal-palette-select:hover) {
+  border-color: rgba(196, 181, 253, 0.42);
+  background-color: #17182f;
+}
+
+.root :global(.fractal-palette-select:focus-visible) {
+  border-color: rgba(196, 181, 253, 0.72);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.24);
+}
+
+.root :global(.fractal-palette-select option) {
+  background-color: #111225;
+  color: #f4f4f5;
+}
+
+.root :global(.fractal-palette-select option:checked) {
+  background-color: #5b21b6;
+  color: #ffffff;
+}

@@ -189,7 +189,7 @@ export function SettingsPanel({ explorer }: SettingsPanelProps) {
                 onChange={(e) =>
                   handlePaletteChange(e.target.value as PaletteName)
                 }
-                className="w-full rounded-lg border border-white/9 bg-black/25 px-2.5 py-2 text-xs font-medium text-zinc-300 outline-none transition-colors focus:border-violet-300/45 cursor-pointer"
+                className="fractal-palette-select w-full rounded-lg border px-2.5 py-2 text-xs font-medium outline-none transition-colors cursor-pointer"
               >
                 <option value="Neon">Neon</option>
                 <option value="Solar">Solar</option>
