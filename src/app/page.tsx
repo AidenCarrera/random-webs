@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Shuffle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { RANDOM_WEBSITE_PATHS, WEBSITES } from "@/lib/websites";
@@ -14,6 +14,7 @@ function maskText(value: string) {
 
 export default function Home() {
   const router = useRouter();
+  const isNavigating = useRef(false);
   const [loading, setLoading] = useState(false);
   const [revealedWebsites, setRevealedWebsites] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState(false);
@@ -42,6 +43,11 @@ export default function Home() {
   }, []);
 
   const visitRandomWebsite = () => {
+    if (isNavigating.current) {
+      return;
+    }
+
+    isNavigating.current = true;
     setLoading(true);
     const randomPage =
       RANDOM_WEBSITE_PATHS[
@@ -70,11 +76,16 @@ export default function Home() {
             Random Webs
           </h1>
           <button
+            type="button"
             onClick={visitRandomWebsite}
             disabled={loading}
+            aria-busy={loading}
             className="group inline-flex items-center justify-center gap-4 rounded-full border border-white/12 bg-zinc-100 px-10 py-6 text-base font-black uppercase tracking-[0.28em] text-black transition-opacity duration-300 disabled:opacity-70"
           >
-            <Shuffle className="h-5 w-5 transition-transform duration-500 group-hover:rotate-180" />
+            <Shuffle
+              aria-hidden="true"
+              className="h-5 w-5 transition-transform duration-500 group-hover:rotate-180"
+            />
             <span>Explore Random Website</span>
           </button>
         </div>
