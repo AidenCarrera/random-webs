@@ -795,7 +795,6 @@ export default function PixelArt() {
           pixelatedPreview
           shareHeading="Share with friends"
           shareUrl={shareUrl}
-          title="Pixel art snapshot"
         />
       ) : null}
     </div>

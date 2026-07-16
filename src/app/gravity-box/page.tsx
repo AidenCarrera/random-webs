@@ -8,12 +8,20 @@ import styles from "./styles.module.css";
 const MIN_BOX_WIDTH = 220;
 const MIN_BOX_HEIGHT = 220;
 const MOBILE_BREAKPOINT = 768;
+const WALL_THICKNESS = 100;
 
 function getBoxCenter(
   viewportWidth: number,
   viewportHeight: number,
   toolbarHeight: number,
 ) {
+  if (viewportWidth >= MOBILE_BREAKPOINT) {
+    return {
+      x: viewportWidth / 2,
+      y: viewportHeight / 2,
+    };
+  }
+
   const availableHeight = Math.max(
     viewportHeight - toolbarHeight,
     MIN_BOX_HEIGHT,
@@ -32,14 +40,16 @@ function getBoxLimits(
 ) {
   const isMobile = viewportWidth < MOBILE_BREAKPOINT;
   const isLandscape = viewportWidth > viewportHeight;
-  const horizontalPadding = isMobile ? 24 : 80;
+  const horizontalPadding = isMobile ? 24 : WALL_THICKNESS * 2;
   const bottomPadding = isMobile ? 20 : 48;
   const availableWidth = Math.max(
     viewportWidth - horizontalPadding,
     MIN_BOX_WIDTH,
   );
   const availableHeight = Math.max(
-    viewportHeight - toolbarHeight - bottomPadding,
+    isMobile
+      ? viewportHeight - toolbarHeight - bottomPadding
+      : viewportHeight - WALL_THICKNESS * 2,
     MIN_BOX_HEIGHT,
   );
 
@@ -329,7 +339,7 @@ export default function GravityBox() {
       windowSize.height,
       toolbarHeight,
     );
-    const thickness = 100; // Deep 100px thickness prevents tunneling completely
+    const thickness = WALL_THICKNESS; // Deep walls prevent fast shapes from tunneling through
     const wallOptions = { isStatic: true, render: { fillStyle: "#475569" } };
 
     // Taller left/right walls overlay the corners seamlessly and eliminate any 1px gaps
@@ -468,7 +478,7 @@ export default function GravityBox() {
       {/* Floating Top Toolbar */}
       <div
         ref={toolbarRef}
-        className="fixed top-0 inset-x-0 z-50 flex flex-wrap items-center justify-center gap-3.5 border-b border-white/10 bg-slate-950/70 px-3.5 pb-3.5 pt-[max(0.85rem,env(safe-area-inset-top))] shadow-2xl backdrop-blur-xl select-none md:left-1/2 md:right-auto md:top-4 md:w-auto md:-translate-x-1/2 md:flex-nowrap md:justify-start md:rounded-full md:border md:px-7 md:py-3.5"
+        className={`${styles.compactLandscapeToolbar} fixed top-0 inset-x-0 z-50 flex flex-wrap items-center justify-center gap-3.5 border-b border-white/10 bg-slate-950/70 px-3.5 pb-3.5 pt-[max(0.85rem,env(safe-area-inset-top))] shadow-2xl backdrop-blur-xl select-none md:left-1/2 md:right-auto md:top-4 md:w-auto md:-translate-x-1/2 md:flex-nowrap md:justify-start md:rounded-full md:border md:px-7 md:py-3.5`}
       >
         <button
           onClick={(e) => e.preventDefault()}
@@ -480,10 +490,12 @@ export default function GravityBox() {
             startAction(addShape);
           }}
           onTouchEnd={stopAction}
-          className="group relative flex h-13 w-13 flex-col items-center justify-center overflow-hidden rounded-full bg-white/5 p-3.5 transition-all duration-200 active:scale-90 hover:bg-white/10 select-none touch-manipulation md:h-16 md:w-16 md:hover:w-40 md:hover:rounded-2xl"
+          className={`${styles.compactLandscapeControl} group relative flex h-13 w-13 flex-col items-center justify-center overflow-hidden rounded-full bg-white/5 p-3.5 transition-all duration-200 active:scale-90 hover:bg-white/10 select-none touch-manipulation md:h-16 md:w-16 md:hover:w-40 md:hover:rounded-2xl`}
           title="Add Shape (Hold)"
         >
-          <span className="absolute md:group-hover:opacity-0 transition-opacity duration-200">
+          <span
+            className={`${styles.compactLandscapeIcon} absolute md:group-hover:opacity-0 transition-opacity duration-200`}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -499,7 +511,9 @@ export default function GravityBox() {
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
           </span>
-          <span className="hidden md:flex opacity-0 group-hover:opacity-100 absolute text-sm font-bold whitespace-nowrap">
+          <span
+            className={`${styles.compactLandscapeLabel} hidden md:flex opacity-0 group-hover:opacity-100 absolute text-sm font-bold whitespace-nowrap`}
+          >
             Add (Hold)
           </span>
         </button>
@@ -514,10 +528,12 @@ export default function GravityBox() {
             startAction(removeShape);
           }}
           onTouchEnd={stopAction}
-          className="group relative flex h-13 w-13 flex-col items-center justify-center overflow-hidden rounded-full bg-white/5 p-3.5 transition-all duration-200 active:scale-90 hover:bg-rose-500/20 hover:text-rose-400 select-none touch-manipulation md:h-16 md:w-16 md:hover:w-40 md:hover:rounded-2xl"
+          className={`${styles.compactLandscapeControl} group relative flex h-13 w-13 flex-col items-center justify-center overflow-hidden rounded-full bg-white/5 p-3.5 transition-all duration-200 active:scale-90 hover:bg-rose-500/20 hover:text-rose-400 select-none touch-manipulation md:h-16 md:w-16 md:hover:w-40 md:hover:rounded-2xl`}
           title="Remove Shape (Hold)"
         >
-          <span className="absolute md:group-hover:opacity-0 transition-opacity duration-200">
+          <span
+            className={`${styles.compactLandscapeIcon} absolute md:group-hover:opacity-0 transition-opacity duration-200`}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -533,19 +549,25 @@ export default function GravityBox() {
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
           </span>
-          <span className="hidden md:flex opacity-0 group-hover:opacity-100 absolute text-sm font-bold whitespace-nowrap">
+          <span
+            className={`${styles.compactLandscapeLabel} hidden md:flex opacity-0 group-hover:opacity-100 absolute text-sm font-bold whitespace-nowrap`}
+          >
             Remove (Hold)
           </span>
         </button>
 
-        <div className="hidden h-9 w-px bg-white/10 md:block"></div>
+        <div
+          className={`${styles.compactLandscapeDivider} hidden h-9 w-px bg-white/10 md:block`}
+        ></div>
 
         <button
           onClick={throwShapes}
-          className="group relative flex h-13 w-13 flex-col items-center justify-center overflow-hidden rounded-full bg-blue-500/20 p-3.5 text-blue-400 transition-all duration-200 active:scale-95 hover:bg-blue-500 hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] select-none touch-manipulation md:h-16 md:w-16 md:hover:w-36 md:hover:rounded-2xl"
+          className={`${styles.compactLandscapeControl} group relative flex h-13 w-13 flex-col items-center justify-center overflow-hidden rounded-full bg-blue-500/20 p-3.5 text-blue-400 transition-all duration-200 active:scale-95 hover:bg-blue-500 hover:text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] select-none touch-manipulation md:h-16 md:w-16 md:hover:w-36 md:hover:rounded-2xl`}
           title="Chaos Mode"
         >
-          <span className="absolute md:group-hover:opacity-0 transition-opacity duration-200">
+          <span
+            className={`${styles.compactLandscapeIcon} absolute md:group-hover:opacity-0 transition-opacity duration-200`}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"
@@ -560,15 +582,21 @@ export default function GravityBox() {
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
             </svg>
           </span>
-          <span className="hidden md:flex opacity-0 group-hover:opacity-100 absolute text-sm font-bold whitespace-nowrap">
+          <span
+            className={`${styles.compactLandscapeLabel} hidden md:flex opacity-0 group-hover:opacity-100 absolute text-sm font-bold whitespace-nowrap`}
+          >
             CHAOS
           </span>
         </button>
 
-        <div className="hidden h-9 w-px bg-white/10 md:block"></div>
+        <div
+          className={`${styles.compactLandscapeDivider} hidden h-9 w-px bg-white/10 md:block`}
+        ></div>
 
         {/* Dynamic Box Width Slider */}
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-left md:w-32 md:flex-none">
+        <div
+          className={`${styles.compactLandscapeSlider} flex min-w-0 flex-1 flex-col gap-1.5 text-left md:w-32 md:flex-none`}
+        >
           <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider">
             Width
           </span>
@@ -583,7 +611,9 @@ export default function GravityBox() {
         </div>
 
         {/* Dynamic Box Height Slider */}
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-left md:w-32 md:flex-none">
+        <div
+          className={`${styles.compactLandscapeSlider} flex min-w-0 flex-1 flex-col gap-1.5 text-left md:w-32 md:flex-none`}
+        >
           <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider">
             Height
           </span>

@@ -1,23 +1,42 @@
 /* Sandbox range slider styling */
+.root,
+.root * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 .root :global(.sandbox-slider) {
+  --slider-track: rgba(71, 85, 105, 0.6);
+
   appearance: none;
   width: 100%;
-  height: 4px;
-  border-radius: 9999px;
-  background: rgba(71, 85, 105, 0.6);
+  height: 32px;
+  margin-block: -8px;
+  background: transparent;
   outline: none;
-  transition: background 0.2s ease;
+  cursor: pointer;
+  touch-action: none;
 }
 
 .root :global(.sandbox-slider):hover {
-  background: rgba(71, 85, 105, 0.8);
+  --slider-track: rgba(71, 85, 105, 0.8);
+}
+
+.root :global(.sandbox-slider)::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--slider-track);
+  transition: background 0.2s ease;
 }
 
 .root :global(.sandbox-slider)::-webkit-slider-thumb {
   appearance: none;
-  width: 14px;
-  height: 14px;
-  border: 2px solid #3b82f6;
+  width: 22px;
+  height: 22px;
+  margin-top: -8px;
+  border: 3px solid #3b82f6;
   border-radius: 50%;
   background: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
@@ -30,9 +49,9 @@
 }
 
 .root :global(.sandbox-slider)::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border: 2px solid #3b82f6;
+  width: 22px;
+  height: 22px;
+  border: 3px solid #3b82f6;
   border-radius: 50%;
   background: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
@@ -42,4 +61,67 @@
 
 .root :global(.sandbox-slider)::-moz-range-thumb:hover {
   transform: scale(1.2);
+}
+
+.root :global(.sandbox-slider)::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--slider-track);
+  transition: background 0.2s ease;
+}
+
+.root :global(.sandbox-slider):focus-visible {
+  outline: 2px solid rgba(96, 165, 250, 0.9);
+  outline-offset: 1px;
+  border-radius: 9999px;
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .compactLandscapeToolbar {
+    top: 0.5rem !important;
+    right: auto !important;
+    left: 50% !important;
+    width: min(calc(100vw - 1rem), 32rem) !important;
+    padding: 0.5rem max(0.75rem, env(safe-area-inset-right)) 0.5rem
+      max(0.75rem, env(safe-area-inset-left)) !important;
+    transform: translateX(-50%) !important;
+    flex-wrap: nowrap !important;
+    gap: 0.5rem !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 9999px !important;
+  }
+
+  .compactLandscapeControl,
+  .compactLandscapeControl:hover {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    padding: 0.5rem !important;
+    flex: none !important;
+    border-radius: 9999px !important;
+  }
+
+  .compactLandscapeControl svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .compactLandscapeIcon {
+    opacity: 1 !important;
+  }
+
+  .compactLandscapeLabel {
+    display: none !important;
+  }
+
+  .compactLandscapeDivider {
+    display: block !important;
+    height: 1.75rem !important;
+  }
+
+  .compactLandscapeSlider {
+    width: 5.5rem !important;
+    flex: none !important;
+    gap: 0.125rem !important;
+  }
 }
