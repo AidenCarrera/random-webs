@@ -5,14 +5,7 @@ import {
   WheelEvent as ReactWheelEvent,
   MutableRefObject,
 } from "react";
-import {
-  GraphNode,
-  AuthorAgent,
-  Particle,
-  Camera,
-  Dataset,
-  ChangeStatus,
-} from "../types";
+import { GraphNode, AuthorAgent, Particle, Camera, Dataset } from "../types";
 import { deterministicUnit, initials } from "../utils/common";
 import { assignTreeLayout } from "../utils/graph";
 import { STATUS_COLORS, ROOT_ID } from "../constants";
@@ -27,7 +20,9 @@ type GraphCanvasProps = {
   avatarCacheRef: MutableRefObject<Map<string, HTMLImageElement>>;
   fitGraph: (width: number, height: number) => void;
   containerRef: MutableRefObject<HTMLDivElement | null>;
+  isPlaying: boolean;
   speed: number;
+  advancePlayback: (timestamp: number, speed: number) => void;
 };
 
 export function GraphCanvas({
@@ -40,10 +35,13 @@ export function GraphCanvas({
   avatarCacheRef,
   fitGraph,
   containerRef,
+  isPlaying,
   speed,
+  advancePlayback,
 }: GraphCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const playbackStateRef = useRef({ isPlaying, speed });
   const pointerRef = useRef({
     isDown: false,
     pointerId: -1,
@@ -53,6 +51,10 @@ export function GraphCanvas({
   });
   const touchPointsRef = useRef(new Map<number, { x: number; y: number }>());
   const pinchDistanceRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    playbackStateRef.current = { isPlaying, speed };
+  }, [isPlaying, speed]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -67,8 +69,11 @@ export function GraphCanvas({
     let devicePixelRatio = 1;
     let resizeTimer: number | null = null;
     let animationTime = 0;
+    let authorMotionTime = 0;
     let lastLayoutUpdate = -Infinity;
+    let lastFrameAt = performance.now();
     let frameNumber = 0;
+    const visibleAvatarUrls = new Set<string>();
 
     const resizeCanvas = () => {
       const bounds = container.getBoundingClientRect();
@@ -361,34 +366,62 @@ export function GraphCanvas({
 
     const drawAuthors = () => {
       const camera = cameraRef.current;
-      const now = performance.now();
+      const graph = graphRef.current;
 
       for (const author of authorsRef.current.values()) {
         const position = toScreen(author.x, author.y);
-        const target = toScreen(author.targetX, author.targetY);
-        const isRecent = now - author.lastActiveAt < 1800;
+        const targetNode = author.targetPath
+          ? graph.get(author.targetPath)
+          : undefined;
+        let targetWorld = {
+          x: author.targetX,
+          y: author.targetY,
+        };
+
+        if (targetNode) {
+          targetWorld = livingPosition(targetNode);
+        }
+
+        const target = toScreen(targetWorld.x, targetWorld.y);
+        const isRecent = author.activity > 0.12;
         const avatarRadius = Math.max(
           13,
           17 * Math.min(1.15, camera.zoom + 0.35),
         );
-
-        // Draw connection line first (stable)
-        context.save();
-        context.strokeStyle = isRecent
-          ? "rgba(143, 174, 255, 0.72)"
-          : "rgba(116, 138, 178, 0.28)";
-        context.lineWidth = Math.max(0.8, 1.3 * camera.zoom);
-        context.setLineDash([4, 7]);
-        context.beginPath();
-        context.moveTo(position.x, position.y);
-        context.lineTo(target.x, target.y);
-        context.stroke();
-        context.setLineDash([]);
-        context.restore();
-
-        // Apply translation and rotation for running animation (extremely sub-pixel values)
         const bobY = Math.sin(author.bobTime || 0) * 0.4;
         const tiltAngle = Math.cos(author.bobTime || 0) * 0.002;
+
+        if (targetNode && targetNode.displayAlpha > 0.015) {
+          const avatarCenter = { x: position.x, y: position.y + bobY };
+          const deltaX = target.x - avatarCenter.x;
+          const deltaY = target.y - avatarCenter.y;
+          const distance = Math.hypot(deltaX, deltaY);
+          const targetRadius = Math.max(1.8, targetNode.radius * camera.zoom);
+          const startPadding = avatarRadius + 4;
+          const endPadding = targetRadius + 2;
+
+          if (distance > startPadding + endPadding) {
+            const directionX = deltaX / distance;
+            const directionY = deltaY / distance;
+            context.save();
+            context.strokeStyle = isRecent
+              ? "rgba(143, 174, 255, 0.72)"
+              : "rgba(116, 138, 178, 0.28)";
+            context.lineWidth = Math.max(0.8, 1.3 * camera.zoom);
+            context.setLineDash([4, 7]);
+            context.beginPath();
+            context.moveTo(
+              avatarCenter.x + directionX * startPadding,
+              avatarCenter.y + directionY * startPadding,
+            );
+            context.lineTo(
+              target.x - directionX * endPadding,
+              target.y - directionY * endPadding,
+            );
+            context.stroke();
+            context.restore();
+          }
+        }
 
         context.save();
         context.translate(position.x, position.y + bobY);
@@ -406,8 +439,12 @@ export function GraphCanvas({
         const avatar = author.avatarUrl
           ? avatarCacheRef.current.get(author.avatarUrl)
           : undefined;
+        const canRevealAvatar =
+          playbackStateRef.current.isPlaying ||
+          (author.avatarUrl ? visibleAvatarUrls.has(author.avatarUrl) : false);
 
-        if (avatar?.complete && avatar.naturalWidth > 0) {
+        if (canRevealAvatar && avatar?.complete && avatar.naturalWidth > 0) {
+          if (author.avatarUrl) visibleAvatarUrls.add(author.avatarUrl);
           context.save();
           context.beginPath();
           context.arc(0, 0, avatarRadius, 0, Math.PI * 2);
@@ -460,7 +497,7 @@ export function GraphCanvas({
       }
     };
 
-    const updateSimulation = () => {
+    const updateSimulation = (frameScale: number) => {
       const graph = graphRef.current;
 
       // Recompute the radial tree from only the currently visible nodes. The
@@ -491,24 +528,26 @@ export function GraphCanvas({
         }
       }
 
-      // 2. Settle physics & decay deleted alphas based on playback speed
-      const decayAmount = Math.min(0.08, 0.018 * Math.max(0.6, speed));
+      // Settle object motion on frame delta, independently from commit timing.
+      const decayAmount = 0.018 * frameScale;
       for (const node of graph.values()) {
-        const opacityEase = node.alpha > node.displayAlpha ? 0.045 : 0.075;
+        const opacityBase = node.alpha > node.displayAlpha ? 0.045 : 0.075;
+        const opacityEase = 1 - (1 - opacityBase) ** frameScale;
         node.displayAlpha += (node.alpha - node.displayAlpha) * opacityEase;
         if (Math.abs(node.alpha - node.displayAlpha) < 0.001) {
           node.displayAlpha = node.alpha;
         }
 
-        const springStrength = node.kind === "file" ? 0.012 : 0.017;
-        const damping = 0.9;
+        const springStrength =
+          (node.kind === "file" ? 0.012 : 0.017) * frameScale;
+        const damping = 0.9 ** frameScale;
         node.vx += (node.targetX - node.x) * springStrength;
         node.vy += (node.targetY - node.y) * springStrength;
         node.vx *= damping;
         node.vy *= damping;
-        node.x += node.vx;
-        node.y += node.vy;
-        node.pulse *= 0.955;
+        node.x += node.vx * frameScale;
+        node.y += node.vy * frameScale;
+        node.pulse *= 0.955 ** frameScale;
 
         if (node.deleted) {
           node.alpha = Math.max(0, node.alpha - decayAmount);
@@ -543,7 +582,7 @@ export function GraphCanvas({
 
             const distance = Math.max(0.01, Math.sqrt(distanceSquared));
             const overlap = minimumDistance - distance;
-            const force = Math.min(0.22, overlap * 0.012);
+            const force = Math.min(0.22, overlap * 0.012) * frameScale;
             const directionX = dx / distance;
             const directionY = dy / distance;
             left.vx -= directionX * force;
@@ -554,121 +593,99 @@ export function GraphCanvas({
         }
       }
 
-      // Local helper to spawn file-edit visual particles upon author arrival
-      const spawnParticlesLocal = (node: GraphNode, status: ChangeStatus) => {
-        const count = status === "modified" ? 12 : 20;
-        const color = STATUS_COLORS[status];
-
-        for (let index = 0; index < count; index += 1) {
-          const angle =
-            deterministicUnit(
-              `${node.id}:${status}:${performance.now()}:${index}`,
-            ) *
-            Math.PI *
-            2;
-          const speedValue =
-            0.7 + deterministicUnit(`${node.id}:${index}:speed`) * 2.4;
-          const maxLife =
-            40 + deterministicUnit(`${node.id}:${index}:life`) * 38;
-
-          particlesRef.current.push({
-            x: node.x,
-            y: node.y,
-            vx: Math.cos(angle) * speedValue,
-            vy: Math.sin(angle) * speedValue,
-            life: maxLife,
-            maxLife,
-            color,
-          });
-        }
-
-        if (particlesRef.current.length > 520) {
-          particlesRef.current.splice(0, particlesRef.current.length - 520);
-        }
-      };
-
       for (const author of authorsRef.current.values()) {
-        if (author.targetQueue && author.targetQueue.length > 0) {
-          const targetChange = author.targetQueue[0];
-          const node = graph.get(targetChange.path);
+        author.activity *= 0.98 ** frameScale;
+        const anchor = author.anchorPath
+          ? graph.get(author.anchorPath)
+          : undefined;
+        let destinationX = author.targetX;
+        let destinationY = author.targetY;
 
-          if (node) {
-            author.targetX = node.x;
-            author.targetY = node.y;
-            author.anchorPath = node.path;
-
-            const dx = author.targetX - author.x;
-            const dy = author.targetY - author.y;
-            const distance = Math.hypot(dx, dy);
-
-            const maxTravel = 6.4 * Math.max(0.6, speed);
-
-            if (distance > 2.2) {
-              const travel = Math.min(
-                distance,
-                Math.max(0.45, Math.min(maxTravel, distance * 0.085 + 0.35)),
-              );
-              author.x += (dx / distance) * travel;
-              author.y += (dy / distance) * travel;
-              author.angle = Math.atan2(dy, dx);
-            } else {
-              // Arrive at file node, pulse it and shoot particles
-              author.x = author.targetX;
-              author.y = author.targetY;
-              node.pulse = 1.0;
-              node.lastStatus = targetChange.status;
-              spawnParticlesLocal(node, targetChange.status);
-
-              author.targetQueue.shift();
-              author.lastActiveAt = performance.now();
-            }
-            author.bobTime = (author.bobTime || 0) + 0.1 * Math.max(0.6, speed);
-          } else {
-            // Node was deleted or not found, skip
-            author.targetQueue.shift();
-          }
-        } else {
-          const anchor = author.anchorPath
-            ? graph.get(author.anchorPath)
-            : undefined;
+        if (!author.isAnimating) {
           if (anchor) {
             author.targetX = anchor.x;
             author.targetY = anchor.y;
           }
 
-          // Continue in a small orbit while waiting for the next commit, so
-          // contributors never freeze on top of a node.
           const phase =
             deterministicUnit(`${author.key}:idle-orbit`) * Math.PI * 2;
-          const orbitRadius =
-            9 + deterministicUnit(`${author.key}:idle-radius`) * 5;
-          const orbitAngle = animationTime * 0.48 + phase;
-          const idleX = author.targetX + Math.cos(orbitAngle) * orbitRadius;
-          const idleY =
+          const orbitRadius = anchor
+            ? anchor.radius +
+              (24 + deterministicUnit(`${author.key}:idle-radius`) * 10) /
+                Math.max(0.28, cameraRef.current.zoom)
+            : 18;
+          const orbitAngle = authorMotionTime * 0.48 + phase;
+          destinationX = author.targetX + Math.cos(orbitAngle) * orbitRadius;
+          destinationY =
             author.targetY + Math.sin(orbitAngle) * orbitRadius * 0.62;
-          const dx = idleX - author.x;
-          const dy = idleY - author.y;
-          const driftFactor = 0.04 * Math.max(0.7, Math.min(speed, 2));
-          author.x += dx * driftFactor;
-          author.y += dy * driftFactor;
-          author.angle = Math.atan2(dy, dx);
-          author.bobTime = (author.bobTime || 0) + 0.05 * Math.max(0.6, speed);
         }
+
+        const playbackRate = playbackStateRef.current.speed;
+        const motionSeconds = Math.min(0.4, (frameScale / 60) * playbackRate);
+        const stepCount = Math.max(1, Math.ceil(motionSeconds / (1 / 120)));
+        const stepSeconds = motionSeconds / stepCount;
+        const stiffness = author.isAnimating ? 36 : 12;
+        const damping = author.isAnimating ? 10.5 : 6.5;
+        const maxSpeed =
+          (author.isAnimating ? 260 : 70) /
+          Math.max(0.45, cameraRef.current.zoom);
+
+        author.vx = Number.isFinite(author.vx) ? author.vx : 0;
+        author.vy = Number.isFinite(author.vy) ? author.vy : 0;
+
+        for (let step = 0; step < stepCount; step += 1) {
+          const dx = destinationX - author.x;
+          const dy = destinationY - author.y;
+          author.vx += dx * stiffness * stepSeconds;
+          author.vy += dy * stiffness * stepSeconds;
+
+          const dampingFactor = Math.exp(-damping * stepSeconds);
+          author.vx *= dampingFactor;
+          author.vy *= dampingFactor;
+
+          const velocity = Math.hypot(author.vx, author.vy);
+          if (velocity > maxSpeed) {
+            const speedScale = maxSpeed / velocity;
+            author.vx *= speedScale;
+            author.vy *= speedScale;
+          }
+
+          author.x += author.vx * stepSeconds;
+          author.y += author.vy * stepSeconds;
+        }
+
+        if (Math.hypot(author.vx, author.vy) > 0.01) {
+          author.angle = Math.atan2(author.vy, author.vx);
+        }
+        author.bobTime =
+          (author.bobTime ?? 0) +
+          (author.isAnimating ? 0.085 : 0.05) * frameScale;
       }
 
       particlesRef.current = particlesRef.current.filter((particle) => {
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-        particle.vx *= 0.975;
-        particle.vy *= 0.975;
-        particle.life -= 1;
+        particle.x += particle.vx * frameScale;
+        particle.y += particle.vy * frameScale;
+        particle.vx *= 0.975 ** frameScale;
+        particle.vy *= 0.975 ** frameScale;
+        particle.life -= frameScale;
         return particle.life > 0;
       });
     };
 
-    const render = () => {
-      animationTime = performance.now() * 0.001;
-      updateSimulation();
+    const render = (timestamp: number) => {
+      const frameDelta = Math.min(50, Math.max(0, timestamp - lastFrameAt));
+      const frameScale = frameDelta / (1000 / 60);
+      lastFrameAt = timestamp;
+      const playbackState = playbackStateRef.current;
+      advancePlayback(
+        timestamp,
+        playbackState.isPlaying ? playbackState.speed : 0,
+      );
+      if (playbackState.isPlaying) {
+        animationTime += frameDelta * 0.001;
+        authorMotionTime += frameDelta * 0.001 * playbackState.speed;
+        updateSimulation(frameScale);
+      }
       drawBackground();
       drawEdges();
       drawParticles();
@@ -698,7 +715,7 @@ export function GraphCanvas({
     graphRef,
     particlesRef,
     containerRef,
-    speed,
+    advancePlayback,
   ]);
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {

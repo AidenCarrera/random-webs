@@ -47,6 +47,37 @@ test.describe("Repository Visualizer loading and playback", () => {
     );
 
     await page.getByRole("button", { name: "Choose repository" }).click();
-    await expect(page.getByText("Switch repository")).toBeVisible();
+    await expect(
+      page.getByText("Switch repository", { exact: true }),
+    ).toBeVisible();
+  });
+
+  test("freezes the canvas while playback is paused", async ({ page }) => {
+    await page.goto("/repo-visualizer", { waitUntil: "domcontentloaded" });
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+    });
+
+    const playButton = page.getByRole("button", { name: "Start playback" });
+    await expect(playButton).toBeEnabled();
+    await playButton.click();
+    await expect(
+      page.getByRole("button", { name: "Pause playback" }),
+    ).toBeVisible();
+
+    await page.waitForTimeout(400);
+    await page.getByRole("button", { name: "Pause playback" }).click();
+    await page.waitForTimeout(100);
+
+    const canvas = page.locator("canvas");
+    const pausedFrame = await canvas.screenshot();
+    await page.waitForTimeout(350);
+    const heldFrame = await canvas.screenshot();
+    expect(heldFrame.equals(pausedFrame)).toBe(true);
+
+    await page.getByRole("button", { name: "Start playback" }).click();
+    await page.waitForTimeout(350);
+    const resumedFrame = await canvas.screenshot();
+    expect(resumedFrame.equals(heldFrame)).toBe(false);
   });
 });

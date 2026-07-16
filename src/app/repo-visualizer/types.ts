@@ -67,11 +67,14 @@ export type AuthorAgent = Author & {
   y: number;
   targetX: number;
   targetY: number;
-  lastActiveAt: number;
-  targetQueue?: Array<{ path: string; status: ChangeStatus }>;
+  activity: number;
   anchorPath?: string;
+  targetPath?: string;
   angle?: number;
   bobTime?: number;
+  isAnimating?: boolean;
+  vx: number;
+  vy: number;
 };
 
 export type Particle = {

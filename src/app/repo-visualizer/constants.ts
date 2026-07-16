@@ -3,7 +3,6 @@ import type { ChangeStatus } from "./types";
 export const ROOT_ID = "__repository_root__";
 export const MAX_TREE_FILES = 700;
 export const MAX_COMMITS = 16;
-export const BASE_EVENT_DELAY = 1350;
 
 export const FILE_COLORS = {
   typescript: "#59a8ff",

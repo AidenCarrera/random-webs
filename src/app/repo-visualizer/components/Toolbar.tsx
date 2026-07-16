@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { SkipBack, SkipForward, Play, Pause, RotateCcw } from "lucide-react";
 import { Dataset } from "../types";
 import { formatDate } from "../utils/common";
-import { BASE_EVENT_DELAY } from "../constants";
+import { getCommitPlaybackDuration } from "../utils/playback";
 
 type ToolbarProps = {
   dataset: Dataset;
@@ -26,9 +26,15 @@ export function Toolbar({
   isReady,
 }: ToolbarProps) {
   const progress = (cursor / Math.max(dataset.events.length, 1)) * 100;
+  const currentEvent = cursor > 0 ? dataset.events[cursor - 1] : null;
   const progressDuration = isPlaying
-    ? Math.max(0.18, BASE_EVENT_DELAY / speed / 1000)
-    : 0.24;
+    ? Math.max(
+        0.18,
+        (currentEvent ? getCommitPlaybackDuration(currentEvent) : 0) /
+          speed /
+          1000,
+      )
+    : 0;
 
   return (
     <motion.div
@@ -114,6 +120,7 @@ export function Toolbar({
             <div className="relative flex h-3.5 items-center">
               <div className="pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 overflow-hidden rounded-full bg-white/10">
                 <motion.div
+                  key={isPlaying ? "playing" : "paused"}
                   data-testid="timeline-progress"
                   className="relative h-full rounded-full bg-blue-400"
                   initial={false}

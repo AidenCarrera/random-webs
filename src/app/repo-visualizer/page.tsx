@@ -70,6 +70,7 @@ export default function GithubHistoryVisualizerPage() {
     avatarCacheRef,
     fitGraph,
     changeZoom,
+    advancePlayback,
   } = useGraphEngine(dataset);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -352,7 +353,9 @@ export default function GithubHistoryVisualizerPage() {
           avatarCacheRef={avatarCacheRef}
           fitGraph={fitGraph}
           containerRef={visualizationRef}
+          isPlaying={isPlaying}
           speed={speed}
+          advancePlayback={advancePlayback}
         />
 
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(3,6,14,0.28),transparent_24%,transparent_72%,rgba(3,6,14,0.48))]" />
