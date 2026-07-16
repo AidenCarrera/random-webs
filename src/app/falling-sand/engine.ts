@@ -122,7 +122,7 @@ export const DRAWABLE_MATERIALS: MaterialDefinition[] = [
     id: Material.STEAM,
     name: "Steam",
     color: "#aac3ca",
-    description: "Rises to ceilings, slowly drips, then dissipates.",
+    description: "Slowly drips at ceilings, or forms snow against ice.",
     shortcut: "S",
   },
   {
@@ -136,15 +136,15 @@ export const DRAWABLE_MATERIALS: MaterialDefinition[] = [
     id: Material.MUD,
     name: "Mud",
     color: "#69533d",
-    description: "A wet and dense material that rapidly grows seeds without water.",
+    description:
+      "A wet and dense material that rapidly grows seeds without water.",
     shortcut: "M",
   },
   {
     id: Material.SEED,
     name: "Seed",
     color: "#9b66d1",
-    description:
-      "A purple seed that grows flowers or extends existing plants.",
+    description: "A purple seed that grows flowers or extends existing plants.",
     shortcut: "B",
   },
   {
@@ -165,7 +165,7 @@ export const DRAWABLE_MATERIALS: MaterialDefinition[] = [
     id: Material.METAL,
     name: "Metal",
     color: "#9da4a6",
-    description: "A blast-resistant wall that conducts nearby heat.",
+    description: "A highly blast-resistant wall that conducts nearby heat.",
     shortcut: "H",
   },
   {
@@ -193,7 +193,7 @@ export const DRAWABLE_MATERIALS: MaterialDefinition[] = [
     id: Material.FUSE,
     name: "Fuse",
     color: "#b57e46",
-    description: "A quiet glowing cord that carries ignition to charges.",
+    description: "A stationary glowing cord that carries ignition to charges.",
     shortcut: "F",
   },
   {
@@ -747,7 +747,7 @@ export class FallingSandEngine {
           const isC4Blast = blast.radius >= 32;
           if (
             material === Material.METAL &&
-            Math.random() > (isC4Blast ? 0.45 : 0.08)
+            Math.random() > (isC4Blast ? 0.22 : 0.03)
           ) {
             continue;
           }
@@ -1179,7 +1179,6 @@ export class FallingSandEngine {
       const fuel = around.find((neighbor) => {
         const material = this.cells[neighbor] as Material;
         return (
-          material === Material.WOOD ||
           material === Material.PLANT ||
           material === Material.SEED ||
           material === Material.FLOWER ||
@@ -1248,7 +1247,6 @@ export class FallingSandEngine {
       this.ignite(index);
       return;
     }
-    this.tryPowderMove(x, y);
   }
 
   private updateGas(x: number, y: number, index: number) {
@@ -1258,8 +1256,11 @@ export class FallingSandEngine {
         y > 0 ? (this.cells[this.index(x, y - 1)] as Material) : Material.EMPTY;
       const hitCeiling =
         y === 0 || (materialAbove !== Material.EMPTY && !isGas(materialAbove));
-      if (hitCeiling && Math.random() < 0.006) {
-        this.assign(index, Material.WATER);
+      const touchingIce = this.neighbors(x, y).some(
+        (neighbor) => this.cells[neighbor] === Material.ICE,
+      );
+      if ((hitCeiling || touchingIce) && Math.random() < 0.006) {
+        this.assign(index, touchingIce ? Material.SNOW : Material.WATER);
         return;
       }
       if (this.frame % 2 === 0) {
