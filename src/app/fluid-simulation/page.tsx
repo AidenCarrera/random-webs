@@ -21,13 +21,32 @@ import {
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { downloadBlob } from "@/lib/canvasExport";
 
-import { FluidEngine, type FluidColorPreset } from "./fluidEngine";
+import {
+  FluidEngine,
+  type FluidColorPreset,
+  type FluidMotionModel,
+} from "./fluidEngine";
 import styles from "./styles.module.css";
 
 const DEFAULT_ITERATIONS = 24;
 const DEFAULT_PARTICLES = 262_144;
 const DEFAULT_FORCE = 1;
 const DEFAULT_COLOR_PRESET: FluidColorPreset = "aurora";
+const DEFAULT_MOTION_MODEL: FluidMotionModel = "fluid";
+const SETTINGS_STORAGE_KEY = "fluid-simulation-settings-v1";
+const VALID_PARTICLE_COUNTS = new Set([
+  32_768, 65_536, 131_072, 262_144, 524_288, 1_048_576,
+]);
+const VALID_COLOR_PRESETS = new Set<FluidColorPreset>([
+  "aurora",
+  "rainbow",
+  "ocean",
+  "fire",
+  "acid",
+  "lavender",
+  "monochrome",
+]);
+const VALID_MOTION_MODELS = new Set<FluidMotionModel>(["fluid", "classic"]);
 
 type CaptureState = "idle" | "capturing" | "saved" | "error";
 
@@ -36,6 +55,72 @@ type FluidSnapshot = {
   fileName: string;
   imageSrc: string;
 };
+
+type FluidSettings = {
+  solverIterations: number;
+  particleCount: number;
+  force: number;
+  colorPreset: FluidColorPreset;
+  motionModel: FluidMotionModel;
+  musicEnabled: boolean;
+};
+
+function readStoredSettings(): Partial<FluidSettings> {
+  try {
+    const rawSettings = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!rawSettings) return {};
+
+    const parsed: unknown = JSON.parse(rawSettings);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+
+    const values = parsed as Record<string, unknown>;
+    const settings: Partial<FluidSettings> = {};
+
+    if (
+      typeof values.solverIterations === "number" &&
+      Number.isInteger(values.solverIterations) &&
+      values.solverIterations >= 4 &&
+      values.solverIterations <= 48
+    ) {
+      settings.solverIterations = values.solverIterations;
+    }
+    if (
+      typeof values.particleCount === "number" &&
+      VALID_PARTICLE_COUNTS.has(values.particleCount)
+    ) {
+      settings.particleCount = values.particleCount;
+    }
+    if (
+      typeof values.force === "number" &&
+      Number.isFinite(values.force) &&
+      values.force >= 0.4 &&
+      values.force <= 2
+    ) {
+      settings.force = values.force;
+    }
+    if (
+      typeof values.colorPreset === "string" &&
+      VALID_COLOR_PRESETS.has(values.colorPreset as FluidColorPreset)
+    ) {
+      settings.colorPreset = values.colorPreset as FluidColorPreset;
+    }
+    if (
+      typeof values.motionModel === "string" &&
+      VALID_MOTION_MODELS.has(values.motionModel as FluidMotionModel)
+    ) {
+      settings.motionModel = values.motionModel as FluidMotionModel;
+    }
+    if (typeof values.musicEnabled === "boolean") {
+      settings.musicEnabled = values.musicEnabled;
+    }
+
+    return settings;
+  } catch {
+    return {};
+  }
+}
 
 function subscribeToTouchCapability(onStoreChange: () => void) {
   const mediaQuery = window.matchMedia("(pointer: coarse)");
@@ -81,8 +166,11 @@ export default function FluidSimulationPage() {
   const [force, setForce] = useState(DEFAULT_FORCE);
   const [colorPreset, setColorPreset] =
     useState<FluidColorPreset>(DEFAULT_COLOR_PRESET);
+  const [motionModel, setMotionModel] =
+    useState<FluidMotionModel>(DEFAULT_MOTION_MODEL);
   const [paused, setPaused] = useState(false);
   const [musicEnabled, setMusicEnabled] = useState(true);
+  const [settingsReady, setSettingsReady] = useState(false);
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
   const [snapshot, setSnapshot] = useState<FluidSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +196,7 @@ export default function FluidSimulationPage() {
         particleCount: DEFAULT_PARTICLES,
         force: DEFAULT_FORCE,
         colorPreset: DEFAULT_COLOR_PRESET,
+        motionModel: DEFAULT_MOTION_MODEL,
       });
     } catch (caughtError) {
       const message =
@@ -142,6 +231,81 @@ export default function FluidSimulationPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const stored = readStoredSettings();
+    const engine = engineRef.current;
+    let cancelled = false;
+
+    if (stored.solverIterations !== undefined) {
+      engine?.setSolverIterations(stored.solverIterations);
+    }
+    if (stored.particleCount !== undefined) {
+      engine?.setParticleCount(stored.particleCount);
+    }
+    if (stored.force !== undefined) {
+      engine?.setForce(stored.force);
+    }
+    if (stored.colorPreset !== undefined) {
+      engine?.setColorPreset(stored.colorPreset);
+    }
+    if (stored.motionModel !== undefined) {
+      engine?.setMotionModel(stored.motionModel);
+    }
+
+    queueMicrotask(() => {
+      if (cancelled) return;
+      if (stored.solverIterations !== undefined) {
+        setSolverIterations(stored.solverIterations);
+      }
+      if (stored.particleCount !== undefined) {
+        setParticleCount(stored.particleCount);
+      }
+      if (stored.force !== undefined) setForce(stored.force);
+      if (stored.colorPreset !== undefined) {
+        setColorPreset(stored.colorPreset);
+      }
+      if (stored.motionModel !== undefined) {
+        setMotionModel(stored.motionModel);
+      }
+      if (stored.musicEnabled !== undefined) {
+        setMusicEnabled(stored.musicEnabled);
+      }
+      setSettingsReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!settingsReady) return;
+
+    try {
+      window.localStorage.setItem(
+        SETTINGS_STORAGE_KEY,
+        JSON.stringify({
+          solverIterations,
+          particleCount,
+          force,
+          colorPreset,
+          motionModel,
+          musicEnabled,
+        } satisfies FluidSettings),
+      );
+    } catch {
+      // The simulation remains usable when browser storage is unavailable.
+    }
+  }, [
+    colorPreset,
+    force,
+    motionModel,
+    musicEnabled,
+    particleCount,
+    settingsReady,
+    solverIterations,
+  ]);
+
   useEffect(
     () => () => {
       if (feedbackTimerRef.current !== null) {
@@ -156,7 +320,7 @@ export default function FluidSimulationPage() {
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !settingsReady) return;
 
     audio.volume = 0.34;
     if (musicEnabled) {
@@ -168,7 +332,7 @@ export default function FluidSimulationPage() {
     }
 
     return () => audio.pause();
-  }, [musicEnabled]);
+  }, [musicEnabled, settingsReady]);
 
   const startMusic = useCallback(() => {
     if (!musicEnabled) return;
@@ -195,16 +359,62 @@ export default function FluidSimulationPage() {
     engineRef.current?.setColorPreset(preset);
   };
 
-  const togglePause = () => {
+  const handleMotionModel = (model: FluidMotionModel) => {
+    setMotionModel(model);
+    engineRef.current?.setMotionModel(model);
+  };
+
+  const togglePause = useCallback(() => {
     setPaused((current) => {
       const next = !current;
       engineRef.current?.setPaused(next);
       return next;
     });
-  };
+  }, []);
 
-  const toggleMusic = () => {
+  const toggleMusic = useCallback(() => {
     setMusicEnabled((current) => !current);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        event.repeat ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey ||
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLSelectElement ||
+        target instanceof HTMLTextAreaElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (event.code === "Space") {
+        event.preventDefault();
+        togglePause();
+      } else if (event.key.toLowerCase() === "r") {
+        event.preventDefault();
+        engineRef.current?.reset();
+      } else if (event.key.toLowerCase() === "m") {
+        event.preventDefault();
+        toggleMusic();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [toggleMusic, togglePause]);
+
+  const handleForceWheel = (event: React.WheelEvent<HTMLCanvasElement>) => {
+    const change = event.deltaY < 0 ? 0.1 : -0.1;
+    const nextForce = Math.min(
+      2,
+      Math.max(0.4, Math.round((force + change) * 10) / 10),
+    );
+    if (nextForce !== force) handleForce(nextForce);
   };
 
   const createSnapshot = useCallback(async () => {
@@ -325,6 +535,7 @@ export default function FluidSimulationPage() {
           onPointerMove={(event) => updatePointer(event, "move")}
           onPointerUp={releasePointer}
           onPointerCancel={releasePointer}
+          onWheel={handleForceWheel}
           onContextMenu={(event) => event.preventDefault()}
         />
 
@@ -341,6 +552,10 @@ export default function FluidSimulationPage() {
                 <X aria-hidden="true" />
               </button>
             </div>
+            <p className={styles.panelDescription}>
+              Settings save automatically; R resets, Space pauses, M mutes, and
+              scrolling adjusts stroke force.
+            </p>
 
             {!error ? (
               <div
@@ -401,10 +616,28 @@ export default function FluidSimulationPage() {
                       handleParticleCount(Number(event.currentTarget.value))
                     }
                   >
+                    <option value={32_768}>32K</option>
+                    <option value={65_536}>65K</option>
                     <option value={131_072}>131K</option>
                     <option value={262_144}>262K</option>
                     <option value={524_288}>524K</option>
                     <option value={1_048_576}>1.05M</option>
+                  </select>
+                </div>
+
+                <div className={styles.selectRow}>
+                  <label htmlFor="motion-model">Particle motion</label>
+                  <select
+                    id="motion-model"
+                    value={motionModel}
+                    onChange={(event) =>
+                      handleMotionModel(
+                        event.currentTarget.value as FluidMotionModel,
+                      )
+                    }
+                  >
+                    <option value="fluid">Fluid tracers</option>
+                    <option value="classic">Fluid particles</option>
                   </select>
                 </div>
 
@@ -493,6 +726,7 @@ export default function FluidSimulationPage() {
           <button
             type="button"
             className={styles.settingsButton}
+            disabled={!settingsReady}
             onClick={() => {
               setPanelOpen(true);
               startMusic();

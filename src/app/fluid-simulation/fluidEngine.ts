@@ -35,6 +35,7 @@ export type FluidColorPreset =
   "aurora" | "rainbow" | "ocean" | "fire" | "acid" | "lavender" | "monochrome";
 
 export type FluidPointerMode = "stir" | "attract";
+export type FluidMotionModel = "fluid" | "classic";
 
 type Rgb = readonly [number, number, number];
 
@@ -179,6 +180,7 @@ export type FluidEngineOptions = {
   particleCount: number;
   force: number;
   colorPreset?: FluidColorPreset;
+  motionModel?: FluidMotionModel;
   paused?: boolean;
   onStats?: (stats: FluidEngineStats) => void;
 };
@@ -283,19 +285,31 @@ precision highp float;
 
 in vec2 v_uv;
 uniform sampler2D u_velocity;
+uniform float u_classic;
 out vec4 outColor;
 
 void main() {
   ivec2 size = textureSize(u_velocity, 0);
   ivec2 coord = ivec2(gl_FragCoord.xy);
   ivec2 maximum = size - ivec2(1);
+  vec2 cellSize = 1.0 / vec2(size);
 
   float left = texelFetch(u_velocity, clamp(coord + ivec2(-1, 0), ivec2(0), maximum), 0).x;
   float right = texelFetch(u_velocity, clamp(coord + ivec2(1, 0), ivec2(0), maximum), 0).x;
   float bottom = texelFetch(u_velocity, clamp(coord + ivec2(0, -1), ivec2(0), maximum), 0).y;
   float top = texelFetch(u_velocity, clamp(coord + ivec2(0, 1), ivec2(0), maximum), 0).y;
 
-  float divergence = 0.5 * (right - left + top - bottom);
+  float divergence;
+  if (u_classic > 0.5) {
+    divergence = 0.5 * (right - left + top - bottom);
+  } else {
+    // Velocity is stored in normalized UV units, so each derivative must use
+    // the actual rectangular grid spacing.
+    divergence = 0.5 * (
+      (right - left) / cellSize.x +
+      (top - bottom) / cellSize.y
+    );
+  }
   outColor = vec4(divergence, 0.0, 0.0, 1.0);
 }
 `;
@@ -306,12 +320,15 @@ precision highp float;
 in vec2 v_uv;
 uniform sampler2D u_pressure;
 uniform sampler2D u_divergence;
+uniform float u_classic;
 out vec4 outColor;
 
 void main() {
   ivec2 size = textureSize(u_pressure, 0);
   ivec2 coord = ivec2(gl_FragCoord.xy);
   ivec2 maximum = size - ivec2(1);
+  vec2 inverseCellSize = vec2(size);
+  vec2 weights = inverseCellSize * inverseCellSize;
 
   float left = texelFetch(u_pressure, clamp(coord + ivec2(-1, 0), ivec2(0), maximum), 0).x;
   float right = texelFetch(u_pressure, clamp(coord + ivec2(1, 0), ivec2(0), maximum), 0).x;
@@ -319,7 +336,16 @@ void main() {
   float top = texelFetch(u_pressure, clamp(coord + ivec2(0, 1), ivec2(0), maximum), 0).x;
   float divergence = texelFetch(u_divergence, coord, 0).x;
 
-  float pressure = (left + right + bottom + top - divergence) * 0.25;
+  float pressure;
+  if (u_classic > 0.5) {
+    pressure = (left + right + bottom + top - divergence) * 0.25;
+  } else {
+    pressure = (
+      (left + right) * weights.x +
+      (bottom + top) * weights.y -
+      divergence
+    ) / (2.0 * (weights.x + weights.y));
+  }
   outColor = vec4(pressure, 0.0, 0.0, 1.0);
 }
 `;
@@ -330,12 +356,14 @@ precision highp float;
 in vec2 v_uv;
 uniform sampler2D u_pressure;
 uniform sampler2D u_velocity;
+uniform float u_classic;
 out vec4 outColor;
 
 void main() {
   ivec2 size = textureSize(u_pressure, 0);
   ivec2 coord = ivec2(gl_FragCoord.xy);
   ivec2 maximum = size - ivec2(1);
+  vec2 cellSize = 1.0 / vec2(size);
 
   float left = texelFetch(u_pressure, clamp(coord + ivec2(-1, 0), ivec2(0), maximum), 0).x;
   float right = texelFetch(u_pressure, clamp(coord + ivec2(1, 0), ivec2(0), maximum), 0).x;
@@ -343,7 +371,14 @@ void main() {
   float top = texelFetch(u_pressure, clamp(coord + ivec2(0, 1), ivec2(0), maximum), 0).x;
   vec2 velocity = texelFetch(u_velocity, coord, 0).xy;
 
-  velocity -= 0.5 * vec2(right - left, top - bottom);
+  if (u_classic > 0.5) {
+    velocity -= 0.5 * vec2(right - left, top - bottom);
+  } else {
+    velocity -= 0.5 * vec2(
+      (right - left) / cellSize.x,
+      (top - bottom) / cellSize.y
+    );
+  }
 
   if (coord.x <= 1 || coord.x >= maximum.x - 1) velocity.x = 0.0;
   if (coord.y <= 1 || coord.y >= maximum.y - 1) velocity.y = 0.0;
@@ -409,6 +444,7 @@ uniform float u_dt;
 uniform vec2 u_attractor;
 uniform float u_attracting;
 uniform float u_aspect;
+uniform float u_classic;
 out vec4 outColor;
 
 ${BILINEAR_GLSL}
@@ -416,11 +452,22 @@ ${BILINEAR_GLSL}
 void main() {
   vec4 particle = texture(u_particles, v_uv);
   vec2 position = particle.xy;
-  vec2 velocity = particle.zw;
-  vec2 fluidVelocity = sampleBilinear(u_velocity, position).xy;
+  vec2 firstVelocity = sampleBilinear(u_velocity, position).xy;
+  vec2 velocity;
 
-  float drag = 1.0 - exp(-u_dt * 11.0);
-  velocity += (fluidVelocity - velocity) * drag;
+  if (u_classic > 0.5) {
+    velocity = particle.zw;
+    float drag = 1.0 - exp(-u_dt * 11.0);
+    velocity += (firstVelocity - velocity) * drag;
+  } else {
+    // Passive fluid tracers use midpoint advection to avoid centrifugal slip.
+    vec2 midpoint = clamp(
+      position + firstVelocity * (u_dt * 0.5),
+      vec2(0.001),
+      vec2(0.999)
+    );
+    velocity = sampleBilinear(u_velocity, midpoint).xy;
+  }
 
   if (u_attracting > 0.5) {
     vec2 offset = u_attractor - position;
@@ -433,7 +480,11 @@ void main() {
     float nearPull = exp(
       -distanceFromAttractor * distanceFromAttractor / 0.22
     );
-    velocity += direction * (0.08 + nearPull * 2.3) * u_dt;
+    if (u_classic > 0.5) {
+      velocity += direction * (0.08 + nearPull * 2.3) * u_dt;
+    } else {
+      velocity += direction * (0.025 + nearPull * 0.58);
+    }
 
     float speed = length(velocity);
     if (speed > 1.8) velocity *= 1.8 / speed;
@@ -577,6 +628,7 @@ export class FluidEngine {
   private solverIterations: number;
   private particleCount: number;
   private force: number;
+  private motionModel: FluidMotionModel;
   private palette: FluidPalette;
   private paused: boolean;
   private particleTextureSide = 0;
@@ -607,6 +659,7 @@ export class FluidEngine {
     this.solverIterations = options.solverIterations;
     this.particleCount = options.particleCount;
     this.force = options.force;
+    this.motionModel = options.motionModel ?? "fluid";
     this.palette = COLOR_PALETTES[options.colorPreset ?? "aurora"];
     this.paused = options.paused ?? false;
 
@@ -751,6 +804,15 @@ export class FluidEngine {
     if (nextCount === this.particleCount) return;
     this.particleCount = nextCount;
     this.createParticleTargets(nextCount);
+  }
+
+  setMotionModel(model: FluidMotionModel) {
+    if (model === this.motionModel) return;
+    this.motionModel = model;
+    if (this.pressure) {
+      this.clearTarget(this.pressure.read);
+      this.clearTarget(this.pressure.write);
+    }
   }
 
   setPaused(paused: boolean) {
@@ -917,6 +979,10 @@ export class FluidEngine {
       this.simulationHeight,
       (program) => {
         this.bindTexture(program, "u_velocity", velocity.read.texture, 0);
+        gl.uniform1f(
+          this.uniform(program, "u_classic"),
+          this.motionModel === "classic" ? 1 : 0,
+        );
       },
     );
 
@@ -929,6 +995,10 @@ export class FluidEngine {
         (program) => {
           this.bindTexture(program, "u_pressure", pressure.read.texture, 0);
           this.bindTexture(program, "u_divergence", divergence.texture, 1);
+          gl.uniform1f(
+            this.uniform(program, "u_classic"),
+            this.motionModel === "classic" ? 1 : 0,
+          );
         },
       );
       swap(pressure);
@@ -942,6 +1012,10 @@ export class FluidEngine {
       (program) => {
         this.bindTexture(program, "u_pressure", pressure.read.texture, 0);
         this.bindTexture(program, "u_velocity", velocity.read.texture, 1);
+        gl.uniform1f(
+          this.uniform(program, "u_classic"),
+          this.motionModel === "classic" ? 1 : 0,
+        );
       },
     );
     swap(velocity);
@@ -1015,6 +1089,10 @@ export class FluidEngine {
         gl.uniform1f(
           this.uniform(program, "u_aspect"),
           this.simulationWidth / this.simulationHeight,
+        );
+        gl.uniform1f(
+          this.uniform(program, "u_classic"),
+          this.motionModel === "classic" ? 1 : 0,
         );
       },
     );
