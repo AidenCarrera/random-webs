@@ -145,7 +145,7 @@ export function SolarSystemCreator() {
           fileName={exportFileName}
           imageAlt="Solar System Creator Export"
           title="Solar System Snapshot"
-          description="Capture of your custom simulated celestial alignment."
+          description="Download the current solar system as an image or share it directly."
           isTouchDevice={
             typeof window !== "undefined" &&
             ("ontouchstart" in window || navigator.maxTouchPoints > 0)

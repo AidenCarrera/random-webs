@@ -19,7 +19,7 @@ import {
   Maximize,
 } from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
-import { canvasToBlob, downloadCanvasPng } from "@/lib/canvasExport";
+import { canvasToBlob } from "@/lib/canvasExport";
 
 import styles from "./styles.module.css";
 
@@ -319,13 +319,8 @@ export default function MandalaMaker() {
 
     setIsSaving(true);
     try {
-      const fileName = "mandala.png";
       const dataUrl = canvas.toDataURL("image/png");
       setPreviewImage(dataUrl);
-
-      if (!isTouchDevice) {
-        await downloadCanvasPng(canvas, fileName);
-      }
     } finally {
       setIsSaving(false);
     }
@@ -539,7 +534,7 @@ export default function MandalaMaker() {
 
       {previewImage ? (
         <ExportPreviewModal
-          description="Your PNG downloaded automatically. You can also save it manually or share it here."
+          description="Download the current mandala as an image or share it directly."
           fileName="mandala.png"
           imageAlt="Mandala export preview"
           imageSrc={previewImage}
@@ -574,7 +569,7 @@ export default function MandalaMaker() {
           }}
           shareHeading="Share your mandala"
           shareUrl={shareUrl}
-          title="Mandala snapshot"
+          title="Mandala Snapshot"
         />
       ) : null}
     </main>

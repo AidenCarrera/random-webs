@@ -581,7 +581,7 @@ export default function GithubHistoryVisualizerPage() {
 
       {exportSnapshot ? (
         <ExportPreviewModal
-          description="Preview your repository visualization, then download the PNG or share the visualizer."
+          description="Download the current repository visualization as an image or share it directly."
           emailBody={`Explore the repository history for ${dataset.name}:`}
           emailSubject="Repository history visualization"
           facebookHashtag="#RepositoryVisualization"
@@ -594,7 +594,7 @@ export default function GithubHistoryVisualizerPage() {
           shareHeading="Share this visualization"
           shareUrl={shareUrl}
           socialTitle={`Explore the repository history for ${dataset.name}.`}
-          title="Repository visualization"
+          title="Repository Snapshot"
         />
       ) : null}
     </main>

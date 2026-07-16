@@ -157,7 +157,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/fractal-explorer",
-    lastModified: "2026-07-15",
+    lastModified: "2026-07-16",
     title: "Fractal Explorer",
     blurb: "Infinite geometric patterns.",
     accent: "from-violet-300/80 via-indigo-400/70 to-sky-500/70",
@@ -169,7 +169,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/gravity-box",
-    lastModified: "2026-07-15",
+    lastModified: "2026-07-16",
     title: "Gravity Box",
     blurb: "A physics sandbox.",
     accent: "from-stone-200/80 via-slate-300/70 to-zinc-500/70",
@@ -181,7 +181,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/hypno-spiral",
-    lastModified: "2026-07-15",
+    lastModified: "2026-07-16",
     title: "Hypno Spiral",
     blurb: "An optical illusion.",
     accent: "from-purple-300/80 via-fuchsia-400/70 to-indigo-500/70",
@@ -229,7 +229,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/mandala-maker",
-    lastModified: "2026-07-15",
+    lastModified: "2026-07-16",
     title: "Mandala Maker",
     blurb: "Symmetrical drawing.",
     accent: "from-teal-200/80 via-cyan-300/70 to-emerald-500/70",

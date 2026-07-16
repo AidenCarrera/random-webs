@@ -3,7 +3,7 @@
 import { Download, Settings2, X } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
-import { canvasToBlob, downloadCanvasPng } from "@/lib/canvasExport";
+import { canvasToBlob } from "@/lib/canvasExport";
 
 type ColorMode = "default" | "neon" | "solar" | "ocean" | "spectrum" | "forest";
 
@@ -358,15 +358,8 @@ export default function HypnoSpiral() {
         const dataUrl = canvas.toDataURL("image/png");
         setPreviewImage(dataUrl);
         setPreviewFileName(fileName);
-
-        if (!isTouchDevice) {
-          await downloadCanvasPng(canvas, fileName);
-        }
-      } catch {
-        const fallbackLink = document.createElement("a");
-        fallbackLink.download = fileName;
-        fallbackLink.href = canvas.toDataURL("image/png");
-        fallbackLink.click();
+      } catch (error) {
+        console.error("Failed to generate preview image:", error);
       } finally {
         setDownloadCountdown(null);
         countdownTimeoutsRef.current = [];
@@ -406,10 +399,12 @@ export default function HypnoSpiral() {
 
       {previewImage ? (
         <ExportPreviewModal
+          title="Spiral Snapshot"
           fileName={previewFileName}
           imageSrc={previewImage}
           isTouchDevice={isTouchDevice}
           onClose={() => setPreviewImage(null)}
+          description="Download the current spiral as an image or share it directly."
           onSaveImage={async () => {
             try {
               const canvas = canvasRef.current;

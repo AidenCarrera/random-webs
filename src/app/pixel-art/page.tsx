@@ -13,7 +13,7 @@ import {
   Undo,
 } from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
-import { canvasToBlob, downloadCanvasPng } from "@/lib/canvasExport";
+import { canvasToBlob } from "@/lib/canvasExport";
 
 import styles from "./styles.module.css";
 
@@ -536,10 +536,6 @@ export default function PixelArt() {
 
       setPreviewImage(dataUrl);
       setPreviewFileName(fileName);
-
-      if (!isTouchDevice) {
-        await downloadCanvasPng(exportCanvas, fileName);
-      }
     } finally {
       setIsSaving(false);
     }
@@ -760,7 +756,8 @@ export default function PixelArt() {
 
       {previewImage ? (
         <ExportPreviewModal
-          description="Your PNG downloaded automatically. You can also save it manually or share it here."
+          title="Pixel Art Snapshot"
+          description="Download the current pixel art as an image or share it directly."
           fileName={previewFileName}
           imageAlt="Pixel art export preview"
           imageSrc={previewImage}

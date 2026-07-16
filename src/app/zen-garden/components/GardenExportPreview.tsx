@@ -23,7 +23,7 @@ export function GardenExportPreview({
 
   return (
     <ExportPreviewModal
-      description="You can save the image manually or share it here."
+      description="Download the current zen garden as an image or share it directly."
       fileName={previewFileName}
       imageAlt="Zen garden export preview"
       imageSrc={previewImage}
@@ -32,7 +32,7 @@ export function GardenExportPreview({
       onSaveImage={savePreviewImage}
       shareHeading="Share with friends"
       shareUrl={shareUrl}
-      title="Zen Garden Snap"
+      title="Zen Garden Snapshot"
     />
   );
 }
