@@ -108,4 +108,26 @@ test.describe("Repository Visualizer loading and playback", () => {
       })
       .toBeGreaterThan(3);
   });
+
+  test("settles the final animation before stopping playback", async ({
+    page,
+  }) => {
+    await page.goto("/repo-visualizer", { waitUntil: "domcontentloaded" });
+
+    await page.getByRole("button", { name: "Start playback" }).click();
+    await page.getByRole("button", { name: "8×" }).click();
+
+    const timeline = page.getByRole("slider", { name: "Commit timeline" });
+    const finalCursor = await timeline.getAttribute("max");
+    expect(finalCursor).not.toBeNull();
+    await timeline.fill(finalCursor!);
+
+    const pauseButton = page.getByRole("button", { name: "Pause playback" });
+    await expect(pauseButton).toBeVisible();
+    await page.waitForTimeout(300);
+    await expect(pauseButton).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Start playback" }),
+    ).toBeVisible({ timeout: 5_000 });
+  });
 });

@@ -73,6 +73,8 @@ export type AuthorAgent = Author & {
   angle?: number;
   bobTime?: number;
   isAnimating?: boolean;
+  isFinishing?: boolean;
+  linkAlpha: number;
   vx: number;
   vy: number;
 };

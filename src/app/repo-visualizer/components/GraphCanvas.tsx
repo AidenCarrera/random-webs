@@ -387,7 +387,17 @@ export function GraphCanvas({
         const bobY = Math.sin(author.bobTime || 0) * 0.4;
         const tiltAngle = Math.cos(author.bobTime || 0) * 0.002;
 
-        if (targetNode && targetNode.displayAlpha > 0.015) {
+        const linkAlpha = Number.isFinite(author.linkAlpha)
+          ? author.linkAlpha
+          : author.isAnimating
+            ? 1
+            : 0;
+
+        if (
+          targetNode &&
+          targetNode.displayAlpha > 0.015 &&
+          linkAlpha > 0.015
+        ) {
           const avatarCenter = { x: position.x, y: position.y + bobY };
           const deltaX = target.x - avatarCenter.x;
           const deltaY = target.y - avatarCenter.y;
@@ -401,8 +411,8 @@ export function GraphCanvas({
             const directionY = deltaY / distance;
             context.save();
             context.strokeStyle = isRecent
-              ? "rgba(143, 174, 255, 0.72)"
-              : "rgba(116, 138, 178, 0.28)";
+              ? `rgba(143, 174, 255, ${0.72 * linkAlpha})`
+              : `rgba(116, 138, 178, ${0.28 * linkAlpha})`;
             context.lineWidth = Math.max(0.8, 1.3 * camera.zoom);
             context.setLineDash([4, 7]);
             context.beginPath();
@@ -591,13 +601,16 @@ export function GraphCanvas({
 
       for (const author of authorsRef.current.values()) {
         author.activity *= 0.98 ** frameScale;
+        author.linkAlpha = author.isAnimating
+          ? Math.min(1, (author.linkAlpha ?? 0) + 0.12 * frameScale)
+          : Math.max(0, (author.linkAlpha ?? 0) * 0.94 ** frameScale);
         const anchor = author.anchorPath
           ? graph.get(author.anchorPath)
           : undefined;
         let destinationX = author.targetX;
         let destinationY = author.targetY;
 
-        if (!author.isAnimating) {
+        if (!author.isAnimating && !author.isFinishing) {
           if (anchor) {
             author.targetX = anchor.x;
             author.targetY = anchor.y;
@@ -620,10 +633,18 @@ export function GraphCanvas({
         const motionSeconds = Math.min(0.4, (frameScale / 60) * playbackRate);
         const stepCount = Math.max(1, Math.ceil(motionSeconds / (1 / 120)));
         const stepSeconds = motionSeconds / stepCount;
-        const stiffness = author.isAnimating ? 36 : 12;
-        const damping = author.isAnimating ? 10.5 : 6.5;
+        const stiffness = author.isAnimating
+          ? 36
+          : author.isFinishing
+            ? 16
+            : 12;
+        const damping = author.isAnimating
+          ? 10.5
+          : author.isFinishing
+            ? 8.5
+            : 6.5;
         const maxSpeed =
-          (author.isAnimating ? 260 : 70) /
+          (author.isAnimating ? 260 : author.isFinishing ? 105 : 70) /
           Math.max(0.45, cameraRef.current.zoom);
 
         author.vx = Number.isFinite(author.vx) ? author.vx : 0;

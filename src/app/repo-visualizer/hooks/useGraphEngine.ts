@@ -183,6 +183,8 @@ export function useGraphEngine(dataset: Dataset) {
         existingAuthor.anchorPath = target.path;
         existingAuthor.targetPath = target.path;
         existingAuthor.isAnimating = animate;
+        existingAuthor.isFinishing = false;
+        existingAuthor.linkAlpha = animate ? 1 : 0;
         if (!animate) {
           existingAuthor.x = approach.x;
           existingAuthor.y = approach.y;
@@ -204,6 +206,8 @@ export function useGraphEngine(dataset: Dataset) {
           anchorPath: target.path,
           targetPath: target.path,
           isAnimating: animate,
+          isFinishing: false,
+          linkAlpha: animate ? 1 : 0,
           vx: 0,
           vy: 0,
         });
@@ -292,6 +296,25 @@ export function useGraphEngine(dataset: Dataset) {
     },
     [finalizeActivePlayback, placeAuthor],
   );
+
+  const prepareFinalSettle = useCallback(() => {
+    for (const author of authorsRef.current.values()) {
+      const anchor = author.anchorPath
+        ? graphRef.current.get(author.anchorPath)
+        : undefined;
+      if (anchor) {
+        const approach = getAuthorApproachPosition(
+          author.key,
+          anchor,
+          cameraRef.current.zoom,
+        );
+        author.targetX = approach.x;
+        author.targetY = approach.y;
+      }
+      author.isAnimating = false;
+      author.isFinishing = true;
+    }
+  }, []);
 
   const advancePlayback = useCallback(
     (timestamp: number, playbackSpeed: number) => {
@@ -498,12 +521,50 @@ export function useGraphEngine(dataset: Dataset) {
     const playback = activePlaybackRef.current;
     const remainingProgress =
       playback?.eventId === event.id ? 1 - playback.progress : 1;
+    let settleFrame: number | null = null;
     const timeout = window.setTimeout(
       () => {
         finalizeActivePlayback();
         if (cursor >= dataset.events.length) {
-          settleGraphImmediately();
-          setIsPlaying(false);
+          prepareFinalSettle();
+          const settleStartedAt = performance.now();
+
+          const finishWhenSettled = (timestamp: number) => {
+            const contributorsSettled = Array.from(
+              authorsRef.current.values(),
+            ).every(
+              (author) =>
+                Math.hypot(author.vx, author.vy) < 0.45 &&
+                Math.hypot(
+                  author.targetX - author.x,
+                  author.targetY - author.y,
+                ) < 1.5 &&
+                author.linkAlpha < 0.02,
+            );
+            const particlesSettled = particlesRef.current.length === 0;
+            const elapsed = timestamp - settleStartedAt;
+
+            if (
+              (elapsed >= 450 && contributorsSettled && particlesSettled) ||
+              elapsed >= 2_400
+            ) {
+              particlesRef.current = [];
+              for (const author of authorsRef.current.values()) {
+                author.vx = 0;
+                author.vy = 0;
+                author.linkAlpha = 0;
+                author.targetPath = undefined;
+                author.isFinishing = false;
+              }
+              settleGraphImmediately();
+              setIsPlaying(false);
+              return;
+            }
+
+            settleFrame = window.requestAnimationFrame(finishWhenSettled);
+          };
+
+          settleFrame = window.requestAnimationFrame(finishWhenSettled);
         } else {
           setCursor(cursor + 1);
         }
@@ -514,12 +575,16 @@ export function useGraphEngine(dataset: Dataset) {
       ),
     );
 
-    return () => window.clearTimeout(timeout);
+    return () => {
+      window.clearTimeout(timeout);
+      if (settleFrame !== null) window.cancelAnimationFrame(settleFrame);
+    };
   }, [
     cursor,
     dataset.events,
     finalizeActivePlayback,
     isPlaying,
+    prepareFinalSettle,
     settleGraphImmediately,
     speed,
   ]);
