@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:mobile": "next dev --hostname 0.0.0.0",
+    "prebuild": "node scripts/update-last-modified.ts",
     "build": "next build",
     "start": "next start",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm validate:websites",
@@ -18,6 +19,7 @@
     "test:smoke": "node scripts/test-smoke.ts",
     "test:smoke:production": "node scripts/test-smoke.ts --production",
     "generate:demo-log": "node scripts/generate-demo-git-log.ts",
+    "update:last-modified": "node scripts/update-last-modified.ts",
     "typecheck": "tsc --noEmit",
     "open:websites": "node scripts/open-websites.ts",
     "normalize:lofi": "node scripts/normalize-audio-lufs.ts",

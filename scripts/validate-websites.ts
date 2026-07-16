@@ -10,6 +10,7 @@ const repositoryRoot = path.resolve(scriptDirectory, "..");
 const appDirectory = path.join(repositoryRoot, "src", "app");
 const reservedPageRoutes = new Set(["dev"]);
 const routePattern = /^\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
 
 function main() {
   const errors: string[] = [];
@@ -25,6 +26,12 @@ function main() {
     }
 
     registeredPaths.add(website.path);
+
+    if (!isoDatePattern.test(website.lastModified)) {
+      errors.push(
+        `Invalid lastModified date for '${website.path}': '${website.lastModified}'.`,
+      );
+    }
 
     if (!website.title.trim() || !website.blurb.trim()) {
       errors.push(`Website display copy is incomplete for '${website.path}'.`);
