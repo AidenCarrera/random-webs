@@ -47,7 +47,12 @@ import {
   type FallingSandCanvasHandle,
   type FallingSandSnapshot,
 } from "./FallingSandCanvas";
-import { DRAWABLE_MATERIALS, Material, type SandWorldStats } from "./engine";
+import {
+  DRAWABLE_MATERIALS,
+  MATERIAL_COUNT,
+  Material,
+  type SandWorldStats,
+} from "./engine";
 import styles from "./styles.module.css";
 
 const STORAGE_KEY = "random-webs:falling-sand:world";
@@ -69,6 +74,17 @@ const MATERIAL_ICONS: Record<Material, LucideIcon> = {
   [Material.ICE]: Snowflake,
   [Material.SMOKE]: Flame,
   [Material.STEAM]: Waves,
+  [Material.DIRT]: Mountain,
+  [Material.MUD]: Droplet,
+  [Material.COAL]: Gem,
+  [Material.METAL]: BrickWall,
+  [Material.GLASS]: FlaskConical,
+  [Material.SNOW]: Snowflake,
+  [Material.METHANE]: Waves,
+  [Material.TNT]: Bomb,
+  [Material.NITRO]: FlaskConical,
+  [Material.C4]: Bomb,
+  [Material.FUSE]: Fuel,
 };
 
 const KEYBOARD_MATERIALS = new Map(
@@ -180,7 +196,7 @@ export default function FallingSandPage() {
     cells: 0,
     active: 0,
     fps: 0,
-    materialCounts: Array<number>(Material.STEAM + 1).fill(0),
+    materialCounts: Array<number>(MATERIAL_COUNT).fill(0),
   });
   const simulationPaused = paused || Boolean(reduceMotion);
   const isTouchDevice = useSyncExternalStore(

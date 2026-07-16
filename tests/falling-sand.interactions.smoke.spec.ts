@@ -35,6 +35,30 @@ test.describe("Falling Sand interactions", () => {
       page.getByText("Material types").locator("..").locator("strong"),
     ).toHaveText("4");
     await page.getByRole("tab", { name: "Elements" }).click();
+    const materialTitles = await page
+      .locator("#panel-elements button")
+      .evaluateAll((buttons) =>
+        buttons.map((button) => button.getAttribute("title")),
+      );
+    expect(materialTitles.slice(0, 10)).toEqual([
+      "Sand (1)",
+      "Water (2)",
+      "Fire (3)",
+      "Lava (4)",
+      "Plant (5)",
+      "Acid (6)",
+      "Stone (7)",
+      "Wood (8)",
+      "Oil (9)",
+      "Salt (0)",
+    ]);
+    expect(materialTitles.slice(18, 23)).toEqual([
+      "Powder (G)",
+      "Fuse (F)",
+      "TNT (T)",
+      "Nitro (R)",
+      "C4 (X)",
+    ]);
     await expect(
       page.getByRole("button", { name: "0.5× speed" }),
     ).toBeVisible();
@@ -163,7 +187,30 @@ test.describe("Falling Sand interactions", () => {
     await page.mouse.wheel(0, 100);
     await expect(page.locator('output[for="sand-brush-size"]')).toHaveText("5");
     await page.getByRole("tab", { name: "Elements" }).click();
+    for (const addedMaterial of [
+      "Dirt",
+      "Mud",
+      "Coal",
+      "Metal",
+      "Glass",
+      "Snow",
+      "Methane",
+      "TNT",
+      "Nitro",
+      "C4",
+      "Fuse",
+    ]) {
+      await expect(
+        page.getByRole("button", { name: addedMaterial }),
+      ).toBeAttached();
+    }
+    await expect(page.getByRole("button", { name: "Firework" })).toHaveCount(0);
     await expect(page.getByText("G", { exact: true })).toHaveCount(1);
+    await page.keyboard.press("x");
+    await expect(page.getByRole("button", { name: "C4" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     await page.keyboard.press("g");
     await expect(page.getByRole("button", { name: "Powder" })).toHaveAttribute(
       "aria-pressed",
