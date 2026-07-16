@@ -226,8 +226,6 @@ export const JOKES = [
   "In order to understand recursion, you must first understand recursion.",
   "Why did the developer go broke? Because he used up all his cache.",
   "There are two hard things in computer science: cache invalidation, naming things, and off-by-one errors.",
-  "A SQL query walks into a bar, walks up to two tables and asks, 'Can I join you?'",
-  "Why do programmers prefer dark mode? Because light attracts bugs.",
 ];
 
 export const FORTUNES = [

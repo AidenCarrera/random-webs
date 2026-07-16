@@ -120,7 +120,7 @@ export default function Home() {
                       className={
                         isRevealedClient
                           ? "text-sm font-black uppercase tracking-[0.04em] text-zinc-100 sm:text-xl sm:tracking-[0.08em]"
-                          : "text-sm font-black uppercase tracking-[0.1em] text-white/95 sm:text-xl sm:tracking-[0.22em]"
+                          : "text-sm font-black uppercase tracking-widest text-white/95 sm:text-xl sm:tracking-[0.22em]"
                       }
                     >
                       {isRevealed ? website.title : maskText(website.title)}

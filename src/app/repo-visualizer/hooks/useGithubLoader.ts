@@ -7,15 +7,20 @@ import {
   GithubTreeResponse,
 } from "../types";
 import { parseRepositoryInput, buildGithubEvents } from "../utils/github";
-import {
-  selectTreePaths,
-  createDemoDataset,
-  parseGitLog,
-} from "../utils/common";
+import { selectTreePaths, parseGitLog } from "../utils/common";
 import { MAX_TREE_FILES } from "../constants";
 
+const EMPTY_DATASET: Dataset = {
+  id: "empty",
+  name: "No repository loaded",
+  source: "empty",
+  events: [],
+  baselinePaths: [],
+  allPaths: [],
+};
+
 export function useGithubLoader() {
-  const [dataset, setDataset] = useState<Dataset>(() => createDemoDataset());
+  const [dataset, setDataset] = useState<Dataset>(EMPTY_DATASET);
   const [isInitializingDataset, setIsInitializingDataset] = useState(true);
   const [repositoryInput, setRepositoryInput] = useState("");
   const [githubToken, setGithubToken] = useState("");
@@ -43,7 +48,9 @@ export function useGithubLoader() {
         }
       })
       .catch(() => {
-        // Fallback createDemoDataset is already loaded by default
+        setRepositoryError(
+          "Could not load the bundled repository history. Load a GitHub repository or upload a local log.",
+        );
       })
       .finally(() => {
         setIsInitializingDataset(false);
@@ -240,8 +247,9 @@ export function useGithubLoader() {
       });
       onLoadSuccess();
     } catch {
-      setDataset(createDemoDataset());
-      onLoadSuccess();
+      setRepositoryError(
+        "Could not load the bundled repository history. Load a GitHub repository or upload a local log.",
+      );
     } finally {
       setIsLoadingRepository(false);
     }

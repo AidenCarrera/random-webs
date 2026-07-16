@@ -30,20 +30,23 @@ test.describe("Repository Visualizer loading and playback", () => {
       0,
     );
 
-    const playButton = page.getByRole("button", { name: "Start playback" });
-    await expect(playButton).toBeEnabled();
-    await expect(page.getByRole("status")).toHaveCount(0);
+    await expect(page.getByRole("status")).toContainText(
+      "Repository history unavailable",
+    );
+    await expect(
+      page.getByRole("button", {
+        name: "Playback unavailable while repository loads",
+      }),
+    ).toBeDisabled();
     await expect(page.getByTestId("timeline-progress")).toHaveCSS(
       "width",
       "0px",
     );
-    await expect(
-      page.getByText("Press Play to begin simulation"),
-    ).toBeVisible();
+    await expect(page.getByText("Press Play to begin simulation")).toHaveCount(
+      0,
+    );
 
-    await playButton.click();
-    await expect(
-      page.getByRole("button", { name: "Pause playback" }),
-    ).toBeVisible();
+    await page.getByRole("button", { name: "Choose repository" }).click();
+    await expect(page.getByText("Switch repository")).toBeVisible();
   });
 });

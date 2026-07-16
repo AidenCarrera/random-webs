@@ -217,7 +217,7 @@ export function RepoLoader({
       {repositoryError ? (
         <p className="mt-2 text-[10px] text-rose-300">{repositoryError}</p>
       ) : null}
-      {dataset.source === "github" ? (
+      {dataset.source !== "demo" ? (
         <button
           type="button"
           onClick={() => {

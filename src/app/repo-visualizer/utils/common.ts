@@ -1,27 +1,5 @@
-import { Dataset, CommitEvent, ChangeStatus } from "../types";
-import { DEMO_EVENTS, FILE_COLORS, MAX_TREE_FILES } from "../constants";
-
-export function createDemoDataset(): Dataset {
-  const allPaths = Array.from(
-    new Set(
-      DEMO_EVENTS.flatMap((event) =>
-        event.changes.flatMap(
-          (change) =>
-            [change.path, change.previousPath].filter(Boolean) as string[],
-        ),
-      ),
-    ),
-  );
-
-  return {
-    id: "demo-random-webs",
-    name: "random-webs / demo history",
-    source: "demo",
-    events: DEMO_EVENTS,
-    baselinePaths: [],
-    allPaths,
-  };
-}
+import { CommitEvent, ChangeStatus } from "../types";
+import { FILE_COLORS, MAX_TREE_FILES } from "../constants";
 
 export function normalizePath(path: string): string {
   return path

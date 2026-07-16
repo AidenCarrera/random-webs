@@ -1,6 +1,14 @@
 import { GitBranch } from "lucide-react";
 
-export function RepositoryLoadingState() {
+type RepositoryLoadingStateProps = {
+  isLoading: boolean;
+  onChooseRepository: () => void;
+};
+
+export function RepositoryLoadingState({
+  isLoading,
+  onChooseRepository,
+}: RepositoryLoadingStateProps) {
   return (
     <div className="absolute inset-0 z-10 grid place-items-center bg-[#04060b]/92 px-6 backdrop-blur-sm">
       <div
@@ -14,19 +22,33 @@ export function RepositoryLoadingState() {
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-100">
-              Loading repository history
+              {isLoading
+                ? "Loading repository history"
+                : "Repository history unavailable"}
             </p>
             <p className="mt-1 text-xs leading-5 text-slate-400">
-              Preparing commits, contributors, and file changes.
+              {isLoading
+                ? "Preparing commits, contributors, and file changes."
+                : "Load a GitHub repository or upload a local git log to begin."}
             </p>
           </div>
         </div>
 
-        <div className="mt-5 space-y-2.5" aria-hidden="true">
-          <div className="h-2.5 w-full animate-pulse rounded-full bg-white/10 motion-reduce:animate-none" />
-          <div className="h-2.5 w-4/5 animate-pulse rounded-full bg-white/8 motion-reduce:animate-none" />
-          <div className="h-2.5 w-3/5 animate-pulse rounded-full bg-white/6 motion-reduce:animate-none" />
-        </div>
+        {isLoading ? (
+          <div className="mt-5 space-y-2.5" aria-hidden="true">
+            <div className="h-2.5 w-full animate-pulse rounded-full bg-white/10 motion-reduce:animate-none" />
+            <div className="h-2.5 w-4/5 animate-pulse rounded-full bg-white/8 motion-reduce:animate-none" />
+            <div className="h-2.5 w-3/5 animate-pulse rounded-full bg-white/6 motion-reduce:animate-none" />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onChooseRepository}
+            className="mt-5 rounded-xl border border-blue-400/25 bg-blue-500/15 px-3 py-2 text-xs font-semibold text-blue-200 transition hover:bg-blue-500/25"
+          >
+            Choose repository
+          </button>
+        )}
       </div>
     </div>
   );

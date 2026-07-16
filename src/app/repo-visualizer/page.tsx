@@ -333,7 +333,7 @@ export default function GithubHistoryVisualizerPage() {
           </div>
 
           <Legend graphRef={graphRef} />
-          {!isDatasetLoading && <CommitOverlay currentEvent={currentEvent} />}
+          {isDatasetReady && <CommitOverlay currentEvent={currentEvent} />}
         </div>
       </div>
 
@@ -357,7 +357,12 @@ export default function GithubHistoryVisualizerPage() {
 
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(3,6,14,0.28),transparent_24%,transparent_72%,rgba(3,6,14,0.48))]" />
 
-        {!isVisualizationReady && <RepositoryLoadingState />}
+        {!isVisualizationReady && (
+          <RepositoryLoadingState
+            isLoading={isDatasetLoading}
+            onChooseRepository={() => setIsRepositorySwitcherOpen(true)}
+          />
+        )}
 
         {/* Zoom & Fullscreen Controls */}
         <div className="pointer-events-none absolute right-3 top-3 z-10 hidden flex-col gap-2 sm:right-5 sm:top-5 lg:flex">

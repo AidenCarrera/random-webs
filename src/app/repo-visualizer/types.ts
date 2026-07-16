@@ -30,7 +30,7 @@ export type Dataset = {
   id: string;
   name: string;
   url?: string;
-  source: "demo" | "github";
+  source: "empty" | "demo" | "github";
   events: CommitEvent[];
   baselinePaths: string[];
   allPaths: string[];
