@@ -813,13 +813,23 @@ export class FallingSandEngine {
       if (this.life[index] === 0) this.life[index] = 80 + randomInt(100);
       const materialAbove =
         y > 0 ? (this.cells[this.index(x, y - 1)] as Material) : Material.EMPTY;
+      const methaneAbove = materialAbove === Material.METHANE;
       const hitCeiling =
         y === 0 || (materialAbove !== Material.EMPTY && !isGas(materialAbove));
       const touchingIce = this.neighbors(x, y).some(
         (neighbor) => this.cells[neighbor] === Material.ICE,
       );
-      if ((hitCeiling || touchingIce) && Math.random() < 0.006) {
-        this.assign(index, touchingIce ? Material.SNOW : Material.WATER);
+      if (
+        (methaneAbove || hitCeiling || touchingIce) &&
+        Math.random() < 0.006
+      ) {
+        const condensation = methaneAbove
+          ? Material.ACID
+          : touchingIce
+            ? Material.SNOW
+            : Material.WATER;
+        if (methaneAbove) this.erase(this.index(x, y - 1));
+        this.assign(index, condensation);
         return;
       }
       if (this.frame % 2 === 0) {

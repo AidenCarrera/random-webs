@@ -82,7 +82,8 @@ export const DRAWABLE_MATERIALS: MaterialDefinition[] = [
     id: Material.STEAM,
     name: "Steam",
     color: "#aac3ca",
-    description: "Slowly drips at ceilings, or forms snow against ice.",
+    description:
+      "Slowly drips at ceilings, forms snow against ice, or consumes methane to rain acid.",
     shortcut: "S",
   },
   {
@@ -139,7 +140,8 @@ export const DRAWABLE_MATERIALS: MaterialDefinition[] = [
     id: Material.METHANE,
     name: "Methane",
     color: "#8a91b8",
-    description: "A rising flammable gas that flashes through chambers.",
+    description:
+      "A rising flammable gas that flashes through chambers and is consumed by steam to make acid rain.",
     shortcut: "A",
   },
   {
