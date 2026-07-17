@@ -13,6 +13,16 @@ test.describe("Falling Sand interactions", () => {
     }
   });
 
+  test("remembers when drawing tips are dismissed", async ({ page }) => {
+    const drawingHint = page.getByText(
+      "Draw with a pointer or touch. Scroll to resize. Right-click erases.",
+    );
+    await expect(drawingHint).toBeVisible();
+    await page.getByRole("button", { name: "Dismiss drawing tips" }).click();
+    await page.reload();
+    await expect(drawingHint).toBeHidden();
+  });
+
   test("draws, pauses, saves, and restores a world", async ({ page }) => {
     await expect(
       page.getByText("Draw a world. Let physics finish it."),

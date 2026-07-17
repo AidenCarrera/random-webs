@@ -2,24 +2,15 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 
-import { canvasToBlob } from "@/lib/canvasExport";
-
-import { FallingSandEngine, Material, type SandWorldStats } from "./engine";
+import { FallingSandEngine } from "./engine";
+import { useLatestRef } from "./hooks/useLatestRef";
 import styles from "./styles.module.css";
-
-export type FallingSandSnapshot = {
-  blob: Blob;
-  fileName: string;
-  imageSrc: string;
-};
-
-export type FallingSandCanvasHandle = {
-  clear: () => void;
-  load: (serialized: string) => void;
-  reset: () => void;
-  serialize: () => string;
-  snapshot: () => Promise<FallingSandSnapshot>;
-};
+import {
+  Material,
+  type FallingSandCanvasHandle,
+  type SandWorldStats,
+} from "./types";
+import { createSnapshot } from "./utils/createSnapshot";
 
 type FallingSandCanvasProps = {
   autoPauseWhenHidden: boolean;
@@ -70,60 +61,20 @@ export const FallingSandCanvas = forwardRef<
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<FallingSandEngine | null>(null);
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
-  const materialRef = useRef(material);
-  const brushSizeRef = useRef(brushSize);
-  const autoPauseWhenHiddenRef = useRef(autoPauseWhenHidden);
-  const pauseWhileDrawingRef = useRef(pauseWhileDrawing);
-  const pausedRef = useRef(paused);
-  const rightClickErasesRef = useRef(rightClickErases);
-  const speedRef = useRef(speed);
-  const onBrushSizeChangeRef = useRef(onBrushSizeChange);
-  const onStatsRef = useRef(onStats);
-  const onReadyRef = useRef(onReady);
+  const materialRef = useLatestRef(material);
+  const brushSizeRef = useLatestRef(brushSize);
+  const autoPauseWhenHiddenRef = useLatestRef(autoPauseWhenHidden);
+  const pauseWhileDrawingRef = useLatestRef(pauseWhileDrawing);
+  const pausedRef = useLatestRef(paused);
+  const rightClickErasesRef = useLatestRef(rightClickErases);
+  const speedRef = useLatestRef(speed);
+  const onBrushSizeChangeRef = useLatestRef(onBrushSizeChange);
+  const onStatsRef = useLatestRef(onStats);
+  const onReadyRef = useLatestRef(onReady);
   const drawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const readyRef = useRef(false);
   const documentHiddenRef = useRef(false);
-
-  useEffect(() => {
-    autoPauseWhenHiddenRef.current = autoPauseWhenHidden;
-  }, [autoPauseWhenHidden]);
-
-  useEffect(() => {
-    materialRef.current = material;
-  }, [material]);
-
-  useEffect(() => {
-    brushSizeRef.current = brushSize;
-  }, [brushSize]);
-
-  useEffect(() => {
-    pausedRef.current = paused;
-  }, [paused]);
-
-  useEffect(() => {
-    pauseWhileDrawingRef.current = pauseWhileDrawing;
-  }, [pauseWhileDrawing]);
-
-  useEffect(() => {
-    rightClickErasesRef.current = rightClickErases;
-  }, [rightClickErases]);
-
-  useEffect(() => {
-    speedRef.current = speed;
-  }, [speed]);
-
-  useEffect(() => {
-    onBrushSizeChangeRef.current = onBrushSizeChange;
-  }, [onBrushSizeChange]);
-
-  useEffect(() => {
-    onStatsRef.current = onStats;
-  }, [onStats]);
-
-  useEffect(() => {
-    onReadyRef.current = onReady;
-  }, [onReady]);
 
   const renderNow = () => {
     const engine = engineRef.current;
@@ -160,69 +111,7 @@ export const FallingSandCanvas = forwardRef<
       async snapshot() {
         const engine = engineRef.current;
         if (!engine) throw new Error("The sandbox is not ready yet.");
-
-        const exportCanvas = document.createElement("canvas");
-        const width = 1200;
-        const topBand = 92;
-        const padding = 36;
-        const artWidth = width - padding * 2;
-        const artHeight = Math.round(artWidth * (engine.height / engine.width));
-        const bottomBand = 54;
-        exportCanvas.width = width;
-        exportCanvas.height = topBand + artHeight + bottomBand;
-        const exportContext = exportCanvas.getContext("2d");
-        if (!exportContext)
-          throw new Error("Unable to prepare the PNG export.");
-
-        exportContext.fillStyle = "#11110f";
-        exportContext.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-        exportContext.fillStyle = "#efe9dc";
-        exportContext.font = "700 28px Arial, sans-serif";
-        exportContext.fillText("FALLING SAND", padding, 49);
-        exportContext.fillStyle = "#938f85";
-        exportContext.font = "15px Arial, sans-serif";
-        exportContext.fillText(
-          "A pocket world made one cell at a time",
-          padding,
-          73,
-        );
-
-        const worldCanvas = document.createElement("canvas");
-        worldCanvas.width = engine.width;
-        worldCanvas.height = engine.height;
-        const worldContext = worldCanvas.getContext("2d");
-        if (!worldContext)
-          throw new Error("Unable to render the current world.");
-        engine.render(worldContext);
-
-        exportContext.imageSmoothingEnabled = false;
-        exportContext.drawImage(
-          worldCanvas,
-          0,
-          0,
-          engine.width,
-          engine.height,
-          padding,
-          topBand,
-          artWidth,
-          artHeight,
-        );
-        exportContext.fillStyle = "#938f85";
-        exportContext.font = "14px Arial, sans-serif";
-        exportContext.fillText(
-          "random-webs.vercel.app/falling-sand",
-          padding,
-          topBand + artHeight + 34,
-        );
-
-        const blob = await canvasToBlob(exportCanvas);
-        const date = new Date().toISOString().slice(0, 10);
-        const fileName = `falling-sand-${date}.png`;
-        return {
-          blob,
-          fileName,
-          imageSrc: URL.createObjectURL(blob),
-        };
+        return createSnapshot(engine);
       },
     }),
     [],
@@ -329,7 +218,14 @@ export const FallingSandCanvas = forwardRef<
       engineRef.current = null;
       readyRef.current = false;
     };
-  }, []);
+  }, [
+    autoPauseWhenHiddenRef,
+    onReadyRef,
+    onStatsRef,
+    pauseWhileDrawingRef,
+    pausedRef,
+    speedRef,
+  ]);
 
   const getPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
