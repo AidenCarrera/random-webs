@@ -124,8 +124,12 @@
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: rgba(17, 20, 15, 0.96);
-  box-shadow: 0 24px 70px rgba(3, 7, 2, 0.26);
+  background: rgba(17, 20, 15, 0.9);
+  box-shadow:
+    0 24px 70px rgba(3, 7, 2, 0.4),
+    inset 0 1px 0 rgba(237, 240, 231, 0.06);
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
   transform: translateY(-50%);
   transition:
     width 380ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -206,15 +210,43 @@
 }
 
 .panelTitle {
+  display: flex;
+  align-items: center;
+  gap: 11px;
   padding: 24px 58px 22px 20px;
   border-bottom: 1px solid var(--line);
+  background: radial-gradient(
+    120% 140% at 0% 0%,
+    rgba(199, 238, 85, 0.1),
+    transparent 60%
+  );
+}
+
+.titleMark {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  color: var(--accent);
+  filter: drop-shadow(0 0 10px rgba(199, 238, 85, 0.45));
+  animation: title-drift 5s ease-in-out infinite;
+}
+
+@keyframes title-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(1px, -2px) rotate(4deg);
+  }
 }
 
 .panelTitle h1 {
   margin: 0;
   color: var(--accent);
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 720;
+  text-shadow: 0 0 28px rgba(199, 238, 85, 0.25);
   letter-spacing: -0.055em;
   line-height: 1;
 }
@@ -270,6 +302,8 @@
 }
 
 .presetRail button {
+  position: relative;
+  isolation: isolate;
   display: flex;
   min-width: 0;
   height: 42px;
@@ -295,8 +329,19 @@
 }
 
 .presetRail .presetActive {
-  background: var(--accent);
   color: #171b0f;
+}
+
+.presetGlider {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--accent);
+  box-shadow: 0 0 22px rgba(199, 238, 85, 0.3);
+}
+
+.presetLabel {
+  position: relative;
 }
 
 .presetDescription {
@@ -348,7 +393,11 @@
 .sliderControl input::-webkit-slider-runnable-track {
   height: 3px;
   border-radius: 999px;
-  background: #343a30;
+  background: linear-gradient(
+    90deg,
+    rgba(199, 238, 85, 0.75) 0 var(--fill, 0%),
+    #343a30 var(--fill, 0%) 100%
+  );
 }
 
 .sliderControl input::-webkit-slider-thumb {
@@ -360,6 +409,27 @@
   border-radius: 50%;
   background: var(--accent);
   box-shadow: 0 0 0 1px rgba(199, 238, 85, 0.34);
+  transition:
+    transform 200ms var(--ease-out-back),
+    box-shadow 200ms ease;
+}
+
+.sliderControl:hover input::-webkit-slider-thumb,
+.sliderControl input:active::-webkit-slider-thumb {
+  transform: scale(1.25);
+  box-shadow:
+    0 0 0 1px rgba(199, 238, 85, 0.5),
+    0 0 12px rgba(199, 238, 85, 0.55);
+}
+
+.sliderControl input::-moz-range-progress {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(199, 238, 85, 0.75);
+}
+
+.sliderControl:hover > span {
+  color: var(--text);
 }
 
 .sliderControl input::-moz-range-track {
@@ -420,8 +490,9 @@
   border-radius: 50%;
   background: #7d8576;
   transition:
-    transform 200ms ease,
-    background-color 200ms ease;
+    transform 260ms var(--ease-out-back),
+    background-color 200ms ease,
+    box-shadow 200ms ease;
 }
 
 .switchRow .switchActive {
@@ -431,6 +502,7 @@
 
 .switchRow .switchActive > span {
   background: var(--accent);
+  box-shadow: 0 0 10px rgba(199, 238, 85, 0.6);
   transform: translateX(15px);
 }
 
@@ -474,6 +546,25 @@
 
 .actions button:hover {
   border-color: rgba(199, 238, 85, 0.4);
+  background-color: #1f241b;
+}
+
+.actions button svg {
+  transition: transform 420ms var(--ease-out-back);
+}
+
+.actions button:nth-of-type(2):hover svg,
+.actions button:nth-of-type(3):hover svg {
+  transform: rotate(180deg);
+}
+
+.actions button:nth-of-type(4):hover svg {
+  transform: translateY(2px);
+}
+
+.actions .primaryAction:hover {
+  background-color: #d6f86e;
+  box-shadow: 0 0 24px rgba(199, 238, 85, 0.35);
 }
 
 .actions .primaryAction {
@@ -524,6 +615,7 @@
   }
 
   .panelHandle {
+    position: relative;
     display: flex;
     width: 100%;
     align-items: center;
@@ -544,6 +636,17 @@
 
   .panelOpen .panelHandle svg {
     transform: rotate(180deg);
+  }
+
+  .handleGrip {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    width: 34px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(237, 240, 231, 0.18);
+    transform: translateX(-50%);
   }
 
   .metrics {

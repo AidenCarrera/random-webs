@@ -33,7 +33,18 @@ export function PresetPicker({
               onClick={() => onSelect(preset)}
               aria-pressed={selected}
             >
-              <span>{preset}</span>
+              {selected ? (
+                <motion.span
+                  layoutId="boids-preset-glider"
+                  className={styles.presetGlider}
+                  transition={
+                    reduceMotion
+                      ? { duration: 0 }
+                      : { type: "spring", stiffness: 480, damping: 36 }
+                  }
+                />
+              ) : null}
+              <span className={styles.presetLabel}>{preset}</span>
             </button>
           );
         })}

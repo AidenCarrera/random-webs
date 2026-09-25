@@ -82,12 +82,23 @@ export function ControlPanel({
         onClick={onMobileOpenToggle}
         aria-expanded={mobileOpen}
       >
+        <span aria-hidden="true" className={styles.handleGrip} />
         <span>Boids Simulator</span>
         <ChevronDown aria-hidden="true" size={18} strokeWidth={1.8} />
       </button>
 
       <div className={styles.panelBody}>
         <div className={styles.panelTitle}>
+          <svg
+            aria-hidden="true"
+            className={styles.titleMark}
+            viewBox="0 0 32 32"
+            fill="currentColor"
+          >
+            <path d="M16 4 22 16 16 13 10 16Z" />
+            <path d="M7 15 11.5 24 7 21.8 2.5 24Z" opacity="0.65" />
+            <path d="M25 15 29.5 24 25 21.8 20.5 24Z" opacity="0.4" />
+          </svg>
           <h1>Boids Simulator</h1>
         </div>
 
