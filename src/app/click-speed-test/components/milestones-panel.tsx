@@ -15,24 +15,34 @@ export function MilestonesPanel({
   bestClicks: number;
 }) {
   return (
-    <section className={`${PANEL} flex flex-1 flex-col justify-between p-6`}>
+    <section
+      className={`${PANEL} flex flex-1 flex-col justify-between p-6 lg:min-h-0 lg:p-5`}
+    >
       <PanelTitle icon={<Award className="size-4 text-yellow-500" />}>
         Milestones ({duration}s mode)
       </PanelTitle>
-      <div className="flex flex-1 flex-col justify-between gap-2.5">
+      <div className="flex flex-1 flex-col justify-between gap-2.5 lg:min-h-0 lg:gap-2">
         {MILESTONES[duration].map((milestone) => {
           const achieved = bestClicks >= milestone.target;
+          const progress = Math.min(1, bestClicks / milestone.target);
 
           return (
             <div
               key={milestone.label}
-              className={`flex flex-1 items-center justify-between rounded-lg border p-2.5 transition-all ${
+              className={`relative flex flex-1 items-center justify-between overflow-hidden rounded-lg border p-2.5 transition-all lg:py-2 ${
                 achieved
                   ? `${milestone.color} shadow-sm`
-                  : "border-slate-800 bg-slate-900/30 text-slate-500"
+                  : "border-slate-800 bg-slate-950/30 text-slate-500"
               }`}
             >
-              <div>
+              {!achieved && progress > 0 ? (
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-y-0 left-0 bg-blue-500/8 transition-[width] duration-700"
+                  style={{ width: `${progress * 100}%` }}
+                />
+              ) : null}
+              <div className="relative">
                 <div className="text-xs font-bold leading-snug">
                   {milestone.label}
                 </div>
@@ -41,7 +51,7 @@ export function MilestonesPanel({
                 </div>
               </div>
               <span
-                className={`rounded px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider ${
+                className={`relative rounded px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider ${
                   achieved
                     ? "bg-emerald-500/20 text-emerald-400"
                     : "bg-slate-800 text-slate-600"

@@ -14,11 +14,11 @@ export const SessionHistory = memo(function SessionHistory({
   history: RunResult[];
 }) {
   return (
-    <section className={`${PANEL} flex flex-1 flex-col p-6`}>
+    <section className={`${PANEL} flex flex-1 flex-col p-6 lg:min-h-0 lg:p-5`}>
       <PanelTitle icon={<Calendar className="size-4 text-blue-400" />}>
         Session History
       </PanelTitle>
-      <div className="flex max-h-137.5 flex-1 flex-col gap-3 overflow-y-auto pr-1 lg:max-h-none">
+      <div className="flex max-h-137.5 flex-1 flex-col gap-3 overflow-y-auto pr-1 lg:max-h-none lg:min-h-0">
         {history.length ? (
           history.map((run) => <HistoryCard key={run.id} run={run} />)
         ) : (
@@ -36,7 +36,7 @@ function HistoryCard({ run }: { run: RunResult }) {
   const intensities = scaleValues(run.pace, 0.15, 1);
 
   return (
-    <div className="flex shrink-0 flex-col gap-1.5 rounded-lg border border-slate-800 bg-slate-900/30 p-3">
+    <div className="flex shrink-0 flex-col gap-1.5 rounded-lg border border-slate-800 bg-slate-950/30 p-3">
       <div className="flex items-center justify-between text-xs">
         <span className="font-semibold text-slate-300">
           {run.clicks} clicks ({run.cps.toFixed(1)} CPS)

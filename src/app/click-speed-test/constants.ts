@@ -12,7 +12,7 @@ export const RESULT_BUFFER_MS = 2500;
 export const HISTORY_LIMIT = 5;
 
 /** Shared card shell so every panel matches. */
-export const PANEL = "rounded-xl border border-slate-700 bg-[#1e293b]";
+export const PANEL = "rounded-xl border border-slate-700 bg-[#162033]";
 
 export const EMPTY_RECORD: RecordEntry = { clicks: 0, cps: 0 };
 
