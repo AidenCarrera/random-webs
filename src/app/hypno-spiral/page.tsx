@@ -5,6 +5,8 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { canvasToBlob } from "@/lib/canvasExport";
 
+import styles from "./styles.module.css";
+
 type ColorMode = "default" | "neon" | "solar" | "ocean" | "spectrum" | "forest";
 
 const COLOR_MODES: Array<{ id: ColorMode; label: string }> = [
@@ -17,6 +19,9 @@ const COLOR_MODES: Array<{ id: ColorMode; label: string }> = [
 ];
 
 type Rgb = [number, number, number];
+
+const HUE_SWEEP =
+  "linear-gradient(90deg,#ff3b3b,#ffb03b,#f7ff3b,#3bff72,#3bd8ff,#6b3bff,#ff3bd2)";
 
 const PALETTE_MAP: Record<Exclude<ColorMode, "default" | "spectrum">, Rgb[]> = {
   neon: [
@@ -44,6 +49,13 @@ const PALETTE_MAP: Record<Exclude<ColorMode, "default" | "spectrum">, Rgb[]> = {
     [220, 180, 255],
   ],
 };
+
+const swatchGradient = (mode: ColorMode) =>
+  mode === "default" || mode === "spectrum"
+    ? HUE_SWEEP
+    : `linear-gradient(90deg,${PALETTE_MAP[mode]
+        .map(([red, green, blue]) => `rgb(${red},${green},${blue})`)
+        .join(",")})`;
 
 function interpolatePalette(t: number, colors: Rgb[]): Rgb {
   const wrapped = ((t % 1) + 1) % 1;
@@ -177,6 +189,7 @@ export default function HypnoSpiral() {
   const [colorMode, setColorMode] = useState<ColorMode>("default");
   const [ringCount, setRingCount] = useState(90);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showHint, setShowHint] = useState(true);
   const isTouchDevice = useSyncExternalStore(
     subscribeToTouchCapability,
     getTouchCapabilitySnapshot,
@@ -306,6 +319,22 @@ export default function HypnoSpiral() {
   }, []);
 
   useEffect(() => {
+    let hideTimer = 0;
+    const scheduleHide = () => {
+      window.removeEventListener("pointermove", scheduleHide);
+      window.removeEventListener("pointerdown", scheduleHide);
+      hideTimer = window.setTimeout(() => setShowHint(false), 3200);
+    };
+    window.addEventListener("pointermove", scheduleHide, { passive: true });
+    window.addEventListener("pointerdown", scheduleHide, { passive: true });
+    return () => {
+      window.clearTimeout(hideTimer);
+      window.removeEventListener("pointermove", scheduleHide);
+      window.removeEventListener("pointerdown", scheduleHide);
+    };
+  }, []);
+
+  useEffect(() => {
     return () => {
       for (const timeoutId of countdownTimeoutsRef.current) {
         window.clearTimeout(timeoutId);
@@ -376,8 +405,12 @@ export default function HypnoSpiral() {
     >
       <canvas ref={canvasRef} className="block h-full w-full" />
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-5 flex justify-center px-4 sm:bottom-8">
-        <div className="max-w-sm rounded-full border border-white/15 bg-black/40 px-4 py-2 text-center font-mono text-xs uppercase tracking-[0.24em] text-white/85 backdrop-blur-sm sm:text-sm">
+      <div
+        className={`pointer-events-none absolute inset-x-0 bottom-5 flex justify-center px-4 transition-[opacity,transform] duration-700 sm:bottom-8 ${
+          showHint ? "opacity-100" : "translate-y-3 opacity-0"
+        }`}
+      >
+        <div className="flex max-w-sm items-center gap-3 rounded-full border border-white/15 bg-black/45 px-4 py-2 text-center font-mono text-xs uppercase tracking-[0.24em] text-white/85 shadow-[0_10px_40px_rgba(0,0,0,0.5)] backdrop-blur-md sm:text-sm">
           {isTouchDevice
             ? "Drag your finger to warp the spiral."
             : "Move the mouse to warp the spiral."}
@@ -386,12 +419,44 @@ export default function HypnoSpiral() {
 
       {downloadCountdown !== null ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6">
-          <div className="rounded-full border border-white/20 bg-black/55 px-10 py-6 text-center shadow-2xl backdrop-blur-md">
+          <div className="relative flex flex-col items-center rounded-[2rem] border border-white/20 bg-black/60 px-10 py-7 text-center shadow-2xl backdrop-blur-md">
             <div className="font-mono text-xs uppercase tracking-[0.3em] text-white/60">
               Capturing spiral in
             </div>
-            <div className="mt-2 text-6xl font-semibold tabular-nums text-white">
-              {downloadCountdown}
+            <div className="relative mt-4 flex h-24 w-24 items-center justify-center">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 100 100"
+                className="absolute inset-0 -rotate-90"
+              >
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="46"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.15)"
+                  strokeWidth="3"
+                />
+                <circle
+                  key={downloadCountdown}
+                  cx="50"
+                  cy="50"
+                  r="46"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray="289"
+                  className={styles.drain}
+                  style={{ strokeDashoffset: 0 }}
+                />
+              </svg>
+              <div
+                key={downloadCountdown}
+                className={`text-6xl font-semibold tabular-nums text-white ${styles.pop}`}
+              >
+                {downloadCountdown}
+              </div>
             </div>
           </div>
         </div>
@@ -440,19 +505,29 @@ export default function HypnoSpiral() {
         <button
           type="button"
           onClick={() => setIsMenuOpen((open) => !open)}
-          className="flex min-h-12 min-w-12 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white shadow-lg backdrop-blur-md transition hover:bg-black/60"
+          className="group flex min-h-12 min-w-12 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white shadow-lg backdrop-blur-md transition hover:border-white/30 hover:bg-black/60 active:scale-95"
           aria-expanded={isMenuOpen}
           aria-controls="hypno-settings"
           aria-label={isMenuOpen ? "Close settings menu" : "Open settings menu"}
         >
-          {isMenuOpen ? <X size={20} /> : <Settings2 size={20} />}
+          {isMenuOpen ? (
+            <X
+              size={20}
+              className="transition-transform duration-300 group-hover:rotate-90"
+            />
+          ) : (
+            <Settings2
+              size={20}
+              className="transition-transform duration-500 group-hover:rotate-180"
+            />
+          )}
         </button>
       </div>
 
       {isMenuOpen ? (
         <div
           id="hypno-settings"
-          className="absolute inset-x-3 top-16 z-10 max-h-[calc(100vh-5.5rem)] overflow-y-auto rounded-3xl border border-white/15 bg-black/72 p-4 text-white shadow-2xl backdrop-blur-xl sm:inset-x-auto sm:right-5 sm:w-80 sm:max-h-[calc(100vh-7rem)]"
+          className={`${styles.panel} absolute inset-x-3 top-16 z-10 max-h-[calc(100vh-5.5rem)] origin-top-right overflow-y-auto rounded-3xl border border-white/15 bg-black/72 p-4 text-white shadow-2xl backdrop-blur-xl sm:inset-x-auto sm:right-5 sm:w-80 sm:max-h-[calc(100vh-7rem)]`}
         >
           <div className="mb-4">
             <p className="font-mono text-xs uppercase tracking-[0.24em] text-white/60">
@@ -464,7 +539,7 @@ export default function HypnoSpiral() {
             <div>
               <label
                 htmlFor="ring-count"
-                className="mb-2 block text-sm text-white/80"
+                className="mb-3 block text-sm text-white/80"
               >
                 Ring count
               </label>
@@ -478,43 +553,62 @@ export default function HypnoSpiral() {
                 onChange={(event) => setRingCount(Number(event.target.value))}
                 className="custom-slider"
               />
-              <div className="mt-2 text-xs text-white/55">
+              <div className="mt-2 text-xs text-white/45">
                 {ringCount} rings
               </div>
             </div>
 
             <div>
-              <label
-                htmlFor="color-mode"
+              <p
+                id="color-mode-label"
                 className="mb-2 block text-sm text-white/80"
               >
                 Palette
-              </label>
-              <select
-                id="color-mode"
-                value={colorMode}
-                onChange={(event) =>
-                  setColorMode(event.target.value as ColorMode)
-                }
-                className="w-full rounded-2xl border border-white/15 bg-white/10 px-3 py-3 text-sm text-white outline-none transition focus:border-white/40"
+              </p>
+              <div
+                role="radiogroup"
+                aria-labelledby="color-mode-label"
+                className="grid grid-cols-2 gap-2"
               >
-                {COLOR_MODES.map((mode) => (
-                  <option
-                    key={mode.id}
-                    value={mode.id}
-                    className="bg-black text-white"
-                  >
-                    {mode.label}
-                  </option>
-                ))}
-              </select>
+                {COLOR_MODES.map((mode) => {
+                  const selected = colorMode === mode.id;
+                  return (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => setColorMode(mode.id)}
+                      className={`group flex items-center gap-2.5 rounded-2xl border px-2.5 py-2 text-left text-xs transition ${
+                        selected
+                          ? "border-white/50 bg-white/12 text-white"
+                          : "border-white/10 bg-white/4 text-white/65 hover:border-white/25 hover:text-white"
+                      }`}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`h-5 w-5 shrink-0 rounded-full ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-110 ${
+                          selected ? "ring-2 ring-white" : ""
+                        }`}
+                        style={{
+                          background:
+                            mode.id === "default" || mode.id === "spectrum"
+                              ? `conic-gradient(#ff3b3b,#ffb03b,#f7ff3b,#3bff72,#3bd8ff,#6b3bff,#ff3bd2,#ff3b3b)`
+                              : swatchGradient(mode.id),
+                        }}
+                      />
+                      {mode.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <button
               type="button"
               onClick={handleDownload}
               disabled={downloadCountdown !== null}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-wait disabled:bg-white/70"
+              className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black shadow-[0_10px_30px_-10px_rgba(255,255,255,0.5)] transition hover:bg-white/90 active:scale-[0.98] disabled:cursor-wait disabled:bg-white/70"
             >
               <Download size={16} />
               {downloadCountdown !== null
