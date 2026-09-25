@@ -24,7 +24,7 @@ export function ClickArena({
 }) {
   return (
     <div
-      className={`${PANEL} relative flex min-h-105 flex-1 flex-col items-center justify-center rounded-2xl p-8`}
+      className={`${PANEL} relative flex min-h-105 flex-1 flex-col items-center justify-center rounded-2xl p-8 lg:min-h-0 lg:p-5`}
     >
       {isActive && (
         <button
@@ -40,7 +40,7 @@ export function ClickArena({
         // not skewed by how long React took to reach this handler.
         onClick={(event) => onClick(event.timeStamp)}
         disabled={!isActive && !canRestart}
-        className={`flex size-64 select-none flex-col items-center justify-center gap-2 rounded-full border-8 transition-all active:scale-95 shrink-0 ${
+        className={`flex size-64 select-none lg:size-[clamp(12rem,27vh,16rem)] flex-col items-center justify-center gap-2 rounded-full border-8 transition-all active:scale-95 shrink-0 ${
           isActive
             ? "border-blue-400 bg-blue-600 shadow-[0_0_50px_rgba(37,99,235,0.5)]"
             : canRestart
@@ -63,7 +63,7 @@ export function ClickArena({
 
 function RunReadout({ readout }: { readout: Readout }) {
   return (
-    <div className="mt-8 min-w-0 w-full text-center transition-all duration-300 animate-in fade-in">
+    <div className="mt-8 min-w-0 w-full lg:mt-4 text-center transition-all duration-300 animate-in fade-in">
       {/* Holds its line even when empty, so the arena does not jump between states. */}
       <p className="mb-2 flex min-h-4 items-center justify-center gap-1.5 text-slate-400 font-semibold tracking-wider text-xs uppercase">
         {readout.title}

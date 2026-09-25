@@ -44,6 +44,7 @@ export function AlgoRace() {
           <SortVisualizer
             key={algorithm.name}
             name={algorithm.name}
+            color={algorithm.color}
             onCanvas={registerCanvas}
             rank={getRank(algorithm.name)}
             complexity={algorithm.complexity}

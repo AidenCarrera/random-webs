@@ -14,13 +14,13 @@ export function PaceChart({ pace }: { pace: number[] }) {
   const isDense = pace.length > 10;
 
   return (
-    <div className="mx-auto mt-4 w-full max-w-md overflow-hidden rounded-lg border border-slate-800 bg-slate-900/50 p-4 text-left">
+    <div className="mx-auto mt-4 w-full max-w-md overflow-hidden rounded-lg border border-slate-800 bg-slate-900/50 p-4 text-left lg:mt-3 lg:p-3">
       <div className="mb-2 flex items-center gap-1 text-xs font-medium text-slate-400">
         <Zap className="size-3.5 text-blue-400" /> Click Speed Flow (clicks per
         second)
       </div>
       <div
-        className={`grid h-20 min-w-0 items-end overflow-hidden px-1 pt-2 ${
+        className={`grid h-20 min-w-0 lg:h-16 items-end overflow-hidden px-1 pt-2 ${
           isDense ? "gap-px sm:gap-0.5" : "gap-1.5"
         }`}
         style={{

@@ -96,7 +96,9 @@ function StatCard({
   children: ReactNode;
 }) {
   return (
-    <div className={`${PANEL} relative overflow-hidden p-6 ${className}`}>
+    <div
+      className={`${PANEL} relative overflow-hidden p-6 lg:p-5 ${className}`}
+    >
       <div
         className={`mb-1 text-sm font-medium uppercase tracking-wider text-slate-400 ${
           icon ? "flex items-center gap-1.5" : ""

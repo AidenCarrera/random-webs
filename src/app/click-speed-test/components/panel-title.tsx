@@ -11,7 +11,7 @@ export function PanelTitle({
   icon?: ReactNode;
 }) {
   return (
-    <div className="mb-4 flex shrink-0 items-center gap-1.5 text-sm font-medium uppercase tracking-wider text-slate-400">
+    <div className="mb-4 flex shrink-0 items-center lg:mb-3 gap-1.5 text-sm font-medium uppercase tracking-wider text-slate-400">
       {icon}
       {children}
     </div>
