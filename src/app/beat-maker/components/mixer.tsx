@@ -3,6 +3,7 @@
 import { memo, useEffect, useRef } from "react";
 import { Volume2 } from "lucide-react";
 import { BASS_MIXER_TRACK, TRACK_BY_ID } from "../constants";
+import styles from "../studio.module.css";
 import type { DrumKit, KitDefinition, TrackConfig } from "../types";
 import { MixerChannelStrip } from "./mixer-channel-strip";
 
@@ -80,12 +81,11 @@ export const Mixer = memo(function Mixer({
 
   return (
     <div
-      className="w-full max-w-6xl rounded-2xl border border-white/6 p-3.5 md:p-4.5"
-      style={{ background: "#121218" }}
+      className={`${styles.panel} w-full max-w-6xl rounded-2xl p-3.5 md:p-5`}
     >
       <div className="flex items-center gap-3 mb-3 md:mb-4">
-        <Volume2 className="w-3.5 h-3.5 text-zinc-400" />
-        <h2 className="text-zinc-400 font-bold text-[10px] uppercase tracking-[0.3em]">
+        <Volume2 className="ml-2 h-3.5 w-3.5 text-indigo-300/70" />
+        <h2 className="text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-300">
           Mixer
         </h2>
         <div
@@ -96,7 +96,9 @@ export const Mixer = memo(function Mixer({
           }}
         />
       </div>
-      <div className="flex justify-start lg:justify-center gap-3 md:gap-6 px-2 overflow-x-auto pb-2 w-full">
+      <div
+        className={`${styles.mixerScroll} flex justify-start lg:justify-center gap-3 md:gap-6 px-2 overflow-x-auto pb-3 w-full`}
+      >
         {[...tracks, BASS_MIXER_TRACK].map((track) => (
           <MixerChannelStrip
             key={track.id}

@@ -1,0 +1,171 @@
+.panel {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 40%),
+    #121218;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 40px -24px rgba(0, 0, 0, 0.9);
+}
+
+/* Shared shell for the toolbar's tempo, swing and select controls. */
+.control {
+  position: relative;
+  display: flex;
+  height: 2rem;
+  align-items: center;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, #20202a, #1a1a22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.4);
+  color: #f4f4f5;
+  transition: border-color 0.2s ease;
+}
+
+.control:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.control:focus-within {
+  border-color: rgba(129, 140, 248, 0.6);
+}
+
+@media (min-width: 768px) {
+  .control {
+    height: 2.25rem;
+  }
+}
+
+.rotateHint {
+  animation: rotate-hint 2.4s ease-in-out infinite;
+}
+
+@keyframes rotate-hint {
+  0%,
+  20% {
+    transform: rotate(0deg);
+  }
+  50%,
+  70% {
+    transform: rotate(-90deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.pad {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.4rem;
+  transition:
+    background-color 90ms ease,
+    box-shadow 120ms ease,
+    transform 120ms var(--ease-out-back),
+    filter 120ms ease;
+}
+
+.pad[data-active] {
+  background: var(--pad-color);
+  box-shadow:
+    0 0 14px var(--pad-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.25);
+}
+
+.pad:not([data-active]) {
+  background: linear-gradient(180deg, #1c1c24, #15151c);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.pad[data-downbeat]:not([data-active]) {
+  background: linear-gradient(180deg, #23232d, #1a1a22);
+}
+
+.cell:hover .pad:not([data-active]) {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pad-color) 22%, #1c1c24),
+    #17171e
+  );
+}
+
+.pad[data-current]:not([data-active]) {
+  background: linear-gradient(180deg, #2c2c38, #22222c);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.25),
+    0 0 12px rgba(255, 255, 255, 0.08);
+}
+
+.pad[data-current][data-active] {
+  transform: scale(1.04);
+  filter: brightness(1.12);
+  box-shadow:
+    0 0 12px var(--pad-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.led {
+  height: 0.4rem;
+  width: 0.4rem;
+  border-radius: 9999px;
+  background: #26262f;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.6);
+  transition:
+    background-color 80ms ease,
+    box-shadow 80ms ease;
+}
+
+.led[data-on] {
+  background: #fb7185;
+  box-shadow:
+    0 0 8px rgba(251, 113, 133, 0.9),
+    0 0 2px #fff;
+}
+
+.led[data-downbeat]:not([data-on]) {
+  background: #3a3a46;
+}
+
+.mixerScroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(129, 140, 248, 0.35) transparent;
+}
+
+.mixerScroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.mixerScroll::-webkit-scrollbar-track {
+  margin: 0 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mixerScroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(129, 140, 248, 0.35);
+  background-clip: padding-box;
+}
+
+.mixerScroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(165, 180, 252, 0.55);
+  background-clip: padding-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rotateHint {
+    animation: none;
+  }
+
+  .pad {
+    transition: none;
+  }
+}

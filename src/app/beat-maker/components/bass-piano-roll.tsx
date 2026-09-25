@@ -2,11 +2,13 @@
 
 import { memo, useEffect, useRef, useState } from "react";
 import { BASS_NOTES, STEPS } from "../constants";
+import styles from "../studio.module.css";
 import type { BassNote } from "../types";
 
 interface BassPianoRollProps {
   notes: BassNote[];
   currentStep: number;
+  isPlaying: boolean;
   onPreview: (note: string) => void;
   onAdd: (pitchIndex: number, step: number) => void;
   onRemove: (id: number) => void;
@@ -17,6 +19,7 @@ interface BassPianoRollProps {
 export const BassPianoRoll = memo(function BassPianoRoll({
   notes,
   currentStep,
+  isPlaying,
   onPreview,
   onAdd,
   onRemove,
@@ -24,6 +27,7 @@ export const BassPianoRoll = memo(function BassPianoRoll({
   onMove,
 }: BassPianoRollProps) {
   const isErasing = useRef(false);
+  const playheadStep = isPlaying || currentStep > 0 ? currentStep : -1;
   const [tool, setTool] = useState<"edit" | "erase">("edit");
   const [rightMouseErasing, setRightMouseErasing] = useState(false);
   const eraseMode = tool === "erase" || rightMouseErasing;
@@ -168,8 +172,7 @@ export const BassPianoRoll = memo(function BassPianoRoll({
 
   return (
     <div
-      className={`w-full max-w-6xl rounded-2xl border border-indigo-400/20 p-3 md:p-4 mb-3 md:mb-4 overflow-hidden ${eraseMode ? "cursor-not-allowed" : ""}`}
-      style={{ background: "linear-gradient(135deg,#101018,#0b0b12)" }}
+      className={`${styles.panel} w-full max-w-6xl rounded-2xl p-3 md:p-5 mb-3 md:mb-4 overflow-hidden ${eraseMode ? "cursor-not-allowed" : ""}`}
       onContextMenu={(event) => event.preventDefault()}
       onPointerDownCapture={(event) => {
         if (event.pointerType === "mouse" && event.button === 2) {
@@ -182,7 +185,7 @@ export const BassPianoRoll = memo(function BassPianoRoll({
       <div className="flex items-center justify-between gap-3 mb-3">
         <div className="flex items-center gap-3">
           <div>
-            <h2 className="text-zinc-200 font-bold text-[10px] uppercase tracking-[0.3em]">
+            <h2 className="ml-2 text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-200">
               808 Bass Piano Roll
             </h2>
             <p className="pointer-coarse:block mt-1 hidden text-[9px] text-zinc-500">
@@ -191,7 +194,7 @@ export const BassPianoRoll = memo(function BassPianoRoll({
           </div>
         </div>
         <div
-          className="flex shrink-0 overflow-hidden rounded-md border border-white/10 bg-black/20 p-0.5"
+          className="flex shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black/40 p-0.5 shadow-[inset_0_1px_3px_rgba(0,0,0,0.6)]"
           aria-label="Piano roll editing tool"
         >
           {(["edit", "erase"] as const).map((nextTool) => (
@@ -200,10 +203,15 @@ export const BassPianoRoll = memo(function BassPianoRoll({
               type="button"
               aria-pressed={tool === nextTool}
               onClick={() => setTool(nextTool)}
-              className="min-h-7 min-w-12 rounded px-2 text-[9px] font-bold uppercase tracking-wider text-zinc-400 transition-colors active:scale-[0.98]"
+              className="min-h-7 min-w-12 rounded-md px-2 text-[9px] font-bold uppercase tracking-wider text-zinc-400 transition-colors hover:text-zinc-200 active:scale-[0.98]"
               style={
                 tool === nextTool
-                  ? { background: "#4f46e5", color: "#f4f4f5" }
+                  ? {
+                      background: "linear-gradient(180deg,#6366f1,#4f46e5)",
+                      color: "#f4f4f5",
+                      boxShadow:
+                        "0 0 12px rgba(99,102,241,0.45),inset 0 1px 0 rgba(255,255,255,0.25)",
+                    }
                   : undefined
               }
             >
@@ -213,8 +221,11 @@ export const BassPianoRoll = memo(function BassPianoRoll({
         </div>
       </div>
       <div
-        className="rounded-xl overflow-hidden"
-        style={{ background: "rgba(0,0,0,0.22)" }}
+        className="rounded-xl overflow-hidden border border-black/40"
+        style={{
+          background: "rgba(0,0,0,0.3)",
+          boxShadow: "inset 0 2px 8px rgba(0,0,0,0.5)",
+        }}
         data-piano-rows
       >
         {BASS_NOTES.map((pitch, pitchIndex) => {
@@ -230,12 +241,15 @@ export const BassPianoRoll = memo(function BassPianoRoll({
                 onPointerDown={(event) => {
                   if (event.pointerType !== "mouse") onPreview(pitch);
                 }}
-                className="w-16 md:w-20 shrink-0 touch-manipulation py-1 text-left px-2 md:px-3 text-[9px] md:text-[10px] font-bold tracking-widest transition-colors"
+                className="w-18 md:w-24 shrink-0 touch-manipulation border-b border-black/30 py-1 text-left px-2 md:px-3 text-[9px] md:text-[10px] font-bold tracking-widest transition-[filter] hover:brightness-110 active:brightness-90"
                 style={{
                   background: blackKey
-                    ? "#09090d"
-                    : "linear-gradient(90deg,#e4e4e7,#b8b8c1)",
-                  color: blackKey ? "#71717a" : "#18181b",
+                    ? "linear-gradient(90deg,#1b1b22 0%,#0b0b0f 70%,#16161c 100%)"
+                    : "linear-gradient(90deg,#f4f4f5 0%,#d9d9de 80%,#bdbdc6 100%)",
+                  color: blackKey ? "#8b8b96" : "#27272a",
+                  boxShadow: blackKey
+                    ? "inset 0 1px 0 rgba(255,255,255,0.06)"
+                    : "inset 0 1px 0 #fff, inset -3px 0 4px rgba(0,0,0,0.12)",
                 }}
                 title={`Double-click or tap to preview ${pitch}`}
               >
@@ -248,17 +262,20 @@ export const BassPianoRoll = memo(function BassPianoRoll({
                     key={step}
                     aria-label={`Add ${pitch} at step ${step + 1}`}
                     onClick={() => onAdd(pitchIndex, step)}
-                    className="min-h-6 touch-manipulation md:min-h-7 border-r border-b border-white/5"
+                    className="min-h-6 touch-manipulation md:min-h-7 border-l border-b border-l-transparent border-b-white/5 transition-colors duration-100 hover:bg-indigo-400/15!"
                     style={{
-                      background: blackKey
-                        ? "rgba(0,0,0,0.25)"
-                        : step % 4 === 0
-                          ? "rgba(255,255,255,0.075)"
-                          : "rgba(255,255,255,0.03)",
-                      boxShadow:
-                        currentStep === step
-                          ? "inset 0 0 0 1px rgba(255,255,255,0.5)"
-                          : "none",
+                      background:
+                        playheadStep === step
+                          ? "rgba(165,180,252,0.14)"
+                          : blackKey
+                            ? "rgba(0,0,0,0.25)"
+                            : step % 4 === 0
+                              ? "rgba(255,255,255,0.075)"
+                              : "rgba(255,255,255,0.03)",
+                      borderLeftColor:
+                        step % 4 === 0 && step > 0
+                          ? "rgba(255,255,255,0.12)"
+                          : undefined,
                     }}
                   />
                 ))}
@@ -267,13 +284,14 @@ export const BassPianoRoll = memo(function BassPianoRoll({
                   .map((note) => (
                     <div
                       key={note.id}
-                      className={`absolute top-0 bottom-0 z-10 rounded-sm border border-indigo-200 select-none ${eraseMode ? "cursor-not-allowed" : "cursor-grab active:cursor-grabbing"}`}
+                      className={`group/note absolute top-0.5 bottom-0.5 z-10 rounded-md border border-indigo-200/80 select-none transition-[filter] hover:brightness-110 ${eraseMode ? "cursor-not-allowed hover:brightness-75" : "cursor-grab active:cursor-grabbing"}`}
                       style={{
                         left: `calc(${(note.start / STEPS) * 100}% + 1px)`,
                         width: `calc(${(note.length / STEPS) * 100}% - 2px)`,
-                        background: "linear-gradient(135deg,#a5b4fc,#4f46e5)",
+                        background:
+                          "linear-gradient(180deg,#c7d2fe 0%,#818cf8 45%,#4f46e5 100%)",
                         boxShadow:
-                          "inset 0 0 12px rgba(255,255,255,0.22),0 0 8px rgba(99,102,241,0.55)",
+                          "inset 0 1px 0 rgba(255,255,255,0.6),0 0 12px rgba(99,102,241,0.6)",
                         touchAction: "none",
                       }}
                       onPointerDownCapture={(event) => {
@@ -301,14 +319,18 @@ export const BassPianoRoll = memo(function BassPianoRoll({
                         onPointerDown={(event) =>
                           beginResize(event, note, "left")
                         }
-                        className={`absolute left-0 top-0 bottom-0 w-3 ${eraseMode ? "cursor-not-allowed" : "cursor-ew-resize"}`}
-                      />
+                        className={`absolute left-0 top-0 bottom-0 flex w-3 items-center justify-center ${eraseMode ? "cursor-not-allowed" : "cursor-ew-resize"}`}
+                      >
+                        <span className="h-2.5 w-px rounded-full bg-indigo-950/50 opacity-0 transition-opacity group-hover/note:opacity-100" />
+                      </span>
                       <span
                         onPointerDown={(event) =>
                           beginResize(event, note, "right")
                         }
-                        className={`absolute right-0 top-0 bottom-0 w-3 ${eraseMode ? "cursor-not-allowed" : "cursor-ew-resize"}`}
-                      />
+                        className={`absolute right-0 top-0 bottom-0 flex w-3 items-center justify-center ${eraseMode ? "cursor-not-allowed" : "cursor-ew-resize"}`}
+                      >
+                        <span className="h-2.5 w-px rounded-full bg-indigo-950/50 opacity-0 transition-opacity group-hover/note:opacity-100" />
+                      </span>
                     </div>
                   ))}
               </div>

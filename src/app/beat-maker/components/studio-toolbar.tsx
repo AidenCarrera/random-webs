@@ -1,8 +1,9 @@
 "use client";
 
 import { memo, useEffect, useState } from "react";
-import { Music, Pause, Play, Trash2 } from "lucide-react";
+import { ChevronDown, Music, Pause, Play, Trash2 } from "lucide-react";
 import { PRESETS } from "../presets";
+import styles from "../studio.module.css";
 import type { DrumKit, KitDefinition } from "../types";
 
 interface StudioToolbarProps {
@@ -18,6 +19,14 @@ interface StudioToolbarProps {
   onPresetChange: (key: string) => void;
   onKitChange: (kit: DrumKit) => void;
 }
+
+const fieldLabel =
+  "px-1 text-[9px] font-bold uppercase tracking-widest text-zinc-400 md:text-[10px]";
+const controlText = "text-[11px] font-bold text-zinc-100 md:text-xs";
+const selectInput = `${controlText} h-full cursor-pointer appearance-none bg-transparent pl-3 pr-8 focus:outline-none`;
+const selectChevron =
+  "pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-zinc-400";
+const optionStyle = { background: "#1c1c24", color: "#f4f4f5" };
 
 export const StudioToolbar = memo(function StudioToolbar({
   isPlaying,
@@ -44,65 +53,81 @@ export const StudioToolbar = memo(function StudioToolbar({
     setTempoDraft(String(next));
   };
 
+  const swingPercent = ((swing - 50) / 25) * 100;
+
   return (
-    <div className="w-full max-w-6xl mb-3 md:mb-4">
-      <div className="flex items-center justify-between mb-2.5 md:mb-3">
+    <div className="mb-3 w-full max-w-6xl md:mb-4">
+      <div className="mb-3 flex items-end justify-between md:mb-4">
         <div>
           <h1
-            className="text-2xl md:text-4xl font-black tracking-[0.2em] text-white"
-            style={{ textShadow: "0 0 40px rgba(99,102,241,0.3)" }}
+            className="text-2xl font-black tracking-[0.2em] text-white md:text-4xl"
+            style={{ textShadow: "0 0 16px rgba(99,102,241,0.15)" }}
           >
-            STUDIO <span style={{ color: "#6366f1" }}>808</span>
+            STUDIO{" "}
+            <span
+              className="bg-linear-to-b from-indigo-300 to-indigo-500 bg-clip-text text-transparent"
+              style={{ filter: "drop-shadow(0 0 6px rgba(99,102,241,0.2))" }}
+            >
+              808
+            </span>
           </h1>
-          <p className="text-[10px] md:text-xs tracking-[0.3em] text-zinc-600 uppercase mt-0.5">
+          <p className="mt-1 text-[10px] uppercase tracking-[0.3em] text-zinc-500 md:text-xs">
             Drum Machine &amp; Sequencer
           </p>
         </div>
       </div>
       <div
-        className="rounded-2xl border border-white/6 py-2.5 px-3 md:py-3 md:px-4 flex flex-wrap gap-2.5 md:gap-3.5 justify-between items-center"
-        style={{ background: "#121218" }}
+        className={`${styles.panel} flex flex-wrap items-center justify-between gap-2.5 rounded-2xl px-3 py-2.5 md:gap-3.5 md:px-5 md:py-3.5`}
       >
         <div className="flex items-center gap-2 md:gap-3">
           <button
             onClick={onTogglePlay}
-            className="flex items-center gap-2 md:gap-2.5 px-4 py-2 md:px-6 md:py-2.5 rounded-xl font-bold text-xs md:text-sm tracking-wider transition-all duration-200"
+            aria-pressed={isPlaying}
+            className="group relative flex items-center gap-2 overflow-hidden rounded-xl px-4 py-2 text-xs font-bold tracking-wider text-white transition-[transform,box-shadow,background] duration-200 active:translate-y-px active:scale-[0.98] md:gap-2.5 md:px-6 md:py-2.5 md:text-sm"
             style={{
               background: isPlaying
-                ? "linear-gradient(135deg,#10b981,#059669)"
-                : "linear-gradient(135deg,#6366f1,#4f46e5)",
+                ? "linear-gradient(180deg,#34d399,#059669)"
+                : "linear-gradient(180deg,#818cf8,#4f46e5)",
               boxShadow: isPlaying
-                ? "0 0 12px rgba(16,185,129,0.2),inset 0 1px 0 rgba(255,255,255,0.15)"
-                : "0 0 12px rgba(99,102,241,0.2),inset 0 1px 0 rgba(255,255,255,0.15)",
-              color: "#fff",
+                ? "0 0 22px rgba(16,185,129,0.35),inset 0 1px 0 rgba(255,255,255,0.3),inset 0 -2px 0 rgba(0,0,0,0.2)"
+                : "0 0 22px rgba(99,102,241,0.3),inset 0 1px 0 rgba(255,255,255,0.3),inset 0 -2px 0 rgba(0,0,0,0.2)",
             }}
           >
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 bg-linear-to-b from-white/20 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+            />
             {isPlaying ? (
-              <Pause className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <Pause
+                className="relative h-3.5 w-3.5 md:h-4 md:w-4"
+                fill="currentColor"
+              />
             ) : (
-              <Play className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <Play
+                className="relative h-3.5 w-3.5 md:h-4 md:w-4"
+                fill="currentColor"
+              />
             )}
-            {isPlaying ? "PAUSE" : "PLAY"}
+            <span className="relative">{isPlaying ? "PAUSE" : "PLAY"}</span>
           </button>
           <button
             onClick={onClear}
-            className="p-2 md:p-2.5 rounded-xl border border-white/6 hover:border-rose-500/40 hover:bg-rose-500/10 transition-all text-zinc-500 hover:text-rose-400"
+            className="rounded-xl border border-white/6 bg-white/2 p-2 text-zinc-500 transition-all hover:border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-400 active:scale-95 md:p-2.5"
             title="Clear"
+            aria-label="Clear"
           >
-            <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </button>
         </div>
         <div className="flex flex-wrap items-center gap-2 md:gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-[9px] md:text-[10px] text-zinc-400 font-bold uppercase tracking-widest px-1">
+            <label htmlFor="studio-tempo" className={fieldLabel}>
               Tempo
             </label>
-            <div
-              className="flex items-center gap-1.5 px-3 py-1.5 md:py-2 rounded-xl border border-white/6"
-              style={{ background: "#0d0d14" }}
-            >
-              <Music className="w-3 h-3 text-zinc-600" />
+            <div className={`${styles.control} gap-1.5 px-3`}>
+              <Music className="h-3 w-3 text-zinc-500" />
               <input
+                id="studio-tempo"
                 type="number"
                 value={tempoDraft}
                 onChange={(event) => setTempoDraft(event.target.value)}
@@ -113,21 +138,21 @@ export const StudioToolbar = memo(function StudioToolbar({
                     event.currentTarget.blur();
                   }
                 }}
-                className="w-8 md:w-12 bg-transparent text-center focus:outline-none font-bold text-zinc-200 text-xs md:text-sm"
+                className={`${controlText} w-8 bg-transparent text-center font-mono tabular-nums focus:outline-none md:w-10 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
               />
-              <span className="text-[9px] md:text-xs text-zinc-600">BPM</span>
+              <span className="font-mono text-[9px] text-zinc-500 md:text-[10px]">
+                BPM
+              </span>
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[9px] md:text-[10px] text-zinc-400 font-bold uppercase tracking-widest px-1">
+            <label htmlFor="studio-swing" className={fieldLabel}>
               Swing
             </label>
-            <div
-              className="flex items-center gap-3 px-3 py-1.5 md:py-2 rounded-xl border border-white/6"
-              style={{ background: "#0d0d14" }}
-            >
-              <div className="relative flex items-center w-20 md:w-28 h-5 cursor-pointer group">
+            <div className={`${styles.control} gap-3 px-3`}>
+              <div className="group relative flex h-5 w-20 cursor-pointer items-center md:w-28">
                 <input
+                  id="studio-swing"
                   type="range"
                   min="50"
                   max="75"
@@ -135,87 +160,75 @@ export const StudioToolbar = memo(function StudioToolbar({
                   onChange={(event) =>
                     onSwingChange(Number(event.target.value))
                   }
-                  className="absolute inset-0 w-full opacity-0 cursor-pointer z-10 h-full"
+                  className="peer absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                />
+                <div className="absolute inset-x-0 h-1 rounded-full bg-white/10" />
+                <div
+                  className="absolute left-0 h-1 rounded-full bg-indigo-400"
+                  style={{ width: `${swingPercent}%` }}
                 />
                 <div
-                  className="absolute inset-x-0 h-1 rounded-full"
-                  style={{ background: "rgba(255,255,255,0.08)" }}
-                />
-                <div
-                  className="absolute left-0 h-1 rounded-full"
-                  style={{
-                    width: `${((swing - 50) / 25) * 100}%`,
-                    background: "linear-gradient(90deg,#6366f1,#818cf8)",
-                    boxShadow: "0 0 6px rgba(99,102,241,0.5)",
-                  }}
-                />
-                <div
-                  className="absolute w-3 h-3 rounded-full pointer-events-none transition-transform duration-75 group-hover:scale-110"
-                  style={{
-                    left: `calc(${((swing - 50) / 25) * 100}% - 6px)`,
-                    background: "#fff",
-                    boxShadow:
-                      "0 0 6px rgba(99,102,241,0.7), 0 1px 3px rgba(0,0,0,0.5)",
-                  }}
+                  className="pointer-events-none absolute h-3.5 w-3.5 rounded-full bg-zinc-100 shadow-[0_1px_3px_rgba(0,0,0,0.6)] transition-transform duration-100 group-hover:scale-110 peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-300"
+                  style={{ left: `calc(${swingPercent}% - 7px)` }}
                 />
               </div>
-              <span className="text-[9px] md:text-xs text-zinc-200 w-7 tabular-nums text-right shrink-0">
+              <span
+                className={`${controlText} w-8 shrink-0 text-right font-mono tabular-nums`}
+              >
                 {swing}%
               </span>
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-[9px] md:text-[10px] text-zinc-400 font-bold uppercase tracking-widest px-1">
-              Preset
-            </label>
-            <select
-              title="Preset"
-              className="text-[10px] md:text-xs font-bold px-3 py-1.5 md:py-2 rounded-xl border border-white/6 focus:outline-none cursor-pointer"
-              style={{ background: "#0d0d14", color: "#e4e4e7" }}
-              onChange={(event) => {
-                if (event.target.value) onPresetChange(event.target.value);
-              }}
-              defaultValue=""
-            >
-              <option
-                value=""
-                disabled
-                style={{ background: "#0d0d14", color: "#52525b" }}
-              >
-                LOAD...
-              </option>
-              {Object.entries(PRESETS).map(([key, preset]) => (
-                <option
-                  key={key}
-                  value={key}
-                  style={{ background: "#0d0d14", color: "#e4e4e7" }}
-                >
-                  {preset.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[9px] md:text-[10px] text-zinc-400 font-bold uppercase tracking-widest px-1">
+            <label htmlFor="studio-kit" className={fieldLabel}>
               Drum Kit
             </label>
-            <select
-              title="Drum sample kit"
-              value={activeKit}
-              onChange={(event) => onKitChange(event.target.value)}
-              className="text-[10px] md:text-xs font-bold px-3 py-1.5 md:py-2 rounded-xl border border-indigo-400/25 focus:outline-none cursor-pointer"
-              style={{ background: "#0d0d14", color: "#c7d2fe" }}
-            >
-              {kits.map((kit) => (
+            <div className={styles.control}>
+              <select
+                id="studio-kit"
+                title="Drum sample kit"
+                value={activeKit}
+                onChange={(event) => onKitChange(event.target.value)}
+                className={selectInput}
+              >
+                {kits.map((kit) => (
+                  <option key={kit.id} value={kit.id} style={optionStyle}>
+                    {kit.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className={selectChevron} />
+            </div>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="studio-preset" className={fieldLabel}>
+              Preset
+            </label>
+            <div className={styles.control}>
+              <select
+                id="studio-preset"
+                title="Preset"
+                className={selectInput}
+                onChange={(event) => {
+                  if (event.target.value) onPresetChange(event.target.value);
+                }}
+                defaultValue=""
+              >
                 <option
-                  key={kit.id}
-                  value={kit.id}
-                  style={{ background: "#0d0d14", color: "#e4e4e7" }}
+                  value=""
+                  disabled
+                  style={{ ...optionStyle, color: "#71717a" }}
                 >
-                  {kit.name}
+                  LOAD...
                 </option>
-              ))}
-            </select>
+                {Object.entries(PRESETS).map(([key, preset]) => (
+                  <option key={key} value={key} style={optionStyle}>
+                    {preset.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className={selectChevron} />
+            </div>
           </div>
         </div>
       </div>

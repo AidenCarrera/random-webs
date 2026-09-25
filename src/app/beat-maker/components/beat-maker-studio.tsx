@@ -7,31 +7,46 @@ import { BassPianoRoll } from "./bass-piano-roll";
 import { Mixer } from "./mixer";
 import { SequencerGrid } from "./sequencer-grid";
 import { StudioToolbar } from "./studio-toolbar";
+import styles from "../studio.module.css";
 
 export function BeatMakerStudio() {
   const studio = useBeatMakerController();
 
   return (
     <div
-      className="min-h-screen select-none relative overflow-hidden"
+      className="relative min-h-screen select-none overflow-hidden"
       style={{ background: "#09090b" }}
     >
       <div
-        className="fixed inset-0 z-50 flex-col items-center justify-center p-8 text-center hidden portrait:flex md:hidden"
-        style={{ background: "#0a0a0f" }}
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0"
+        style={{
+          background:
+            "radial-gradient(60rem 30rem at 50% -8rem, rgba(99,102,241,0.16), transparent 70%), radial-gradient(40rem 30rem at 100% 100%, rgba(244,63,94,0.06), transparent 70%)",
+        }}
+      />
+      <div
+        className="fixed inset-0 z-50 hidden flex-col items-center justify-center p-8 text-center portrait:flex md:hidden"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 40%, #16162a 0%, #0a0a0f 70%)",
+        }}
       >
-        <Smartphone
-          className="w-16 h-16 mb-6 animate-pulse"
-          style={{ color: "#6366f1" }}
-        />
-        <h2 className="text-2xl font-bold text-white mb-4 tracking-widest">
+        <div className="relative mb-8">
+          <span className="absolute inset-0 -m-4 rounded-full bg-indigo-500/20 blur-2xl motion-safe:animate-pulse" />
+          <Smartphone
+            className={`relative h-16 w-16 ${styles.rotateHint}`}
+            style={{ color: "#818cf8" }}
+          />
+        </div>
+        <h2 className="mb-4 text-2xl font-black tracking-[0.3em] text-white">
           ROTATE DEVICE
         </h2>
-        <p className="text-zinc-500 max-w-xs text-sm">
+        <p className="max-w-xs text-sm text-zinc-500">
           Studio 808 requires a landscape view.
         </p>
       </div>
-      <div className="relative z-10 py-3 px-4 md:py-4 md:px-6 flex flex-col items-center min-h-screen font-sans">
+      <div className="relative z-10 flex min-h-screen flex-col items-center px-4 py-3 font-sans md:px-6 md:py-5">
         <StudioToolbar
           isPlaying={studio.isPlaying}
           tempo={studio.tempo}
@@ -49,6 +64,7 @@ export function BeatMakerStudio() {
           tracks={studio.tracks}
           grid={studio.grid}
           currentStep={studio.currentStep}
+          isPlaying={studio.isPlaying}
           onMouseDown={studio.beginPaint}
           onMouseEnter={studio.continuePaint}
           onAddTrack={studio.addTrack}
@@ -59,6 +75,7 @@ export function BeatMakerStudio() {
         <BassPianoRoll
           notes={studio.bassNotes}
           currentStep={studio.currentStep}
+          isPlaying={studio.isPlaying}
           onPreview={studio.previewBassNote}
           onAdd={studio.addBassNote}
           onRemove={studio.removeBassNote}
