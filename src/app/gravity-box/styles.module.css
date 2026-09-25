@@ -125,3 +125,32 @@
     gap: 0.125rem !important;
   }
 }
+
+.root :global(.sandbox-slider)::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    90deg,
+    #3b82f6 0 var(--fill, 50%),
+    var(--slider-track) var(--fill, 50%) 100%
+  );
+}
+
+.root :global(.sandbox-slider)::-moz-range-progress {
+  height: 6px;
+  border-radius: 9999px;
+  background: #3b82f6;
+}
+
+.root :global(.sandbox-slider)::-webkit-slider-thumb {
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 0 0 0 rgba(59, 130, 246, 0.3);
+  transition:
+    transform 0.2s var(--ease-out-back),
+    box-shadow 0.2s ease;
+}
+
+.root :global(.sandbox-slider):active::-webkit-slider-thumb {
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 0 0 6px rgba(59, 130, 246, 0.25);
+}

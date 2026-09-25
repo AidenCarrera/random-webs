@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Matter from "matter-js";
+import { Trash2 } from "lucide-react";
 
 import styles from "./styles.module.css";
 
@@ -463,6 +464,15 @@ export default function GravityBox() {
     windowSize.height,
     toolbarHeight,
   );
+  const widthFill =
+    ((boxWidth - MIN_BOX_WIDTH) /
+      Math.max(1, boxLimits.maxWidth - MIN_BOX_WIDTH)) *
+    100;
+  const heightFill =
+    ((boxHeight - MIN_BOX_HEIGHT) /
+      Math.max(1, boxLimits.maxHeight - MIN_BOX_HEIGHT)) *
+    100;
+
   return (
     <main
       ref={sceneRef}
@@ -534,20 +544,7 @@ export default function GravityBox() {
           <span
             className={`${styles.compactLandscapeIcon} absolute md:group-hover:opacity-0 transition-opacity duration-200`}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 6h18"></path>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
+            <Trash2 size={22} strokeWidth={2} aria-hidden="true" />
           </span>
           <span
             className={`${styles.compactLandscapeLabel} hidden md:flex opacity-0 group-hover:opacity-100 absolute text-sm font-bold whitespace-nowrap`}
@@ -607,6 +604,8 @@ export default function GravityBox() {
             value={boxWidth}
             onChange={(e) => setBoxWidth(parseInt(e.target.value))}
             className="sandbox-slider"
+            aria-label="Width"
+            style={{ "--fill": `${widthFill}%` } as React.CSSProperties}
           />
         </div>
 
@@ -624,6 +623,8 @@ export default function GravityBox() {
             value={boxHeight}
             onChange={(e) => setBoxHeight(parseInt(e.target.value))}
             className="sandbox-slider"
+            aria-label="Height"
+            style={{ "--fill": `${heightFill}%` } as React.CSSProperties}
           />
         </div>
       </div>
