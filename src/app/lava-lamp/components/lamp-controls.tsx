@@ -1,3 +1,6 @@
+"use client";
+
+import { motion } from "framer-motion";
 import { Maximize2, Minimize2, Pause, Play, RefreshCw } from "lucide-react";
 
 import { PRESETS, PRESET_IDS } from "../data/presets";
@@ -44,20 +47,39 @@ export function LampControls({
         className="flex min-w-0 items-center gap-0.5 overflow-x-auto no-scrollbar preset-list"
         aria-label="Fluid presets"
       >
-        {PRESET_IDS.map((id) => (
-          <button
-            key={id}
-            type="button"
-            className={`flex-none px-2.75 max-[700px]:px-2.25 max-[410px]:px-2 py-2 border-0 rounded-[9px] text-[0.76rem] max-[410px]:text-[0.7rem] font-[610] tracking-[0.015em] cursor-pointer transition-all duration-150 active:scale-95 ${
-              id === presetId && isUsingExactPreset
-                ? "text-white bg-white/11 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.045)] active"
-                : "text-white/58 bg-transparent hover:text-white/92 hover:bg-white/7.5"
-            }`}
-            onClick={() => onSelectPreset(id)}
-          >
-            {PRESETS[id].name}
-          </button>
-        ))}
+        {PRESET_IDS.map((id) => {
+          const isActive = id === presetId && isUsingExactPreset;
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={isActive}
+              className={`relative flex flex-none items-center gap-1.5 px-2.75 max-[700px]:px-2.25 max-[410px]:px-2 py-2 border-0 rounded-[9px] text-[0.76rem] max-[410px]:text-[0.7rem] font-[610] tracking-[0.015em] cursor-pointer transition-colors duration-150 active:scale-95 ${
+                isActive
+                  ? "text-white active"
+                  : "text-white/58 bg-transparent hover:text-white/92 hover:bg-white/7.5"
+              }`}
+              onClick={() => onSelectPreset(id)}
+            >
+              {isActive ? (
+                <motion.span
+                  layoutId="lava-preset"
+                  className="absolute inset-0 rounded-[9px] bg-white/11 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]"
+                  transition={{ type: "spring", stiffness: 480, damping: 36 }}
+                />
+              ) : null}
+              <span
+                aria-hidden="true"
+                className="relative h-2 w-2 shrink-0 rounded-full max-[410px]:hidden"
+                style={{
+                  background: PRESETS[id].glow,
+                  boxShadow: isActive ? `0 0 8px ${PRESETS[id].glow}` : "none",
+                }}
+              />
+              <span className="relative">{PRESETS[id].name}</span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex flex-none items-center gap-1 pl-1.5 border-l border-white/8 icon-actions">
@@ -113,7 +135,7 @@ type ColorPickerProps = {
 function ColorPicker({ label, value, onChange }: ColorPickerProps) {
   return (
     <label
-      className="grid w-8.5 h-8.5 place-items-center border border-white/11 rounded-[9px] bg-white/4.5 cursor-pointer color-picker"
+      className="grid w-8.5 h-8.5 place-items-center border border-white/11 rounded-[9px] bg-white/4.5 cursor-pointer transition-colors hover:border-white/25 hover:bg-white/8 focus-within:outline-2 focus-within:outline-white/60 color-picker"
       title={label}
     >
       <span className="sr-only">{label}</span>

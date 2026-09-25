@@ -20,8 +20,9 @@ export function createGlassPath(geometry: Geometry) {
 
 export function makeGeometry(width: number, height: number): Geometry {
   const isLandscapeMobile = width > height && height < 500;
-  const topPadding = isLandscapeMobile ? 12 : 35;
-  const bottomPadding = isLandscapeMobile ? 54 : 125;
+  const isShortStage = !isLandscapeMobile && height < 860;
+  const topPadding = isLandscapeMobile ? 12 : isShortStage ? 14 : 35;
+  const bottomPadding = isLandscapeMobile ? 54 : isShortStage ? 82 : 125;
   const maxAvailableHeight = height - (topPadding + bottomPadding);
   const lampHeight = Math.min(Math.max(maxAvailableHeight / 1.2, 200), 850);
   const topCapHeight = lampHeight * 0.16;

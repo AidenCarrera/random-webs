@@ -66,6 +66,7 @@ export function LavaLamp() {
       className={`${styles.root} flex h-svh min-h-svh flex-col overflow-hidden p-6 sm:p-8 md:p-12 pb-3 max-[700px]:p-0 lava-page ${isFullscreen ? "is-fullscreen" : ""}`}
       style={pageStyle}
     >
+      <h1 className="sr-only">Lava Lamp</h1>
       <section
         ref={stageRef}
         className={`relative w-full max-w-270 flex-1 min-h-0 mx-auto overflow-visible select-none touch-none lamp-stage cursor-${pointer.cursorMode}`}
