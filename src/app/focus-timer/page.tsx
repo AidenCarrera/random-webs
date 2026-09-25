@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Play, Pause, RotateCcw } from "lucide-react";
 
+import styles from "./styles.module.css";
+
 const PRESETS = [
   { label: "5 MIN", minutes: 5 },
   { label: "25 MIN", minutes: 25 },
@@ -81,6 +83,7 @@ export default function MinimalMono() {
       }
 
       if (e.key.toLowerCase() === "e" && !isActive) {
+        e.preventDefault();
         setEditValue(Math.floor(duration / 60).toString());
         setIsEditing(true);
       }
@@ -250,7 +253,9 @@ export default function MinimalMono() {
               }`}
               title={!isActive ? "Click to edit duration" : ""}
             >
-              {formatTime(time)}
+              <span className={time === 0 && !isActive ? styles.complete : ""}>
+                {formatTime(time)}
+              </span>
             </div>
           )}
         </div>
@@ -264,7 +269,8 @@ export default function MinimalMono() {
                 key={preset.minutes}
                 onClick={() => handlePresetClick(preset.minutes)}
                 disabled={isActive}
-                className={`px-4 py-2 border border-white rounded-full text-sm tracking-widest transition-colors ${
+                aria-pressed={selected}
+                className={`px-4 py-2 border border-white rounded-full text-sm tracking-widest transition-[background-color,color,opacity,transform] duration-200 active:scale-95 ${
                   selected ? "bg-white text-black" : "bg-transparent text-white"
                 } ${
                   isActive
@@ -281,8 +287,9 @@ export default function MinimalMono() {
         <div className="flex gap-8 mt-12">
           <button
             onClick={() => setIsActive(!isActive)}
-            className="w-24 h-24 border-4 border-white rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-colors"
+            className={`${styles.control} w-24 h-24 border-4 border-white rounded-full flex items-center justify-center hover:bg-white hover:text-black`}
             title="Space"
+            aria-label={isActive ? "Pause" : "Start"}
           >
             {isActive ? (
               <Pause className="w-10 h-10" />
@@ -293,8 +300,10 @@ export default function MinimalMono() {
 
           <button
             onClick={resetTimer}
-            className="w-24 h-24 border-4 border-white rounded-full flex items-center justify-center hover:bg-white hover:text-black transition-colors"
+            data-kind="reset"
+            className={`${styles.control} w-24 h-24 border-4 border-white rounded-full flex items-center justify-center hover:bg-white hover:text-black`}
             title="R"
+            aria-label="Reset"
           >
             <RotateCcw className="w-8 h-8" />
           </button>

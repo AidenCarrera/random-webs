@@ -1,0 +1,47 @@
+.complete {
+  animation: complete-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes complete-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+}
+
+.control {
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    transform 250ms var(--ease-out-back);
+}
+
+.control:hover {
+  transform: scale(1.05);
+}
+
+.control:active {
+  transform: scale(0.94);
+}
+
+.control svg {
+  transition: transform 450ms var(--ease-out-back);
+}
+
+.control[data-kind="reset"]:hover svg {
+  transform: rotate(-200deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .complete {
+    animation: none;
+  }
+
+  .control,
+  .control svg {
+    transition: none;
+  }
+}
