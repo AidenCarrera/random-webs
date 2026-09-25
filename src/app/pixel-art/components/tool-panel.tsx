@@ -50,7 +50,6 @@ export function ToolPanel({
     <aside className="pixel-panel min-w-0 bg-[#2b395e] p-2 text-[#fff1e8] sm:p-4">
       <div className="mb-2 flex items-center justify-between sm:mb-3">
         <span className="pixel-font text-xs sm:text-sm">TOOLS</span>
-        <span className="pixel-label text-[#ffcd75]">{activeTool}</span>
       </div>
 
       <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-2 sm:gap-2">

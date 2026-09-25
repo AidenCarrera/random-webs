@@ -60,3 +60,76 @@
 .root :global(.animate-button-glow) {
   animation: button-glow 4s linear infinite;
 }
+
+.rainbowText {
+  background: linear-gradient(
+    to right,
+    #ef4444,
+    #fb923c,
+    #facc15,
+    #22c55e,
+    #3b82f6,
+    #6366f1,
+    #9333ea,
+    #ef4444
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rainbow-flow 5s linear infinite;
+}
+
+/* Drifting clouds across the top of the sky. */
+.cloud {
+  position: absolute;
+  animation: cloud-drift var(--drift, 90s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  will-change: transform;
+}
+
+@keyframes cloud-drift {
+  from {
+    transform: translateX(-30vw);
+  }
+  to {
+    transform: translateX(130vw);
+  }
+}
+
+/* A press-and-hold fills the chip, previewing the mix gesture. */
+.chip {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.chip::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(255, 255, 255, 0.35);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.chip:active::after {
+  animation: hold-fill 325ms linear forwards;
+}
+
+@keyframes hold-fill {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cloud,
+  .rainbowText,
+  .root :global(.animate-rainbow),
+  .root :global(.animate-button-glow) {
+    animation: none;
+  }
+}

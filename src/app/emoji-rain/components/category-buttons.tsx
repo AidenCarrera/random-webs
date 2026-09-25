@@ -4,6 +4,7 @@ import { memo } from "react";
 
 import { CATEGORY_KEYS, EMOJIS } from "../data/emojis";
 import { useHoldPress } from "../hooks/use-hold-press";
+import styles from "../styles.module.css";
 import type { Category } from "../types";
 
 export const CategoryButtons = memo(function CategoryButtons({
@@ -20,7 +21,7 @@ export const CategoryButtons = memo(function CategoryButtons({
   const getHoldHandlers = useHoldPress(onPress);
 
   return (
-    <div className="flex shrink-0 flex-wrap justify-center gap-1.5 sm:gap-2.5">
+    <div className="flex shrink-0 flex-wrap justify-center gap-1.5 sm:gap-2">
       {CATEGORY_KEYS.map((category) => {
         const isSelected = selected.includes(category);
 
@@ -29,12 +30,12 @@ export const CategoryButtons = memo(function CategoryButtons({
             key={category}
             type="button"
             {...getHoldHandlers(category)}
-            className={`cursor-pointer touch-manipulation select-none whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-bold capitalize transition-all hover:scale-105 active:scale-95 sm:px-3.5 sm:py-2 sm:text-sm ${
+            className={`${styles.chip} cursor-pointer touch-manipulation select-none whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-bold capitalize transition-all hover:scale-105 active:scale-95 sm:px-3 sm:py-1.5 sm:text-[13px] ${
               isSelected
                 ? `text-white shadow-lg ${
                     isRainbow ? "animate-button-glow border-transparent" : ""
                   }`
-                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                : "bg-slate-100/90 text-slate-500 ring-1 ring-slate-200/70 hover:bg-white hover:text-slate-700"
             }`}
             style={
               isSelected

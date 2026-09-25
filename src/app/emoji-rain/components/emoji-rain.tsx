@@ -14,6 +14,7 @@ import styles from "../styles.module.css";
 import type { Category } from "../types";
 import { getHeaderName } from "../utils/format";
 import { getBackgroundOpacity } from "../utils/style";
+import { Clouds } from "./clouds";
 import { ControlPanel } from "./control-panel";
 import { HeaderTitle } from "./header-title";
 import { RainCanvas } from "./rain-canvas";
@@ -82,6 +83,8 @@ export function EmojiRain() {
             : `linear-gradient(to bottom, ${theme.from}, ${theme.to})`,
         }}
       />
+
+      <Clouds isDark={theme.isDark || isRainbow} />
 
       <RainCanvas intensity={intensity} speed={speed} selected={selected} />
 

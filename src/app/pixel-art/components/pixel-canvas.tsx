@@ -3,10 +3,10 @@ import { memo } from "react";
 
 import { usePixelDrawing } from "../hooks/use-pixel-drawing";
 import type { PixelGridAction } from "../hooks/use-pixel-grid";
+import styles from "../styles.module.css";
 import type { PixelGrid, Tool } from "../types";
 
 const CANVAS_STYLE: CSSProperties = {
-  width: "min(calc(100vw - 2.5rem), 42rem)",
   maxWidth: "100%",
   aspectRatio: "1 / 1",
   touchAction: "none",
@@ -68,7 +68,7 @@ export function PixelCanvas({
       <div className="flex justify-center overflow-hidden rounded-none bg-[#c2c3c7] p-1.5 sm:p-3">
         <div
           ref={containerRef}
-          className={`grid ${showGrid ? "gap-px border border-[#847e87] bg-[#847e87]" : ""}`}
+          className={`${styles.canvas} grid ${showGrid ? "gap-px border border-[#847e87] bg-[#847e87]" : ""}`}
           onContextMenu={(event) => event.preventDefault()}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
