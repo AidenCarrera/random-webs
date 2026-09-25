@@ -9,7 +9,8 @@ const geistSans = localFont({
   variable: "--font-geist-sans",
   weight: "100 900",
   display: "swap",
-  preload: false,
+  // Geist is the default body face on every page, so fetch it early.
+  preload: true,
 });
 
 const geistMono = localFont({

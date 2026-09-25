@@ -1,7 +1,7 @@
 "use client";
 
-import { Link2, X } from "lucide-react";
-import { useState } from "react";
+import { Download, Link2, X } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   BlueskyIcon,
   BlueskyShareButton,
@@ -57,12 +57,43 @@ export function ExportPreviewModal({
   title = "Export preview",
 }: ExportPreviewModalProps) {
   const [copyLinkLabel, setCopyLinkLabel] = useState("Copy Link");
+  const titleId = useId();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    closeButtonRef.current?.focus({ preventScroll: true });
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        onCloseRef.current();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus?.({ preventScroll: true });
+    };
+  }, []);
 
   return (
     <div
       className={`${styles.modal} fixed inset-0 z-100 flex items-end justify-center bg-black/82 px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6`}
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className={`${styles.card} flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-4xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] text-white shadow-[0_32px_120px_rgba(0,0,0,0.6)] ring-1 ring-black/30 sm:max-h-208 sm:rounded-3xl`}
       >
         <div className="flex items-start justify-between gap-3 border-b border-white/10 bg-white/3 px-4 pb-3 pt-4 sm:px-5">
@@ -70,7 +101,10 @@ export function ExportPreviewModal({
             <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-white/40">
               Export Preview
             </p>
-            <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-xl">
+            <h2
+              id={titleId}
+              className="mt-1 text-lg font-semibold tracking-tight sm:text-xl"
+            >
               {title}
             </h2>
             <p className="mt-1 text-sm leading-relaxed text-white/62">
@@ -78,9 +112,10 @@ export function ExportPreviewModal({
             </p>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/6 text-white/85 transition hover:bg-white/12 hover:text-white"
+            className="group flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/6 text-white/85 transition hover:bg-white/12 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white [&_svg]:transition-transform [&_svg]:duration-300 hover:[&_svg]:rotate-90"
             aria-label="Close export preview"
           >
             <X size={18} />
@@ -113,16 +148,26 @@ export function ExportPreviewModal({
                 <button
                   type="button"
                   onClick={onSaveImage}
-                  className="flex w-full items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-white/90"
+                  className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black shadow-[0_10px_30px_-12px_rgba(255,255,255,0.45)] transition hover:bg-white/90 active:scale-[0.98]"
                 >
+                  <Download
+                    aria-hidden="true"
+                    size={16}
+                    className="transition-transform duration-300 group-hover:translate-y-0.5"
+                  />
                   Download PNG
                 </button>
               ) : (
                 <a
                   href={imageSrc}
                   download={fileName}
-                  className="flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-white/90"
+                  className="group flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black shadow-[0_10px_30px_-12px_rgba(255,255,255,0.45)] transition hover:bg-white/90 active:scale-[0.98]"
                 >
+                  <Download
+                    aria-hidden="true"
+                    size={16}
+                    className="transition-transform duration-300 group-hover:translate-y-0.5"
+                  />
                   Download PNG
                 </a>
               )}
@@ -145,7 +190,7 @@ export function ExportPreviewModal({
                       );
                     } catch {}
                   }}
-                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
+                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white [&>svg]:transition-transform [&>svg]:duration-300 hover:[&>svg]:-translate-y-0.5 [&>div]:transition-transform [&>div]:duration-300 hover:[&>div]:-translate-y-0.5"
                 >
                   <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-black">
                     <Link2 size={18} />
@@ -156,7 +201,7 @@ export function ExportPreviewModal({
                 <XShareButton
                   url={shareUrl}
                   title={socialTitle}
-                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
+                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white [&>svg]:transition-transform [&>svg]:duration-300 hover:[&>svg]:-translate-y-0.5 [&>div]:transition-transform [&>div]:duration-300 hover:[&>div]:-translate-y-0.5"
                 >
                   <XIcon size={44} round />
                   <span>X</span>
@@ -165,7 +210,7 @@ export function ExportPreviewModal({
                 <RedditShareButton
                   url={shareUrl}
                   title={socialTitle}
-                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
+                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white [&>svg]:transition-transform [&>svg]:duration-300 hover:[&>svg]:-translate-y-0.5 [&>div]:transition-transform [&>div]:duration-300 hover:[&>div]:-translate-y-0.5"
                 >
                   <RedditIcon size={44} round />
                   <span>Reddit</span>
@@ -174,7 +219,7 @@ export function ExportPreviewModal({
                 <BlueskyShareButton
                   url={shareUrl}
                   title={socialTitle}
-                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
+                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white [&>svg]:transition-transform [&>svg]:duration-300 hover:[&>svg]:-translate-y-0.5 [&>div]:transition-transform [&>div]:duration-300 hover:[&>div]:-translate-y-0.5"
                 >
                   <BlueskyIcon size={44} round />
                   <span>Bluesky</span>
@@ -184,7 +229,7 @@ export function ExportPreviewModal({
                   url={shareUrl}
                   title={socialTitle}
                   separator=" "
-                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
+                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white [&>svg]:transition-transform [&>svg]:duration-300 hover:[&>svg]:-translate-y-0.5 [&>div]:transition-transform [&>div]:duration-300 hover:[&>div]:-translate-y-0.5"
                 >
                   <WhatsappIcon size={44} round />
                   <span>WhatsApp</span>
@@ -193,7 +238,7 @@ export function ExportPreviewModal({
                 <TelegramShareButton
                   url={shareUrl}
                   title={socialTitle}
-                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
+                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white [&>svg]:transition-transform [&>svg]:duration-300 hover:[&>svg]:-translate-y-0.5 [&>div]:transition-transform [&>div]:duration-300 hover:[&>div]:-translate-y-0.5"
                 >
                   <TelegramIcon size={44} round />
                   <span>Telegram</span>
@@ -202,7 +247,7 @@ export function ExportPreviewModal({
                 <FacebookShareButton
                   url={shareUrl}
                   hashtag={facebookHashtag}
-                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
+                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white [&>svg]:transition-transform [&>svg]:duration-300 hover:[&>svg]:-translate-y-0.5 [&>div]:transition-transform [&>div]:duration-300 hover:[&>div]:-translate-y-0.5"
                 >
                   <FacebookIcon size={44} round />
                   <span>Facebook</span>
@@ -212,7 +257,7 @@ export function ExportPreviewModal({
                   url={shareUrl}
                   subject={emailSubject}
                   body={emailBody}
-                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white"
+                  className="group flex flex-col items-center gap-2 rounded-2xl p-1 text-[11px] text-white/72 transition hover:bg-white/4 hover:text-white [&>svg]:transition-transform [&>svg]:duration-300 hover:[&>svg]:-translate-y-0.5 [&>div]:transition-transform [&>div]:duration-300 hover:[&>div]:-translate-y-0.5"
                 >
                   <EmailIcon size={44} round />
                   <span>Email</span>

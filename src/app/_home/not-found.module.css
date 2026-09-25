@@ -1,0 +1,8 @@
+.code {
+  font-size: clamp(5.5rem, 24vw, 11rem);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+  color: #fafafa;
+}

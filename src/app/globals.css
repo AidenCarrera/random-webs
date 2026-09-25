@@ -3,13 +3,24 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Shared motion curves so every site eases the same way. */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans:
+    var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo, Consolas,
+    monospace;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,10 +30,98 @@
   }
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    var(--font-geist-sans),
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
+}
+
+/*
+ * A consistent, visible keyboard focus ring for any control that does not
+ * define its own. It lives in the base layer so Tailwind utilities and
+ * route CSS modules can still replace or remove it.
+ */
+@layer base {
+  :where(a, button, input, select, textarea, summary, [tabindex]):where(
+    :focus-visible
+  ) {
+    outline: 2px solid color-mix(in srgb, currentColor 75%, transparent);
+    outline-offset: 3px;
+  }
+}
+
+/*
+ * Enter-animation utilities (`animate-in fade-in zoom-in-95 duration-300`,
+ * `slide-in-from-*`, `animate-fade-in`) used across several sites. Each
+ * modifier sets a starting value that the shared keyframes animate from.
+ */
+@keyframes rw-enter {
+  from {
+    opacity: var(--rw-enter-opacity, 1);
+    transform: translate3d(
+        var(--rw-enter-translate-x, 0),
+        var(--rw-enter-translate-y, 0),
+        0
+      )
+      scale(var(--rw-enter-scale, 1));
+  }
+}
+
+@keyframes rw-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@utility animate-in {
+  animation: rw-enter var(--tw-duration, 200ms) var(--ease-out-expo) backwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@utility animate-fade-in {
+  animation: rw-fade-in var(--tw-duration, 500ms) var(--ease-out-expo) backwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@utility fade-in {
+  --rw-enter-opacity: 0;
+}
+
+@utility zoom-in {
+  --rw-enter-scale: 0.95;
+}
+
+@utility zoom-in-95 {
+  --rw-enter-scale: 0.95;
+}
+
+@utility slide-in-from-top-4 {
+  --rw-enter-translate-y: -1rem;
+}
+
+@utility slide-in-from-right-10 {
+  --rw-enter-translate-x: 2.5rem;
 }
 
 /* Custom Styled Range Slider */
@@ -41,40 +140,60 @@ body {
   background: rgba(255, 255, 255, 0.72);
 }
 
+.custom-slider:focus-visible {
+  outline: 2px solid #0ea5e9;
+  outline-offset: 4px;
+}
+
 .custom-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: #ffffff;
   border: 2px solid #0ea5e9;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.18),
+    0 0 0 0 rgba(14, 165, 233, 0.25);
   transition:
-    transform 0.1s ease-in-out,
-    background-color 0.1s ease-in-out;
+    transform 0.18s var(--ease-out-back),
+    box-shadow 0.18s ease-out;
 }
 
-.custom-slider::-webkit-slider-thumb:hover {
+.custom-slider::-webkit-slider-thumb:hover,
+.custom-slider:active::-webkit-slider-thumb {
   transform: scale(1.15);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.2),
+    0 0 0 6px rgba(14, 165, 233, 0.18);
 }
 
 .custom-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: #ffffff;
   border: 2px solid #0ea5e9;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
   transition:
-    transform 0.1s ease-in-out,
-    background-color 0.1s ease-in-out;
+    transform 0.18s var(--ease-out-back),
+    box-shadow 0.18s ease-out;
 }
 
-.custom-slider::-moz-range-thumb:hover {
+.custom-slider::-moz-range-thumb:hover,
+.custom-slider:active::-moz-range-thumb {
   transform: scale(1.15);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.2),
+    0 0 0 6px rgba(14, 165, 233, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .custom-slider::-webkit-slider-thumb,
+  .custom-slider::-moz-range-thumb {
+    transition: none;
+  }
 }
