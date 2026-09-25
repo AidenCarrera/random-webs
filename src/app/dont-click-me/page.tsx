@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import styles from "./styles.module.css";
+
 const CONFIG = {
   proximity: 65,
   escapeDistance: 220,
@@ -34,6 +36,13 @@ export default function DontClickMe() {
 
   const [phase, setPhase] = useState<Phase>("avoiding");
   const [clickCount, setClickCount] = useState(0);
+  // The room grows noisier and redder the more the button is provoked.
+  const intensity = Math.min(1, clickCount / 20);
+  const intensityRef = useRef(intensity);
+
+  useEffect(() => {
+    intensityRef.current = intensity;
+  }, [intensity]);
 
   const updatePhase = useCallback((nextPhase: Phase) => {
     phaseRef.current = nextPhase;
@@ -247,7 +256,7 @@ export default function DontClickMe() {
         pixels[index] = noise;
         pixels[index + 1] = noise;
         pixels[index + 2] = noise;
-        pixels[index + 3] = 28;
+        pixels[index + 3] = 24 + intensityRef.current * 34;
       }
 
       context.putImageData(imageData, 0, 0);
@@ -280,9 +289,23 @@ export default function DontClickMe() {
             "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.18) 3px, rgba(0,0,0,0.18) 4px)",
         }}
       />
+      <div aria-hidden="true" className={styles.vignette} />
+      <div
+        aria-hidden="true"
+        className={styles.tension}
+        style={{ opacity: intensity }}
+      />
+      {clickCount > 0 ? (
+        <div
+          key={`flash-${clickCount}`}
+          aria-hidden="true"
+          className={styles.flash}
+        />
+      ) : null}
 
       {clickCount > 0 && (
         <p
+          aria-live="polite"
           className="absolute top-6 z-10 select-none font-black tabular-nums"
           style={{
             fontFamily: FONT,
@@ -310,12 +333,14 @@ export default function DontClickMe() {
             type="button"
             onPointerDown={handlePointerDown}
             onClick={handleClick}
-            className="touch-manipulation border-2 px-10 py-4 text-lg font-black uppercase tracking-widest transition-colors duration-150"
+            data-yielding={isYielding || undefined}
+            className={`${styles.button} touch-manipulation border-2 px-10 py-4 text-lg font-black uppercase tracking-widest transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-red-700`}
             style={{
               fontFamily: FONT,
               background: isYielding ? "rgba(200,0,0,0.12)" : "rgba(0,0,0,0.6)",
               borderColor: isYielding ? "#ff2222" : "#222",
-              color: isYielding ? "#ff4040" : "#333",
+              color: isYielding ? "#ff4040" : "#3a3a3a",
+              textShadow: isYielding ? "0 0 12px rgba(255,40,40,0.6)" : "none",
               boxShadow: isYielding
                 ? "0 0 24px rgba(255,0,0,0.35), inset 0 0 20px rgba(255,0,0,0.08)"
                 : "none",
