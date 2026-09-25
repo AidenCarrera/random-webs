@@ -35,3 +35,132 @@
 .root :global(.animate-shake) {
   animation: shake 0.6s ease-in-out;
 }
+
+/* ───────── Fortune parlor staging ───────── */
+
+.spotlight {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    conic-gradient(
+      from 180deg at 50% -10%,
+      transparent 160deg,
+      rgba(255, 236, 200, 0.1) 172deg,
+      rgba(255, 236, 200, 0.15) 180deg,
+      rgba(255, 236, 200, 0.1) 188deg,
+      transparent 200deg
+    ),
+    radial-gradient(
+      ellipse 60% 45% at 50% 55%,
+      rgba(255, 220, 170, 0.06),
+      transparent 70%
+    );
+  mask-image: linear-gradient(to bottom, black 20%, transparent 95%);
+}
+
+.motes {
+  pointer-events: none;
+  position: absolute;
+  left: 30%;
+  right: 30%;
+  top: 0;
+  bottom: 0;
+}
+
+.motes > span {
+  position: absolute;
+  bottom: -10px;
+  border-radius: 9999px;
+  background: rgba(255, 230, 190, 0.55);
+  box-shadow: 0 0 6px rgba(255, 230, 190, 0.6);
+  animation: mote-rise linear infinite;
+}
+
+@keyframes mote-rise {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  15% {
+    opacity: 0.8;
+  }
+  85% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(24px, -100vh);
+  }
+}
+
+.floorShadow {
+  pointer-events: none;
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  width: 70%;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.85),
+    transparent 70%
+  );
+  filter: blur(6px);
+  transform: translateX(-50%);
+  transition: transform 0.3s ease;
+}
+
+.floorShadowShake {
+  animation: shadow-wobble 0.6s ease-in-out;
+}
+
+@keyframes shadow-wobble {
+  0%,
+  100% {
+    transform: translateX(-50%) scaleX(1);
+  }
+  25% {
+    transform: translateX(-54%) scaleX(0.9);
+  }
+  50% {
+    transform: translateX(-46%) scaleX(1.06);
+  }
+  75% {
+    transform: translateX(-52%) scaleX(0.94);
+  }
+}
+
+.questionForm::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(217, 119, 6, 0.9),
+    transparent
+  );
+  transform: scaleX(0);
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.questionForm:focus-within::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motes {
+    display: none;
+  }
+
+  .floorShadowShake,
+  .root :global(.animate-shake) {
+    animation: none;
+  }
+}

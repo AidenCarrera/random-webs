@@ -33,6 +33,14 @@ const ANSWERS = [
   "Very\ndoubtful.",
 ];
 
+// Deterministic dust motes drifting through the spotlight.
+const MOTES = Array.from({ length: 22 }, (_, index) => ({
+  left: (index * 37) % 100,
+  size: 1 + (index % 3),
+  delay: -((index * 1.7) % 12),
+  duration: 10 + (index % 5) * 2.5,
+}));
+
 export default function MagicEightBall() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
@@ -73,42 +81,87 @@ export default function MagicEightBall() {
 
   return (
     <main
-      className={`${styles.root} min-h-screen bg-[#07070a] text-[#b4b4b8] flex flex-col items-center justify-center p-4 relative overflow-hidden font-serif select-none`}
+      className={`${styles.root} min-h-screen bg-[#07070a] text-[#b4b4b8] flex flex-col items-center justify-center px-4 pt-4 pb-14 relative overflow-hidden font-serif select-none`}
       style={{
         backgroundImage:
           "radial-gradient(circle at center, #111116 0%, #030305 100%)",
       }}
     >
+      <div aria-hidden="true" className={styles.spotlight} />
+      <div aria-hidden="true" className={styles.motes}>
+        {MOTES.map((mote, index) => (
+          <span
+            key={index}
+            style={{
+              left: `${mote.left}%`,
+              width: mote.size,
+              height: mote.size,
+              animationDelay: `${mote.delay}s`,
+              animationDuration: `${mote.duration}s`,
+            }}
+          />
+        ))}
+      </div>
+
       <div className="max-w-md w-full flex flex-col items-center z-10 text-center gap-8">
-        <header className="flex flex-col items-center">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-[0.2em] text-stone-100 uppercase font-serif">
+        <header className="flex flex-col items-center gap-3">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-[0.2em] text-stone-100 uppercase font-serif drop-shadow-[0_2px_24px_rgba(255,255,255,0.12)]">
             Magic Eight Ball
           </h1>
         </header>
 
         <div className="relative py-2 flex items-center justify-center">
           <div
+            aria-hidden="true"
+            className={`${styles.floorShadow} ${isShaking ? styles.floorShadowShake : ""}`}
+          />
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label="Shake the Magic Eight Ball"
             onClick={() => askBall()}
-            className={`w-80 h-80 md:w-96 md:h-96 rounded-full overflow-hidden flex items-center justify-center cursor-pointer select-none relative transition-all duration-300 shadow-[0_35px_65px_-15px_rgba(0,0,0,0.95),inset_0_-10px_25px_rgba(0,0,0,0.9)] active:scale-95 border border-stone-800/50 ${
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                askBall();
+              }
+            }}
+            className={`w-80 h-80 md:w-96 md:h-96 rounded-full overflow-hidden flex items-center justify-center cursor-pointer select-none relative transition-[box-shadow] duration-300 shadow-[0_35px_65px_-15px_rgba(0,0,0,0.95),inset_0_-10px_25px_rgba(0,0,0,0.9)] active:scale-95 border border-stone-800/50 outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 focus-visible:ring-offset-4 focus-visible:ring-offset-[#07070a] ${
               isShaking ? "animate-shake" : ""
             }`}
-            style={{
-              background:
-                "linear-gradient(to bottom, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.06) 18%, rgba(255,255,255,0) 38%), radial-gradient(circle at 35% 35%, #2a2a2e 0%, #0e0e11 35%, #020203 100%)",
-            }}
           >
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle at 35% 35%, #2c2c31 0%, #0e0e11 38%, #020203 100%)",
+              }}
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-20 rounded-full"
+              style={{
+                background:
+                  "radial-gradient(ellipse 30% 20% at 32% 24%, rgba(255,255,255,0.32), rgba(255,255,255,0.05) 60%, transparent 100%)",
+              }}
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-20 rounded-full shadow-[inset_0_-18px_40px_rgba(0,0,0,0.9),inset_0_2px_0_rgba(255,255,255,0.08),inset_-8px_-8px_30px_rgba(120,120,160,0.08)]"
+            />
             {ballMode === "default" ? (
-              <div className="w-36 h-36 md:w-44 md:h-44 rounded-full bg-stone-100 flex items-center justify-center shadow-[inset_0_-8px_16px_rgba(0,0,0,0.15),0_6px_15px_rgba(0,0,0,0.5)] border border-stone-300">
-                <span className="text-stone-950 font-sans text-7xl md:text-8xl font-black tracking-tighter">
+              <div className="relative z-10 w-36 h-36 md:w-44 md:h-44 rounded-full bg-[radial-gradient(circle_at_40%_35%,#ffffff_0%,#f1efe9_45%,#d6d3cb_100%)] flex items-center justify-center shadow-[inset_0_-8px_16px_rgba(0,0,0,0.15),0_6px_15px_rgba(0,0,0,0.5)] border border-stone-300">
+                <span className="text-stone-950 font-sans text-7xl md:text-8xl font-black">
                   8
                 </span>
               </div>
             ) : (
               <div
-                className="w-36 h-36 md:w-44 md:h-44 rounded-full overflow-hidden flex items-center justify-center relative shadow-[inset_0_12px_24px_rgba(0,0,0,0.95)]"
+                className="z-10 w-36 h-36 md:w-44 md:h-44 rounded-full overflow-hidden flex items-center justify-center relative shadow-[inset_0_12px_24px_rgba(0,0,0,0.95),0_0_40px_rgba(37,99,235,0.18)]"
                 style={{
                   background:
-                    "radial-gradient(circle, #081223 0%, #020408 100%)",
+                    "radial-gradient(circle, #0b1830 0%, #020408 100%)",
                   border: "4px solid #0f141e",
                 }}
               >
@@ -148,7 +201,7 @@ export default function MagicEightBall() {
           <form
             ref={formRef}
             onSubmit={askBall}
-            className="w-full max-w-xs md:max-w-sm flex items-center gap-2 border-b border-stone-700/80 pb-2 focus-within:border-amber-700/80 transition-all"
+            className={`${styles.questionForm} relative w-full max-w-xs md:max-w-sm flex items-center gap-2 border-b border-stone-700/80 pb-2 transition-all`}
           >
             <input
               type="text"
@@ -156,7 +209,8 @@ export default function MagicEightBall() {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               disabled={isShaking}
-              className="w-full bg-transparent text-stone-150 placeholder-stone-600 focus:outline-none font-serif text-sm italic py-1 disabled:opacity-50 text-center"
+              aria-label="Your question"
+              className="w-full bg-transparent text-stone-200 placeholder-stone-600 focus:outline-none font-serif text-sm italic py-1 disabled:opacity-50 text-center"
             />
 
             <button
@@ -171,9 +225,9 @@ export default function MagicEightBall() {
           {ballMode === "answer" && !isShaking && (
             <button
               onClick={resetBall}
-              className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 hover:text-amber-500 transition-all border border-stone-800/80 rounded-sm px-4 py-2 bg-stone-950/40 hover:border-amber-900/30"
+              className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 hover:text-amber-500 transition-all border border-stone-800/80 rounded-sm px-4 py-2 bg-stone-950/40 hover:border-amber-900/40 active:scale-95"
             >
-              <RefreshCw className="w-2.5 h-2.5" />
+              <RefreshCw className="w-2.5 h-2.5 transition-transform duration-500 group-hover:-rotate-180" />
               Reset Sphere
             </button>
           )}
