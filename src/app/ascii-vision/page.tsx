@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Download, Upload } from "lucide-react";
+import { Download, ImagePlus, Upload } from "lucide-react";
 import { ExportPreviewModal } from "@/components/ExportPreviewModal";
 import { canvasToBlob } from "@/lib/canvasExport";
 
@@ -11,6 +11,12 @@ import styles from "./styles.module.css";
  * ASCII Density strings from dark to light
  */
 const DENSITY = "Ñ@#W$9876543210?!abc;:+=-,._ ";
+
+const SWATCHES = [
+  { color: "#00ff00", title: "Green" },
+  { color: "#0088ff", title: "Blue" },
+  { color: "#ff3333", title: "Red" },
+];
 
 const ASCII_EXPORT_FONT_SIZE = 18;
 const ASCII_EXPORT_LINE_HEIGHT = 20;
@@ -65,6 +71,7 @@ export default function AsciiCamera() {
   );
 
   const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     if (!imageSrc) return;
@@ -108,9 +115,8 @@ export default function AsciiCamera() {
     };
   }, [imageSrc, resolution, contrast]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const loadImageFile = (file: File | undefined) => {
+    if (!file || !file.type.startsWith("image/")) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -118,6 +124,11 @@ export default function AsciiCamera() {
       setPreviewImage(null);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    loadImageFile(e.target.files?.[0]);
+    e.target.value = "";
   };
 
   const renderAsciiToCanvas = () => {
@@ -144,7 +155,7 @@ export default function AsciiCamera() {
     context.textBaseline = "top";
     context.fillStyle = color;
     context.shadowColor = color;
-    context.shadowBlur = 10;
+    context.shadowBlur = 4;
 
     lines.forEach((line, index) => {
       context.fillText(
@@ -174,6 +185,8 @@ export default function AsciiCamera() {
     }
   };
 
+  const isCustomColor = !SWATCHES.some((swatch) => swatch.color === color);
+
   return (
     <main
       className={`${styles.root} ascii-shell min-h-screen bg-black font-mono flex flex-col items-center justify-center px-2 py-2 overflow-hidden select-none sm:p-4`}
@@ -187,41 +200,60 @@ export default function AsciiCamera() {
         } as React.CSSProperties
       }
     >
+      <div aria-hidden="true" className={styles.roomGlow} />
       <div
-        className="ascii-frame relative w-full max-w-7xl rounded-[1.25rem] border-[3px] bg-[#111] p-2 transition-all duration-500 sm:rounded-3xl sm:border-4 sm:p-6 md:p-8"
+        className={`ascii-frame ${styles.bezel} relative w-full max-w-7xl rounded-[1.25rem] border-[3px] p-2 transition-all duration-500 sm:rounded-3xl sm:border-4 sm:p-6 md:p-8`}
         style={{
           borderColor: color,
-          boxShadow: `0 0 30px rgba(0,0,0,0.8), 0 0 15px ${color}33`,
+          boxShadow: `0 0 0 1px rgba(255,255,255,0.04) inset, 0 30px 80px rgba(0,0,0,0.85), 0 0 22px ${color}40, 0 0 90px ${color}14`,
         }}
       >
         <div className="ascii-overlay absolute inset-0 pointer-events-none z-20 rounded-2xl bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-size-[100%_4px,4px_100%] transition-all duration-500 sm:rounded-2xl" />
 
         <div className="relative z-10">
-          <div className="ascii-header mb-2 flex flex-col gap-2 border-b border-(--theme-color) border-opacity-30 pb-2 text-(--theme-color) transition-colors duration-500 sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:pb-2">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-[0.22em] sm:text-xl">
-                ASCII_VISION
-              </h1>
-            </div>
-            <div className="text-[11px] opacity-70 sm:text-xs">
+          <div className="ascii-header mb-2 flex flex-col gap-2 border-b border-(--theme-color)/30 pb-2 text-(--theme-color) transition-colors duration-500 sm:mb-4 sm:flex-row sm:items-center sm:justify-between sm:pb-3">
+            <h1
+              className={`text-lg font-bold tracking-[0.22em] sm:text-xl ${styles.glow}`}
+            >
+              ASCII_VISION
+            </h1>
+            <span className="text-[11px] opacity-75 sm:text-xs">
               {resolution}x :: IMG {imageSrc ? "LOADED" : "WAITING"}
-            </div>
+            </span>
           </div>
 
-          <div className="ascii-output flex min-h-[60dvh] w-full items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-black p-1.5 transition-all duration-500 sm:min-h-[70vh] sm:p-4">
+          <div
+            className={`ascii-output ${styles.screen} relative flex min-h-[60dvh] w-full items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-black p-1.5 transition-all duration-500 sm:min-h-[70vh] sm:p-4`}
+            data-dragging={isDragging || undefined}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setIsDragging(true);
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(event) => {
+              event.preventDefault();
+              setIsDragging(false);
+              loadImageFile(event.dataTransfer.files?.[0]);
+            }}
+          >
             {!imageSrc ? (
-              <div className="text-center space-y-4 px-3">
-                <label className="inline-flex cursor-pointer items-center gap-2 border-2 border-(--theme-color) px-6 py-3 font-bold uppercase tracking-widest text-(--theme-color) transition-all hover:bg-(--theme-color) hover:text-black sm:px-8">
+              <div className="relative z-10 space-y-5 px-3 text-center">
+                <ImagePlus
+                  aria-hidden="true"
+                  className={`mx-auto h-10 w-10 text-(--theme-color) opacity-80 ${styles.glow}`}
+                  strokeWidth={1.5}
+                />
+                <label className="inline-flex cursor-pointer items-center gap-2 border-2 border-(--theme-color) bg-black/80 px-6 py-3 font-bold uppercase tracking-widest text-(--theme-color) shadow-[0_0_24px_color-mix(in_srgb,var(--theme-color)_25%,transparent)] transition-all hover:bg-(--theme-color) hover:text-black focus-within:outline-2 focus-within:outline-offset-4 focus-within:outline-(--theme-color) active:translate-y-px sm:px-8">
                   <Upload className="h-5 w-5" />
                   Upload Image
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
-                    className="hidden"
+                    className="sr-only"
                   />
                 </label>
-                <p className="font-mono text-xs opacity-50">
+                <p className="font-mono text-xs tracking-widest text-(--theme-color)/60">
                   Supports JPG, PNG, WEBP
                 </p>
               </div>
@@ -230,7 +262,7 @@ export default function AsciiCamera() {
                 className="w-full overflow-hidden text-center font-bold leading-none whitespace-pre text-(--theme-color) transition-colors duration-500"
                 style={{
                   fontFamily: "'Courier New', Courier, monospace",
-                  textShadow: `0 0 8px ${color}`,
+                  textShadow: `0 0 3px color-mix(in srgb, ${color} 45%, transparent)`,
                 }}
               >
                 {asciiArt}
@@ -241,23 +273,40 @@ export default function AsciiCamera() {
           {imageSrc && (
             <div className="ascii-controls mt-3 grid grid-cols-1 gap-3 sm:mt-6 sm:gap-6 md:grid-cols-3">
               <div className="ascii-slider-group space-y-2">
-                <label className="text-xs font-bold uppercase text-(--theme-color) transition-colors duration-500">
+                <label
+                  htmlFor="ascii-density"
+                  className="flex items-center justify-between text-xs font-bold uppercase text-(--theme-color) transition-colors duration-500"
+                >
                   Density (Res)
+                  <span className="tabular-nums opacity-70">{resolution}</span>
                 </label>
                 <input
+                  id="ascii-density"
                   type="range"
                   min="60"
                   max="200"
                   value={resolution}
                   onChange={(e) => setResolution(Number(e.target.value))}
                   className="ascii-slider w-full appearance-none rounded-lg h-2 cursor-pointer"
+                  style={
+                    {
+                      "--fill": `${((resolution - 60) / 140) * 100}%`,
+                    } as React.CSSProperties
+                  }
                 />
               </div>
               <div className="ascii-slider-group space-y-2">
-                <label className="text-xs font-bold uppercase text-(--theme-color) transition-colors duration-500">
+                <label
+                  htmlFor="ascii-contrast"
+                  className="flex items-center justify-between text-xs font-bold uppercase text-(--theme-color) transition-colors duration-500"
+                >
                   Contrast
+                  <span className="tabular-nums opacity-70">
+                    {contrast.toFixed(1)}
+                  </span>
                 </label>
                 <input
+                  id="ascii-contrast"
                   type="range"
                   min="0.5"
                   max="3"
@@ -265,42 +314,39 @@ export default function AsciiCamera() {
                   value={contrast}
                   onChange={(e) => setContrast(Number(e.target.value))}
                   className="ascii-slider w-full appearance-none rounded-lg h-2 cursor-pointer"
+                  style={
+                    {
+                      "--fill": `${((contrast - 0.5) / 2.5) * 100}%`,
+                    } as React.CSSProperties
+                  }
                 />
               </div>
               <div className="ascii-actions flex items-end justify-between gap-3 text-(--theme-color) md:justify-end">
                 <div className="ascii-swatch-group flex items-end gap-3">
-                  <button
-                    onClick={() => setColor("#00ff00")}
-                    className={`ascii-swatch h-8 w-8 rounded-full bg-[#00ff00] cursor-pointer transition-all ${
-                      color === "#00ff00"
-                        ? "ring-2 ring-offset-2 ring-offset-[#111] ring-white scale-110"
-                        : "opacity-60 hover:opacity-100"
-                    }`}
-                    title="Green"
-                  />
-                  <button
-                    onClick={() => setColor("#0088ff")}
-                    className={`ascii-swatch h-8 w-8 rounded-full bg-[#0088ff] cursor-pointer transition-all ${
-                      color === "#0088ff"
-                        ? "ring-2 ring-offset-2 ring-offset-[#111] ring-white scale-110"
-                        : "opacity-60 hover:opacity-100"
-                    }`}
-                    title="Blue"
-                  />
-                  <button
-                    onClick={() => setColor("#ff3333")}
-                    className={`ascii-swatch h-8 w-8 rounded-full bg-[#ff3333] cursor-pointer transition-all ${
-                      color === "#ff3333"
-                        ? "ring-2 ring-offset-2 ring-offset-[#111] ring-white scale-110"
-                        : "opacity-60 hover:opacity-100"
-                    }`}
-                    title="Red"
-                  />
+                  {SWATCHES.map((swatch) => (
+                    <button
+                      key={swatch.color}
+                      type="button"
+                      onClick={() => setColor(swatch.color)}
+                      aria-pressed={color === swatch.color}
+                      className={`ascii-swatch h-8 w-8 rounded-full cursor-pointer transition-all ${
+                        color === swatch.color
+                          ? "ring-2 ring-offset-2 ring-offset-[#111] ring-white scale-110"
+                          : "opacity-60 hover:opacity-100 hover:scale-105"
+                      }`}
+                      style={{
+                        background: swatch.color,
+                        boxShadow:
+                          color === swatch.color
+                            ? `0 0 14px ${swatch.color}`
+                            : undefined,
+                      }}
+                      title={swatch.title}
+                    />
+                  ))}
                   <div
-                    className={`ascii-swatch relative h-8 w-8 overflow-hidden rounded-full border border-white/20 cursor-pointer transition-all duration-500 ${
-                      color !== "#00ff00" &&
-                      color !== "#0088ff" &&
-                      color !== "#ff3333"
+                    className={`ascii-swatch relative h-8 w-8 overflow-hidden rounded-full border border-white/20 cursor-pointer transition-all duration-500 focus-within:ring-2 focus-within:ring-white ${
+                      isCustomColor
                         ? "ring-2 ring-offset-2 ring-offset-[#111] ring-white scale-110"
                         : "opacity-60 hover:opacity-100"
                     }`}
@@ -310,6 +356,7 @@ export default function AsciiCamera() {
                       type="color"
                       value={color}
                       onChange={(e) => setColor(e.target.value)}
+                      aria-label="Custom Color"
                       className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                     />
                     <div
@@ -324,7 +371,7 @@ export default function AsciiCamera() {
 
                 <div className="ascii-file-actions flex items-center gap-3">
                   <label
-                    className="ascii-icon-button flex h-10 w-10 cursor-pointer items-center justify-center rounded border border-current text-current transition-all duration-500 hover:bg-(--theme-color) hover:text-black"
+                    className="ascii-icon-button flex h-10 w-10 cursor-pointer items-center justify-center rounded border border-current text-current transition-all duration-500 hover:bg-(--theme-color) hover:text-black focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-(--theme-color)"
                     title="Upload New Image"
                   >
                     <Upload className="h-5 w-5" />
@@ -332,7 +379,8 @@ export default function AsciiCamera() {
                       type="file"
                       accept="image/*"
                       onChange={handleImageUpload}
-                      className="hidden"
+                      aria-label="Upload New Image"
+                      className="sr-only"
                     />
                   </label>
 
