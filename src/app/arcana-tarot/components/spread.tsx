@@ -1,3 +1,7 @@
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
+
 import type { TarotCard as TarotCardData } from "../data/cards";
 import type { DrawnCard } from "../types";
 import { TarotCard } from "./card";
@@ -13,15 +17,37 @@ export function TarotSpread({
   onRevealCard,
   onShowDetails,
 }: TarotSpreadProps) {
+  const reduceMotion = useReducedMotion();
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 w-full perspective-1000">
+    <div className="grid w-full grid-cols-1 gap-10 [perspective:1000px] md:grid-cols-3 md:gap-12">
       {spread.map((drawnCard, index) => (
-        <div
+        <motion.div
           key={drawnCard.position.id}
           className="flex flex-col items-center gap-6"
+          initial={
+            reduceMotion
+              ? false
+              : { opacity: 0, y: -80, rotate: (index - 1) * 8, scale: 0.9 }
+          }
+          animate={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
+          transition={{
+            type: "spring",
+            stiffness: 140,
+            damping: 18,
+            delay: index * 0.16,
+          }}
         >
-          <p className="text-xl font-bold uppercase text-purple-300/50 tracking-widest border-b border-purple-300/20 pb-2 w-full text-center">
+          <p className="flex w-full items-center justify-center gap-3 pb-2 text-center text-xl font-bold uppercase tracking-widest text-purple-300/60">
+            <span
+              aria-hidden="true"
+              className="h-px flex-1 bg-linear-to-r from-transparent to-purple-300/30"
+            />
             {drawnCard.position.label}
+            <span
+              aria-hidden="true"
+              className="h-px flex-1 bg-linear-to-l from-transparent to-purple-300/30"
+            />
           </p>
 
           <TarotCard
@@ -31,7 +57,7 @@ export function TarotSpread({
             onReveal={() => onRevealCard(index)}
             onShowDetails={onShowDetails}
           />
-        </div>
+        </motion.div>
       ))}
     </div>
   );

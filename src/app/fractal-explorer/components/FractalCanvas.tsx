@@ -15,7 +15,6 @@ export function FractalCanvas({ explorer }: FractalCanvasProps) {
     handlePointerDown,
     handlePointerMove,
     handlePointerUpOrCancel,
-    handleWheel,
   } = explorer;
 
   return (
@@ -27,7 +26,6 @@ export function FractalCanvas({ explorer }: FractalCanvasProps) {
         onPointerUp={handlePointerUpOrCancel}
         onPointerCancel={handlePointerUpOrCancel}
         onPointerLeave={handlePointerUpOrCancel}
-        onWheel={handleWheel}
         onDoubleClick={handleDoubleClick}
         onClick={handleCanvasClick}
         className="absolute top-0 left-0 w-full h-full cursor-grab active:cursor-grabbing block animate-fade-in duration-300 touch-none"

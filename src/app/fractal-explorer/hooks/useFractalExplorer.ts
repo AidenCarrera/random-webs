@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { MouseEvent, PointerEvent, WheelEvent } from "react";
+import type { MouseEvent, PointerEvent } from "react";
 import { canvasToBlob } from "@/lib/canvasExport";
 import { MAX_RENDER_ITERATIONS, MAX_ZOOM } from "../constants";
 import type {
@@ -13,6 +13,13 @@ import type {
 } from "../types";
 import { useFractalAudio } from "./useFractalAudio";
 import { useFractalRenderer } from "./useFractalRenderer";
+
+// WebKit-only GestureEvent, absent from the standard DOM typings
+type SafariGestureEvent = UIEvent & {
+  scale: number;
+  clientX: number;
+  clientY: number;
+};
 
 type ExportSnapshot = {
   blob: Blob;
@@ -101,6 +108,8 @@ export function useFractalExplorer() {
     focusY: number;
   } | null>(null);
   const DRAG_THRESHOLD_PX = 5;
+  const isSafariGestureActiveRef = useRef<boolean>(false);
+  const safariGestureScaleRef = useRef<number>(1);
   const isAnimatingRef = useRef<boolean>(false);
   const recentTouchInteractionRef = useRef<boolean>(false);
   const touchResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -443,29 +452,24 @@ export function useFractalExplorer() {
     }
   };
 
-  // Zoom logic based on scroll/wheel
-  const handleWheel = (e: WheelEvent<HTMLCanvasElement>) => {
-    if (isAnimatingRef.current) return;
-    e.preventDefault();
+  // Zoom by `factor`, keeping the complex point under the cursor fixed
+  const zoomAtClientPoint = (
+    clientX: number,
+    clientY: number,
+    factor: number,
+  ) => {
+    const pointer = getCanvasPointerPosition(clientX, clientY);
+    if (!pointer) return;
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const mousePx = e.clientX - rect.left;
-    const mousePy = e.clientY - rect.top;
-
-    const widthInComplex = 3.0 / zoomRef.current;
-    const heightInComplex = widthInComplex * (canvas.height / canvas.width);
+    const { canvas, px, py, widthInComplex, heightInComplex } = pointer;
 
     const mouseCX =
       centerXRef.current +
-      (mousePx - canvas.width / 2) * (widthInComplex / canvas.width);
+      (px - canvas.width / 2) * (widthInComplex / canvas.width);
     const mouseCY =
       centerYRef.current +
-      (mousePy - canvas.height / 2) * (heightInComplex / canvas.height);
+      (py - canvas.height / 2) * (heightInComplex / canvas.height);
 
-    const factor = e.deltaY < 0 ? 1.18 : 1 / 1.18;
     const newZoom = Math.max(0.1, Math.min(MAX_ZOOM, zoomRef.current * factor));
 
     const newWidthInComplex = 3.0 / newZoom;
@@ -473,11 +477,9 @@ export function useFractalExplorer() {
       newWidthInComplex * (canvas.height / canvas.width);
 
     centerXRef.current =
-      mouseCX -
-      (mousePx - canvas.width / 2) * (newWidthInComplex / canvas.width);
+      mouseCX - (px - canvas.width / 2) * (newWidthInComplex / canvas.width);
     centerYRef.current =
-      mouseCY -
-      (mousePy - canvas.height / 2) * (newHeightInComplex / canvas.height);
+      mouseCY - (py - canvas.height / 2) * (newHeightInComplex / canvas.height);
     zoomRef.current = newZoom;
 
     setZoomLevel(newZoom);
@@ -485,6 +487,100 @@ export function useFractalExplorer() {
     drawFastPreview();
     scheduleProgressiveRender(150);
   };
+
+  // Zoom logic based on scroll/wheel. Trackpad pinches arrive as ctrl+wheel
+  // events, which zoom the whole page unless the default is prevented.
+  const handleWheel = (e: globalThis.WheelEvent) => {
+    e.preventDefault();
+    if (isAnimatingRef.current || e.deltaY === 0) return;
+
+    if (e.ctrlKey) {
+      // Safari reports pinches as gesture events; avoid zooming twice.
+      if (isSafariGestureActiveRef.current) return;
+      // Pinch deltas are small and continuous, so scale smoothly with them
+      // rather than stepping a fixed amount per event like a mouse notch.
+      const factor = Math.exp(-e.deltaY * 0.01);
+      zoomAtClientPoint(
+        e.clientX,
+        e.clientY,
+        Math.min(1.18, Math.max(1 / 1.18, factor)),
+      );
+      return;
+    }
+
+    zoomAtClientPoint(e.clientX, e.clientY, e.deltaY < 0 ? 1.18 : 1 / 1.18);
+  };
+
+  // Safari (macOS) sends trackpad pinches as non-standard gesture events
+  const handleSafariGestureStart = (e: SafariGestureEvent) => {
+    e.preventDefault();
+    isSafariGestureActiveRef.current = true;
+    safariGestureScaleRef.current = 1;
+  };
+
+  const handleSafariGestureChange = (e: SafariGestureEvent) => {
+    e.preventDefault();
+    const factor = e.scale / safariGestureScaleRef.current;
+    safariGestureScaleRef.current = e.scale;
+    // Touchscreen pinches are already handled via pointer events
+    if (isAnimatingRef.current || activeTouchPointersRef.current.size > 0) {
+      return;
+    }
+    zoomAtClientPoint(e.clientX, e.clientY, factor);
+  };
+
+  const handleSafariGestureEnd = (e: SafariGestureEvent) => {
+    e.preventDefault();
+    isSafariGestureActiveRef.current = false;
+  };
+
+  const canvasZoomHandlersRef = useRef({
+    handleWheel,
+    handleSafariGestureStart,
+    handleSafariGestureChange,
+    handleSafariGestureEnd,
+  });
+  useEffect(() => {
+    canvasZoomHandlersRef.current = {
+      handleWheel,
+      handleSafariGestureStart,
+      handleSafariGestureChange,
+      handleSafariGestureEnd,
+    };
+  });
+
+  // React's onWheel is passive, so preventDefault() there can't stop the
+  // browser's page zoom. Register non-passive native listeners instead.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const onWheel = (e: globalThis.WheelEvent) =>
+      canvasZoomHandlersRef.current.handleWheel(e);
+    const onGestureStart = (e: Event) =>
+      canvasZoomHandlersRef.current.handleSafariGestureStart(
+        e as SafariGestureEvent,
+      );
+    const onGestureChange = (e: Event) =>
+      canvasZoomHandlersRef.current.handleSafariGestureChange(
+        e as SafariGestureEvent,
+      );
+    const onGestureEnd = (e: Event) =>
+      canvasZoomHandlersRef.current.handleSafariGestureEnd(
+        e as SafariGestureEvent,
+      );
+
+    canvas.addEventListener("wheel", onWheel, { passive: false });
+    canvas.addEventListener("gesturestart", onGestureStart);
+    canvas.addEventListener("gesturechange", onGestureChange);
+    canvas.addEventListener("gestureend", onGestureEnd);
+    return () => {
+      canvas.removeEventListener("wheel", onWheel);
+      canvas.removeEventListener("gesturestart", onGestureStart);
+      canvas.removeEventListener("gesturechange", onGestureChange);
+      canvas.removeEventListener("gestureend", onGestureEnd);
+    };
+  }, [canvasRef]);
 
   // Double click zooms into the clicked point (desktop only)
   const handleDoubleClick = (e: MouseEvent<HTMLCanvasElement>) => {
@@ -689,7 +785,6 @@ export function useFractalExplorer() {
     handlePointerDown,
     handlePointerMove,
     handlePointerUpOrCancel,
-    handleWheel,
     initAudioEngine,
     isAudioEnabled,
     isAudioLoading,
