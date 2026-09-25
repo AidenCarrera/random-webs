@@ -2,6 +2,7 @@
 
 import {
   Download,
+  Hand,
   Pause,
   Play,
   RotateCcw,
@@ -32,6 +33,7 @@ const DEFAULT_FORCE = 1;
 const DEFAULT_COLOR_PRESET: FluidColorPreset = "aurora";
 const DEFAULT_MOTION_MODEL: FluidMotionModel = "fluid";
 const SETTINGS_STORAGE_KEY = "fluid-simulation-settings-v1";
+const HINT_SEEN_STORAGE_KEY = "fluid-simulation-hint-seen-v1";
 const VALID_PARTICLE_COUNTS = new Set([
   32_768, 65_536, 131_072, 262_144, 524_288, 1_048_576,
 ]);
@@ -172,6 +174,7 @@ export default function FluidSimulationPage() {
   const [captureState, setCaptureState] = useState<CaptureState>("idle");
   const [snapshot, setSnapshot] = useState<FluidSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showGestureHint, setShowGestureHint] = useState(false);
   const isTouchDevice = useSyncExternalStore(
     subscribeToTouchCapability,
     getTouchCapabilitySnapshot,
@@ -332,6 +335,32 @@ export default function FluidSimulationPage() {
     return () => audio.pause();
   }, [musicEnabled, settingsReady]);
 
+  // Only show the drag cue on the first visit.
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(HINT_SEEN_STORAGE_KEY)) return;
+    } catch {
+      // Without storage, fall back to showing the hint every visit.
+    }
+
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setShowGestureHint(true);
+    });
+    const timer = window.setTimeout(() => setShowGestureHint(false), 9_000);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!showGestureHint) return;
+    try {
+      window.localStorage.setItem(HINT_SEEN_STORAGE_KEY, "1");
+    } catch {}
+  }, [showGestureHint]);
+
   const startMusic = useCallback(() => {
     if (!musicEnabled) return;
     void audioRef.current?.play().catch(() => {});
@@ -484,6 +513,7 @@ export default function FluidSimulationPage() {
     const bounds = event.currentTarget.getBoundingClientRect();
     if (phase === "down") {
       if (event.button !== 0 && event.button !== 2) return;
+      setShowGestureHint(false);
       startMusic();
       event.currentTarget.setPointerCapture(event.pointerId);
       engineRef.current?.pointerDown(
@@ -533,6 +563,25 @@ export default function FluidSimulationPage() {
           onWheel={handleForceWheel}
           onContextMenu={(event) => event.preventDefault()}
         />
+
+        {!error ? (
+          <div
+            aria-hidden="true"
+            className={styles.gestureHint}
+            data-hidden={!showGestureHint || undefined}
+          >
+            <svg viewBox="0 0 240 120" className={styles.gestureTrail}>
+              <path d="M20 92 C 64 8, 112 10, 120 60 S 188 112, 220 28" />
+              <path
+                pathLength={1}
+                d="M20 92 C 64 8, 112 10, 120 60 S 188 112, 220 28"
+              />
+            </svg>
+            <span className={styles.gestureHand}>
+              <Hand />
+            </span>
+          </div>
+        ) : null}
 
         {panelOpen ? (
           <aside className={styles.panel} aria-label="Fluid settings">
@@ -667,6 +716,11 @@ export default function FluidSimulationPage() {
                   <input
                     id="solver-iterations"
                     className={styles.range}
+                    style={
+                      {
+                        "--fill": `${((solverIterations - 4) / 44) * 100}%`,
+                      } as React.CSSProperties
+                    }
                     type="range"
                     min="4"
                     max="48"
@@ -686,6 +740,11 @@ export default function FluidSimulationPage() {
                   <input
                     id="force"
                     className={styles.range}
+                    style={
+                      {
+                        "--fill": `${((force - 0.4) / 1.6) * 100}%`,
+                      } as React.CSSProperties
+                    }
                     type="range"
                     min="0.4"
                     max="2"
