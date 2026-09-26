@@ -1,4 +1,7 @@
 // src/components/CheatSheet.tsx
+"use client";
+
+import { motion } from "framer-motion";
 import { MORSE_CODE } from "../lib/morse";
 import localFont from "next/font/local";
 
@@ -28,8 +31,12 @@ interface CheatSheetProps {
 
 export function CheatSheet({ onClose }: CheatSheetProps) {
   return (
-    <div
-      className={`max-w-70 w-full bg-[#f4efe2] border-4 border-[#c0a080] p-5 rounded-sm shadow-2xl relative text-[#2d2219] ${kalam.className} animate-fade-in shrink-0`}
+    <motion.div
+      initial={{ opacity: 0, y: 16, rotate: -3 }}
+      animate={{ opacity: 1, y: 0, rotate: 1.2 }}
+      exit={{ opacity: 0, y: 12, rotate: 3 }}
+      transition={{ type: "spring", stiffness: 260, damping: 22 }}
+      className={`max-w-70 w-full bg-[#f4efe2] border-4 border-[#c0a080] p-5 rounded-sm shadow-2xl relative text-[#2d2219] ${kalam.className} shrink-0`}
       style={{ boxShadow: "3px 3px 20px rgba(0,0,0,0.4)" }}
     >
       {/* Vintage Tape decoration at the top */}
@@ -54,7 +61,7 @@ export function CheatSheet({ onClose }: CheatSheetProps) {
           return (
             <div
               key={char}
-              className="flex flex-col items-center bg-[#fdfbf7] py-1 px-0.5 rounded border border-[#c0a080]/30 shadow-sm"
+              className="flex flex-col items-center bg-[#fdfbf7] py-1 px-0.5 rounded border border-[#c0a080]/30 shadow-sm transition-transform duration-150 hover:-translate-y-0.5 hover:border-[#a0522d]/50"
             >
               <span className="text-[#5c4033] text-sm font-bold leading-tight">
                 {char}
@@ -66,6 +73,6 @@ export function CheatSheet({ onClose }: CheatSheetProps) {
           );
         })}
       </div>
-    </div>
+    </motion.div>
   );
 }
