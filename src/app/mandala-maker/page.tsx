@@ -13,8 +13,9 @@ import {
   Palette,
   Eye,
   EyeOff,
-  Undo,
-  Redo,
+  Undo2,
+  Redo2,
+  Asterisk,
   Square,
   Maximize,
 } from "lucide-react";
@@ -93,6 +94,20 @@ export default function MandalaMaker() {
   const isMobileViewport =
     viewportWidth < 768 || (isTouchDevice && viewportHeight <= 500);
   const shouldUseSquareCanvas = isSquareCanvas && !isMobileViewport;
+
+  // Switching to square crops the drawing, so ask first.
+  const [isConfirmingSquare, setIsConfirmingSquare] = useState(false);
+  const showSquareConfirm =
+    isConfirmingSquare && showUI && !isMobileViewport && !isSquareCanvas;
+
+  useEffect(() => {
+    if (!showSquareConfirm) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsConfirmingSquare(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showSquareConfirm]);
   const squareSide = Math.max(
     240,
     Math.min(viewportWidth - 16, viewportHeight - 180, 750),
@@ -348,186 +363,235 @@ export default function MandalaMaker() {
         }}
       />
 
-      {/* Toggle UI Button */}
-      <button
-        onClick={() => setShowUI(!showUI)}
-        className={`absolute right-3 top-3 z-10 rounded-xl border border-white/10 bg-gray-900/50 p-2.5 text-white/50 shadow-lg backdrop-blur-md transition-all hover:bg-gray-900/80 hover:text-white sm:right-4 sm:top-4 sm:flex sm:p-3 ${
-          showUI ? "hidden" : "flex"
+      {/* Show controls again once hidden */}
+      <ToolButton
+        onClick={() => setShowUI(true)}
+        className={`absolute right-3 top-3 z-10 border border-white/10 bg-[#0a0e13]/80 shadow-lg backdrop-blur-xl transition-opacity duration-300 sm:right-4 sm:top-4 ${
+          showUI ? "pointer-events-none opacity-0" : "opacity-100"
         }`}
-        title={showUI ? "Hide Controls" : "Show Controls"}
-        aria-label={showUI ? "Hide controls" : "Show controls"}
+        title="Show Controls"
+        aria-label="Show controls"
         aria-pressed={showUI}
+        tabIndex={showUI ? -1 : 0}
       >
-        {showUI ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-      </button>
+        <Eye className="h-4 w-4" />
+      </ToolButton>
 
       {/* Controls */}
       <div
-        className={`mandala-controls-viewport pointer-events-none absolute left-0 top-0 z-10 flex w-full items-start justify-center p-2 transition-opacity duration-300 sm:p-4 ${
+        className={`mandala-controls-viewport pointer-events-none absolute left-0 top-0 z-10 flex w-full items-start justify-center p-2 transition-[opacity,translate] duration-300 sm:p-4 ${
           showUI
-            ? "mandala-controls-visible opacity-100"
-            : "opacity-0 pointer-events-none"
+            ? "mandala-controls-visible translate-y-0 opacity-100"
+            : "-translate-y-3 opacity-0"
         }`}
+        inert={!showUI}
       >
         <div
-          className={`mandala-controls flex max-w-[calc(100vw-1rem)] flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-gray-900/80 p-2 shadow-2xl backdrop-blur-xl sm:max-w-none sm:gap-6 sm:p-4 ${
+          className={`mandala-controls flex max-w-[calc(100vw-1rem)] flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-[#0a0e13]/85 p-1.5 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl sm:max-w-[calc(100vw-2rem)] ${
             showUI ? "pointer-events-auto" : "pointer-events-none"
           }`}
         >
-          {/* Layout Toggle */}
-          <div className="mandala-layout-control flex flex-col gap-1.5 sm:gap-2">
-            <label className="text-[10px] font-bold uppercase text-white/50 sm:text-xs">
-              Layout
-            </label>
-            <button
-              onClick={() => setIsSquareCanvas(!isSquareCanvas)}
-              aria-label={
-                shouldUseSquareCanvas
-                  ? "Use fullscreen canvas"
-                  : "Use square canvas"
-              }
-              aria-pressed={shouldUseSquareCanvas}
-              className={`flex cursor-pointer items-center gap-1.5 rounded-lg p-2 text-xs font-bold transition-colors ${
-                shouldUseSquareCanvas
-                  ? "bg-cyan-500 text-white shadow-lg"
-                  : "bg-white/10 text-white hover:bg-white/15"
-              }`}
-              title={
-                shouldUseSquareCanvas ? "Fullscreen Canvas" : "Square Canvas"
-              }
-            >
-              {shouldUseSquareCanvas ? (
-                <Maximize className="h-4 w-4" />
-              ) : (
-                <Square className="h-4 w-4" />
-              )}
-              <span className="hidden sm:inline">
-                {shouldUseSquareCanvas ? "Fullscreen" : "Square"}
-              </span>
-            </button>
-          </div>
-
-          <div className="mandala-layout-divider hidden h-8 w-px bg-white/10 sm:block" />
-
-          <div className="flex flex-col gap-1.5 sm:gap-2">
-            <label className="text-[10px] font-bold uppercase text-white/50 sm:text-xs">
-              Color
-            </label>
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={color}
-                onChange={(e) => {
-                  setColor(e.target.value);
-                  setRainbowMode(false);
+          {/* Brush: layout + color */}
+          <div className="flex items-center gap-1">
+            <div className="mandala-layout-control relative flex items-center gap-1">
+              <ToolButton
+                onClick={() => {
+                  if (isSquareCanvas) {
+                    setIsSquareCanvas(false);
+                  } else {
+                    setIsConfirmingSquare(!isConfirmingSquare);
+                  }
                 }}
-                className="color-picker-input"
-              />
-              <button
-                onClick={() => setRainbowMode(!rainbowMode)}
-                aria-label="Toggle rainbow mode"
-                aria-pressed={rainbowMode}
-                className={`flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg transition-colors ${
-                  rainbowMode
-                    ? "bg-linear-to-r from-red-500 via-green-500 to-blue-500 text-white"
-                    : "bg-white/10 text-white/50 hover:bg-white/15"
-                }`}
-                title="Rainbow Mode"
+                tone={
+                  shouldUseSquareCanvas || showSquareConfirm
+                    ? "active"
+                    : "default"
+                }
+                aria-label={
+                  shouldUseSquareCanvas
+                    ? "Use fullscreen canvas"
+                    : "Use square canvas"
+                }
+                aria-pressed={shouldUseSquareCanvas}
+                aria-expanded={
+                  shouldUseSquareCanvas ? undefined : showSquareConfirm
+                }
+                title={
+                  shouldUseSquareCanvas ? "Fullscreen Canvas" : "Square Canvas"
+                }
               >
-                <Palette className="w-4 h-4" />
-              </button>
+                {shouldUseSquareCanvas ? (
+                  <Maximize className="h-4 w-4" />
+                ) : (
+                  <Square className="h-4 w-4" />
+                )}
+              </ToolButton>
+              <Divider />
+
+              {showSquareConfirm ? (
+                <div
+                  role="alertdialog"
+                  aria-labelledby="square-confirm-title"
+                  aria-describedby="square-confirm-body"
+                  className="animate-in fade-in slide-in-from-top-4 absolute left-0 top-full mt-3 w-64 rounded-xl border border-white/10 bg-[#0a0e13]/95 p-3 text-left shadow-[0_24px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl duration-300"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="absolute -top-1.5 left-3.5 h-3 w-3 rotate-45 border-l border-t border-white/10 bg-[#0a0e13]"
+                  />
+                  <p
+                    id="square-confirm-title"
+                    className="text-sm font-medium text-white"
+                  >
+                    Switch to a square canvas?
+                  </p>
+                  <p
+                    id="square-confirm-body"
+                    className="mt-1 text-xs leading-relaxed text-white/55"
+                  >
+                    Anything drawn outside the square will be cropped away.
+                  </p>
+                  <div className="mt-3 flex justify-end gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsConfirmingSquare(false)}
+                      className="cursor-pointer rounded-lg px-2.5 py-1.5 text-xs font-medium text-white/55 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      autoFocus
+                      onClick={() => {
+                        setIsSquareCanvas(true);
+                        setIsConfirmingSquare(false);
+                      }}
+                      className="flex cursor-pointer items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1.5 text-xs font-medium text-white ring-1 ring-inset ring-white/10 transition-colors hover:bg-white/15"
+                    >
+                      <Square className="h-3.5 w-3.5" />
+                      Make it square
+                    </button>
+                  </div>
+                </div>
+              ) : null}
             </div>
+
+            <input
+              type="color"
+              value={color}
+              onChange={(e) => {
+                setColor(e.target.value);
+                setRainbowMode(false);
+              }}
+              className={`color-picker-input ${rainbowMode ? "opacity-40" : ""}`}
+              aria-label="Brush color"
+              title="Brush Color"
+            />
+            <ToolButton
+              onClick={() => setRainbowMode(!rainbowMode)}
+              tone={rainbowMode ? "rainbow" : "default"}
+              aria-label="Toggle rainbow mode"
+              aria-pressed={rainbowMode}
+              title="Rainbow Mode"
+            >
+              <Palette className="h-4 w-4" />
+            </ToolButton>
           </div>
 
-          <div className="flex w-24 flex-col gap-1.5 sm:w-32 sm:gap-2">
-            <label className="text-[10px] font-bold uppercase text-white/50 sm:text-xs">
-              Segments: {segments}
-            </label>
-            <input
-              type="range"
-              min="2"
-              max="32"
-              step="1"
+          <Divider className="hidden md:block" />
+
+          {/* Stroke shape */}
+          <div className="flex items-center gap-1.5 max-md:order-first max-md:w-full max-md:justify-center">
+            <SliderField
+              label="Segments"
+              icon={<Asterisk className="h-4 w-4" />}
               value={segments}
-              onChange={(e) => setSegments(parseInt(e.target.value))}
-              className="mandala-slider"
+              min={2}
+              max={32}
+              onChange={setSegments}
             />
-          </div>
-
-          <div className="flex w-24 flex-col gap-1.5 sm:w-32 sm:gap-2">
-            <label className="text-[10px] font-bold uppercase text-white/50 sm:text-xs">
-              Size: {lineWidth}
-            </label>
-            <input
-              type="range"
-              min="1"
-              max="50"
+            <SliderField
+              label="Size"
+              icon={
+                <span
+                  aria-hidden="true"
+                  className="flex h-4 w-4 items-center justify-center"
+                >
+                  <span
+                    className="block rounded-full transition-[width,height] duration-150"
+                    style={{
+                      width: Math.max(3, Math.min(16, lineWidth / 2 + 2)),
+                      height: Math.max(3, Math.min(16, lineWidth / 2 + 2)),
+                      background: rainbowMode
+                        ? "conic-gradient(#f43f5e,#facc15,#22c55e,#3b82f6,#a855f7,#f43f5e)"
+                        : color,
+                      boxShadow: `0 0 8px ${rainbowMode ? "#a855f7" : color}`,
+                    }}
+                  />
+                </span>
+              }
+              iconAlways
               value={lineWidth}
-              onChange={(e) => setLineWidth(parseInt(e.target.value))}
-              className="mandala-slider"
+              min={1}
+              max={50}
+              onChange={setLineWidth}
             />
           </div>
 
-          <div className="hidden h-8 w-px bg-white/10 sm:block" />
+          <Divider className="hidden md:block" />
 
-          {/* Action buttons including Undo / Redo */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <button
+          {/* History + output */}
+          <div className="flex items-center gap-1">
+            <ToolButton
               onClick={undo}
               disabled={!canUndo}
-              className={`cursor-pointer rounded-xl p-2.5 transition-all sm:p-3 ${
-                canUndo
-                  ? "bg-white/10 text-white hover:bg-white/20 active:scale-95"
-                  : "bg-white/5 text-white/25 cursor-not-allowed"
-              }`}
               title="Undo (Ctrl+Z)"
+              aria-label="Undo"
             >
-              <Undo className="h-4 w-4 sm:h-5 sm:w-5" />
-            </button>
-            <button
+              <Undo2 className="h-4 w-4" />
+            </ToolButton>
+            <ToolButton
               onClick={redo}
               disabled={!canRedo}
-              className={`cursor-pointer rounded-xl p-2.5 transition-all sm:p-3 ${
-                canRedo
-                  ? "bg-white/10 text-white hover:bg-white/20 active:scale-95"
-                  : "bg-white/5 text-white/25 cursor-not-allowed"
-              }`}
               title="Redo (Ctrl+Y)"
+              aria-label="Redo"
             >
-              <Redo className="h-4 w-4 sm:h-5 sm:w-5" />
-            </button>
+              <Redo2 className="h-4 w-4" />
+            </ToolButton>
 
-            <div className="mx-0.5 h-8 w-px bg-white/10 sm:mx-1" />
+            <Divider />
 
-            <button
+            <ToolButton
               onClick={clearCanvas}
-              className="cursor-pointer rounded-xl bg-red-500/20 p-2.5 text-red-500 transition-all hover:bg-red-500 hover:text-white active:scale-95 sm:p-3"
+              tone="danger"
               title="Clear"
+              aria-label="Clear"
             >
-              <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
-            </button>
-            <button
+              <Trash2 className="h-4 w-4" />
+            </ToolButton>
+            <ToolButton
               onClick={exportToPNG}
               disabled={isSaving}
-              className="cursor-pointer rounded-xl bg-cyan-500/20 p-2.5 text-cyan-400 transition-all hover:bg-cyan-500 hover:text-white active:scale-95 disabled:cursor-wait disabled:opacity-60 sm:p-3"
+              tone="primary"
               title="Download"
+              aria-label="Download"
             >
-              <Download className="h-4 w-4 sm:h-5 sm:w-5" />
-            </button>
-            <button
+              <Download className="h-4 w-4" />
+              <span className="hidden text-sm sm:inline">Save</span>
+            </ToolButton>
+            <ToolButton
               onClick={() => setShowUI(false)}
-              className="mandala-mobile-only cursor-pointer rounded-xl bg-white/10 p-2.5 text-white/60 transition-all hover:bg-white/20 hover:text-white active:scale-95"
               title="Hide Controls"
               aria-label="Hide controls"
             >
               <EyeOff className="h-4 w-4" />
-            </button>
+            </ToolButton>
           </div>
         </div>
       </div>
 
       <div className="pointer-events-none absolute bottom-6 hidden w-full text-center sm:block">
-        <h1 className="text-4xl font-black uppercase tracking-[1em] text-white/20">
+        <h1 className="pl-[1em] text-3xl font-extralight uppercase tracking-[1em] text-white/20 [text-shadow:0_0_24px_rgba(0,255,234,0.25)]">
           Mandala
         </h1>
       </div>
@@ -573,5 +637,87 @@ export default function MandalaMaker() {
         />
       ) : null}
     </main>
+  );
+}
+
+const toolButtonTones = {
+  default: "text-white/65 hover:bg-white/10 hover:text-white",
+  active:
+    "bg-cyan-400/15 text-cyan-300 ring-1 ring-inset ring-cyan-400/30 hover:bg-cyan-400/20",
+  rainbow: "bg-linear-to-r from-red-500 via-green-500 to-blue-500 text-white",
+  danger: "text-white/65 hover:bg-red-500/15 hover:text-red-400",
+  primary:
+    "bg-white/[0.06] px-3 font-medium text-white/85 ring-1 ring-inset ring-white/10 hover:bg-white/12 hover:text-white",
+};
+
+function ToolButton({
+  tone = "default",
+  className = "",
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  tone?: keyof typeof toolButtonTones;
+}) {
+  return (
+    <button
+      type="button"
+      className={`flex h-10 min-w-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl transition-[background-color,color,opacity,scale] active:scale-95 disabled:pointer-events-none disabled:opacity-30 ${toolButtonTones[tone]} ${className}`}
+      {...props}
+    />
+  );
+}
+
+function Divider({ className = "" }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`mx-0.5 h-6 w-px shrink-0 bg-white/10 ${className}`}
+    />
+  );
+}
+
+function SliderField({
+  label,
+  icon,
+  iconAlways = false,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  iconAlways?: boolean;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="flex h-10 items-center gap-2.5 rounded-xl bg-white/4 pl-3 pr-2.5 ring-1 ring-inset ring-white/6">
+      <span className={`text-white/50 ${iconAlways ? "" : "lg:hidden"}`}>
+        {icon}
+      </span>
+      <span className="mandala-field-label hidden text-[11px] font-medium uppercase tracking-[0.12em] text-white/45 lg:inline">
+        {label}
+      </span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step="1"
+        value={value}
+        onChange={(e) => onChange(parseInt(e.target.value))}
+        className="mandala-slider w-20 sm:w-24 xl:w-28"
+        aria-label={label}
+        style={
+          {
+            "--fill": `${((value - min) / (max - min)) * 100}%`,
+          } as React.CSSProperties
+        }
+      />
+      <output className="w-5 text-right text-sm font-medium tabular-nums text-white/90">
+        {value}
+      </output>
+    </div>
   );
 }

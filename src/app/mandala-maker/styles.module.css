@@ -1,7 +1,6 @@
 /* Mandala range slider styling */
 .root :global(.mandala-slider) {
   appearance: none;
-  width: 100%;
   height: 28px;
   background: transparent;
   outline: none;
@@ -63,37 +62,42 @@
   appearance: none;
   display: inline-block;
   box-sizing: border-box;
-  width: 44px;
-  height: 44px;
-  padding: 0;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 5px;
   border: 0;
+  border-radius: 12px;
   background-color: transparent;
   cursor: pointer;
   vertical-align: middle;
+  transition:
+    background-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.root :global(.color-picker-input):hover {
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .root :global(.color-picker-input)::-webkit-color-swatch-wrapper {
   padding: 0;
 }
 
-.root :global(.color-picker-input)::-webkit-color-swatch,
-.root :global(.color-picker-input)::-moz-color-swatch {
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
+/* Separate rules: an unknown pseudo-element would drop a combined rule. */
+.root :global(.color-picker-input)::-webkit-color-swatch {
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
 }
 
-.root :global(.mandala-mobile-only) {
-  display: none;
+.root :global(.color-picker-input)::-moz-color-swatch {
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
 }
 
 @media (max-width: 767px), (orientation: landscape) and (max-height: 500px) {
-  .root :global(.mandala-layout-control),
-  .root :global(.mandala-layout-divider) {
+  .root :global(.mandala-layout-control) {
     display: none;
-  }
-
-  .root :global(.mandala-mobile-only) {
-    display: inline-flex;
   }
 }
 
@@ -124,14 +128,42 @@
 
   .root :global(.mandala-controls) > div {
     flex-shrink: 0;
+    flex-wrap: nowrap;
+    width: auto;
   }
 
-  .root :global(.mandala-controls) label {
-    font-size: 9px;
-    line-height: 1;
+  .root :global(.mandala-field-label) {
+    display: none;
   }
 
   .root :global(.mandala-controls) :global(.mandala-slider) {
     width: 88px;
   }
+}
+
+/* Filled tracks and a glowing thumb. */
+.root :global(.mandala-slider)::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 255, 234, 0.75) 0 var(--fill, 0%),
+    rgba(255, 255, 255, 0.15) var(--fill, 0%) 100%
+  );
+}
+
+.root :global(.mandala-slider)::-moz-range-progress {
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(0, 255, 234, 0.75);
+}
+
+.root :global(.mandala-slider):active::-webkit-slider-thumb {
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.25),
+    0 0 0 6px rgba(0, 255, 234, 0.2);
+}
+
+.root :global(.mandala-slider):focus-visible {
+  outline: 2px solid rgba(0, 255, 234, 0.7);
+  outline-offset: 2px;
+  border-radius: 9999px;
 }
