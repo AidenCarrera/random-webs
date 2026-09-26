@@ -11,6 +11,7 @@ export function SolarSystemBackdrop({ theme }: { theme: BackgroundTheme }) {
         style={{ backgroundImage: `url(${TEXTURE_MAP[theme]})` }}
       />
       <div className="absolute inset-0 bg-black/40 -z-10" />
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.55)_100%)]" />
     </>
   );
 }
@@ -18,7 +19,7 @@ export function SolarSystemBackdrop({ theme }: { theme: BackgroundTheme }) {
 export function SolarSystemHeader() {
   return (
     <div className="relative z-40 w-full max-w-sm self-start px-1 pb-3 pointer-events-none md:absolute md:top-6 md:left-6 md:w-auto md:max-w-none md:px-0 md:pb-0">
-      <h1 className="text-3xl font-extralight tracking-[0.2em] uppercase text-white/95 leading-none">
+      <h1 className="text-3xl font-extralight tracking-[0.2em] uppercase text-white/95 leading-none [text-shadow:0_0_24px_rgba(252,211,77,0.25)]">
         Solar System Creator
       </h1>
       <p className="text-[10px] font-mono tracking-widest text-white/40 uppercase mt-1">

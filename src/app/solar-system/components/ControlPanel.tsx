@@ -1,6 +1,16 @@
 "use client";
 
-import { Download, LoaderCircle, Plus, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  Circle,
+  Download,
+  LoaderCircle,
+  Mountain,
+  Orbit,
+  Plus,
+  Sun,
+  Trash2,
+} from "lucide-react";
 
 import { TEXTURE_MAP, TEXTURE_OPTIONS, TYPE_OPTIONS } from "../constants";
 import type { PlanetEditorController } from "../hooks/usePlanetEditor";
@@ -82,29 +92,30 @@ export function ControlPanel({
         mounted ? "transition-all duration-300" : ""
       } md:absolute md:top-1/2 md:left-6 md:mb-0 md:w-80 md:max-w-none md:-translate-y-1/2 ${
         sidebarOpen
-          ? "max-h-[70vh] md:max-h-[80vh]"
+          ? "max-h-[70vh] md:max-h-[calc(100dvh-10rem)]"
           : "max-h-13.5 overflow-hidden"
       }`}
     >
       {/* Clickable Header Area */}
-      <div
+      <button
+        type="button"
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="cursor-pointer group flex items-center justify-between select-none pb-1"
+        aria-expanded={sidebarOpen}
+        className="cursor-pointer group flex w-full items-center justify-between select-none pb-1 text-left"
       >
         <span className="text-xs font-mono tracking-[0.15em] font-bold text-white/60 group-hover:text-white transition-colors uppercase">
           Control Panel
         </span>
-        <span
-          className={`text-white/40 group-hover:text-white/80 transition-transform duration-300 font-mono text-[9px] ${
+        <ChevronDown
+          aria-hidden="true"
+          className={`h-3.5 w-3.5 text-white/40 group-hover:text-white/80 transition-transform duration-300 ${
             sidebarOpen ? "rotate-180" : ""
           }`}
-        >
-          ▼
-        </span>
-      </div>
+        />
+      </button>
 
       {sidebarOpen && (
-        <div className="flex flex-col gap-6 mt-5 animate-in fade-in duration-300 overflow-y-auto solar-system-scrollbar pr-1 max-h-[calc(70vh-80px)] md:max-h-[calc(80vh-80px)]">
+        <div className="flex flex-col gap-6 mt-5 animate-in fade-in duration-300 overflow-y-auto solar-system-scrollbar pr-1 max-h-[calc(70vh-80px)] md:max-h-[calc(100dvh-10rem-80px)]">
           {/* Preset Selector */}
           <div>
             <h3 className="text-xs font-mono font-bold tracking-widest uppercase text-white/60 mb-3 border-b border-white/5 pb-1">
@@ -113,26 +124,42 @@ export function ControlPanel({
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => handleLoadPreset("full")}
-                className="px-3 py-2 text-[10px] font-mono uppercase bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg tracking-wider text-left transition-colors cursor-pointer"
+                className="group flex items-center gap-2 px-3 py-2 text-[10px] font-mono uppercase bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/25 rounded-lg tracking-wider text-left transition-colors cursor-pointer"
               >
+                <Orbit
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 shrink-0 text-amber-200/70 transition-transform duration-500 group-hover:rotate-90"
+                />
                 Solar System
               </button>
               <button
                 onClick={() => handleLoadPreset("inner")}
-                className="px-3 py-2 text-[10px] font-mono uppercase bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg tracking-wider text-left transition-colors cursor-pointer"
+                className="group flex items-center gap-2 px-3 py-2 text-[10px] font-mono uppercase bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/25 rounded-lg tracking-wider text-left transition-colors cursor-pointer"
               >
+                <Mountain
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 shrink-0 text-orange-300/70"
+                />
                 Rocky Planets
               </button>
               <button
                 onClick={() => handleLoadPreset("outer")}
-                className="px-3 py-2 text-[10px] font-mono uppercase bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg tracking-wider text-left transition-colors cursor-pointer"
+                className="group flex items-center gap-2 px-3 py-2 text-[10px] font-mono uppercase bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/25 rounded-lg tracking-wider text-left transition-colors cursor-pointer"
               >
+                <Circle
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 shrink-0 text-sky-300/70"
+                />
                 Giants
               </button>
               <button
                 onClick={() => handleLoadPreset("empty")}
-                className="px-3 py-2 text-[10px] font-mono uppercase bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg tracking-wider text-left transition-colors cursor-pointer"
+                className="group flex items-center gap-2 px-3 py-2 text-[10px] font-mono uppercase bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/25 rounded-lg tracking-wider text-left transition-colors cursor-pointer"
               >
+                <Sun
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 shrink-0 text-amber-300/70"
+                />
                 Empty Star
               </button>
             </div>
@@ -149,7 +176,7 @@ export function ControlPanel({
                   type="checkbox"
                   checked={showOrbits}
                   onChange={(e) => setShowOrbits(e.target.checked)}
-                  className="rounded border-white/20 bg-white/5 focus:ring-0 focus:ring-offset-0 text-white w-4 h-4 cursor-pointer"
+                  className="rounded border-white/20 bg-white/5 focus:ring-0 focus:ring-offset-0 text-white w-4 h-4 cursor-pointer accent-amber-300"
                 />
                 Show Orbital Rings
               </label>
@@ -158,7 +185,7 @@ export function ControlPanel({
                   type="checkbox"
                   checked={showMoons}
                   onChange={(e) => setShowMoons(e.target.checked)}
-                  className="rounded border-white/20 bg-white/5 focus:ring-0 focus:ring-offset-0 text-white w-4 h-4 cursor-pointer"
+                  className="rounded border-white/20 bg-white/5 focus:ring-0 focus:ring-offset-0 text-white w-4 h-4 cursor-pointer accent-amber-300"
                 />
                 Show Moons
               </label>
@@ -167,7 +194,7 @@ export function ControlPanel({
                   type="checkbox"
                   checked={enableGlow}
                   onChange={(e) => setEnableGlow(e.target.checked)}
-                  className="rounded border-white/20 bg-white/5 focus:ring-0 focus:ring-offset-0 text-white w-4 h-4 cursor-pointer"
+                  className="rounded border-white/20 bg-white/5 focus:ring-0 focus:ring-offset-0 text-white w-4 h-4 cursor-pointer accent-amber-300"
                 />
                 Enable Glow Effects
               </label>
@@ -203,6 +230,9 @@ export function ControlPanel({
                   step="0.01"
                   value={ambientVolume}
                   onChange={(e) => setAmbientVolume(Number(e.target.value))}
+                  style={{
+                    background: `linear-gradient(90deg, rgba(252,211,77,0.85) 0 ${ambientVolume * 100}%, rgba(255,255,255,0.15) ${ambientVolume * 100}% 100%)`,
+                  }}
                   className="w-full h-1 bg-white/15 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
                 />
               </div>
@@ -211,7 +241,7 @@ export function ControlPanel({
                 type="button"
                 onClick={onExport}
                 disabled={isGeneratingPng}
-                className="mt-4 w-full py-3.5 bg-white/10 hover:bg-white/15 disabled:hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-bold tracking-widest uppercase transition-all hover:scale-[1.01] disabled:hover:scale-100 flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-wait text-white disabled:text-white/70"
+                className="group mt-4 w-full py-3.5 bg-white/10 hover:bg-white/15 disabled:hover:bg-white/10 border border-white/10 hover:border-amber-200/30 hover:shadow-[0_0_24px_-6px_rgba(252,211,77,0.35)] rounded-xl text-[10px] font-bold tracking-widest uppercase transition-all hover:scale-[1.01] disabled:hover:scale-100 flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-wait text-white disabled:text-white/70"
               >
                 {isGeneratingPng ? (
                   <>

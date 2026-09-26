@@ -35,7 +35,7 @@ export function PlanetEditorPanel({
       : "rgba(253,184,19,0.15)";
 
   return (
-    <div className="order-3 relative z-40 -mt-1 mb-4 w-full max-w-sm self-stretch overflow-y-auto solar-system-scrollbar bg-black/60 backdrop-blur-xl border border-white/10 p-6 text-left shadow-[0_15px_40px_rgba(0,0,0,0.7)] rounded-2xl animate-in fade-in duration-300 md:absolute md:top-1/2 md:right-6 md:mb-0 md:mt-0 md:w-80 md:max-w-none md:max-h-[80vh] md:-translate-y-1/2 md:slide-in-from-right-10">
+    <div className="order-3 relative z-40 -mt-1 mb-4 w-full max-w-sm self-stretch overflow-y-auto solar-system-scrollbar bg-black/60 backdrop-blur-xl border border-white/10 p-6 text-left shadow-[0_15px_40px_rgba(0,0,0,0.7)] rounded-2xl animate-in fade-in duration-300 md:absolute md:top-1/2 md:right-6 md:mb-0 md:mt-0 md:w-80 md:max-w-none md:max-h-[calc(100dvh-10rem)] md:-translate-y-1/2 md:slide-in-from-right-10">
       {/* Close Panel Button */}
       <button
         onClick={onClose}

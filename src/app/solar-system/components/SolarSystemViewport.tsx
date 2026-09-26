@@ -50,7 +50,7 @@ export function SolarSystemViewport({
 }: Props) {
   return (
     <div
-      className="order-4 relative z-10 flex w-full justify-center overflow-hidden px-1 pt-2 md:block md:w-auto md:overflow-visible md:px-0 md:pt-0"
+      className="order-4 relative z-10 flex w-full justify-center overflow-hidden px-1 pt-2 md:pointer-events-none md:absolute md:inset-0 md:items-center md:px-0 md:pt-0"
       style={
         isMobileViewport
           ? { height: `${900 * containerScale + 56}px` }
@@ -60,7 +60,7 @@ export function SolarSystemViewport({
       <div
         ref={exportStageRef}
         data-export-stage="true"
-        className="relative shrink-0 overflow-hidden"
+        className="pointer-events-auto relative shrink-0 overflow-hidden"
         style={{
           width: "900px",
           height: "900px",

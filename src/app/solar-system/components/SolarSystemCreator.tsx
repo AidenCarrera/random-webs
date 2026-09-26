@@ -78,7 +78,7 @@ export function SolarSystemCreator() {
   const togglePause = () => setPaused((current) => !current);
 
   return (
-    <div className="min-h-screen text-white font-sans relative select-none overflow-x-hidden overflow-y-auto md:overflow-hidden flex flex-col items-center md:justify-center px-3 pt-4 pb-6 md:px-0 md:pt-0 md:pb-0">
+    <div className="min-h-screen md:h-dvh md:min-h-0 text-white font-sans relative select-none overflow-x-hidden overflow-y-auto md:overflow-hidden flex flex-col items-center md:justify-center px-3 pt-4 pb-6 md:px-0 md:pt-0 md:pb-0">
       <SolarSystemBackdrop theme={bgTheme} />
       <SolarSystemHeader />
 
