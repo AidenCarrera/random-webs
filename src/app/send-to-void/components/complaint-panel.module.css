@@ -1,0 +1,30 @@
+/* The card leans toward the void as the message gains mass. */
+.lean {
+  transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.panel {
+  position: relative;
+  transition: box-shadow 0.7s ease;
+}
+
+@media (min-width: 1024px) {
+  .lean {
+    transform: perspective(1400px) rotateY(calc(var(--pull, 0) * -7deg))
+      translateX(calc(var(--pull, 0) * 16px));
+  }
+
+  .panel {
+    box-shadow:
+      calc(var(--pull, 0) * 30px) 20px 50px rgba(0, 0, 0, 0.5),
+      calc(var(--pull, 0) * 40px) 0 80px -30px
+        rgba(126, 34, 206, calc(var(--pull, 0) * 0.5));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lean {
+    transition: none;
+    transform: none;
+  }
+}

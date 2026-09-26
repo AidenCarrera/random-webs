@@ -19,7 +19,7 @@ import { GifPrompt } from "./gif-prompt";
 import { ShreddedText } from "./shredded-text";
 import { StarField } from "./star-field";
 
-export function SubmitToVoid() {
+export function SendToVoid() {
   const [phase, setPhase] = useState<Phase>("TYPING");
   const [voidMass, setVoidMass] = useState(1);
   const [particles, setParticles] = useState<Particle[]>([]);

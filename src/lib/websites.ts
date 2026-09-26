@@ -360,6 +360,18 @@ export const WEBSITES: WebsiteEntry[] = [
     },
   },
   {
+    path: "/send-to-void",
+    lastModified: "2026-09-25",
+    title: "Send to the Void",
+    blurb: "Throw text away.",
+    accent: "from-slate-300/80 via-zinc-500/70 to-black/70",
+    metadata: {
+      title: "Send to the Void - Black Hole Message Shredder",
+      description:
+        "Type a short message and watch every character shred into a black hole, surrounded by stars, and optional GIF export.",
+    },
+  },
+  {
     path: "/solar-system",
     lastModified: "2026-07-16",
     title: "Solar System",
@@ -393,18 +405,6 @@ export const WEBSITES: WebsiteEntry[] = [
       title: "Style Pet - Virtual Pet Simulator",
       description:
         "Care for a handheld-style virtual pet by feeding, petting, cleaning, and managing sleep, then customize its skin, hats, and accessories as it grows.",
-    },
-  },
-  {
-    path: "/submit-to-void",
-    lastModified: "2026-07-28",
-    title: "Submit to Void",
-    blurb: "Throw text away.",
-    accent: "from-slate-300/80 via-zinc-500/70 to-black/70",
-    metadata: {
-      title: "Submit to Void - Black Hole Message Shredder",
-      description:
-        "Type a short message and watch every character shred into a black hole, surrounded by stars, and optional GIF export.",
     },
   },
   {

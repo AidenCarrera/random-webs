@@ -56,5 +56,5 @@ export const GIF_MOBILE_SIZE = 300;
 export const GIF_MOBILE_FRAMES = 32;
 /** Encoding yields to the main thread every this many frames. */
 export const GIF_YIELD_EVERY_FRAMES = 8;
-export const GIF_FILE_NAME = "submit-to-void-blackhole.gif";
+export const GIF_FILE_NAME = "send-to-void-blackhole.gif";
 export const GIF_FALLBACK_TEXT = "THE VOID";
