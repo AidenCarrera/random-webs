@@ -163,6 +163,17 @@ export function GraphCanvas({
       };
     };
 
+    // A faint screen-space dot grid, built once and tiled every frame.
+    const gridTile = document.createElement("canvas");
+    gridTile.width = 28;
+    gridTile.height = 28;
+    const gridContext = gridTile.getContext("2d");
+    if (gridContext) {
+      gridContext.fillStyle = "rgba(148, 163, 184, 0.09)";
+      gridContext.fillRect(0, 0, 1.25, 1.25);
+    }
+    const gridPattern = context.createPattern(gridTile, "repeat");
+
     const drawBackground = () => {
       const gradient = context.createRadialGradient(
         width * 0.5,
@@ -177,6 +188,10 @@ export function GraphCanvas({
       gradient.addColorStop(1, "#04060b");
       context.fillStyle = gradient;
       context.fillRect(0, 0, width, height);
+      if (gridPattern) {
+        context.fillStyle = gridPattern;
+        context.fillRect(0, 0, width, height);
+      }
     };
 
     const drawEdges = () => {

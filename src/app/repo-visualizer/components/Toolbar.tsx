@@ -44,7 +44,7 @@ export function Toolbar({
       className="pointer-events-none absolute inset-x-3 bottom-3 z-20 sm:inset-x-5 sm:bottom-5"
     >
       <div
-        className="pointer-events-auto mx-auto max-w-5xl rounded-2xl border border-white/10 bg-slate-950/82 p-3 shadow-2xl shadow-black/40 backdrop-blur-2xl"
+        className="pointer-events-auto mx-auto max-w-5xl rounded-2xl border border-white/10 bg-slate-950/82 p-3 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-2xl"
         aria-busy={!isReady}
       >
         <div className="flex flex-wrap items-center gap-3">
@@ -122,7 +122,7 @@ export function Toolbar({
                 <motion.div
                   key={isPlaying ? "playing" : "paused"}
                   data-testid="timeline-progress"
-                  className="relative h-full rounded-full bg-blue-400"
+                  className="relative h-full rounded-full bg-blue-500 shadow-[0_0_12px_rgba(96,165,250,0.6)]"
                   initial={false}
                   animate={{ width: isReady ? `${progress}%` : "0%" }}
                   transition={{ duration: progressDuration, ease: "linear" }}
@@ -179,13 +179,21 @@ export function Toolbar({
                 type="button"
                 onClick={() => setSpeed(value)}
                 disabled={!isReady}
-                className={`rounded-lg px-2 py-1 font-mono text-[10px] font-medium transition-all hover:scale-105 active:scale-95 sm:px-2.5 ${
+                aria-pressed={speed === value}
+                className={`relative rounded-lg border border-transparent px-2 py-1 font-mono text-[10px] font-medium transition-all hover:scale-105 active:scale-95 sm:px-2.5 ${
                   speed === value
-                    ? "bg-blue-500/20 border border-blue-400/30 text-blue-200"
-                    : "border border-transparent text-slate-400 hover:text-slate-200"
+                    ? "text-blue-200"
+                    : "text-slate-400 hover:text-slate-200"
                 } disabled:cursor-wait disabled:opacity-35 disabled:hover:scale-100`}
               >
-                {value}×
+                {speed === value ? (
+                  <motion.span
+                    layoutId="repo-speed"
+                    className="absolute inset-0 rounded-lg border border-blue-400/30 bg-blue-500/20"
+                    transition={{ type: "spring", stiffness: 520, damping: 38 }}
+                  />
+                ) : null}
+                <span className="relative">{value}×</span>
               </button>
             ))}
           </div>

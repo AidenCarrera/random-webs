@@ -16,7 +16,7 @@ export function Header({
   return (
     <div className="flex flex-col gap-2 pb-4 border-b border-white/10">
       <div className="flex items-center gap-2">
-        <div className="grid size-8 place-items-center rounded-lg border border-blue-400/30 bg-blue-500/15 text-blue-300">
+        <div className="grid size-8 place-items-center rounded-lg border border-blue-400/30 bg-linear-to-b from-blue-500/25 to-blue-500/10 text-blue-300 shadow-[0_0_10px_-4px_rgba(59,130,246,0.35)]">
           <GitBranch className="size-4" />
         </div>
         <h1 className="text-sm font-bold tracking-tight text-slate-100 sm:text-base">
@@ -32,9 +32,10 @@ export function Header({
         <button
           type="button"
           onClick={onSwitchRepository}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-white/4 px-3 py-1.5 text-[11px] font-semibold text-slate-200 transition hover:border-blue-400/30 hover:bg-blue-500/10 hover:text-blue-100"
+          className="group inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-white/4 px-3 py-1.5 text-[11px] font-semibold text-slate-200 transition hover:border-blue-400/30 hover:bg-blue-500/10 hover:text-blue-100 active:scale-[0.97]"
         >
-          <Repeat2 className="size-3.5" /> Switch Repository
+          <Repeat2 className="size-3.5 transition-transform duration-500 group-hover:rotate-180" />{" "}
+          Switch Repository
         </button>
         {datasetUrl ? (
           <a
