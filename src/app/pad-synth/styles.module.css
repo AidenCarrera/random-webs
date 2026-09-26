@@ -64,3 +64,183 @@
 .root input[type="range"]::-moz-range-thumb:hover {
   background: #d8dee8;
 }
+
+/* Filled travel on the soft sliders. */
+.root input[type="range"]::-webkit-slider-runnable-track {
+  background:
+    linear-gradient(
+        90deg,
+        #ffffff 0 var(--fill, 0%),
+        transparent var(--fill, 0%)
+      )
+      no-repeat,
+    #e0e5ec;
+}
+
+.root input[type="range"]::-moz-range-progress {
+  height: 6px;
+  border-radius: 9999px;
+  background: #ffffff;
+}
+
+.root input[type="range"]::-webkit-slider-thumb {
+  transition:
+    background-color 0.2s,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.root input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+  box-shadow:
+    inset 2px 2px 4px #bebebe,
+    inset -2px -2px 4px #ffffff;
+}
+
+.root input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    2px 2px 5px #bebebe,
+    -2px -2px 5px #ffffff,
+    0 0 0 3px #ffffff;
+}
+
+.pad:focus-visible {
+  outline: 2px solid #94a3b8;
+  outline-offset: 4px;
+}
+
+/*
+ * One-screen layout. The pad grid is always a square: controls sit above it
+ * in portrait and beside it in landscape, and it takes whatever room is left.
+ */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: 56rem;
+  /* Portrait hugs its content and only squeezes the pads on short screens. */
+  max-height: 100%;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 1rem;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.sliders {
+  grid-column: span 2;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: center;
+  gap: 0.75rem;
+}
+
+.padArea {
+  container-type: size;
+  flex: 0 1 auto;
+  width: 100%;
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.padGrid {
+  width: min(100cqw, 100cqh);
+  aspect-ratio: 1;
+}
+
+@media (min-width: 640px) {
+  .card,
+  .sidebar {
+    gap: 1.5rem;
+  }
+
+  .controls {
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 768px) and (orientation: landscape) {
+  /* Card height is the viewport minus main's padding; its width hugs the
+     square grid plus the 17rem sidebar and 2rem gap. */
+  .card {
+    flex-direction: row;
+    gap: 2rem;
+    width: calc(min(100dvh - 48px, 56rem) + 19rem);
+    height: 100%;
+    max-width: 100%;
+    max-height: 56rem;
+  }
+
+  .sidebar {
+    /* 12px of room each side for the soft outer shadows inside the scroll
+       box, cancelled by the negative margin so the footprint stays 17rem. */
+    width: calc(17rem + 24px);
+    margin: -12px;
+    padding: 12px;
+    overflow-y: auto;
+  }
+
+  .logo {
+    display: none;
+  }
+
+  .controls {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .controls > * {
+    flex: 1 0 auto;
+  }
+
+  .sliders {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .padArea {
+    flex: 1;
+    width: auto;
+    aspect-ratio: auto;
+  }
+}
+
+/* Short landscape windows: tighten the sidebar so every control fits. */
+@media (min-width: 768px) and (orientation: landscape) and (max-height: 700px) {
+  .card {
+    padding: 1.25rem;
+  }
+
+  .card,
+  .sidebar {
+    gap: 0.75rem;
+  }
+
+  .controls {
+    gap: 0.75rem;
+  }
+
+  .controls > * {
+    padding: 0.75rem;
+  }
+
+  .sliders {
+    gap: 0.5rem;
+  }
+
+  .subtitle {
+    display: none;
+  }
+}

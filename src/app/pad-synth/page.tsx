@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import * as Tone from "tone";
 
 import styles from "./styles.module.css";
+import { WaveGlyph } from "./waveforms";
 
 const createScale = (notes: readonly string[]) =>
   Array.from({ length: 16 }, (_, index) => {
@@ -216,170 +217,198 @@ export default function PadSynth() {
   };
 
   const [activeNoteColor, hoverNoteColor] = NOTE_COLOR_CLASSES[oscType];
+  const fillStyle = (value: number, min: number, max: number) =>
+    ({
+      "--fill": `${((value - min) / (max - min)) * 100}%`,
+    }) as React.CSSProperties;
 
   return (
     <main
-      className={`${styles.root} min-h-screen bg-[#e0e5ec] text-slate-600 font-sans flex items-center justify-center p-3 sm:p-6 select-none transition-opacity duration-150 ${
+      className={`${styles.root} h-dvh overflow-hidden bg-[#e0e5ec] text-slate-600 font-sans flex items-center justify-center p-3 sm:p-6 select-none transition-opacity duration-150 ${
         stylesReady ? "opacity-100" : "opacity-0"
       }`}
     >
-      <div className="bg-[#e0e5ec] rounded-4xl sm:rounded-[3rem] p-4 sm:p-8 md:p-12 shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff] max-w-4xl w-full mx-auto">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-10 gap-4 sm:gap-6">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#e0e5ec] shadow-[5px_5px_10px_#bebebe,-5px_-5px_10px_#ffffff] flex items-center justify-center text-blue-400">
-              <Music className="w-6 h-6 sm:w-8 sm:h-8" />
+      <div
+        className={`${styles.card} bg-[#e0e5ec] rounded-4xl sm:rounded-[3rem] p-4 sm:p-6 md:p-8 shadow-[20px_20px_60px_#bebebe,-20px_-20px_60px_#ffffff]`}
+      >
+        <div className={styles.sidebar}>
+          <div className="flex flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div
+                className={`${styles.logo} w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#e0e5ec] shadow-[5px_5px_10px_#bebebe,-5px_-5px_10px_#ffffff] flex items-center justify-center text-blue-400`}
+              >
+                <Music className="w-6 h-6 sm:w-8 sm:h-8" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-700">
+                  PAD SYNTH
+                </h1>
+                <p
+                  className={`${styles.subtitle} text-xs sm:text-sm font-medium text-slate-400`}
+                >
+                  Soft Tactile Interface
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-700">
-                PAD SYNTH
-              </h1>
-              <p className="text-xs sm:text-sm font-medium text-slate-400">
-                Soft Tactile Interface
-              </p>
-            </div>
-          </div>
 
-          <div className="flex gap-4">
             <button
               onClick={() => setIsReady(!isReady)}
-              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+              aria-pressed={isReady}
+              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-blue-500 transition-all duration-300 ${
                 isReady
-                  ? "shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] text-blue-500"
-                  : "shadow-[5px_5px_10px_#bebebe,-5px_-5px_10px_#ffffff] text-slate-400 hover:text-blue-400"
+                  ? "shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff]"
+                  : "shadow-[5px_5px_10px_#bebebe,-5px_-5px_10px_#ffffff]"
               }`}
               title="Power Toggle"
+              aria-label="Power Toggle"
             >
               <Activity className="w-5 h-5" />
             </button>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8 mb-6 sm:mb-10">
-          <div className="bg-[#e0e5ec] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff]">
-            <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 block text-center text-slate-500">
-              Scale Mode
-            </label>
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              {Object.keys(SCALES).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setCurrentScale(s as keyof typeof SCALES)}
-                  className={`py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all duration-200 ${
-                    currentScale === s
-                      ? "shadow-[inset_3px_3px_6px_#bebebe,inset_-3px_-3px_6px_#ffffff] text-blue-500"
-                      : "shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] hover:-translate-y-0.5"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-[#e0e5ec] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff]">
-            <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 block text-center text-slate-500">
-              Waveform
-            </label>
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              {OSCILLATOR_TYPES.map((type) => (
-                <button
-                  key={type}
-                  onClick={() => handleOscChange(type)}
-                  className={`py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold capitalize transition-all duration-200 ${
-                    oscType === type
-                      ? OSCILLATOR_ACTIVE_CLASSES[type]
-                      : "shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] hover:-translate-y-0.5"
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-[#e0e5ec] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] flex flex-col justify-center gap-3 sm:gap-4 col-span-1 sm:col-span-2 md:col-span-1">
-            <div className="space-y-1">
-              <div className="flex justify-between text-[10px] sm:text-xs font-bold text-slate-500">
-                <span>VOLUME</span>
-                <span>{Math.round((volume + 30) / 0.3)}%</span>
-              </div>
-              <input
-                type="range"
-                min="-30"
-                max="0"
-                value={volume}
-                onChange={(e) => handleVolumeChange(Number(e.target.value))}
-                className="w-full appearance-none outline-none bg-transparent"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex justify-between text-[10px] sm:text-xs font-bold text-slate-500">
-                <span>REVERB</span>
-                <span>{Math.round(reverbAmt * 100)}%</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={reverbAmt}
-                onChange={(e) => handleReverbChange(Number(e.target.value))}
-                className="w-full appearance-none outline-none bg-transparent"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex justify-between text-[10px] sm:text-xs font-bold text-slate-500 items-center">
-                <span className="flex items-center gap-1.5 sm:gap-2">
-                  ECHO
+          <div className={styles.controls}>
+            <div className="bg-[#e0e5ec] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] flex flex-col justify-center">
+              <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 block text-center text-slate-500">
+                Scale Mode
+              </label>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                {Object.keys(SCALES).map((s) => (
                   <button
-                    onClick={toggleDelayTime}
-                    className="bg-[#e0e5ec] shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] active:shadow-[inset_2px_2px_5px_#bebebe,inset_-2px_-2px_5px_#ffffff] px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] hover:text-blue-500 transition-all font-mono"
-                    title="Toggle Delay Time"
+                    key={s}
+                    onClick={() => setCurrentScale(s as keyof typeof SCALES)}
+                    aria-pressed={currentScale === s}
+                    className={`py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all duration-200 ${
+                      currentScale === s
+                        ? "shadow-[inset_3px_3px_6px_#bebebe,inset_-3px_-3px_6px_#ffffff] text-blue-500"
+                        : "shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] hover:-translate-y-0.5"
+                    }`}
                   >
-                    {DELAY_TIME_LABELS[delayTime]}
+                    {s}
                   </button>
-                </span>
-                <span>{Math.round(delayAmt * 100)}%</span>
+                ))}
               </div>
-              <input
-                type="range"
-                min="0"
-                max="0.6"
-                step="0.05"
-                value={delayAmt}
-                onChange={(e) => handleDelayChange(Number(e.target.value))}
-                className="w-full appearance-none outline-none bg-transparent"
-              />
+            </div>
+
+            <div className="bg-[#e0e5ec] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff] flex flex-col justify-center">
+              <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 sm:mb-3 block text-center text-slate-500">
+                Waveform
+              </label>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                {OSCILLATOR_TYPES.map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => handleOscChange(type)}
+                    aria-pressed={oscType === type}
+                    className={`flex items-center justify-center gap-1.5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold capitalize transition-all duration-200 ${
+                      oscType === type
+                        ? OSCILLATOR_ACTIVE_CLASSES[type]
+                        : "shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] hover:-translate-y-0.5"
+                    }`}
+                  >
+                    <WaveGlyph
+                      type={type}
+                      className="hidden h-2.5 w-5 shrink-0 sm:block"
+                    />
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className={`${styles.sliders} bg-[#e0e5ec] p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-[inset_5px_5px_10px_#bebebe,inset_-5px_-5px_10px_#ffffff]`}
+            >
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] sm:text-xs font-bold text-slate-500">
+                  <span>VOLUME</span>
+                  <span>{Math.round((volume + 30) / 0.3)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="-30"
+                  max="0"
+                  value={volume}
+                  onChange={(e) => handleVolumeChange(Number(e.target.value))}
+                  aria-label="Volume"
+                  style={fillStyle(volume, -30, 0)}
+                  className="w-full appearance-none outline-none bg-transparent"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] sm:text-xs font-bold text-slate-500">
+                  <span>REVERB</span>
+                  <span>{Math.round(reverbAmt * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={reverbAmt}
+                  onChange={(e) => handleReverbChange(Number(e.target.value))}
+                  aria-label="Reverb"
+                  style={fillStyle(reverbAmt, 0, 1)}
+                  className="w-full appearance-none outline-none bg-transparent"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] sm:text-xs font-bold text-slate-500 items-center">
+                  <span className="flex items-center gap-1.5 sm:gap-2">
+                    ECHO
+                    <button
+                      onClick={toggleDelayTime}
+                      className="bg-[#e0e5ec] shadow-[3px_3px_6px_#bebebe,-3px_-3px_6px_#ffffff] active:shadow-[inset_2px_2px_5px_#bebebe,inset_-2px_-2px_5px_#ffffff] px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] hover:text-blue-500 transition-all font-mono"
+                      title="Toggle Delay Time"
+                    >
+                      {DELAY_TIME_LABELS[delayTime]}
+                    </button>
+                  </span>
+                  <span>{Math.round(delayAmt * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="0.6"
+                  step="0.05"
+                  value={delayAmt}
+                  onChange={(e) => handleDelayChange(Number(e.target.value))}
+                  aria-label="Echo"
+                  style={fillStyle(delayAmt, 0, 0.6)}
+                  className="w-full appearance-none outline-none bg-transparent"
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        <div
-          className="grid grid-cols-4 gap-2 sm:gap-4 md:gap-6 touch-none"
-          onTouchMove={(e) => {
-            e.preventDefault();
-            handleTouchMove(e);
-          }}
-        >
-          {SCALES[currentScale].map((note) => (
-            <button
-              key={note}
-              data-note={note}
-              onMouseDown={() => {
-                isMouseDown.current = true;
-                playNote(note);
-              }}
-              onMouseEnter={() => {
-                if (isMouseDown.current) playNote(note);
-              }}
-              onTouchStart={(e) => {
-                e.preventDefault();
-                playNote(note);
-              }}
-              className={`
-                  aspect-square rounded-xl sm:rounded-2xl md:rounded-3xl flex items-center justify-center
+        <div className={styles.padArea}>
+          <div
+            className={`${styles.padGrid} grid grid-cols-4 grid-rows-4 gap-2 sm:gap-4 md:gap-5 touch-none`}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              handleTouchMove(e);
+            }}
+          >
+            {SCALES[currentScale].map((note) => (
+              <button
+                key={note}
+                data-note={note}
+                onMouseDown={() => {
+                  isMouseDown.current = true;
+                  playNote(note);
+                }}
+                onMouseEnter={() => {
+                  if (isMouseDown.current) playNote(note);
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  playNote(note);
+                }}
+                aria-label={note}
+                className={`
+                  ${styles.pad} relative min-h-0 rounded-xl sm:rounded-2xl md:rounded-3xl flex items-center justify-center
                   text-sm sm:text-lg font-bold transition-all duration-150 touch-none select-none
                   ${
                     activeNote === note
@@ -387,10 +416,16 @@ export default function PadSynth() {
                       : `shadow-[8px_8px_16px_#bebebe,-8px_-8px_16px_#ffffff] text-slate-500 ${hoverNoteColor} active:scale-95`
                   }
                 `}
-            >
-              {note}
-            </button>
-          ))}
+              >
+                <span aria-hidden="true">
+                  {note.slice(0, -1)}
+                  <sub className="ml-0.5 align-baseline text-[0.6em] opacity-50">
+                    {note.slice(-1)}
+                  </sub>
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </main>
