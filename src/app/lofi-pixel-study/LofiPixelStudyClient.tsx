@@ -18,6 +18,7 @@ import {
   SkipBack,
   Image as ImageIcon,
   Music,
+  Radio,
   Repeat,
   Sparkles,
   Maximize2,
@@ -781,9 +782,18 @@ export default function LofiPixelStudyClient({
             {/* Active Track Info */}
             <div className="lofi-track-info flex items-center gap-2.5 md:gap-3 min-w-0 w-full md:max-w-[28%]">
               <div
-                className={`lofi-track-icon shrink-0 p-2 md:p-2.5 rounded-xl bg-purple-900/30 border-2 border-purple-500/30 text-purple-400 ${isPlaying ? "animate-pulse" : ""}`}
+                className={`lofi-track-icon shrink-0 p-2 md:p-2.5 rounded-xl bg-purple-900/30 border-2 border-purple-500/30 text-purple-400 transition-colors ${isPlaying ? "border-purple-400/60 text-purple-300" : ""}`}
               >
-                <Music className="w-4 h-4 md:w-5 md:h-5" />
+                {isPlaying ? (
+                  <span aria-hidden="true" className={styles.equalizer}>
+                    <span />
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                ) : (
+                  <Music className="w-4 h-4 md:w-5 md:h-5" />
+                )}
               </div>
               <div className="flex min-w-0 flex-col text-left">
                 <span className="text-base md:text-lg font-bold text-zinc-200 tracking-wide line-clamp-1">
@@ -844,6 +854,8 @@ export default function LofiPixelStudyClient({
                 <button
                   onClick={() => setIsMuted(!isMuted)}
                   className="text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                  aria-label={isMuted || volume === 0 ? "Unmute" : "Mute"}
+                  title={isMuted || volume === 0 ? "Unmute" : "Mute"}
                 >
                   {isMuted || volume === 0 ? (
                     <VolumeX className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -1068,15 +1080,25 @@ export default function LofiPixelStudyClient({
           <motion.div
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/85 flex items-center justify-center z-50 p-4"
+            className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(20,8,36,0.55),rgba(0,0,0,0.88)_75%)] backdrop-blur-[2px] flex items-center justify-center z-50 p-4"
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="max-w-70 w-full pixel-box p-4 flex flex-col gap-3 text-center items-center font-pixel"
+              initial={{ y: 12, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="max-w-72 w-full pixel-box p-5 flex flex-col gap-3 text-center items-center font-pixel"
             >
+              <div
+                aria-hidden="true"
+                className="grid h-12 w-12 place-items-center border-2 border-purple-500/50 bg-purple-900/30 text-purple-300 shadow-[3px_3px_0_#000]"
+              >
+                <Radio className="h-6 w-6" />
+              </div>
               <h2 className="text-xl font-bold tracking-wider text-purple-400">
                 LOFI STUDY
+                <span aria-hidden="true" className={styles.introCursor}>
+                  _
+                </span>
               </h2>
               <p className="text-base text-zinc-400 leading-normal">
                 Click to load the radio and enter the pixel room.
@@ -1086,8 +1108,14 @@ export default function LofiPixelStudyClient({
                   setShowIntro(false);
                   handlePlayPause(); // Try auto-play on enter
                 }}
-                className="w-full py-1.5 text-sm font-bold uppercase tracking-wider pixel-btn cursor-pointer"
+                className="group w-full py-2 text-sm font-bold uppercase tracking-wider pixel-btn cursor-pointer"
               >
+                <span
+                  aria-hidden="true"
+                  className="mr-2 inline-block text-purple-400 transition-transform group-hover:translate-x-0.5"
+                >
+                  ▶
+                </span>
                 Enter Room
               </button>
             </motion.div>
