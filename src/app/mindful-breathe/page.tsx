@@ -9,6 +9,7 @@ type Palette = {
   background: string;
   orb: string;
   slider: string;
+  toggle: string;
 };
 
 const PALETTES: Palette[] = [
@@ -18,6 +19,7 @@ const PALETTES: Palette[] = [
     background: "from-indigo-50 via-purple-50 to-pink-50",
     orb: "from-blue-400 to-pink-400",
     slider: "from-blue-300 to-pink-300",
+    toggle: "bg-purple-200/70 text-purple-700",
   },
   {
     id: "sun",
@@ -25,6 +27,7 @@ const PALETTES: Palette[] = [
     background: "from-amber-50 via-rose-50 to-orange-100",
     orb: "from-amber-300 to-rose-400",
     slider: "from-amber-300 to-rose-300",
+    toggle: "bg-rose-200/70 text-rose-700",
   },
   {
     id: "ocean",
@@ -32,6 +35,7 @@ const PALETTES: Palette[] = [
     background: "from-sky-50 via-blue-50 to-indigo-100",
     orb: "from-blue-400 to-indigo-500",
     slider: "from-sky-300 to-blue-400",
+    toggle: "bg-blue-200/70 text-blue-700",
   },
 ];
 
@@ -138,26 +142,31 @@ export default function MindfulBreathePage() {
             }}
             transition={{ duration: speed, ease: "easeInOut" }}
             className="z-10 text-3xl md:text-4xl font-extralight text-slate-600/80 tracking-[0.4em] pl-[0.4em] uppercase text-center"
+            aria-live="polite"
           >
             {isInhale ? "Inhale" : "Exhale"}
           </motion.div>
         </div>
 
-        <div className="bg-white/20 backdrop-blur-md px-6 py-5 rounded-2xl border border-white/40 shadow-lg flex flex-col items-center gap-4 w-full max-w-84 md:max-w-88">
-          <label className="text-slate-500/90 font-light text-xs tracking-wider uppercase mt-1">
+        <div className="bg-white/30 backdrop-blur-xl px-5 py-3.5 rounded-3xl border border-white/60 shadow-[0_20px_50px_-20px_rgba(100,116,139,0.45),inset_0_1px_0_rgba(255,255,255,0.8)] flex flex-col items-center gap-2.5 w-full max-w-84 md:max-w-88">
+          <label
+            htmlFor="breath-duration"
+            className="text-slate-500/90 font-light text-xs tracking-wider uppercase"
+          >
             Breath Duration:{" "}
             <span className="font-normal text-slate-600">{speed}s</span>
           </label>
 
           <div className="relative flex items-center w-full h-5 cursor-pointer group">
             <input
+              id="breath-duration"
               type="range"
               min="2"
               max="8"
               step="0.5"
               value={speed}
               onChange={(event) => setSpeed(parseFloat(event.target.value))}
-              className="absolute inset-0 w-full opacity-0 cursor-pointer z-10 h-full"
+              className="peer absolute inset-0 w-full opacity-0 cursor-pointer z-10 h-full"
             />
             <div className="absolute inset-x-0 h-1 bg-slate-200/50 rounded-full" />
             <div
@@ -167,19 +176,19 @@ export default function MindfulBreathePage() {
               }}
             />
             <div
-              className="absolute w-3.5 h-3.5 rounded-full bg-white shadow-md border border-slate-200 transition-transform duration-75 group-hover:scale-110"
+              className="absolute w-4 h-4 rounded-full bg-white shadow-md border border-slate-200 transition-transform duration-150 group-hover:scale-110 peer-focus-visible:ring-2 peer-focus-visible:ring-slate-400 peer-focus-visible:ring-offset-2"
               style={{
                 left: `calc(${((speed - 2) / 6) * 100}% - 7px)`,
               }}
             />
           </div>
 
-          <div className="flex justify-between w-full text-[10px] text-slate-400 font-light tracking-wide -mt-2">
+          <div className="flex justify-between w-full text-[10px] text-slate-400 font-light tracking-wide -mt-1.5">
             <span>Fast (2s)</span>
             <span>Slow (8s)</span>
           </div>
 
-          <div className="w-full border-t border-white/35 pt-4 space-y-4">
+          <div className="w-full border-t border-white/35 pt-2.5 space-y-2.5">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-[11px] text-slate-500/90 font-light tracking-[0.25em] uppercase">
@@ -189,18 +198,28 @@ export default function MindfulBreathePage() {
               <button
                 type="button"
                 onClick={() => setMusicEnabled((current) => !current)}
-                className={`rounded-full px-4 py-2 text-[10px] tracking-[0.25em] uppercase transition ${
+                aria-pressed={musicEnabled}
+                aria-label="Ambient Music"
+                className={`group flex items-center gap-2 rounded-full py-1 pl-1 pr-3 text-[10px] tracking-[0.25em] uppercase transition-colors duration-300 ${
                   musicEnabled
-                    ? "bg-slate-600 text-white"
-                    : "bg-white/70 text-slate-600"
+                    ? palette.toggle
+                    : "bg-white/60 text-slate-500"
                 }`}
               >
+                <span
+                  aria-hidden="true"
+                  className={`h-4 w-4 rounded-full shadow-sm transition-transform duration-300 ${
+                    musicEnabled
+                      ? "bg-linear-to-tr " + palette.orb
+                      : "bg-white ring-1 ring-slate-200"
+                  }`}
+                />
                 {musicEnabled ? "On" : "Off"}
               </button>
             </div>
 
             <div className="w-full">
-              <p className="text-[11px] text-slate-500/90 font-light tracking-[0.25em] uppercase mb-2">
+              <p className="text-[11px] text-slate-500/90 font-light tracking-[0.25em] uppercase mb-1.5">
                 Color Palette
               </p>
               <div className="flex flex-wrap gap-2">
@@ -212,12 +231,19 @@ export default function MindfulBreathePage() {
                       key={entry.id}
                       type="button"
                       onClick={() => setPaletteId(entry.id)}
-                      className={`rounded-full border px-3 py-2 text-[10px] tracking-[0.2em] uppercase transition ${
+                      aria-pressed={selected}
+                      className={`flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-[10px] tracking-[0.2em] uppercase transition ${
                         selected
-                          ? "border-slate-400/60 bg-white/80 text-slate-700"
+                          ? "border-slate-400/60 bg-white/85 text-slate-700 shadow-sm"
                           : "border-white/50 bg-white/35 text-slate-500 hover:bg-white/60"
                       }`}
                     >
+                      <span
+                        aria-hidden="true"
+                        className={`h-4 w-4 rounded-full bg-linear-to-tr ${entry.orb} ${
+                          selected ? "ring-2 ring-white" : ""
+                        }`}
+                      />
                       {entry.name}
                     </button>
                   );
