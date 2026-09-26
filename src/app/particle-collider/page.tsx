@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { MousePointer2, Circle } from "lucide-react";
 
 import styles from "./styles.module.css";
@@ -15,6 +16,8 @@ interface Particle {
 }
 
 const PARTICLE_COLORS = ["#00ffff", "#ff00ff", "#ffff00", "#ffffff"];
+
+const FIELD_RADIUS = 400;
 
 const createParticle = (width: number, height: number): Particle => ({
   x: Math.random() * width,
@@ -70,8 +73,30 @@ export default function ParticleCollider() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    let pulse = 0;
+
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const pointer = mouseRef.current;
+      if (pointer.down) {
+        pulse = (pulse + 0.02) % 1;
+        const attract = modeRef.current === "attract";
+        const color = attract ? "255, 255, 255" : "255, 0, 255";
+        // 0 at minimum force, 1 at maximum; drives ring size and opacity.
+        const strength = (forcePowerRef.current - 100) / 9900;
+        const maxRadius = 40 + strength * 140;
+
+        for (let ring = 0; ring < 3; ring++) {
+          const phase = (pulse + ring / 3) % 1;
+          const radius = maxRadius * (attract ? 1 - phase : phase) + 6;
+          ctx.beginPath();
+          ctx.arc(pointer.x, pointer.y, radius, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(${color}, ${(0.03 + strength * 0.07) * (1 - Math.abs(phase - 0.5) * 2)})`;
+          ctx.lineWidth = 0.75;
+          ctx.stroke();
+        }
+      }
 
       particlesRef.current.forEach((p) => {
         const mouse = mouseRef.current;
@@ -81,7 +106,7 @@ export default function ParticleCollider() {
           const dy = mouse.y - p.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 400 && dist > 5) {
+          if (dist < FIELD_RADIUS && dist > 5) {
             const force = forcePowerRef.current / (dist * dist);
             const angle = Math.atan2(dy, dx);
             const direction = modeRef.current === "attract" ? 1 : -1;
@@ -159,6 +184,7 @@ export default function ParticleCollider() {
     <main
       className={`${styles.root} relative min-h-screen overflow-hidden bg-[#0a0a14] cursor-crosshair select-none touch-none`}
     >
+      <div aria-hidden="true" className={styles.detector} />
       <canvas
         ref={canvasRef}
         className="absolute inset-0 touch-none select-none"
@@ -173,39 +199,62 @@ export default function ParticleCollider() {
         <h1 className="text-xl font-bold tracking-tighter mix-blend-difference sm:text-3xl">
           PARTICLE COLLIDER
         </h1>
-        <p className="text-[10px] font-mono opacity-50 sm:text-xs">
+        <p className="text-[10px] font-mono opacity-60 sm:text-xs">
           Quantum Simulation Environment
         </p>
       </div>
 
       <div className="absolute bottom-4 left-1/2 z-10 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 flex-col gap-2 sm:bottom-6">
-        <div className="flex gap-2 rounded-full border border-white/20 bg-white/10 p-2 shadow-xl backdrop-blur-md">
+        <div className="flex gap-2 rounded-full border border-white/15 bg-white/8 p-2 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
           <button
             onClick={() => setMode("attract")}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all sm:text-sm ${
-              mode === "attract"
-                ? "bg-white text-black shadow-[0_0_12px_rgba(255,255,255,0.6)]"
-                : "text-white hover:bg-white/10"
+            aria-pressed={mode === "attract"}
+            className={`relative flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-colors sm:text-sm ${
+              mode === "attract" ? "text-black" : "text-white hover:bg-white/10"
             }`}
           >
-            <Circle className="h-4 w-4 fill-current" />
-            ATTRACT
+            {mode === "attract" ? (
+              <motion.span
+                layoutId="collider-mode"
+                className="absolute inset-0 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.6)]"
+                transition={{ type: "spring", stiffness: 480, damping: 34 }}
+              />
+            ) : null}
+            <span className="relative flex items-center gap-2">
+              <Circle className="h-4 w-4 fill-current" />
+              ATTRACT
+            </span>
           </button>
 
           <button
             onClick={() => setMode("repel")}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all sm:text-sm ${
-              mode === "repel"
-                ? "bg-[#ff00ff] text-white shadow-[0_0_12px_rgba(255,0,255,0.6)]"
-                : "text-white hover:bg-white/10"
+            aria-pressed={mode === "repel"}
+            className={`relative flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-colors sm:text-sm ${
+              mode === "repel" ? "text-white" : "text-white hover:bg-white/10"
             }`}
           >
-            <MousePointer2 className="h-4 w-4" />
-            REPEL
+            {mode === "repel" ? (
+              <motion.span
+                layoutId="collider-mode"
+                className="absolute inset-0 rounded-full bg-[#ff00ff] shadow-[0_0_12px_rgba(255,0,255,0.6)]"
+                transition={{ type: "spring", stiffness: 480, damping: 34 }}
+              />
+            ) : null}
+            <span className="relative flex items-center gap-2">
+              <MousePointer2 className="h-4 w-4" />
+              REPEL
+            </span>
           </button>
         </div>
 
-        <div className="rounded-3xl border border-white/20 bg-white/10 px-4 py-3 shadow-xl backdrop-blur-md sm:rounded-full sm:px-6">
+        <div
+          className="rounded-3xl border border-white/15 bg-white/8 px-4 py-3 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl sm:rounded-full sm:px-6"
+          style={
+            {
+              "--accent": mode === "attract" ? "#ffffff" : "#ff00ff",
+            } as React.CSSProperties
+          }
+        >
           <div className="flex items-center gap-3">
             <span className="w-20 text-[10px] font-bold text-white sm:text-xs">
               FORCE
@@ -217,6 +266,12 @@ export default function ParticleCollider() {
               step="50"
               value={forcePower}
               onChange={(e) => setForcePower(Number(e.target.value))}
+              aria-label="Force"
+              style={
+                {
+                  "--fill": `${((forcePower - 100) / 9900) * 100}%`,
+                } as React.CSSProperties
+              }
               className="w-full appearance-none bg-transparent cursor-pointer focus:outline-none"
             />
             <span className="w-12 text-right font-mono text-[10px] text-white sm:text-xs">
@@ -235,6 +290,12 @@ export default function ParticleCollider() {
               step="50"
               value={particleCount}
               onChange={(e) => setParticleCount(Number(e.target.value))}
+              aria-label="Particles"
+              style={
+                {
+                  "--fill": `${((particleCount - 50) / 550) * 100}%`,
+                } as React.CSSProperties
+              }
               className="w-full appearance-none bg-transparent cursor-pointer focus:outline-none"
             />
             <span className="w-12 text-right font-mono text-[10px] text-white sm:text-xs">

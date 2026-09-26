@@ -37,3 +37,35 @@
   transform: scale(1.2);
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
 }
+
+.root input[type="range"]::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent, #fff) 80%, transparent) 0 var(--fill, 0%),
+    rgba(255, 255, 255, 0.18) var(--fill, 0%) 100%
+  );
+}
+
+.root input[type="range"]::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent, #fff) 80%, transparent);
+}
+
+.root input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.35),
+    0 0 12px rgba(255, 255, 255, 0.8);
+}
+
+/* Soft glow behind the particle field. */
+.detector {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 60% 55% at 50% 50%,
+    rgba(90, 60, 180, 0.12),
+    transparent 70%
+  );
+}
