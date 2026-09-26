@@ -17,7 +17,7 @@ export function TerminalOutput({
 }: TerminalOutputProps) {
   return (
     <div
-      className="flex-1 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-current scrollbar-track-transparent pr-2 font-bold transition-colors duration-200 ease-out"
+      className={`flex-1 overflow-y-auto mb-4 scrollbar-thin scrollbar-thumb-current scrollbar-track-transparent pr-2 font-bold transition-colors duration-200 ease-out`}
       onClick={onFocusInput}
     >
       {history.map((line, index) => {

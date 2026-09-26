@@ -22,7 +22,10 @@ export function TerminalInput({
   prompt,
 }: TerminalInputProps) {
   return (
-    <div className="flex flex-wrap items-center gap-1.5 text-[13px] font-bold leading-tight transition-colors duration-200 ease-out sm:gap-2 sm:text-lg sm:leading-normal">
+    <div
+      className={`flex flex-wrap items-center gap-1.5 border-t pt-3 text-[13px] font-bold leading-tight transition-colors duration-200 ease-out sm:gap-2 sm:text-lg sm:leading-normal`}
+      style={{ borderColor: `${activeTheme.border}40` }}
+    >
       <span className="break-all" style={{ color: activeTheme.text }}>
         {isPasswordPrompt ? "[sudo] password for user:" : prompt}
       </span>

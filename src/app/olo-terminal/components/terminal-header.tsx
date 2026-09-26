@@ -1,4 +1,6 @@
-import { Check, Maximize2, Minus, Settings, Terminal, X } from "lucide-react";
+import { Check, Settings, Terminal } from "lucide-react";
+
+import styles from "./terminal-window.module.css";
 
 import { TERMINAL_THEMES } from "../constants";
 import type { TerminalTheme } from "../types";
@@ -43,22 +45,25 @@ export function TerminalHeader({
           {isMatrixMode ? "@@@@@@@@@@" : "OLO_SHELL_V2.0"}
         </span>
       </div>
-      <div className="relative flex gap-2">
+      <div className="relative flex items-center gap-4">
         <button
           type="button"
           aria-label="Open settings"
+          aria-expanded={settingsOpen}
           title="Settings"
           onClick={() => setSettingsOpen((open) => !open)}
-          className="opacity-60 hover:opacity-100 cursor-pointer"
+          className="group grid h-7 w-7 cursor-pointer place-items-center rounded-md opacity-60 transition-[opacity,background-color] hover:bg-white/5 hover:opacity-100"
         >
-          <Settings className="h-4 w-4" />
+          <Settings className="h-4 w-4 transition-transform duration-500 group-hover:rotate-90" />
         </button>
-        <Minus className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer" />
-        <Maximize2 className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer" />
-        <X className="h-4 w-4 opacity-50 hover:opacity-100 cursor-pointer" />
+        <div aria-hidden="true" className={styles.lights}>
+          <span style={{ background: "#e0af68" }} />
+          <span style={{ background: "#9ece6a" }} />
+          <span style={{ background: "#f7768e" }} />
+        </div>
         {settingsOpen && (
           <div
-            className="absolute right-0 top-7 z-60 w-56 rounded border p-3 text-xs shadow-xl transition-[background-color,border-color,color,box-shadow] duration-200 ease-out"
+            className="absolute right-0 top-9 z-60 w-60 rounded-lg border p-3 text-xs shadow-xl transition-[background-color,border-color,color,box-shadow] duration-200 ease-out"
             onMouseLeave={() => setPreviewThemeId(null)}
             style={{
               backgroundColor: activeTheme.panel,
@@ -85,7 +90,7 @@ export function TerminalHeader({
                     setCustomBackground("");
                     setSettingsOpen(false);
                   }}
-                  className="flex h-9 items-center justify-center rounded border opacity-75 hover:opacity-100 transition-[background-color,border-color,color,opacity] duration-200 ease-out"
+                  className="flex h-10 items-center justify-center rounded-md border opacity-75 hover:-translate-y-px hover:opacity-100 transition-[background-color,border-color,color,opacity,transform] duration-200 ease-out"
                   style={{
                     backgroundColor: theme.panel,
                     borderColor: theme.border,
