@@ -19,6 +19,14 @@ const FLOATING_EMOJIS = Array.from({ length: 28 }, (_, index) => ({
   },
 }));
 
+const BUNTING_COLORS = ["#ec4899", "#8b5cf6", "#06b6d4", "#22c55e", "#ffffff"];
+const PENNANTS = Array.from({ length: 22 }, (_, index) => ({
+  color: BUNTING_COLORS[index % BUNTING_COLORS.length],
+  // Pennants sag along a shallow curve toward the middle of the string.
+  drop: Math.round(Math.sin((index / 21) * Math.PI) * 28),
+}));
+const TITLE = "PARTY MODE";
+
 const randomInRange = (min: number, max: number) =>
   Math.random() * (max - min) + min;
 
@@ -26,11 +34,27 @@ export default function PartyMode() {
   const [isPartying, setIsPartying] = useState(false);
   const resetTimeoutRef = useRef<number>(null);
   const confettiIntervalsRef = useRef(new Set<number>());
+  const musicRef = useRef<HTMLAudioElement>(null);
+
+  // The music plays for exactly as long as the party does.
+  useEffect(() => {
+    const music = musicRef.current;
+    if (!music) return;
+
+    if (isPartying) {
+      music.play().catch(() => {});
+    } else {
+      music.pause();
+      music.currentTime = 0;
+    }
+  }, [isPartying]);
 
   useEffect(() => {
     const intervals = confettiIntervalsRef.current;
+    const music = musicRef.current;
 
     return () => {
+      music?.pause();
       if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
       intervals.forEach(clearInterval);
     };
@@ -75,11 +99,56 @@ export default function PartyMode() {
 
   return (
     <main
-      className={`${styles.root} min-h-screen bg-linear-to-t from-yellow-300 to-orange-400 flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ${
+      className={`${styles.root} relative min-h-screen bg-linear-to-t from-yellow-300 to-orange-400 flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ${
         isPartying ? "animate-party-bg" : ""
       }`}
     >
+      <audio
+        ref={musicRef}
+        src="/party-mode/party-music.mp3"
+        loop
+        preload="auto"
+      />
+      <div aria-hidden="true" className={styles.sunburst} />
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/confetti.png')] opacity-20 pointer-events-none" />
+
+      <div aria-hidden="true" className={styles.bunting}>
+        <svg
+          className={styles.buntingString}
+          viewBox="0 0 100 10"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M0 0 Q50 12 100 0"
+            fill="none"
+            stroke="rgba(255,255,255,0.8)"
+            strokeWidth="0.35"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+        {PENNANTS.map((pennant, index) => (
+          <span
+            key={index}
+            className={styles.pennant}
+            data-partying={isPartying || undefined}
+            style={
+              {
+                "--pennant": pennant.color,
+                "--drop": `${pennant.drop}px`,
+                animationDelay: `${(index % 7) * -0.35}s`,
+              } as React.CSSProperties
+            }
+          />
+        ))}
+      </div>
+
+      {isPartying && (
+        <div aria-hidden="true" className={styles.lights}>
+          <span />
+          <span />
+          <span />
+        </div>
+      )}
 
       {isPartying && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
@@ -96,23 +165,30 @@ export default function PartyMode() {
       )}
 
       <h1
-        className={`px-4 text-[clamp(2.75rem,13vw,3.5rem)] sm:text-6xl md:text-8xl leading-none tracking-tight font-black text-center text-white drop-shadow-md mb-8 sm:mb-12 origin-center transition-all duration-300 ${
+        className={`${styles.title} relative z-20 px-4 text-[clamp(2.75rem,13vw,3.5rem)] sm:text-6xl md:text-8xl leading-none tracking-tight font-black text-center text-white mb-8 sm:mb-12 origin-center transition-all duration-300 ${
           isPartying ? "animate-dance scale-105 sm:scale-110" : ""
         }`}
       >
-        PARTY MODE
+        {TITLE.split("").map((letter, index) => (
+          <span
+            key={index}
+            className={styles.letter}
+            data-partying={isPartying || undefined}
+            style={{ animationDelay: `${index * 0.07}s` }}
+          >
+            {letter === " " ? "\u00a0" : letter}
+          </span>
+        ))}
       </h1>
 
       <button
         onClick={celebrate}
-        className="relative inline-flex items-center justify-center p-0.5 mb-2 mr-2 overflow-hidden rounded-lg bg-linear-to-br from-pink-500 to-orange-400 focus:ring-4 focus:outline-none focus:ring-pink-200"
+        className={`${styles.celebrate} relative z-20 inline-flex items-center justify-center rounded-2xl focus:outline-none focus-visible:ring-4 focus-visible:ring-pink-200`}
       >
-        <span className="flex px-12 py-6 bg-white rounded-md text-2xl font-bold uppercase text-orange-500">
-          CELEBRATE
-        </span>
+        <span className={styles.celebrateFace}>CELEBRATE</span>
       </button>
 
-      <p className="mt-8 text-white font-bold opacity-80 animate-bounce">
+      <p className="relative z-20 mt-8 text-white font-bold opacity-90 drop-shadow-[0_2px_6px_rgba(194,65,12,0.45)] motion-safe:animate-bounce">
         Click for a party!
       </p>
     </main>
