@@ -120,3 +120,40 @@
   color: #17131a;
   box-shadow: 0 10px 22px -14px rgba(250, 249, 246, 0.9);
 }
+
+.pad svg {
+  opacity: 0.7;
+  transition:
+    transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 140ms ease;
+}
+
+.pad:hover svg,
+.padActive svg {
+  opacity: 1;
+  transform: rotate(45deg);
+}
+
+/* Desktop layout: sidebar beside the stage. The stage height is sized to the
+   viewport, and the maximum width keeps the layout centered without excess
+   space beside the stage. */
+@media (min-width: 64rem) {
+  .shell {
+    --sidebar: clamp(18rem, min(50dvh, 30vw), 30rem);
+    --page-h: max(100dvh, 37.5rem);
+    grid-template-columns: var(--sidebar) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    height: var(--page-h);
+    max-width: calc(var(--page-h) - 5.875rem + var(--sidebar) + 5rem);
+  }
+
+  /* Keep pad rows within a landscape-friendly height and center the grid
+     vertically when there is unused space. */
+  .padGrid {
+    flex: 1;
+    min-height: 0;
+    align-content: center;
+    grid-template-rows: repeat(4,
+        minmax(2.25rem, calc((var(--sidebar) - 3rem) * 0.24)));
+  }
+}

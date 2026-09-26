@@ -4,8 +4,8 @@ import { TAU } from "../../constants";
 import type { VisualizerProps } from "../../types";
 import { pulseKey, range } from "../../utils";
 
-const WIDTH = 960;
-const HEIGHT = 680;
+const WIDTH = 840;
+const HEIGHT = 840;
 const CENTER_X = WIDTH / 2;
 const CENTER_Y = HEIGHT / 2;
 
@@ -24,7 +24,7 @@ export function BloomVisualizer({
     <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
       <svg
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        className="h-full min-h-140 w-full max-w-260"
+        className="h-full w-full"
         role="img"
         aria-label="Bloom polyrhythm visualization"
       >

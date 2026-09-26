@@ -14,8 +14,8 @@ export function TimelineVisualizer({
   activePulses,
 }: TimelineVisualizerProps) {
   return (
-    <div className="relative flex min-h-140 w-full max-w-245 flex-col justify-center gap-5 overflow-hidden p-5 sm:p-8">
-      <div className="pointer-events-none absolute inset-0 grid grid-cols-[80px_1fr] gap-6 p-5 sm:p-8">
+    <div className="relative flex max-h-full w-full flex-col justify-center gap-3 overflow-hidden px-2 py-4 sm:px-4 sm:py-6">
+      <div className="pointer-events-none absolute inset-0 grid grid-cols-[56px_1fr] gap-4 px-2 py-4 sm:grid-cols-[80px_1fr] sm:gap-6 sm:px-4 sm:py-6">
         <div />
         <div className="relative h-full">
           <div
@@ -26,7 +26,10 @@ export function TimelineVisualizer({
       </div>
 
       {rhythms.map((rhythm) => (
-        <div key={rhythm.count} className="grid grid-cols-[80px_1fr] gap-6">
+        <div
+          key={rhythm.count}
+          className="grid h-16 min-h-0 grid-cols-[56px_1fr] gap-4 sm:grid-cols-[80px_1fr] sm:gap-6"
+        >
           <div className="flex items-center justify-end gap-2">
             <span
               className="h-2 w-2 rounded-full"
@@ -39,7 +42,7 @@ export function TimelineVisualizer({
               /{rhythm.count}
             </span>
           </div>
-          <div className="relative h-16 rounded-lg border border-white/8 bg-black/24">
+          <div className="relative h-full rounded-lg border border-white/8 bg-black/24">
             <div className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-white/12" />
             {range(rhythm.count).map((pulse) => {
               const downbeat = pulse === 0;

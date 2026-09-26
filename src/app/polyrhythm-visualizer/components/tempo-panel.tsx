@@ -61,7 +61,7 @@ export const TempoPanel = memo(function TempoPanel({
         style={{ "--fill": `${fill}%` } as CSSProperties}
         aria-label="BPM"
       />
-      <div className="mt-2 flex justify-between font-mono text-[10px] tabular-nums text-[#faf9f6]/35">
+      <div className="mt-2 flex justify-between font-mono text-[10px] tabular-nums text-[#faf9f6]/35 lg:hidden">
         <span>{BPM_MIN}</span>
         <span>{BPM_MAX}</span>
       </div>

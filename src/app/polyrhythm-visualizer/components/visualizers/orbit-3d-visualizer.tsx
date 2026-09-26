@@ -188,7 +188,7 @@ export const Orbit3DVisualizer = memo(function Orbit3DVisualizer({
   }, [rhythms]);
 
   return (
-    <div className="relative h-full min-h-140 w-full overflow-hidden">
+    <div className="relative h-full w-full overflow-hidden">
       <div ref={mountRef} className="absolute inset-0" />
     </div>
   );
