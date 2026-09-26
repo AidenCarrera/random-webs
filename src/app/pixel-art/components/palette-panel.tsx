@@ -18,14 +18,15 @@ export function PalettePanel({
         </span>
       </div>
 
-      <div className="grid grid-cols-8 gap-1 sm:grid-cols-8 sm:gap-2 xl:grid-cols-4">
+      <div className="grid grid-cols-8 gap-1 sm:gap-2 lg:grid-cols-[repeat(4,2.25rem)] lg:justify-between lg:gap-1.5">
         {COLORS.map((color) => (
           <button
             key={color}
             onClick={() => onSelectColor(color)}
             type="button"
             aria-label={`Select ${color}`}
-            className={`aspect-square min-w-0 border-2 transition-transform hover:scale-[1.04] ${
+            aria-pressed={selectedColor === color}
+            className={`pixel-swatch aspect-square min-w-0 border-2 ${
               selectedColor === color
                 ? "border-[#1d2b53] shadow-[2px_2px_0px_#1d2b53]"
                 : "border-[#847e87]"
@@ -39,10 +40,12 @@ export function PalettePanel({
         <p className="pixel-label mb-1 text-[#8f563b]">Selected color</p>
         <div className="flex items-center gap-3">
           <div
-            className="h-10 w-10 shrink-0 border-2 border-[#1d2b53]"
+            className="h-10 w-10 shrink-0 border-2 border-[#1d2b53] shadow-[3px_3px_0_#1d2b53] transition-colors duration-150"
             style={{ backgroundColor: selectedColor }}
           />
-          <span className="pixel-font text-xs sm:text-sm">{selectedColor}</span>
+          <span className="pixel-font text-xs sm:text-sm lg:text-xs xl:text-sm">
+            {selectedColor}
+          </span>
         </div>
       </div>
     </aside>

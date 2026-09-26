@@ -27,6 +27,7 @@ export function CanvasActions({
       }
     >
       <button
+        aria-pressed={showGrid}
         className={`pixel-action ${showGrid ? "pixel-action-active" : ""}`}
         onClick={onToggleGrid}
         type="button"

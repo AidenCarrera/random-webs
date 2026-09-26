@@ -62,7 +62,7 @@ export function PixelArtStudio() {
 
   return (
     <div
-      className={`${styles.root} min-h-screen overflow-x-hidden bg-[#c2c3c7] px-3 py-3 text-[#1d2b53] sm:px-4 sm:py-8 lg:flex lg:items-center lg:justify-center`}
+      className={`${styles.root} ${styles.backdrop} min-h-screen overflow-x-hidden bg-[#c2c3c7] px-3 py-3 text-[#1d2b53] sm:px-4 sm:py-8 lg:flex lg:py-4 lg:items-center lg:justify-center`}
     >
       <div className="mx-auto flex w-full min-w-0 max-w-7xl flex-col gap-3 sm:gap-4 lg:my-auto">
         <StudioHeader
@@ -75,7 +75,7 @@ export function PixelArtStudio() {
           size={size}
         />
 
-        <div className="grid min-w-0 gap-3 sm:gap-4 xl:grid-cols-[15rem_minmax(0,1fr)_16rem]">
+        <div className="grid min-w-0 gap-3 sm:gap-4 lg:grid-cols-[12.5rem_minmax(0,1fr)_13.5rem] xl:grid-cols-[15rem_minmax(0,1fr)_16rem]">
           <ToolPanel
             activeTool={activeTool}
             canRedo={canRedo}

@@ -84,3 +84,110 @@
   background: #29adff;
   color: #fff7dd;
 }
+
+/* ───────── Tactile pixel refinements ───────── */
+
+.backdrop {
+  background-image:
+    linear-gradient(rgba(29, 43, 83, 0.07) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(29, 43, 83, 0.07) 2px, transparent 2px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+}
+
+.root :global(.pixel-chip):active,
+.root :global(.pixel-action):active:not(:disabled) {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 #1d2b53;
+}
+
+.root :global(.pixel-tool) {
+  transition:
+    transform 90ms steps(2),
+    box-shadow 90ms steps(2),
+    background-color 120ms ease;
+}
+
+.root :global(.pixel-tool):not(:disabled):not([aria-pressed="true"]) {
+  box-shadow: 3px 3px 0 #1d2b53;
+}
+
+.root :global(.pixel-tool):not(:disabled):not([aria-pressed="true"]):hover {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 #1d2b53;
+}
+
+.root :global(.pixel-tool):not(:disabled):active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 #1d2b53;
+}
+
+.root :global(.pixel-tool) svg {
+  transition: transform 160ms steps(3);
+}
+
+.root :global(.pixel-tool)[aria-pressed="true"] svg {
+  transform: translateY(-1px) scale(1.15);
+}
+
+.root :global(.pixel-swatch) {
+  position: relative;
+  transition: transform 90ms steps(2);
+}
+
+.root :global(.pixel-swatch):hover {
+  transform: translate(-1px, -1px);
+}
+
+/* Stepped corner brackets mark the chosen color. */
+.root :global(.pixel-swatch)[aria-pressed="true"]::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: -6px;
+  background:
+    linear-gradient(#1d2b53, #1d2b53) 0 0 / 8px 3px,
+    linear-gradient(#1d2b53, #1d2b53) 0 0 / 3px 8px,
+    linear-gradient(#1d2b53, #1d2b53) 100% 0 / 8px 3px,
+    linear-gradient(#1d2b53, #1d2b53) 100% 0 / 3px 8px,
+    linear-gradient(#1d2b53, #1d2b53) 0 100% / 8px 3px,
+    linear-gradient(#1d2b53, #1d2b53) 0 100% / 3px 8px,
+    linear-gradient(#1d2b53, #1d2b53) 100% 100% / 8px 3px,
+    linear-gradient(#1d2b53, #1d2b53) 100% 100% / 3px 8px;
+  background-repeat: no-repeat;
+  animation: swatch-blink 1s steps(1) infinite;
+}
+
+@keyframes swatch-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.root :global(.pixel-logo) {
+  filter: drop-shadow(2px 2px 0 rgba(29, 43, 83, 0.35));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root :global(.pixel-swatch)[aria-pressed="true"]::after {
+    animation: none;
+  }
+}
+
+/* The canvas is square, so on desktop its width is capped by the viewport
+   height minus the header and panel chrome to keep the studio on one screen. */
+.canvas {
+  width: min(calc(100vw - 2.5rem), 42rem);
+}
+
+@media (min-width: 1024px) {
+  .canvas {
+    width: min(42rem, max(18rem, calc(100dvh - 12rem)));
+  }
+}
+
+@media (min-width: 1024px) {
+  .root :global(.pixel-action) {
+    padding-block: 0.65rem;
+  }
+}

@@ -1,5 +1,6 @@
 import { GRID_SIZES } from "../constants";
 import { CanvasActions } from "./canvas-actions";
+import { PixelLogo } from "./pixel-logo";
 
 type StudioHeaderProps = {
   isSaving: boolean;
@@ -21,9 +22,10 @@ export function StudioHeader({
   size,
 }: StudioHeaderProps) {
   return (
-    <header className="pixel-panel bg-white p-3 sm:p-5">
+    <header className="pixel-panel bg-white p-3 sm:p-5 lg:py-3">
       <div className="flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-3">
+          <PixelLogo className="pixel-logo h-7 w-7 shrink-0 sm:h-10 sm:w-10" />
           <h1 className="pixel-font text-lg leading-none text-[#1d2b53] sm:text-3xl">
             PIXEL STUDIO {size}
           </h1>
@@ -35,6 +37,7 @@ export function StudioHeader({
               <button
                 key={gridSize}
                 onClick={() => onSizeChange(gridSize)}
+                aria-pressed={size === gridSize}
                 className={`pixel-chip ${size === gridSize ? "pixel-chip-active" : ""}`}
                 type="button"
               >
