@@ -52,7 +52,7 @@ export default function MorseTelegraph() {
 
   return (
     <main
-      className={`${styles.room} min-h-screen text-[#d4b483] ${courierPrime.className} relative flex flex-col items-center justify-center gap-8 p-4 lg:flex-row lg:items-start lg:p-12`}
+      className={`${styles.room} min-h-screen text-[#d4b483] ${courierPrime.className} relative flex flex-col items-center justify-center gap-8 p-4 lg:flex-row lg:p-12`}
     >
       <div
         className={`${styles.casing} relative flex w-full max-w-3xl flex-col gap-8 overflow-hidden rounded-xl p-6 sm:p-8`}
