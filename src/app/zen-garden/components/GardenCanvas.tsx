@@ -50,6 +50,12 @@ export function GardenCanvas({
         aria-label="Interactive zen garden canvas"
       />
 
+      {/* Soft shading toward the edges, like a sunken garden bed. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 shadow-[inset_0_0_120px_24px_rgba(60,45,20,0.1)]"
+      />
+
       {atmosphere === "dusk" && (
         <div className="absolute inset-0 bg-orange-600/10 pointer-events-none mix-blend-color-burn transition-all duration-1000" />
       )}

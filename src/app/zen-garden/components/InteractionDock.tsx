@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Shuffle } from "lucide-react";
 import { EMOJI_CATEGORIES } from "../constants";
 import type { ZenGardenController } from "../hooks/useZenGarden";
@@ -14,6 +15,17 @@ type InteractionDockProps = Pick<
   | "setRandomMode"
 >;
 
+const TOOLS = [
+  {
+    id: "plant",
+    label: "Plant 🌱",
+    active: "bg-emerald-500 shadow-emerald-500/25",
+  },
+  { id: "rake", label: "Rake ☰", active: "bg-amber-500 shadow-amber-500/25" },
+  { id: "water", label: "Water 💧", active: "bg-sky-500 shadow-sky-500/25" },
+  { id: "prune", label: "Shovel 🪏", active: "bg-rose-500 shadow-rose-500/25" },
+] as const;
+
 export function InteractionDock({
   activeTab,
   activeTool,
@@ -29,7 +41,12 @@ export function InteractionDock({
   return (
     <footer className="zen-footer absolute bottom-3 sm:bottom-6 inset-x-0 px-2 sm:px-4 flex flex-col items-center gap-2 sm:gap-3 z-30 pointer-events-none">
       {activeTool === "plant" && (
-        <div className="zen-emoji-box w-full max-w-lg sm:max-w-2xl bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-emerald-200/50 dark:border-emerald-700/60 shadow-2xl p-2 sm:p-4 pointer-events-auto flex flex-col gap-1.5 sm:gap-3">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          className="zen-emoji-box w-full max-w-lg sm:max-w-2xl bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md rounded-2xl sm:rounded-3xl border border-emerald-200/50 dark:border-emerald-700/60 shadow-[0_24px_50px_-20px_rgba(6,78,59,0.35)] p-2 sm:p-4 pointer-events-auto flex flex-col gap-1.5 sm:gap-3"
+        >
           <div className="flex justify-between items-center border-b border-emerald-200/30 dark:border-emerald-700/40 pb-1 sm:pb-2 gap-2 overflow-x-auto">
             <div className="flex gap-0.5 sm:gap-1">
               {EMOJI_CATEGORIES.map((category) => (
@@ -69,60 +86,44 @@ export function InteractionDock({
               <button
                 key={emoji}
                 onClick={() => selectEmoji(emoji)}
-                className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 text-2xl sm:text-3xl flex items-center justify-center rounded-xl transition-all duration-100 ${
+                className={`shrink-0 w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 text-2xl sm:text-3xl flex items-center justify-center rounded-xl transition-all duration-200 ${
                   selectedEmoji === emoji && !randomMode
                     ? "bg-amber-200 dark:bg-emerald-800 border border-amber-400 dark:border-emerald-500 scale-105 shadow-inner"
-                    : "bg-transparent border border-transparent hover:bg-emerald-100/60 dark:hover:bg-emerald-800/40 active:scale-95 text-emerald-900 dark:text-emerald-100"
+                    : "bg-transparent border border-transparent hover:-translate-y-0.5 hover:rotate-[-6deg] hover:bg-emerald-100/60 dark:hover:bg-emerald-800/40 active:scale-95 text-emerald-900 dark:text-emerald-100"
                 }`}
               >
                 {emoji}
               </button>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
       <div className="zen-tool-bar flex items-center gap-1 sm:gap-1.5 bg-emerald-50/95 dark:bg-emerald-900/90 backdrop-blur-md p-0.5 sm:p-1 rounded-full border border-emerald-200/60 dark:border-emerald-700/60 shadow-xl pointer-events-auto">
-        <button
-          onClick={() => setActiveTool("plant")}
-          className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
-            activeTool === "plant"
-              ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/25"
-              : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
-          }`}
-        >
-          Plant 🌱
-        </button>
-        <button
-          onClick={() => setActiveTool("rake")}
-          className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
-            activeTool === "rake"
-              ? "bg-amber-500 text-white shadow-md shadow-amber-500/25"
-              : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
-          }`}
-        >
-          Rake ☰
-        </button>
-        <button
-          onClick={() => setActiveTool("water")}
-          className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
-            activeTool === "water"
-              ? "bg-sky-500 text-white shadow-md shadow-sky-500/25"
-              : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
-          }`}
-        >
-          Water 💧
-        </button>
-        <button
-          onClick={() => setActiveTool("prune")}
-          className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-all ${
-            activeTool === "prune"
-              ? "bg-rose-500 text-white shadow-md shadow-rose-500/25"
-              : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
-          }`}
-        >
-          Shovel 🪏
-        </button>
+        {TOOLS.map((tool) => {
+          const isActive = activeTool === tool.id;
+          return (
+            <button
+              key={tool.id}
+              onClick={() => setActiveTool(tool.id)}
+              aria-pressed={isActive}
+              className={`relative px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold transition-colors ${
+                isActive
+                  ? "text-white"
+                  : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
+              }`}
+            >
+              {isActive ? (
+                <motion.span
+                  layoutId="zen-active-tool"
+                  className={`absolute inset-0 rounded-full shadow-md ${tool.active}`}
+                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                />
+              ) : null}
+              <span className="relative">{tool.label}</span>
+            </button>
+          );
+        })}
       </div>
     </footer>
   );

@@ -9,7 +9,7 @@ export function ToastNotification({ message }: { message: string | null }) {
             initial={{ opacity: 0, y: -15, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            className="bg-zinc-900/90 text-zinc-100 border border-zinc-800 text-xs px-4 py-2 rounded-xl shadow-lg backdrop-blur"
+            className="bg-emerald-950/90 text-emerald-50 border border-emerald-800/60 text-xs px-4 py-2 rounded-full shadow-[0_12px_30px_-10px_rgba(6,78,59,0.6)] backdrop-blur"
           >
             {message}
           </motion.div>

@@ -33,7 +33,7 @@ export function QuickToolbar({
           className={`zen-header-btn p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl transition-all hover:scale-105 active:scale-95 ${
             soundEnabled
               ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-inner"
-              : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
+              : "border border-transparent text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
           }`}
           title={soundEnabled ? "Mute chimes" : "Enable ambient wind chimes"}
         >
@@ -46,7 +46,7 @@ export function QuickToolbar({
 
         <button
           onClick={downloadGardenAsImage}
-          className="zen-header-btn p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 transition-all hover:scale-105 active:scale-95"
+          className="zen-header-btn p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl border border-transparent text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 transition-all hover:scale-105 active:scale-95"
           title="Download Garden as Image"
         >
           <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -55,7 +55,7 @@ export function QuickToolbar({
         <button
           onClick={triggerUndo}
           disabled={historyIndex <= 0}
-          className="zen-header-btn p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
+          className="zen-header-btn p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl border border-transparent text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
           title="Undo"
         >
           <Undo className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -63,7 +63,7 @@ export function QuickToolbar({
         <button
           onClick={triggerRedo}
           disabled={historyIndex >= history.length - 1}
-          className="zen-header-btn p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
+          className="zen-header-btn p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl border border-transparent text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60 disabled:opacity-30 transition-all hover:scale-105 active:scale-95"
           title="Redo"
         >
           <Redo className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -75,7 +75,7 @@ export function QuickToolbar({
           className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl transition-all hover:scale-105 active:scale-95 ${
             sidebarOpen
               ? "bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 shadow-inner"
-              : "text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
+              : "border border-transparent text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-800/60"
           }`}
           title="Settings and Themes"
         >
