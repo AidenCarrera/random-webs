@@ -1,4 +1,5 @@
 import type { Competitor, GameState, RaceRank } from "../types";
+import styles from "../styles.module.css";
 import { Car } from "./car";
 
 interface RaceLaneProps {
@@ -6,23 +7,38 @@ interface RaceLaneProps {
   labelClassName: string;
   color: string;
   progress: number;
+  running: boolean;
 }
 
-function RaceLane({ label, labelClassName, color, progress }: RaceLaneProps) {
+function RaceLane({
+  label,
+  labelClassName,
+  color,
+  progress,
+  running,
+}: RaceLaneProps) {
   return (
-    <div className="relative h-12 bg-black/40 border-y border-purple-900/40 flex items-center px-4 rounded-xl">
+    <div
+      className={`${styles.lane} ${running ? styles.laneRunning : ""} relative h-12 bg-black/40 border-y border-purple-900/40 flex items-center px-4 rounded-xl`}
+    >
       <div
-        className={`absolute left-3 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${labelClassName}`}
+        className={`absolute left-3 z-10 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded ${labelClassName}`}
       >
         {label}
       </div>
       <div
-        className="absolute transition-all duration-300"
-        style={{ left: `calc(${progress}% - 48px)`, marginLeft: "48px" }}
+        className={`${styles.car} absolute z-10 transition-all duration-300`}
+        style={
+          {
+            left: `calc(${progress}% - 48px)`,
+            marginLeft: "48px",
+            "--car-glow": `${color}4d`,
+          } as React.CSSProperties
+        }
       >
         <Car color={color} />
       </div>
-      <div className="absolute right-0 top-0 bottom-0 w-1 bg-linear-to-b from-cyan-400 via-pink-500 to-purple-600 opacity-60" />
+      <div aria-hidden="true" className={styles.finish} />
     </div>
   );
 }
@@ -46,17 +62,15 @@ export function Racetrack({
       aria-label={`Cyber highway track. Player position ${currentRank} of 3.`}
     >
       <div
-        className="absolute inset-0 z-0 opacity-15 rolling-grid"
+        className={`absolute inset-0 z-0 opacity-15 rolling-grid ${
+          gameState === "playing" ? styles.gridScroll : ""
+        }`}
         style={{
           backgroundImage: `
             linear-gradient(rgba(147, 51, 234, 0.4) 1px, transparent 1px),
             linear-gradient(90deg, rgba(147, 51, 234, 0.4) 1px, transparent 1px)
           `,
           backgroundSize: "60px 40px",
-          animation:
-            gameState === "playing"
-              ? "gridScroll 0.8s linear infinite"
-              : "none",
         }}
       />
 
@@ -75,6 +89,7 @@ export function Racetrack({
           labelClassName="text-cyan-400 bg-cyan-950/60 border border-cyan-800/40"
           color="#22d3ee"
           progress={playerProgress}
+          running={gameState === "playing"}
         />
 
         {competitors[0] && (
@@ -83,6 +98,7 @@ export function Racetrack({
             labelClassName="text-purple-400 bg-purple-950/60 border border-purple-800/40"
             color={competitors[0].color}
             progress={competitors[0].progress}
+            running={gameState === "playing"}
           />
         )}
 
@@ -92,6 +108,7 @@ export function Racetrack({
             labelClassName="text-pink-400 bg-pink-950/60 border border-pink-850/40"
             color={competitors[1].color}
             progress={competitors[1].progress}
+            running={gameState === "playing"}
           />
         )}
       </div>

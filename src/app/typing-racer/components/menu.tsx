@@ -1,4 +1,8 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Flame, Gauge, Zap } from "lucide-react";
+
+import styles from "../styles.module.css";
+
+const MODE_ICONS = { easy: Gauge, medium: Flame, hard: Zap } as const;
 
 import { DIFFICULTY_OPTIONS, DIFFICULTY_SETTINGS } from "../data/race-config";
 import type { Difficulty } from "../types";
@@ -13,7 +17,9 @@ export function Menu({ difficulty, onDifficultyChange, onStart }: MenuProps) {
   return (
     <div className="bg-[#120b24]/75 border border-purple-900/40 rounded-3xl p-10 backdrop-blur-xl shadow-2xl flex flex-col items-center text-center gap-8 animate-in fade-in zoom-in duration-300">
       <div className="flex flex-col gap-2">
-        <h2 className="text-5xl font-black tracking-tighter uppercase text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-pink-500">
+        <h2
+          className={`${styles.neonTitle} text-4xl font-black tracking-tighter uppercase text-transparent bg-clip-text bg-linear-to-r from-purple-400 via-pink-500 to-orange-300 sm:text-5xl`}
+        >
           T Y P I N G R A C E R
         </h2>
         <p className="text-zinc-500 text-sm max-w-lg mx-auto">
@@ -30,6 +36,7 @@ export function Menu({ difficulty, onDifficultyChange, onStart }: MenuProps) {
         {DIFFICULTY_OPTIONS.map((level) => {
           const active = difficulty === level;
           const config = DIFFICULTY_SETTINGS[level];
+          const Icon = MODE_ICONS[level];
 
           return (
             <button
@@ -37,12 +44,20 @@ export function Menu({ difficulty, onDifficultyChange, onStart }: MenuProps) {
               type="button"
               onClick={() => onDifficultyChange(level)}
               aria-pressed={active}
-              className={`flex-1 p-6 rounded-2xl border transition-all duration-300 flex flex-col items-center gap-2 ${
+              className={`group flex-1 p-6 rounded-2xl border transition-all duration-300 flex flex-col items-center gap-2 hover:-translate-y-0.5 ${
                 active
                   ? "bg-purple-900/30 border-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.3)] text-white"
                   : "bg-black/40 border-purple-900/30 text-zinc-500 hover:border-purple-800/40 hover:text-zinc-300"
               }`}
             >
+              <Icon
+                aria-hidden="true"
+                className={`h-5 w-5 transition-colors ${
+                  active
+                    ? "text-pink-400"
+                    : "text-purple-800 group-hover:text-purple-500"
+                }`}
+              />
               <span className="text-xs uppercase tracking-wider font-bold">
                 MODE
               </span>

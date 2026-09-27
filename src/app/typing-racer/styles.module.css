@@ -37,3 +37,178 @@
     animation: none !important;
   }
 }
+
+/* ───────── Synthwave horizon ───────── */
+
+.horizon {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.sun {
+  position: absolute;
+  left: 50%;
+  bottom: 38%;
+  width: min(62vmin, 520px);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #fde047 0%, #fb7185 45%, #c026d3 100%);
+  opacity: 0.34;
+  filter: drop-shadow(0 0 60px rgba(236, 72, 153, 0.6));
+  transform: translateX(-50%);
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    #000 0 52%,
+    transparent 52% 56%,
+    #000 56% 64%,
+    transparent 64% 69%,
+    #000 69% 76%,
+    transparent 76% 82%,
+    #000 82% 88%,
+    transparent 88% 95%,
+    #000 95%
+  );
+  mask-image: linear-gradient(
+    180deg,
+    #000 0 52%,
+    transparent 52% 56%,
+    #000 56% 64%,
+    transparent 64% 69%,
+    #000 69% 76%,
+    transparent 76% 82%,
+    #000 82% 88%,
+    transparent 88% 95%,
+    #000 95%
+  );
+}
+
+.floor {
+  position: absolute;
+  left: -50%;
+  right: -50%;
+  bottom: -10%;
+  height: 52%;
+  background-image:
+    linear-gradient(rgba(236, 72, 153, 0.55) 2px, transparent 2px),
+    linear-gradient(90deg, rgba(168, 85, 247, 0.5) 2px, transparent 2px);
+  background-size: 80px 80px;
+  transform: perspective(360px) rotateX(62deg);
+  transform-origin: 50% 0;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 60%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 60%);
+  opacity: 0.35;
+  animation: floor-run 2.4s linear infinite;
+}
+
+@keyframes floor-run {
+  to {
+    background-position:
+      0 80px,
+      0 80px;
+  }
+}
+
+.horizonGlow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 41%;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(236, 72, 153, 0.7),
+    rgba(34, 211, 238, 0.7),
+    rgba(236, 72, 153, 0.7),
+    transparent
+  );
+  box-shadow: 0 0 24px rgba(236, 72, 153, 0.6);
+  opacity: 0.5;
+}
+
+.neonTitle {
+  filter: drop-shadow(0 0 18px rgba(236, 72, 153, 0.35));
+}
+
+/* ───────── Track ───────── */
+
+.gridScroll {
+  animation: grid-scroll 0.8s linear infinite;
+}
+
+@keyframes grid-scroll {
+  to {
+    background-position:
+      -60px 0,
+      -60px 0;
+  }
+}
+
+.lane::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(250, 250, 250, 0.16) 0 18px,
+    transparent 18px 36px
+  );
+  transform: translateY(-50%);
+}
+
+.laneRunning::before {
+  animation: lane-dash 0.5s linear infinite;
+}
+
+@keyframes lane-dash {
+  to {
+    background-position: -36px 0;
+  }
+}
+
+.finish {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  background: conic-gradient(
+      #f5f5f5 25%,
+      #1e1b2e 0 50%,
+      #f5f5f5 0 75%,
+      #1e1b2e 0
+    )
+    0 0 / 10px 10px;
+  opacity: 0.75;
+  border-radius: 0 0.75rem 0.75rem 0;
+}
+
+.car {
+  filter: drop-shadow(0 0 3px var(--car-glow))
+    drop-shadow(4px 0 5px var(--car-glow));
+}
+
+.caret {
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+  50% {
+    background-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floor,
+  .gridScroll,
+  .laneRunning::before,
+  .caret {
+    animation: none;
+  }
+}

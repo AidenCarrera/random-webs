@@ -1,5 +1,7 @@
 import { memo } from "react";
 
+import styles from "../styles.module.css";
+
 interface PassageTextProps {
   passage: string;
   typedText: string;
@@ -17,7 +19,7 @@ function getCharacterClasses(
   }
 
   if (index === typedText.length) {
-    return "text-white underline decoration-purple-500 decoration-2 underline-offset-4 bg-purple-900/30 ring-1 ring-purple-600";
+    return `text-white underline decoration-purple-500 decoration-2 underline-offset-4 bg-purple-700/50 ring-1 ring-purple-500 ${styles.caret}`;
   }
 
   return "text-zinc-500";

@@ -14,7 +14,11 @@ export function TypingRacerMain() {
     <div
       className={`${styles.root} min-h-[100dvh] bg-[#0d071c] text-white flex flex-col justify-center overflow-hidden relative select-none font-mono`}
     >
-      <div className="absolute inset-0 bg-size-[50px_50px] bg-[linear-gradient(rgba(139,92,246,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.06)_1px,transparent_1px)] z-0 pointer-events-none" />
+      <div aria-hidden="true" className={styles.horizon}>
+        <div className={styles.sun} />
+        <div className={styles.horizonGlow} />
+        <div className={styles.floor} />
+      </div>
       <div className="absolute inset-0 pointer-events-none z-30 bg-[radial-gradient(circle_at_center,transparent_55%,rgba(0,0,0,0.4)_100%)] opacity-60" />
 
       <div className="z-10 max-w-5xl w-full mx-auto p-6 flex flex-col gap-6">

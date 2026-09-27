@@ -27,7 +27,7 @@ export function Results({
   return (
     <div className="bg-[#120b24]/75 border border-purple-900/40 rounded-3xl p-10 backdrop-blur-xl shadow-2xl flex flex-col gap-8 animate-in zoom-in-95 duration-300">
       <div className="text-center flex flex-col items-center gap-2">
-        <div className="h-16 w-16 rounded-full bg-yellow-500/10 border border-yellow-500/40 flex items-center justify-center text-yellow-400 animate-bounce mb-2">
+        <div className="h-16 w-16 rounded-full bg-yellow-500/10 border border-yellow-500/40 flex items-center justify-center text-yellow-400 shadow-[0_0_30px_rgba(234,179,8,0.35)] motion-safe:animate-bounce mb-2">
           <Award size={36} aria-hidden="true" />
         </div>
         <h2 className="text-4xl font-black tracking-widest uppercase text-transparent bg-clip-text bg-linear-to-r from-yellow-400 to-pink-500">
@@ -95,9 +95,13 @@ export function Results({
         <button
           type="button"
           onClick={onRaceAgain}
-          className="flex-1 py-4 bg-linear-to-r from-purple-700 to-indigo-800 hover:from-purple-600 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2"
+          className="group flex-1 py-4 bg-linear-to-r from-purple-700 to-indigo-800 hover:from-purple-600 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-300 hover:shadow-[0_0_24px_rgba(168,85,247,0.45)] active:scale-[0.98] flex items-center justify-center gap-2"
         >
-          <RotateCcw size={16} aria-hidden="true" />
+          <RotateCcw
+            size={16}
+            aria-hidden="true"
+            className="transition-transform duration-500 group-hover:-rotate-180"
+          />
           <span>RACE AGAIN</span>
         </button>
         <button
