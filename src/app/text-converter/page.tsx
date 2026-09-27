@@ -290,7 +290,12 @@ function RangeControl({
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
         className={`${styles.range} h-2 w-full cursor-pointer appearance-none`}
-        style={{ "--accent": accent } as AccentStyle}
+        style={
+          {
+            "--accent": accent,
+            "--fill": `${((value - min) / (max - min)) * 100}%`,
+          } as AccentStyle
+        }
       />
       <div className="mt-1 flex justify-between text-[10px] text-gray-400">
         <span>{minLabel}</span>
@@ -343,7 +348,8 @@ function TransformOutput({ transform }: { transform: TransformDefinition }) {
       </div>
       {transform.output ? (
         <p
-          className="break-all font-mono text-xs leading-relaxed tracking-wide"
+          key={transform.output}
+          className={`${styles.signal} break-all font-mono text-xs leading-relaxed tracking-wide`}
           style={{ color: transform.accent }}
         >
           {transform.output}
@@ -541,7 +547,9 @@ export default function TextConverter() {
     <main
       className={`${styles.root} relative min-h-dvh overflow-hidden bg-[#050510] p-4 font-mono text-[#00ff9d] sm:p-8`}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.05)_1px,transparent_1px)] bg-size-[50px_50px]" />
+      <div
+        className={`${styles.grid} pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(0,255,157,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,157,0.05)_1px,transparent_1px)] bg-size-[50px_50px]`}
+      />
       <div className="pointer-events-none absolute top-0 left-0 h-32 w-full bg-[#00ff9d]/4 blur-[100px]" />
       <div className="pointer-events-none absolute right-0 bottom-0 h-96 w-96 bg-[#ff00ff]/4 blur-[120px]" />
 
@@ -559,7 +567,8 @@ export default function TextConverter() {
               <div>
                 <h1
                   id="input-heading"
-                  className="text-3xl font-bold tracking-tighter drop-shadow-[0_0_6px_rgba(255,0,255,0.4)] sm:text-4xl"
+                  className={`${styles.glitch} text-3xl font-bold tracking-tighter drop-shadow-[0_0_6px_rgba(255,0,255,0.4)] sm:text-4xl`}
+                  data-text="TEXT_CONVERTER"
                 >
                   TEXT_CONVERTER
                 </h1>
@@ -603,7 +612,7 @@ export default function TextConverter() {
                 setText(event.target.value);
                 setClipboardMessage("");
               }}
-              className="h-48 w-full resize-y border border-[#00ff9d]/30 bg-[#0a0a1f] p-4 font-mono text-lg tracking-wide text-white/90 outline-none transition-colors placeholder:text-gray-400 focus:border-[#00ff9d] focus:bg-[#0a0a24]/80 motion-reduce:transition-none sm:p-6 sm:text-xl"
+              className="h-48 w-full resize-y border border-[#00ff9d]/30 bg-[#0a0a1f] p-4 font-mono text-lg tracking-wide text-white/90 caret-[#00ff9d] outline-none transition-[border-color,background-color,box-shadow] placeholder:text-gray-400 focus:border-[#00ff9d] focus:bg-[#0a0a24]/80 focus:shadow-[0_0_0_1px_rgba(0,255,157,0.35),0_0_30px_-6px_rgba(0,255,157,0.45)] motion-reduce:transition-none sm:p-6 sm:text-xl"
               placeholder="Enter text to convert..."
               spellCheck={false}
             />

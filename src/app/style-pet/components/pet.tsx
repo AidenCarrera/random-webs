@@ -21,7 +21,7 @@ export function Pet({ accessory, hat, reduceMotion, skin, status }: PetProps) {
   const colors = SKIN_COLORS[skin];
 
   return (
-    <div className="relative z-10 flex flex-1 flex-col items-center justify-center pb-7">
+    <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center pt-1 pb-7">
       <motion.div
         animate={
           reduceMotion
@@ -83,7 +83,7 @@ export function Pet({ accessory, hat, reduceMotion, skin, status }: PetProps) {
                   }
                 : { duration: 0.5, repeat: 4, ease: "easeInOut" }
         }
-        className="relative flex h-40 w-40 items-center justify-center sm:h-44 sm:w-44"
+        className="relative flex aspect-square min-h-0 max-h-40 flex-1 items-center justify-center sm:max-h-44"
       >
         {status === "CLEANING" && !reduceMotion && (
           <div

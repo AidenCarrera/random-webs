@@ -122,23 +122,47 @@ export function SettingsPanel({ explorer }: SettingsPanelProps) {
               <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-black/20 p-1">
                 <button
                   onClick={enterMandelbrotMode}
-                  className={`py-2 text-[10px] font-semibold uppercase tracking-[0.08em] rounded-md border transition-all cursor-pointer ${
+                  aria-pressed={currentMode === "mandelbrot"}
+                  className={`relative py-2 text-[10px] font-semibold uppercase tracking-[0.08em] rounded-md transition-colors cursor-pointer ${
                     currentMode === "mandelbrot"
-                      ? "border-violet-300/30 bg-violet-400/15 text-violet-100 shadow-[0_4px_12px_rgba(124,58,237,0.14)]"
-                      : "border-transparent text-zinc-500 hover:bg-white/6 hover:text-zinc-300"
+                      ? "text-violet-100"
+                      : "text-zinc-500 hover:bg-white/6 hover:text-zinc-300"
                   }`}
                 >
-                  Mandelbrot
+                  {currentMode === "mandelbrot" ? (
+                    <motion.span
+                      layoutId="fractal-mode-glider"
+                      className="absolute inset-0 rounded-md border border-violet-300/30 bg-violet-400/15 shadow-[0_4px_12px_rgba(124,58,237,0.18),inset_0_1px_0_rgba(255,255,255,0.06)]"
+                      transition={{
+                        type: "spring",
+                        stiffness: 480,
+                        damping: 36,
+                      }}
+                    />
+                  ) : null}
+                  <span className="relative">Mandelbrot</span>
                 </button>
                 <button
                   onClick={enterJuliaModeWithSeed}
-                  className={`py-2 text-[10px] font-semibold uppercase tracking-[0.08em] rounded-md border transition-all cursor-pointer ${
+                  aria-pressed={currentMode === "julia"}
+                  className={`relative py-2 text-[10px] font-semibold uppercase tracking-[0.08em] rounded-md transition-colors cursor-pointer ${
                     currentMode === "julia"
-                      ? "border-violet-300/30 bg-violet-400/15 text-violet-100 shadow-[0_4px_12px_rgba(124,58,237,0.14)]"
-                      : "border-transparent text-zinc-500 hover:bg-white/6 hover:text-zinc-300"
+                      ? "text-violet-100"
+                      : "text-zinc-500 hover:bg-white/6 hover:text-zinc-300"
                   }`}
                 >
-                  Julia Set
+                  {currentMode === "julia" ? (
+                    <motion.span
+                      layoutId="fractal-mode-glider"
+                      className="absolute inset-0 rounded-md border border-violet-300/30 bg-violet-400/15 shadow-[0_4px_12px_rgba(124,58,237,0.18),inset_0_1px_0_rgba(255,255,255,0.06)]"
+                      transition={{
+                        type: "spring",
+                        stiffness: 480,
+                        damping: 36,
+                      }}
+                    />
+                  ) : null}
+                  <span className="relative">Julia Set</span>
                 </button>
               </div>
             </div>
@@ -160,7 +184,16 @@ export function SettingsPanel({ explorer }: SettingsPanelProps) {
                 step="20"
                 value={currentIterations}
                 onChange={(e) => handleIterationChange(Number(e.target.value))}
-                className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-zinc-800/80 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-violet-300 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#17172b] hover:[&::-webkit-slider-thumb]:bg-violet-200 [&::-webkit-slider-thumb]:transition-all active:[&::-webkit-slider-thumb]:scale-90 [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-violet-300 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#17172b]"
+                style={{
+                  background: `linear-gradient(90deg, #a78bfa 0 ${
+                    ((currentIterations - 20) / (MAX_RENDER_ITERATIONS - 20)) *
+                    100
+                  }%, rgba(39,39,42,0.8) ${
+                    ((currentIterations - 20) / (MAX_RENDER_ITERATIONS - 20)) *
+                    100
+                  }% 100%)`,
+                }}
+                className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-zinc-800/80 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-violet-300 [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#17172b] hover:[&::-webkit-slider-thumb]:bg-violet-200 hover:[&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(167,139,250,0.7)] [&::-webkit-slider-thumb]:transition-all active:[&::-webkit-slider-thumb]:scale-90 [&::-moz-range-thumb]:w-3.5 [&::-moz-range-thumb]:h-3.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-violet-300 [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#17172b]"
               />
               {isCpuRenderActive && (
                 <p className="mt-1.5 text-[9px] font-medium text-amber-200/85">

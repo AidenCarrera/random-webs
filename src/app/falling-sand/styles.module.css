@@ -964,3 +964,109 @@
     -webkit-backdrop-filter: none;
   }
 }
+
+/* ───────── Tactile refinements (size-neutral) ───────── */
+
+.materialIcon {
+  transition:
+    transform 220ms var(--ease-out-back),
+    box-shadow 220ms ease,
+    background-color 150ms ease;
+}
+
+.materialGrid button:hover .materialIcon {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--material-color) 26%, transparent);
+}
+
+.materialGrid button.materialActive .materialIcon {
+  box-shadow:
+    0 0 16px color-mix(in srgb, var(--material-color) 45%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  animation: material-pop 320ms var(--ease-out-back);
+}
+
+@keyframes material-pop {
+  0% {
+    transform: scale(0.82);
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.toggleTrack > span {
+  transition:
+    background-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 240ms var(--ease-out-back);
+}
+
+.settingToggle input:checked + .toggleTrack > span {
+  box-shadow: 0 0 10px rgba(239, 189, 88, 0.6);
+}
+
+.actions .exportButton {
+  transition:
+    background-color 150ms ease,
+    box-shadow 200ms ease,
+    transform 150ms ease;
+}
+
+.actions .exportButton:hover {
+  box-shadow: 0 0 22px rgba(239, 189, 88, 0.4);
+}
+
+.brandMark {
+  position: relative;
+  overflow: hidden;
+}
+
+.brandMark::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(
+    120deg,
+    transparent 40%,
+    rgba(255, 236, 190, 0.35) 50%,
+    transparent 60%
+  );
+  transform: translateX(-70%);
+  animation: brand-sheen 6s ease-in-out infinite 2s;
+}
+
+@keyframes brand-sheen {
+  0%,
+  70% {
+    transform: translateX(-70%);
+  }
+  100% {
+    transform: translateX(70%);
+  }
+}
+
+.range::-webkit-slider-thumb {
+  transition:
+    transform 200ms var(--ease-out-back),
+    box-shadow 200ms ease;
+}
+
+.range:hover::-webkit-slider-thumb,
+.range:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 14px rgba(239, 189, 88, 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .materialGrid button.materialActive .materialIcon,
+  .brandMark::after {
+    animation: none;
+  }
+}

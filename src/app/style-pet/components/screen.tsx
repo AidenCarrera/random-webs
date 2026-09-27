@@ -97,7 +97,7 @@ export function Screen({ pet }: ScreenProps) {
 
   return (
     <div
-      className="relative flex aspect-11/10 w-full flex-col overflow-hidden rounded-2xl border-solid border-[#676b69] bg-[#87977a] p-4 text-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.32),0_2px_4px_rgba(255,255,255,0.3)]"
+      className="relative flex aspect-4/3 w-full flex-col overflow-hidden rounded-2xl border-solid border-[#676b69] bg-[#87977a] p-4 text-zinc-900 shadow-[inset_0_4px_12px_rgba(0,0,0,0.32),0_2px_4px_rgba(255,255,255,0.3)]"
       style={{ borderWidth: "18px 26px" }}
     >
       <div

@@ -1,0 +1,57 @@
+/* Paper: a lifted bottom-right corner. */
+.note {
+  box-shadow:
+    0 1px 1px rgba(60, 34, 12, 0.1),
+    3px 6px 8px -6px rgba(60, 34, 12, 0.3),
+    0 4px 10px -6px rgba(60, 34, 12, 0.18);
+  transition: box-shadow 0.25s ease;
+}
+
+.note:hover {
+  box-shadow:
+    0 1px 1px rgba(60, 34, 12, 0.1),
+    4px 9px 12px -8px rgba(60, 34, 12, 0.35),
+    0 7px 14px -8px rgba(60, 34, 12, 0.24);
+}
+
+.fab {
+  transition:
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.fab svg {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -8px rgba(30, 41, 59, 0.7);
+}
+
+.fab:hover svg {
+  transform: rotate(90deg);
+}
+
+.fab:active {
+  transform: scale(0.94);
+}
+
+.settingsCard {
+  animation: settings-in 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top right;
+}
+
+@keyframes settings-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96) rotate(-1deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settingsCard {
+    animation: none;
+  }
+}

@@ -139,3 +139,128 @@
     transition: none;
   }
 }
+
+/* ───────── HUD refinements ───────── */
+
+.range {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 70%, transparent) 0 var(--fill, 0%),
+    color-mix(in srgb, var(--accent) 20%, transparent) var(--fill, 0%) 100%
+  );
+}
+
+.outputPanel {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Corner brackets lock onto a panel while it is hovered. */
+.outputPanel::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 6px;
+  background:
+    linear-gradient(var(--accent), var(--accent)) right top / 10px 1px,
+    linear-gradient(var(--accent), var(--accent)) right top / 1px 10px,
+    linear-gradient(var(--accent), var(--accent)) right bottom / 10px 1px,
+    linear-gradient(var(--accent), var(--accent)) right bottom / 1px 10px;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transform: scale(1.03);
+  transition:
+    opacity 200ms ease,
+    transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.outputPanel:hover::before {
+  opacity: 0.9;
+  transform: scale(1);
+}
+
+/* Fresh output flashes like an incoming signal. */
+.signal {
+  animation: signal-in 420ms ease-out;
+}
+
+@keyframes signal-in {
+  from {
+    text-shadow: 0 0 10px currentColor;
+    filter: brightness(1.6);
+  }
+  to {
+    text-shadow: 0 0 0 transparent;
+    filter: none;
+  }
+}
+
+.grid {
+  animation: grid-drift 24s linear infinite;
+}
+
+@keyframes grid-drift {
+  to {
+    background-position:
+      0 50px,
+      50px 0;
+  }
+}
+
+.glitch {
+  position: relative;
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.glitch::before {
+  color: #00ffff;
+  transform: translateX(-2px);
+  clip-path: inset(10% 0 55% 0);
+}
+
+.glitch::after {
+  color: #ffff00;
+  transform: translateX(2px);
+  clip-path: inset(60% 0 8% 0);
+}
+
+.glitch:hover::before,
+.glitch:hover::after {
+  opacity: 0.8;
+  animation: glitch 900ms steps(2) infinite;
+}
+
+@keyframes glitch {
+  0% {
+    clip-path: inset(10% 0 55% 0);
+  }
+  25% {
+    clip-path: inset(70% 0 5% 0);
+  }
+  50% {
+    clip-path: inset(30% 0 40% 0);
+  }
+  75% {
+    clip-path: inset(5% 0 80% 0);
+  }
+  100% {
+    clip-path: inset(50% 0 20% 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signal,
+  .grid,
+  .glitch:hover::before,
+  .glitch:hover::after {
+    animation: none;
+  }
+}

@@ -12,6 +12,8 @@ import {
 import localFont from "next/font/local";
 import { useEffect, useRef, useState } from "react";
 
+import styles from "./styles.module.css";
+
 const kalam = localFont({
   src: [
     {
@@ -216,22 +218,27 @@ export default function StickyNotes() {
 
       <button
         onClick={() => addNote()}
-        className="fixed bottom-6 right-6 z-50 rounded-full bg-slate-800 p-4 text-white shadow-xl transition-colors hover:bg-slate-700 md:bottom-8 md:right-8"
+        className={`${styles.fab} fixed bottom-6 right-6 z-50 rounded-full bg-slate-800 p-4 text-white shadow-xl hover:bg-slate-700 md:bottom-10 md:right-10`}
         title="Add note"
+        aria-label="Add note"
       >
         <Plus className="h-7 w-7 md:h-8 md:w-8" />
       </button>
 
       <button
         onClick={() => setIsSettingsOpen((open) => !open)}
-        className="fixed right-6 top-6 z-50 rounded-full bg-white/85 p-3 text-slate-800 shadow-lg backdrop-blur transition-colors hover:bg-white"
+        className="group fixed right-6 top-6 z-50 rounded-full bg-white/85 p-3 text-slate-800 shadow-lg backdrop-blur transition-colors hover:bg-white md:right-10 md:top-10"
         title="Settings"
+        aria-label="Settings"
+        aria-expanded={isSettingsOpen}
       >
-        <Settings className="h-6 w-6" />
+        <Settings className="h-6 w-6 transition-transform duration-500 group-hover:rotate-90" />
       </button>
 
       {isSettingsOpen && (
-        <div className="fixed right-6 top-20 z-50 w-[min(20rem,calc(100vw-3rem))] rounded-lg bg-white/95 p-4 text-slate-900 shadow-2xl backdrop-blur">
+        <div
+          className={`${styles.settingsCard} fixed right-6 top-20 z-50 w-[min(20rem,calc(100vw-3rem))] rounded-lg bg-[#fffdf6] p-4 text-slate-900 shadow-[0_20px_50px_-12px_rgba(60,34,12,0.6)] ring-1 ring-black/5 md:right-10 md:top-24`}
+        >
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-sans text-sm font-bold uppercase tracking-wide text-slate-600">
               Settings
@@ -240,6 +247,7 @@ export default function StickyNotes() {
               onClick={() => setIsSettingsOpen(false)}
               className="rounded-full p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
               title="Close settings"
+              aria-label="Close settings"
             >
               <X className="h-4 w-4" />
             </button>
@@ -332,10 +340,10 @@ function NoteItem({
       }}
       whileDrag={{
         scale: 1.06,
-        boxShadow: "10px 10px 20px rgba(0,0,0,0.2)",
+        boxShadow: "5px 6px 12px rgba(0,0,0,0.12)",
         zIndex: 100,
       }}
-      className={`absolute flex h-48 w-48 flex-col p-4 shadow-lg md:h-64 md:w-64 md:p-6 ${note.color} group select-text`}
+      className={`${styles.note} absolute flex h-48 w-48 flex-col p-4 md:h-64 md:w-64 md:p-6 ${note.color} group select-text`}
     >
       {/* Delete Button - Always visible on mobile, subtle hover on desktop */}
       <button
@@ -347,8 +355,9 @@ function NoteItem({
             setConfirmDeleteId(note.id);
           }
         }}
-        className="absolute -right-3 -top-3 z-20 rounded-full bg-red-500 p-2 text-white opacity-100 shadow-md transition-opacity hover:scale-110 md:opacity-0 md:group-hover:opacity-100"
+        className="absolute -right-3 -top-3 z-20 rounded-full bg-red-500 p-2 text-white opacity-100 shadow-md transition-[opacity,transform] hover:scale-110 focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100"
         title="Delete Note"
+        aria-label="Delete Note"
       >
         <X className="w-4 h-4" />
       </button>
@@ -376,22 +385,22 @@ function NoteItem({
         </div>
       )}
 
-      {/* Drag Handle (Tape) */}
+      {/* Drag Handle */}
       <div
-        className="absolute left-0 top-0 flex h-10 w-full cursor-move touch-none items-center justify-center bg-black/10 text-black/20"
+        className="absolute left-0 top-0 z-10 flex h-10 w-full cursor-move touch-none items-center justify-center text-black/25"
         onPointerDown={(e) => {
           e.preventDefault();
           dragControls.start(e, { snapToCursor: false });
         }}
         style={{ touchAction: "none" }}
       >
-        <GripHorizontal className="w-4 h-4 opacity-50" />
+        <GripHorizontal className="w-4 h-4 opacity-40 transition-opacity group-hover:opacity-70" />
       </div>
 
       <textarea
         value={note.text}
         onChange={(e) => updateNoteText(note.id, e.target.value)}
-        className={`mt-5 h-full w-full resize-none bg-transparent text-lg leading-relaxed text-slate-800 focus:outline-none md:mt-4 md:text-xl ${kalam.className}`}
+        className={`relative mt-5 h-full w-full resize-none bg-transparent text-lg leading-relaxed text-slate-800 placeholder:text-slate-800/35 focus:outline-none md:mt-4 md:text-xl ${kalam.className}`}
         spellCheck={false}
         placeholder="Type something..."
         onPointerDown={(e) => e.stopPropagation()}

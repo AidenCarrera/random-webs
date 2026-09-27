@@ -149,7 +149,7 @@ function ActionButtons({ pet }: ControlsProps) {
 
 function LowerControls({ pet }: ControlsProps) {
   return (
-    <div className="relative mt-10 flex min-h-14 w-full items-center px-4">
+    <div className="relative mt-6 flex min-h-14 w-full items-center px-4">
       <div className="absolute top-0 left-1/2 flex -translate-x-1/2 -rotate-12 gap-3">
         <div className="flex flex-col items-center gap-1.5">
           <button
@@ -188,7 +188,7 @@ function LowerControls({ pet }: ControlsProps) {
 export function Controls({ pet }: ControlsProps) {
   return (
     <>
-      <div className="mt-16 flex w-full items-center justify-between px-2 max-[420px]:scale-[0.82]">
+      <div className="mt-6 flex w-full items-center justify-between px-2 @max-[22.5rem]:scale-[0.82]">
         <DPad pet={pet} />
         <ControlHints pet={pet} />
         <ActionButtons pet={pet} />
