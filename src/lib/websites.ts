@@ -12,6 +12,18 @@ export type WebsiteEntry = {
 
 export const WEBSITES: WebsiteEntry[] = [
   {
+    path: "/2048",
+    lastModified: "2026-09-30",
+    title: "2048",
+    blurb: "Slide and merge tiles.",
+    accent: "from-amber-100/90 via-orange-300/75 to-yellow-500/70",
+    metadata: {
+      title: "2048 - Classic Sliding Tile Puzzle",
+      description:
+        "Slide and merge numbered tiles to reach 2048 in a faithful take on the original, with keyboard and swipe controls, best-score tracking, and a saved game.",
+    },
+  },
+  {
     path: "/algo-race",
     lastModified: "2026-07-28",
     title: "Algo Race",
@@ -168,6 +180,18 @@ export const WEBSITES: WebsiteEntry[] = [
     },
   },
   {
+    path: "/game-of-life",
+    lastModified: "2026-09-30",
+    title: "Game of Life",
+    blurb: "Life in a petri dish.",
+    accent: "from-pink-300/80 via-fuchsia-400/70 to-amber-200/80",
+    metadata: {
+      title: "Game of Life - Petri Dish Cellular Automaton",
+      description:
+        "Grow Conway's Game of Life in a petri dish. Draw cells, set the incubator temperature, and seed classic patterns like the glider gun and pulsar.",
+    },
+  },
+  {
     path: "/gravity-box",
     lastModified: "2026-07-16",
     title: "Gravity Box",
@@ -249,6 +273,18 @@ export const WEBSITES: WebsiteEntry[] = [
       title: "Matrix Rain - Hacker Terminal",
       description:
         "Type like you're in a hacker movie as code appears across the screen with a Matrix-inspired digital rain effect in the background.",
+    },
+  },
+  {
+    path: "/maze-generator",
+    lastModified: "2026-09-30",
+    title: "Maze Generator",
+    blurb: "Draft a maze, then escape it.",
+    accent: "from-sky-300/80 via-blue-500/70 to-amber-300/70",
+    metadata: {
+      title: "Maze Generator - Build, Explore, and Solve Mazes",
+      description:
+        "Watch mazes get drafted with backtracking, Prim's, or Kruskal's algorithm, explore them yourself, then let Dijkstra's algorithm find the shortest way out.",
     },
   },
   {

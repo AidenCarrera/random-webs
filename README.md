@@ -71,7 +71,7 @@ Install Playwright's Chromium browser after installing dependencies:
 pnpm exec playwright install chromium
 ```
 
-`pnpm test:smoke` reuses a running development server or starts one on port 3100. It checks every registered site for a successful response, a document title, console errors, and uncaught page errors. There are also interaction tests for Algo Race, Boids Simulator, Falling Sand, Fluid Simulation, Fractal Explorer, Lofi Pixel Study, Olo Terminal, Repository Visualizer, Solar System, and Zen Garden, plus a server-render check for the home page and the not-found route.
+`pnpm test:smoke` reuses a running development server or starts one on port 3100. It checks every registered site for a successful response, a document title, console errors, and uncaught page errors. There are also interaction tests for 2048, Algo Race, Boids Simulator, Falling Sand, Fluid Simulation, Fractal Explorer, Game of Life, Lofi Pixel Study, Maze Generator, Olo Terminal, Repository Visualizer, Solar System, and Zen Garden, plus a server-render check for the home page and the not-found route.
 
 ```bash
 # Limit the registry-wide route checks to sites changed since HEAD
