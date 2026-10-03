@@ -12,7 +12,7 @@ function gradient(stops: [number, number, number][], count: number) {
   });
 }
 
-// Carve order runs teal to pink; Dijkstra's distances run gold to violet.
+// Carve order runs teal to pink; the search's distances run gold to violet.
 const DRAFT_COLORS = gradient(
   [
     [45, 212, 191],
@@ -40,6 +40,8 @@ export type Solve = {
   run: Generator<{ cell: number; distance: number }, number[]>;
   heat: Float32Array;
   maxHeat: number;
+  /** How many cells had been explored when each cell was visited. */
+  visitedAt: Int32Array;
   explored: number;
   budget: number;
   rate: number;
@@ -123,9 +125,11 @@ export function drawMaze(
     }
   }
 
-  // Dijkstra's search, coloured by distance from the source.
+  // The search, coloured by distance from the source. The latest visits glow
+  // white and fade, so the stack, layer, or heap can be seen at work.
   if (solve) {
     const span = Math.max(solve.maxHeat, 1);
+    const glow = Math.max(4, solve.rate * 0.08);
     for (let index = 0; index < total; index += 1) {
       const heat = solve.heat[index];
       if (heat < 0) continue;
@@ -134,8 +138,9 @@ export function drawMaze(
       ctx.globalAlpha = 0.82;
       ctx.fillStyle = HEAT_COLORS[Math.round((heat / span) * 63)];
       ctx.fillRect(x, y, cell + 0.5, cell + 0.5);
-      if (!solve.path && solve.maxHeat - heat < 1.5) {
-        ctx.globalAlpha = 0.55;
+      const age = solve.explored - solve.visitedAt[index];
+      if (!solve.path && age <= glow) {
+        ctx.globalAlpha = 0.7 * (1 - (age - 1) / glow);
         ctx.fillStyle = "#fff";
         ctx.fillRect(x, y, cell + 0.5, cell + 0.5);
       }

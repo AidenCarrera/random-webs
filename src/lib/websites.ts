@@ -112,7 +112,7 @@ export const WEBSITES: WebsiteEntry[] = [
     lastModified: "2026-10-01",
     title: "Conway Multiverse",
     blurb: "2,116 universes of life at once.",
-    accent: "from-orange-200/85 via-amber-300/70 to-blue-500/70",
+    accent: "from-pink-300/85 via-cyan-300/70 to-violet-500/70",
     metadata: {
       title: "Conway Multiverse - Every Life-like Rule at Once",
       description:
@@ -296,7 +296,7 @@ export const WEBSITES: WebsiteEntry[] = [
     metadata: {
       title: "Maze Generator - Build, Explore, and Solve Mazes",
       description:
-        "Watch mazes get drafted with backtracking, Prim's, or Kruskal's algorithm, explore them yourself, then let Dijkstra's algorithm find the shortest way out.",
+        "Watch mazes get drafted with backtracking, Prim's, or Kruskal's algorithm, explore them yourself, then watch depth-first, breadth-first, or A* search find the way out.",
     },
   },
   {

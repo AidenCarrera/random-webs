@@ -5,14 +5,15 @@ import { FastForward, PencilRuler, Route } from "lucide-react";
 
 import {
   createMaze,
-  dijkstra,
   estimateSteps,
   generateMaze,
   passage,
   shortestPath,
+  solveMaze,
   DIRECTIONS,
   type Algorithm,
   type Maze,
+  type Solver,
 } from "./lib/maze";
 import { drawMaze, type Layout, type Player, type Solve } from "./lib/draw";
 import { isTypingTarget } from "@/lib/keyboard";
@@ -26,6 +27,14 @@ const ALGORITHMS: { id: Algorithm; name: string }[] = [
   { id: "prim", name: "Prim's" },
   { id: "kruskal", name: "Kruskal's" },
 ];
+
+// Depth-first search settles for the first route it finds, not the shortest.
+const SOLVERS: { id: Solver; name: string; label: string; optimal: boolean }[] =
+  [
+    { id: "dfs", name: "DFS", label: "Depth-first search", optimal: false },
+    { id: "bfs", name: "BFS", label: "Breadth-first search", optimal: true },
+    { id: "astar", name: "A*", label: "A-star search", optimal: true },
+  ];
 
 // Cells along the stage's shorter side.
 const SHORT_SIDE: Record<MazeSize, number> = { S: 11, M: 19, L: 31 };
@@ -62,6 +71,7 @@ export default function MazeGenerator() {
   const [algorithm, setAlgorithm] = useState<Algorithm>("backtracker");
   const [size, setSize] = useState<MazeSize>("M");
   const [loops, setLoops] = useState(true);
+  const [solver, setSolver] = useState<Solver>("bfs");
   const [phase, setPhase] = useState<Phase>("idle");
   const [sheet, setSheet] = useState({ number: 0, cols: 0, rows: 0 });
   const [moves, setMoves] = useState(0);
@@ -137,7 +147,7 @@ export default function MazeGenerator() {
     setPhase("ready");
   };
 
-  const solve = () => {
+  const solve = (method: Solver = solver) => {
     const maze = mazeRef.current;
     const player = playerRef.current;
     if (!maze || !player || phase === "generating" || phase === "idle") return;
@@ -145,9 +155,10 @@ export default function MazeGenerator() {
     const source = player.cell === goal ? 0 : player.cell;
 
     solveRef.current = {
-      run: dijkstra(maze, source, goal),
+      run: solveMaze(maze, method, source, goal),
       heat: new Float32Array(maze.walls.length).fill(-1),
       maxHeat: 0,
+      visitedAt: new Int32Array(maze.walls.length),
       explored: 0,
       budget: 0,
       rate: maze.walls.length / SOLVE_SECONDS,
@@ -257,6 +268,7 @@ export default function MazeGenerator() {
         }
         search.heat[settled.value.cell] = settled.value.distance;
         search.maxHeat = Math.max(search.maxHeat, settled.value.distance);
+        search.visitedAt[settled.value.cell] = search.explored;
         search.explored += 1;
       }
     }
@@ -330,11 +342,13 @@ export default function MazeGenerator() {
       walk(path.slice(1));
   };
 
+  const chosen = SOLVERS.find((entry) => entry.id === solver)!;
+
   const status =
     phase === "generating"
       ? "Drafting…"
       : phase === "solving"
-        ? "Dijkstra searching…"
+        ? `${chosen.name} searching…`
         : phase === "solved" && solution
           ? `Solved in ${solution.steps} steps`
           : phase === "escaped"
@@ -390,10 +404,10 @@ export default function MazeGenerator() {
                 <button
                   type="button"
                   className={styles.secondary}
-                  onClick={solve}
+                  onClick={() => solve()}
                 >
                   <Route aria-hidden="true" />
-                  Show shortest
+                  {chosen.optimal ? "Show shortest" : "Show a route"}
                 </button>
               </div>
             </div>
@@ -484,6 +498,35 @@ export default function MazeGenerator() {
           </div>
         </div>
 
+        <div className={styles.field}>
+          <span className={styles.caption} id="maze-solver">
+            Solver
+          </span>
+          <div
+            className={styles.segmented}
+            role="radiogroup"
+            aria-labelledby="maze-solver"
+          >
+            {SOLVERS.map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                role="radio"
+                aria-label={entry.label}
+                aria-checked={solver === entry.id}
+                onClick={() => {
+                  setSolver(entry.id);
+                  // A search already on the sheet is redrawn by the new solver.
+                  if (phase === "solving" || phase === "solved")
+                    solve(entry.id);
+                }}
+              >
+                {entry.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className={styles.actions}>
           <button
             type="button"
@@ -508,11 +551,11 @@ export default function MazeGenerator() {
             <button
               type="button"
               className={styles.secondary}
-              onClick={solve}
+              onClick={() => solve()}
               disabled={phase === "idle" || phase === "solving"}
             >
               <Route aria-hidden="true" />
-              Solve with Dijkstra
+              Solve with {chosen.name}
             </button>
           )}
         </div>

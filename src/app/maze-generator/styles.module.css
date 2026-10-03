@@ -460,7 +460,7 @@
 }
 
 /* Shorter laptop screens: tighten the panel so it still fits beside the maze. */
-@media (min-width: 1024px) and (max-height: 780px) {
+@media (min-width: 1024px) and (max-height: 860px) {
   .panel,
   .readout {
     gap: 12px;
@@ -512,7 +512,7 @@
 }
 
 /* Very short windows drop the key legend, the least essential piece. */
-@media (min-width: 1024px) and (max-height: 660px) {
+@media (min-width: 1024px) and (max-height: 735px) {
   .keys {
     display: none;
   }

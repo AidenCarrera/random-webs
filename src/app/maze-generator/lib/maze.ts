@@ -1,7 +1,9 @@
 // Grid mazes carved one step at a time by generators, so every algorithm can
-// be animated, and solved with Dijkstra's algorithm over the open passages.
+// be animated, and solved by a depth-first, breadth-first, or A* search over
+// the open passages.
 
 export type Algorithm = "backtracker" | "prim" | "kruskal";
+export type Solver = "dfs" | "bfs" | "astar";
 
 export const N = 1;
 export const E = 2;
@@ -285,47 +287,125 @@ class MinHeap {
 }
 
 /**
- * Dijkstra's algorithm from `source`, yielding each cell as it is settled
- * (closest first) and returning the shortest path to `target`.
+ * A search from `source`, yielding each cell as it is visited along with its
+ * distance from the source along the search tree, and returning the route it
+ * found to `target`.
  */
-export function* dijkstra(
-  maze: Maze,
-  source: number,
-  target: number,
-): Generator<{ cell: number; distance: number }, number[]> {
-  const distance = new Float64Array(maze.walls.length).fill(Infinity);
-  const previous = new Int32Array(maze.walls.length).fill(-1);
-  const settled = new Uint8Array(maze.walls.length);
-  const queue = new MinHeap();
+type Search = Generator<{ cell: number; distance: number }, number[]>;
 
-  distance[source] = 0;
-  queue.push(0, source);
-
-  while (queue.size > 0) {
-    const [cost, cell] = queue.pop();
-    if (settled[cell]) continue;
-    settled[cell] = 1;
-    yield { cell, distance: cost };
-    if (cell === target) break;
-
-    for (let direction = 0; direction < 4; direction += 1) {
-      const next = passage(maze, cell, direction);
-      // Every corridor step costs the same, so each edge weighs 1.
-      if (next < 0 || settled[next] || cost + 1 >= distance[next]) continue;
-      distance[next] = cost + 1;
-      previous[next] = cell;
-      queue.push(cost + 1, next);
-    }
-  }
-
-  if (!settled[target]) return [];
+function trace(previous: Int32Array, target: number) {
   const path: number[] = [];
   for (let cell = target; cell !== -1; cell = previous[cell]) path.push(cell);
   return path.reverse();
 }
 
+/**
+ * Depth-first search: follows one corridor as deep as it goes, then backtracks
+ * to the last junction. It finds a route, but rarely the shortest one.
+ */
+function* dfs(maze: Maze, source: number, target: number): Search {
+  const depth = new Int32Array(maze.walls.length);
+  const previous = new Int32Array(maze.walls.length).fill(-1);
+  const visited = new Uint8Array(maze.walls.length);
+  const stack = [source];
+
+  while (stack.length > 0) {
+    const cell = stack.pop()!;
+    if (visited[cell]) continue;
+    visited[cell] = 1;
+    yield { cell, distance: depth[cell] };
+    if (cell === target) return trace(previous, target);
+
+    for (let direction = 0; direction < 4; direction += 1) {
+      const next = passage(maze, cell, direction);
+      if (next < 0 || visited[next]) continue;
+      // A cell still waiting on the stack is claimed by the deeper branch.
+      depth[next] = depth[cell] + 1;
+      previous[next] = cell;
+      stack.push(next);
+    }
+  }
+  return [];
+}
+
+/**
+ * Breadth-first search: floods outward one distance layer at a time, so the
+ * first route to reach the target is a shortest one.
+ */
+function* bfs(maze: Maze, source: number, target: number): Search {
+  const distance = new Int32Array(maze.walls.length).fill(-1);
+  const previous = new Int32Array(maze.walls.length).fill(-1);
+  const queue = [source];
+  distance[source] = 0;
+
+  for (let head = 0; head < queue.length; head += 1) {
+    const cell = queue[head];
+    yield { cell, distance: distance[cell] };
+    if (cell === target) return trace(previous, target);
+
+    for (let direction = 0; direction < 4; direction += 1) {
+      const next = passage(maze, cell, direction);
+      if (next < 0 || distance[next] >= 0) continue;
+      distance[next] = distance[cell] + 1;
+      previous[next] = cell;
+      queue.push(next);
+    }
+  }
+  return [];
+}
+
+/**
+ * A*: always visits the cell whose steps so far plus Manhattan distance to the
+ * target is smallest. That estimate never overshoots the real distance, so the
+ * route is still a shortest one, usually found with far less searching.
+ */
+function* astar(maze: Maze, source: number, target: number): Search {
+  const distance = new Float64Array(maze.walls.length).fill(Infinity);
+  const previous = new Int32Array(maze.walls.length).fill(-1);
+  const settled = new Uint8Array(maze.walls.length);
+  const open = new MinHeap();
+  const estimate = (cell: number) =>
+    Math.abs((cell % maze.cols) - (target % maze.cols)) +
+    Math.abs(Math.floor(cell / maze.cols) - Math.floor(target / maze.cols));
+
+  distance[source] = 0;
+  open.push(estimate(source), source);
+
+  while (open.size > 0) {
+    const [, cell] = open.pop();
+    if (settled[cell]) continue;
+    settled[cell] = 1;
+    yield { cell, distance: distance[cell] };
+    if (cell === target) return trace(previous, target);
+
+    const cost = distance[cell] + 1;
+    for (let direction = 0; direction < 4; direction += 1) {
+      const next = passage(maze, cell, direction);
+      if (next < 0 || settled[next] || cost >= distance[next]) continue;
+      distance[next] = cost;
+      previous[next] = cell;
+      // The fraction breaks ties in favour of the cell nearer the target.
+      const remaining = estimate(next);
+      open.push(cost + remaining + remaining / 1024, next);
+    }
+  }
+  return [];
+}
+
+const SOLVERS: Record<
+  Solver,
+  (maze: Maze, source: number, target: number) => Search
+> = { dfs, bfs, astar };
+
+export const solveMaze = (
+  maze: Maze,
+  solver: Solver,
+  source: number,
+  target: number,
+) => SOLVERS[solver](maze, source, target);
+
 export function shortestPath(maze: Maze, source: number, target: number) {
-  const search = dijkstra(maze, source, target);
+  const search = bfs(maze, source, target);
   let step = search.next();
   while (!step.done) step = search.next();
   return step.value;
