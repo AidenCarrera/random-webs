@@ -51,34 +51,53 @@ export function fitCamera(width: number, height: number): Camera {
   };
 }
 
+const clampZoom = (zoom: number, width: number, height: number) =>
+  Math.min(MAX_ZOOM, Math.max(fitCamera(width, height).zoom * 0.75, zoom));
+
 /** Keeps the zoom in range and at least part of the map on screen. */
 export function clampCamera(
   camera: Camera,
   width: number,
   height: number,
 ): Camera {
-  const fit = fitCamera(width, height).zoom;
-  const zoom = Math.min(MAX_ZOOM, Math.max(fit * 0.75, camera.zoom));
-  const halfW = (MAP_WIDTH * zoom) / 2;
-  const halfH = (MAP_HEIGHT * zoom) / 2;
+  const zoom = clampZoom(camera.zoom, width, height);
+  const mapWidth = MAP_WIDTH * zoom;
+  const mapHeight = MAP_HEIGHT * zoom;
+  // Half the map stays in view, or half the view once the map outgrows it,
+  // so every edge can still be reached when zoomed in.
+  const keepX = Math.min(mapWidth, width - RULER.left) / 2;
+  const keepY = Math.min(mapHeight, height - RULER.top) / 2;
   return {
     zoom,
-    x: Math.min(width - halfW, Math.max(RULER.left - halfW, camera.x)),
-    y: Math.min(height - halfH, Math.max(RULER.top - halfH, camera.y)),
+    x: Math.min(
+      width - keepX,
+      Math.max(RULER.left + keepX - mapWidth, camera.x),
+    ),
+    y: Math.min(
+      height - keepY,
+      Math.max(RULER.top + keepY - mapHeight, camera.y),
+    ),
   };
 }
 
-/** Scales the camera by `factor` while the point (px, py) stays put. */
+/**
+ * Scales the camera by `factor`, as far as the zoom limits allow, while the
+ * point (px, py) stays put.
+ */
 export function zoomAround(
   camera: Camera,
   factor: number,
   px: number,
   py: number,
+  width: number,
+  height: number,
 ): Camera {
+  const zoom = clampZoom(camera.zoom * factor, width, height);
+  const scale = zoom / camera.zoom;
   return {
-    zoom: camera.zoom * factor,
-    x: px - (px - camera.x) * factor,
-    y: py - (py - camera.y) * factor,
+    zoom,
+    x: px - (px - camera.x) * scale,
+    y: py - (py - camera.y) * scale,
   };
 }
 

@@ -70,12 +70,33 @@ type Gesture =
 
 type Flight = { from: Camera; to: Camera; start: number };
 
+/** Safari's non-standard event for a trackpad pinch. */
+type SafariGestureEvent = UIEvent & {
+  scale: number;
+  clientX: number;
+  clientY: number;
+};
+
 const FLIGHT_MS = 420;
 const PULSE_MS = 1400;
+const TRACKPAD_HOLD_MS = 150;
+const PINCH_GAIN = 1;
 const formatCount = new Intl.NumberFormat("en-US").format;
 
 const easeInOut = (t: number) =>
   t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+
+/**
+ * Whether a wheel event is a notch of a mouse wheel rather than a trackpad
+ * scroll. Wheels turn one axis a whole notch at a time: lines in Firefox, and
+ * 120 legacy units elsewhere. Trackpads send fine pixel deltas.
+ */
+function isWheelNotch(event: WheelEvent) {
+  if (event.deltaX !== 0) return false;
+  if (event.deltaMode !== WheelEvent.DOM_DELTA_PIXEL) return true;
+  const legacy = (event as WheelEvent & { wheelDeltaY?: number }).wheelDeltaY;
+  return !!legacy && legacy % 120 === 0;
+}
 
 type Props = TransportProps & {
   sessionRef: RefObject<MapSession>;
@@ -110,6 +131,8 @@ export function MultiverseMap({
   const pointersRef = useRef(new Map<number, { x: number; y: number }>());
   const gestureRef = useRef<Gesture | null>(null);
   const flightRef = useRef<Flight | null>(null);
+  const trackpadAtRef = useRef(-TRACKPAD_HOLD_MS);
+  const pinchScaleRef = useRef<number | null>(null);
   const pulseStartRef = useRef(-PULSE_MS);
   const fontRef = useRef("ui-monospace, monospace");
 
@@ -148,6 +171,8 @@ export function MultiverseMap({
         factor,
         (width + RULER.left) / 2,
         (height + RULER.top) / 2,
+        width,
+        height,
       ),
     );
   };
@@ -155,6 +180,49 @@ export function MultiverseMap({
   const fit = () => {
     const { width, height } = sizeRef.current;
     flyTo(fitCamera(width, height));
+  };
+
+  const local = (event: {
+    clientX: number;
+    clientY: number;
+    currentTarget: EventTarget | null;
+  }) => {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  };
+
+  const universeUnder = (x: number, y: number) => {
+    const camera = sessionRef.current.camera;
+    if (!camera || x < RULER.left || y < RULER.top) return -1;
+    return universeAt(
+      Math.floor((x - camera.x) / camera.zoom),
+      Math.floor((y - camera.y) / camera.zoom),
+    );
+  };
+
+  const moveTip = (x: number, y: number) => {
+    const tip = tipRef.current;
+    if (!tip) return;
+    const { width, height } = sizeRef.current;
+    const left =
+      x + 16 + tip.offsetWidth > width ? x - 12 - tip.offsetWidth : x + 16;
+    const top =
+      y + 16 + tip.offsetHeight > height ? y - 12 - tip.offsetHeight : y + 16;
+    tip.style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`;
+  };
+
+  const setHoverUniverse = (universe: number) => {
+    if (hoverRef.current === universe) return;
+    hoverRef.current = universe;
+    frameStaleRef.current = true;
+  };
+
+  /** Points the mouse at whatever is under it now. */
+  const hoverAt = (canvas: HTMLElement, x: number, y: number) => {
+    const universe = universeUnder(x, y);
+    setHoverUniverse(universe);
+    moveTip(x, y);
+    canvas.style.cursor = universe < 0 ? "grab" : "pointer";
   };
 
   const step = () => {
@@ -292,22 +360,50 @@ export function MultiverseMap({
     const camera = sessionRef.current.camera;
     if (!camera) return;
     event.preventDefault();
+    // A fast trackpad flick can pass for a notch, so a scroll stays a
+    // trackpad's until it has been quiet for a moment.
+    if (!isWheelNotch(event)) trackpadAtRef.current = event.timeStamp;
+    const trackpad = event.timeStamp - trackpadAtRef.current < TRACKPAD_HOLD_MS;
+    const zooming = event.ctrlKey || !trackpad;
+    // Safari sends its pinches as gesture events instead.
+    if (zooming && pinchScaleRef.current !== null) return;
+
     flightRef.current = null;
+    const { width, height } = sizeRef.current;
+    const { x, y } = local(event);
     const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 400 : 1;
-    // Trackpad pinches arrive as ctrl + wheel with small deltas.
-    const rate = event.ctrlKey ? 0.01 : 0.0015;
-    const factor = Math.exp(-event.deltaY * unit * rate);
-    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-    setCamera(
-      zoomAround(
-        camera,
-        factor,
-        event.clientX - rect.left,
-        event.clientY - rect.top,
-      ),
-    );
+    if (zooming) {
+      // Trackpad pinches arrive as ctrl + wheel with small deltas.
+      const rate = trackpad ? 0.01 * PINCH_GAIN : 0.0015;
+      const factor = Math.exp(-event.deltaY * unit * rate);
+      setCamera(zoomAround(camera, factor, x, y, width, height));
+    } else {
+      // Two fingers on a trackpad slide the map around.
+      setCamera({
+        ...camera,
+        x: camera.x - event.deltaX * unit,
+        y: camera.y - event.deltaY * unit,
+      });
+    }
+    // The map may have moved under a mouse that didn't.
+    if (!gestureRef.current) hoverAt(event.currentTarget as HTMLElement, x, y);
   };
   const wheelEvent = useEffectEvent(onWheel);
+
+  const onGesture = (event: SafariGestureEvent) => {
+    event.preventDefault();
+    const last = pinchScaleRef.current;
+    pinchScaleRef.current = event.type === "gestureend" ? null : event.scale;
+    const camera = sessionRef.current.camera;
+    // Touchscreen pinches are already handled as pointers.
+    if (!camera || last === null || pointersRef.current.size > 0) return;
+    flightRef.current = null;
+    const { width, height } = sizeRef.current;
+    const { x, y } = local(event);
+    const factor = (event.scale / last) ** PINCH_GAIN;
+    setCamera(zoomAround(camera, factor, x, y, width, height));
+  };
+  const gestureEvent = useEffectEvent(onGesture);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -343,6 +439,10 @@ export function MultiverseMap({
 
     const handleWheel = (event: WheelEvent) => wheelEvent(event);
     canvas.addEventListener("wheel", handleWheel, { passive: false });
+    const handleGesture = (event: Event) =>
+      gestureEvent(event as SafariGestureEvent);
+    const gestures = ["gesturestart", "gesturechange", "gestureend"];
+    for (const type of gestures) canvas.addEventListener(type, handleGesture);
 
     let frame = requestAnimationFrame(function loop(now) {
       frameEvent(now, ctx);
@@ -353,6 +453,9 @@ export function MultiverseMap({
       cancelAnimationFrame(frame);
       observer.disconnect();
       canvas.removeEventListener("wheel", handleWheel);
+      for (const type of gestures) {
+        canvas.removeEventListener(type, handleGesture);
+      }
       pixelsRef.current = null;
     };
   }, [sessionRef]);
@@ -387,37 +490,6 @@ export function MultiverseMap({
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, []);
-
-  const local = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
-  };
-
-  const universeUnder = (x: number, y: number) => {
-    const camera = sessionRef.current.camera;
-    if (!camera || x < RULER.left || y < RULER.top) return -1;
-    return universeAt(
-      Math.floor((x - camera.x) / camera.zoom),
-      Math.floor((y - camera.y) / camera.zoom),
-    );
-  };
-
-  const moveTip = (x: number, y: number) => {
-    const tip = tipRef.current;
-    if (!tip) return;
-    const { width, height } = sizeRef.current;
-    const left =
-      x + 16 + tip.offsetWidth > width ? x - 12 - tip.offsetWidth : x + 16;
-    const top =
-      y + 16 + tip.offsetHeight > height ? y - 12 - tip.offsetHeight : y + 16;
-    tip.style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`;
-  };
-
-  const setHoverUniverse = (universe: number) => {
-    if (hoverRef.current === universe) return;
-    hoverRef.current = universe;
-    frameStaleRef.current = true;
-  };
 
   const startGesture = () => {
     const camera = sessionRef.current.camera;
@@ -467,7 +539,7 @@ export function MultiverseMap({
         <canvas
           ref={canvasRef}
           className={styles.mapCanvas}
-          aria-label="Map of 2,116 life-like universes. Drag to pan, scroll or pinch to zoom, and click a universe to enter it."
+          aria-label="Map of 2,116 life-like universes. Drag or swipe with two fingers to pan, pinch or turn the mouse wheel to zoom, and click a universe to enter it."
           onContextMenu={(event) => event.preventDefault()}
           onPointerDown={(event) => {
             if (event.button !== 0) return;
@@ -484,11 +556,7 @@ export function MultiverseMap({
 
             if (!pointersRef.current.has(event.pointerId) || !gesture) {
               if (event.pointerType !== "mouse") return;
-              const universe = universeUnder(point.x, point.y);
-              setHoverUniverse(universe);
-              moveTip(point.x, point.y);
-              event.currentTarget.style.cursor =
-                universe < 0 ? "grab" : "pointer";
+              hoverAt(event.currentTarget, point.x, point.y);
               return;
             }
 
@@ -511,11 +579,14 @@ export function MultiverseMap({
               const x = (a.x + b.x) / 2;
               const y = (a.y + b.y) / 2;
               // The map point under the starting midpoint follows the fingers.
+              const { width, height } = sizeRef.current;
               const zoomed = zoomAround(
                 gesture.camera,
                 distance / gesture.distance,
                 gesture.x,
                 gesture.y,
+                width,
+                height,
               );
               setCamera({
                 ...zoomed,
