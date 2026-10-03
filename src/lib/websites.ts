@@ -72,6 +72,18 @@ export const WEBSITES: WebsiteEntry[] = [
     },
   },
   {
+    path: "/blackout",
+    lastModified: "2026-09-27",
+    title: "Blackout",
+    blurb: "Scan the dark.",
+    accent: "from-cyan-300/80 via-violet-400/70 to-fuchsia-500/70",
+    metadata: {
+      title: "Blackout",
+      description:
+        "Explore a pitch-black building with a scanner, revealing walls piece by piece as you search for signal beacons and a way out.",
+    },
+  },
+  {
     path: "/boids-simulator",
     lastModified: "2026-07-29",
     title: "Boids Simulator",
@@ -405,6 +417,18 @@ export const WEBSITES: WebsiteEntry[] = [
       title: "Send to the Void - Black Hole Message Shredder",
       description:
         "Type a short message and watch every character shred into a black hole, surrounded by stars, and optional GIF export.",
+    },
+  },
+  {
+    path: "/shatter",
+    lastModified: "2026-10-03",
+    title: "Shatter",
+    blurb: "Break it. Watch it rebuild.",
+    accent: "from-sky-300/80 via-fuchsia-400/70 to-rose-500/70",
+    metadata: {
+      title: "Shatter - Interactive Cube Physics",
+      description:
+        "Thousands of tiny cubes hold a shape until you sweep through them. Blast them apart, drop them into a pile, and watch them leap back together.",
     },
   },
   {

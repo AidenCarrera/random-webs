@@ -1,0 +1,118 @@
+.page {
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+  background: #06070b;
+  color: #e7e9f3;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.header {
+  position: absolute;
+  top: clamp(1rem, 3vw, 1.75rem);
+  left: clamp(1rem, 3vw, 1.75rem);
+  pointer-events: none;
+}
+
+.header h1 {
+  font-size: clamp(1.1rem, 2.4vw, 1.4rem);
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.header p {
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(231, 233, 243, 0.5);
+}
+
+.controls {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(3rem, 8vh, 4rem);
+  translate: -50% 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  width: max-content;
+  max-width: calc(100% - 2rem);
+}
+
+.controls button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid rgba(231, 233, 243, 0.18);
+  border-radius: 999px;
+  background: rgba(6, 7, 11, 0.6);
+  color: rgba(231, 233, 243, 0.75);
+  font: inherit;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.controls button:hover {
+  border-color: rgba(231, 233, 243, 0.5);
+  color: #fff;
+}
+
+.controls button[aria-pressed="true"] {
+  border-color: #e7e9f3;
+  background: #e7e9f3;
+  color: #06070b;
+}
+
+.controls .drop {
+  margin-left: 0.4rem;
+  border-color: rgba(255, 95, 162, 0.5);
+  color: #ff8fc0;
+}
+
+.controls .drop[aria-pressed="true"] {
+  border-color: #ff5fa2;
+  background: #ff5fa2;
+  color: #06070b;
+}
+
+.help {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1rem, 3vh, 1.5rem);
+  translate: -50% 0;
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  text-align: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: rgba(231, 233, 243, 0.4);
+  pointer-events: none;
+}
+
+.touch {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .mouse {
+    display: none;
+  }
+
+  .touch {
+    display: inline;
+  }
+}
