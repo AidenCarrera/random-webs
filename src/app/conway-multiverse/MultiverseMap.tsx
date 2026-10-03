@@ -617,9 +617,10 @@ export function MultiverseMap({
               ranges grow upward and to the right.
             </p>
             <p>
-              Colors show age: white newborns, then orange, yellow, green, and
-              blue for the oldest cells. Rules with B0 show every other
-              generation inverted, as Golly does, so they don&apos;t strobe.
+              Colors show age: white newborns, then a rainbow from pink and red
+              through yellow, green, and blue to violet for the oldest cells.
+              Rules with B0 show every other generation inverted, as Golly does,
+              so they don&apos;t strobe.
             </p>
             <p className={styles.credit}>
               Based on{" "}

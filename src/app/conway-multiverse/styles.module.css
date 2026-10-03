@@ -8,8 +8,8 @@
   --muted: #8a90a4;
   --line: rgba(255, 255, 255, 0.08);
   --hover: rgba(255, 255, 255, 0.07);
-  --accent: #ff9140;
-  --on-accent: #1d1206;
+  --accent: #38d6f0;
+  --on-accent: #041a20;
 
   display: flex;
   flex-direction: column;
@@ -248,7 +248,7 @@
 
 .iconButton[aria-pressed="true"],
 .iconButton[aria-expanded="true"] {
-  background: rgba(255, 145, 64, 0.16);
+  background: rgba(56, 214, 240, 0.16);
   color: var(--accent);
 }
 
@@ -496,11 +496,11 @@
 }
 
 .minimapLandmarks rect {
-  fill: rgba(255, 145, 64, 0.45);
+  fill: rgba(56, 214, 240, 0.45);
 }
 
 .minimapHere line {
-  stroke: rgba(255, 145, 64, 0.4);
+  stroke: rgba(56, 214, 240, 0.4);
   stroke-width: 0.35;
 }
 

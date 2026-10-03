@@ -20,7 +20,7 @@ import {
 import type { World } from "./world";
 
 const VOID = `rgb(${VOID_RGB.join(", ")})`;
-const ACCENT = "#ff9140";
+const ACCENT = "#38d6f0";
 const INK = "rgba(238, 240, 246, 0.92)";
 const MUTED = "rgba(150, 156, 176, 0.75)";
 const RULE_LINE = "rgba(150, 156, 176, 0.28)";

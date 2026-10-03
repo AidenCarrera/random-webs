@@ -192,15 +192,19 @@ export const landmarkFor = (rule: Rule) =>
 
 // ───────── Colors ─────────
 
-// Cells are colored by age, as in the video: newborns are white, then orange
-// at about four generations, yellow, green, and blue past a hundred or so.
+// Cells are colored by age along a rainbow, one hue per doubling: newborns
+// are white, then pink, red, yellow, green, cyan, blue, and indigo, ending in
+// violet for cells that have lasted a couple hundred generations.
 const AGE_STOPS: [age: number, rgb: [number, number, number]][] = [
   [1, [255, 255, 255]],
-  [4, [255, 145, 64]],
-  [12, [255, 214, 74]],
-  [40, [90, 214, 125]],
-  [128, [74, 125, 255]],
-  [255, [92, 92, 230]],
+  [2, [255, 107, 190]],
+  [4, [255, 82, 94]],
+  [8, [255, 214, 64]],
+  [16, [94, 224, 108]],
+  [32, [48, 214, 212]],
+  [64, [64, 150, 255]],
+  [128, [116, 104, 255]],
+  [255, [176, 98, 246]],
 ];
 
 /** RGB for ages 0–255. Age 0 (dead) is unused. */
