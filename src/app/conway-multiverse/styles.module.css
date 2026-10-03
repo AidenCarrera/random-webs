@@ -1,0 +1,631 @@
+/* ───────── Conway Multiverse: deep space, cells colored by age ───────── */
+
+.page {
+  --bg: #07080c;
+  --void: #131622;
+  --raised: #12141d;
+  --ink: #eef0f6;
+  --muted: #8a90a4;
+  --line: rgba(255, 255, 255, 0.08);
+  --hover: rgba(255, 255, 255, 0.07);
+  --accent: #ff9140;
+  --on-accent: #1d1206;
+
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      1100px 520px at 50% -12%,
+      rgba(74, 125, 255, 0.09),
+      transparent 70%
+    ),
+    var(--bg);
+  color: var(--ink);
+  color-scheme: dark;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 58px;
+  padding: 14px 24px 10px;
+}
+
+.header h1 {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.back {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-left: -6px;
+  border-radius: 9px;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s var(--ease-out-back);
+}
+
+.back svg {
+  width: 18px;
+  height: 18px;
+}
+
+.stats {
+  display: flex;
+  gap: 20px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.stats > div {
+  display: flex;
+  gap: 8px;
+}
+
+.stats dt {
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stats dd {
+  min-width: 4ch;
+  font-variant-numeric: tabular-nums;
+}
+
+.of {
+  color: var(--muted);
+}
+
+/* ───────── Boards ───────── */
+
+.board {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 0 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgb(10, 11, 17);
+}
+
+.mapCanvas,
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.mapCanvas {
+  cursor: grab;
+}
+
+.canvas {
+  cursor: crosshair;
+}
+
+.tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(14, 16, 24, 0.95);
+  box-shadow: 0 10px 28px -12px rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.tip[hidden] {
+  display: none;
+}
+
+.tipRule {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tipName {
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.tipMeta {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(14, 16, 24, 0.92);
+  color: var(--muted);
+  font-size: 14px;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: fade-in 0.4s ease both;
+}
+
+/* ───────── Dock ───────── */
+
+.dock {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 12px 16px 18px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--raised);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 14px 34px -14px rgba(0, 0, 0, 0.8);
+}
+
+.divider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 22px;
+  margin: 0 5px;
+  background: var(--line);
+}
+
+.iconButton,
+.play,
+.speed {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s var(--ease-out-back);
+}
+
+.iconButton svg,
+.play svg {
+  width: 18px;
+  height: 18px;
+}
+
+.play {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.speed {
+  width: auto;
+  min-width: 38px;
+  padding: 0 8px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.iconButton[aria-pressed="true"],
+.iconButton[aria-expanded="true"] {
+  background: rgba(255, 145, 64, 0.16);
+  color: var(--accent);
+}
+
+.iconButton:disabled {
+  color: rgba(238, 240, 246, 0.2);
+  cursor: not-allowed;
+}
+
+/* Hover never repaints a pressed button, and touch screens skip it entirely
+   so a tap can't leave a button stuck in its hover color. */
+@media (hover: hover) {
+  .iconButton:hover:not(
+      :disabled,
+      [aria-pressed="true"],
+      [aria-expanded="true"]
+    ),
+  .speed:hover,
+  .back:hover,
+  .landmark:hover {
+    background: var(--hover);
+  }
+
+  .play:hover {
+    filter: brightness(1.08);
+  }
+
+  .count:hover:not([aria-pressed="true"]) {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--ink);
+  }
+}
+
+.iconButton:active:not(:disabled),
+.play:active,
+.speed:active,
+.back:active,
+.count:active,
+.landmark:active {
+  transform: scale(0.94);
+}
+
+/* ───────── Popovers ───────── */
+
+.popover {
+  position: absolute;
+  bottom: calc(100% - 4px);
+  left: 50%;
+  z-index: 2;
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(60dvh, 440px);
+  padding: 12px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--raised);
+  box-shadow: 0 20px 48px -18px rgba(0, 0, 0, 0.85);
+  transform: translateX(-50%);
+  animation: rise-in 0.25s var(--ease-out-expo) both;
+}
+
+.popoverTitle {
+  margin: 0 4px 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.landmarks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 2px;
+}
+
+.landmark {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 550;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s var(--ease-out-back);
+}
+
+.landmarkRule {
+  color: var(--muted);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.about {
+  padding: 14px 16px 16px;
+}
+
+.about .popoverTitle {
+  margin: 0 0 4px;
+}
+
+.about p:not(.popoverTitle) {
+  margin-top: 8px;
+  color: rgba(238, 240, 246, 0.82);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.about code {
+  color: var(--ink);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.credit a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ───────── One universe ───────── */
+
+.universe {
+  display: grid;
+  flex: 1;
+  grid-template-areas:
+    "board panel"
+    "dock panel";
+  grid-template-columns: minmax(0, 1fr) 288px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+}
+
+.universe .board {
+  grid-area: board;
+  margin-right: 0;
+}
+
+.universe .dock {
+  grid-area: dock;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  grid-area: panel;
+  gap: 22px;
+  min-height: 0;
+  padding: 2px 20px 18px;
+  overflow-y: auto;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rule {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.title {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.note {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.laws {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.counts legend {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.counts > div {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.count {
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s var(--ease-out-back);
+}
+
+.count[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.travel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.minimap {
+  flex: none;
+  width: 136px;
+  height: 136px;
+  cursor: pointer;
+}
+
+.minimapFamilies rect {
+  fill: rgba(255, 255, 255, 0.07);
+}
+
+.minimapLandmarks rect {
+  fill: rgba(255, 145, 64, 0.45);
+}
+
+.minimapHere line {
+  stroke: rgba(255, 145, 64, 0.4);
+  stroke-width: 0.35;
+}
+
+.minimapHere rect {
+  fill: var(--accent);
+}
+
+.pad {
+  display: grid;
+  grid-template-areas:
+    ". up ."
+    "left . right"
+    ". down .";
+  gap: 2px;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Narrow screens stack the rule panel above the board. */
+@media (max-width: 820px) {
+  .universe {
+    grid-template-areas:
+      "panel"
+      "board"
+      "dock";
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .universe .board {
+    margin-right: 16px;
+  }
+
+  .panel {
+    gap: 10px;
+    padding: 0 16px 12px;
+    overflow: visible;
+  }
+
+  .identity {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 10px;
+  }
+
+  .rule {
+    font-size: 17px;
+  }
+
+  .note,
+  .travel {
+    display: none;
+  }
+
+  .laws {
+    gap: 8px;
+  }
+
+  .counts legend {
+    margin-bottom: 4px;
+  }
+
+  .count {
+    height: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 12px 16px 8px;
+  }
+
+  .stats {
+    gap: 12px;
+  }
+
+  .of {
+    display: none;
+  }
+
+  .board {
+    margin: 0 8px;
+  }
+
+  .universe .board {
+    margin-right: 8px;
+  }
+
+  .dock {
+    padding: 10px 8px 14px;
+  }
+
+  .iconButton,
+  .play,
+  .speed {
+    width: 34px;
+    height: 34px;
+  }
+
+  .speed {
+    width: auto;
+    min-width: 34px;
+    padding: 0 6px;
+  }
+
+  .divider {
+    margin: 0 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover,
+  .empty {
+    animation: none;
+  }
+}

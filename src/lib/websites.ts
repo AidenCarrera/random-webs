@@ -108,6 +108,18 @@ export const WEBSITES: WebsiteEntry[] = [
     },
   },
   {
+    path: "/conway-multiverse",
+    lastModified: "2026-10-01",
+    title: "Conway Multiverse",
+    blurb: "2,116 universes of life at once.",
+    accent: "from-orange-200/85 via-amber-300/70 to-blue-500/70",
+    metadata: {
+      title: "Conway Multiverse - Every Life-like Rule at Once",
+      description:
+        "Watch all 2,116 connected life-like cellular automata run side by side from the same soup, then step inside any universe to rewrite its birth and survival rules.",
+    },
+  },
+  {
     path: "/dont-click-me",
     lastModified: "2026-07-15",
     title: "Don't Click Me",
@@ -189,18 +201,6 @@ export const WEBSITES: WebsiteEntry[] = [
       title: "Fractal Explorer - Mandelbrot Viewer",
       description:
         "Explore the Mandelbrot set with smooth zooming, customizable colors, and an optional audio-reactive mode that brings fractals to life.",
-    },
-  },
-  {
-    path: "/game-of-life",
-    lastModified: "2026-09-30",
-    title: "Game of Life",
-    blurb: "Life in a petri dish.",
-    accent: "from-pink-300/80 via-fuchsia-400/70 to-amber-200/80",
-    metadata: {
-      title: "Game of Life - Petri Dish Cellular Automaton",
-      description:
-        "Grow Conway's Game of Life in a petri dish. Draw cells, set the incubator temperature, and seed classic patterns like the glider gun and pulsar.",
     },
   },
   {
