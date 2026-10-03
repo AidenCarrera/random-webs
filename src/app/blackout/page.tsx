@@ -21,6 +21,9 @@ import styles from "./styles.module.css";
 const MAX_POINTS = 180_000;
 const RAYS = 170;
 const PULSE_RAYS = 4200;
+// Points swell from one pixel to a 2x2 blob somewhere between these depths.
+const BLOB_NEAR = 1.5;
+const BLOB_FAR = 4.5;
 const WHITE = 0xffffffff;
 const GREEN = 0xff66ff9a | 0;
 
@@ -56,6 +59,7 @@ export default function BlackoutPage() {
     const ys = new Float32Array(MAX_POINTS);
     const zs = new Float32Array(MAX_POINTS);
     const colors = new Uint32Array(MAX_POINTS);
+    const blobs = new Float32Array(MAX_POINTS);
     let count = 0;
     let head = 0;
     const add = (x: number, y: number, z: number, color: number) => {
@@ -63,6 +67,10 @@ export default function BlackoutPage() {
       ys[head] = y;
       zs[head] = z;
       colors[head] = color;
+      // Every point swells at its own depth, so the change never lines up into an edge.
+      blobs[head] =
+        BLOB_NEAR +
+        ((BLOB_FAR - BLOB_NEAR) * (Math.random() + Math.random())) / 2;
       head = (head + 1) % MAX_POINTS;
       count = Math.min(MAX_POINTS, count + 1);
     };
@@ -437,7 +445,7 @@ export default function BlackoutPage() {
         y: number,
         z: number,
         color: number,
-        big: boolean,
+        blob: number,
       ) => {
         const dx = x - player.x;
         const dy = y - player.y;
@@ -455,14 +463,14 @@ export default function BlackoutPage() {
           depth[index] = f;
           buffer[index] = color;
         }
-        if (big || f < 3) {
+        if (f < blob) {
           buffer[index + 1] = color;
           buffer[index + width] = color;
           buffer[index + width + 1] = color;
         }
       };
       for (let i = 0; i < count; i += 1)
-        plot(xs[i], ys[i], zs[i], colors[i], false);
+        plot(xs[i], ys[i], zs[i], colors[i], blobs[i]);
       ghosts = ghosts.filter((ghost) => (ghost.life -= dt * 0.45) > 0);
       for (const ghost of ghosts) {
         const fade = Math.round(90 + ghost.life * 165);
@@ -471,7 +479,7 @@ export default function BlackoutPage() {
           ghost.y,
           ghost.z,
           (255 << 24) | (40 << 16) | (40 << 8) | fade,
-          true,
+          Infinity,
         );
       }
       const pulse = 0.5 + 0.5 * Math.sin(now / 180);
@@ -485,7 +493,7 @@ export default function BlackoutPage() {
             beacon.y + Math.sin(a) * 0.3 * (1 + pulse),
             0.3,
             WHITE,
-            true,
+            Infinity,
           );
         }
       });
