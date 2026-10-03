@@ -9,6 +9,17 @@ const FLOOR = -3.2;
 const WALL = 4.2;
 const GOLDEN = Math.PI * (3 - Math.sqrt(5));
 const HOT = [2.4, 2.1, 1.8];
+// Camera orbit keys by physical position: [turn, tilt].
+const ORBIT: Record<string, [number, number]> = {
+  KeyA: [-1, 0],
+  ArrowLeft: [-1, 0],
+  KeyD: [1, 0],
+  ArrowRight: [1, 0],
+  KeyW: [0, 1],
+  ArrowUp: [0, 1],
+  KeyS: [0, -1],
+  ArrowDown: [0, -1],
+};
 
 const rnd = (i: number) => {
   const x = Math.sin(i * 127.1 + 311.7) * 43758.5453;
@@ -562,7 +573,17 @@ export default function ShatterPage() {
       }
     };
 
+    const held = new Set<string>();
     const onKey = (event: KeyboardEvent) => {
+      // Ahead of the button guard: a clicked shape button keeps focus.
+      if (
+        event.code in ORBIT &&
+        !(event.ctrlKey || event.metaKey || event.altKey)
+      ) {
+        event.preventDefault();
+        held.add(event.code);
+        return;
+      }
       if ((event.target as HTMLElement | null)?.closest("button")) return;
       if (event.key === " ") {
         event.preventDefault();
@@ -571,6 +592,8 @@ export default function ShatterPage() {
       const digit = Number(event.key);
       if (digit >= 1 && digit <= FORMS.length) assemble(digit - 1, 0.6);
     };
+    const onKeyUp = (event: KeyboardEvent) => held.delete(event.code);
+    const onBlur = () => held.clear();
 
     const canvas = renderer.domElement;
     canvas.addEventListener("pointermove", onMove);
@@ -579,8 +602,15 @@ export default function ShatterPage() {
     canvas.addEventListener("pointercancel", onLeave);
     canvas.addEventListener("pointerleave", onLeave);
     window.addEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
 
     let cameraZ = 11.5;
+    let yaw = 0;
+    let yawVel = 0;
+    // Offset from the resting tilt, which depends on the layout.
+    let pitch = 0;
+    let pitchVel = 0;
     const resize = () => {
       const width = mount.clientWidth;
       const height = mount.clientHeight;
@@ -642,7 +672,29 @@ export default function ShatterPage() {
       cubes.instanceMatrix.needsUpdate = true;
       instanceColor.needsUpdate = true;
 
-      camera.position.set(calm ? 0 : Math.sin(t * 0.13) * 0.8, 4.8, cameraZ);
+      let turn = 0;
+      let tilt = 0;
+      for (const code of held) {
+        turn += ORBIT[code][0];
+        tilt += ORBIT[code][1];
+      }
+      const ease = 1 - Math.exp(-8 * dt);
+      yawVel += (Math.sign(turn) * 1.4 - yawVel) * ease;
+      pitchVel += (Math.sign(tilt) * 0.8 - pitchVel) * ease;
+      yaw += yawVel * dt;
+      // Orbit the look target; at rest this is the original (sway, 4.8, cameraZ).
+      const rest = Math.atan2(6.8, cameraZ);
+      pitch = Math.min(1.4 - rest, Math.max(0.1 - rest, pitch + pitchVel * dt));
+      const reach = Math.hypot(6.8, cameraZ);
+      const flat = Math.cos(rest + pitch) * reach;
+      const sway = calm ? 0 : Math.sin(t * 0.13) * 0.8;
+      const cy = Math.cos(yaw);
+      const sy = Math.sin(yaw);
+      camera.position.set(
+        sway * cy + flat * sy,
+        Math.sin(rest + pitch) * reach - 2,
+        flat * cy - sway * sy,
+      );
       camera.lookAt(0, -2, 0);
       renderer.render(scene, camera);
       frame = requestAnimationFrame(render);
@@ -653,6 +705,8 @@ export default function ShatterPage() {
       cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointerup", onUp);
@@ -707,7 +761,8 @@ export default function ShatterPage() {
 
       <p className={styles.help}>
         <span className={styles.mouse}>
-          Sweep to scatter · click to shatter · space to drop
+          Sweep to scatter · click to shatter · space to drop · WASD or arrows
+          to orbit
         </span>
         <span className={styles.touch}>Drag to scatter · tap to shatter</span>
       </p>
