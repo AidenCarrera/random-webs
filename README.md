@@ -112,8 +112,8 @@ The changed-site check watches `src/app/<route>/` and `public/<route>/`.
 ## Adding a site
 
 1. Create `src/app/<route>/page.tsx`. Route names must use lowercase kebab-case.
-2. Create `src/app/<route>/layout.tsx` and call `createWebsiteMetadata("/<route>")`.
-3. Add the site to `WEBSITES` in `src/lib/websites.ts`. Include its path, title, blurb, accent classes, SEO title, and description.
+2. Create `src/app/<route>/layout.tsx`, call `createWebsiteMetadata("/<route>")`, and wrap the children in `<WebsiteFrame path="/<route>">`. The frame adds the home link, discovery tracking, and structured data.
+3. Add the site to `WEBSITES` in `src/lib/websites.ts`. Include its path, title, category, blurb, accent classes, SEO title, and description. The home link sits top-left by default; if the site has a title there, set `homeLink` (and `homeLinkMobile` for phone widths) to `"bottom-left"`, or to another corner when that one is taken too.
 4. Put route-specific public files in `public/<route>/`. Shared fonts belong in `public/fonts/`.
 5. Use Tailwind for small styles and `styles.module.css` for route-specific CSS.
 6. Run `pnpm check` and the relevant smoke tests.

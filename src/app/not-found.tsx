@@ -5,14 +5,14 @@ import { House } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
+import {
+  readRevealedWebsites,
+  saveRevealedWebsites,
+} from "@/lib/revealed-websites";
 import { pickRandomWebsitePath } from "@/lib/websites";
 
 import { ExploreButton } from "./_home/explore-button";
 import styles from "./_home/not-found.module.css";
-import {
-  readRevealedWebsites,
-  saveRevealedWebsites,
-} from "./_home/revealed-websites";
 
 export default function NotFound() {
   const router = useRouter();

@@ -1,9 +1,27 @@
+export const WEBSITE_CATEGORIES = [
+  { id: "games", label: "Games" },
+  { id: "simulations", label: "Simulations" },
+  { id: "audio", label: "Audio tools" },
+  { id: "visual", label: "Visual experiments" },
+  { id: "utilities", label: "Utilities" },
+] as const;
+
+export type WebsiteCategoryId = (typeof WEBSITE_CATEGORIES)[number]["id"];
+
+export type HomeLinkCorner =
+  "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
 export type WebsiteEntry = {
   path: string;
   lastModified: string;
   title: string;
+  category: WebsiteCategoryId;
   blurb: string;
   accent: string;
+  // Corner for the home badge (defaults to top-left).
+  homeLink?: HomeLinkCorner;
+  // Mobile corner override, or "hidden". Falls back to homeLink.
+  homeLinkMobile?: HomeLinkCorner | "hidden";
   metadata: {
     title: string;
     description: string;
@@ -15,6 +33,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/2048",
     lastModified: "2026-09-30",
     title: "2048",
+    category: "games",
     blurb: "Slide and merge tiles.",
     accent: "from-amber-100/90 via-orange-300/75 to-yellow-500/70",
     metadata: {
@@ -27,8 +46,11 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/algo-race",
     lastModified: "2026-07-28",
     title: "Algo Race",
+    category: "simulations",
     blurb: "Algorithms race to the finish.",
     accent: "from-cyan-200/80 via-sky-300/70 to-blue-500/70",
+    homeLink: "bottom-left",
+    homeLinkMobile: "top-left",
     metadata: {
       title: "Algo Race - Sorting Algorithm Visualizer",
       description:
@@ -39,6 +61,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/arcana-tarot",
     lastModified: "2026-07-14",
     title: "Arcana Tarot",
+    category: "games",
     blurb: "Draw the cards.",
     accent: "from-amber-300/80 via-orange-400/70 to-rose-500/75",
     metadata: {
@@ -51,6 +74,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/ascii-vision",
     lastModified: "2026-07-28",
     title: "ASCII Vision",
+    category: "visual",
     blurb: "Video in text.",
     accent: "from-lime-300/80 via-emerald-400/70 to-teal-500/70",
     metadata: {
@@ -63,6 +87,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/beat-maker",
     lastModified: "2026-07-15",
     title: "Beat Maker",
+    category: "audio",
     blurb: "A rhythm sequencer.",
     accent: "from-fuchsia-300/75 via-pink-400/70 to-rose-500/70",
     metadata: {
@@ -75,8 +100,11 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/blackout",
     lastModified: "2026-09-27",
     title: "Blackout",
+    category: "games",
     blurb: "Scan the dark.",
     accent: "from-cyan-300/80 via-violet-400/70 to-fuchsia-500/70",
+    homeLink: "bottom-left",
+    homeLinkMobile: "top-right",
     metadata: {
       title: "Blackout",
       description:
@@ -87,6 +115,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/boids-simulator",
     lastModified: "2026-07-29",
     title: "Boids Simulator",
+    category: "simulations",
     blurb: "Emergent boid movement.",
     accent: "from-lime-200/80 via-green-300/70 to-emerald-500/70",
     metadata: {
@@ -99,6 +128,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/click-speed-test",
     lastModified: "2026-07-29",
     title: "Click Speed Test",
+    category: "games",
     blurb: "A clicks per second test.",
     accent: "from-yellow-200/80 via-orange-300/70 to-red-400/70",
     metadata: {
@@ -111,8 +141,11 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/conway-multiverse",
     lastModified: "2026-10-01",
     title: "Conway Multiverse",
+    category: "simulations",
     blurb: "2,116 universes of life at once.",
     accent: "from-pink-300/85 via-cyan-300/70 to-violet-500/70",
+    homeLink: "bottom-left",
+    homeLinkMobile: "hidden",
     metadata: {
       title: "Conway Multiverse - Every Life-like Rule at Once",
       description:
@@ -123,6 +156,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/dont-click-me",
     lastModified: "2026-07-15",
     title: "Don't Click Me",
+    category: "games",
     blurb: "Do not click.",
     accent: "from-red-300/80 via-rose-400/70 to-orange-500/70",
     metadata: {
@@ -135,6 +169,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/emoji-rain",
     lastModified: "2026-07-28",
     title: "Emoji Rain",
+    category: "visual",
     blurb: "Falling icons.",
     accent: "from-sky-200/80 via-cyan-300/70 to-blue-500/70",
     metadata: {
@@ -147,6 +182,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/encoded-message",
     lastModified: "2026-07-15",
     title: "Encoded Message",
+    category: "visual",
     blurb: "Decode the message.",
     accent: "from-blue-200/80 via-indigo-300/70 to-slate-500/70",
     metadata: {
@@ -159,8 +195,10 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/falling-sand",
     lastModified: "2026-07-29",
     title: "Falling Sand",
+    category: "simulations",
     blurb: "A reactive particle sandbox.",
     accent: "from-amber-200/80 via-orange-300/70 to-red-500/70",
+    homeLink: "bottom-left",
     metadata: {
       title: "Falling Sand - Interactive Particle Sandbox",
       description:
@@ -171,6 +209,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/focus-timer",
     lastModified: "2026-07-15",
     title: "Focus Timer",
+    category: "utilities",
     blurb: "A countdown for deep work.",
     accent: "from-emerald-200/80 via-green-300/70 to-teal-500/70",
     metadata: {
@@ -183,6 +222,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/fluid-simulation",
     lastModified: "2026-07-28",
     title: "Fluid Simulation",
+    category: "simulations",
     blurb: "Stir a field of glowing particles.",
     accent: "from-fuchsia-300/80 via-violet-400/70 to-cyan-400/75",
     metadata: {
@@ -195,6 +235,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/fractal-explorer",
     lastModified: "2026-07-28",
     title: "Fractal Explorer",
+    category: "visual",
     blurb: "Infinite geometric patterns.",
     accent: "from-violet-300/80 via-indigo-400/70 to-sky-500/70",
     metadata: {
@@ -207,8 +248,10 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/gravity-box",
     lastModified: "2026-07-16",
     title: "Gravity Box",
+    category: "simulations",
     blurb: "A physics sandbox.",
     accent: "from-stone-200/80 via-slate-300/70 to-zinc-500/70",
+    homeLinkMobile: "bottom-right",
     metadata: {
       title: "Gravity Box - Physics Sandbox",
       description:
@@ -219,6 +262,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/hypno-spiral",
     lastModified: "2026-07-16",
     title: "Hypno Spiral",
+    category: "visual",
     blurb: "An optical illusion.",
     accent: "from-purple-300/80 via-fuchsia-400/70 to-indigo-500/70",
     metadata: {
@@ -231,6 +275,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/lava-lamp",
     lastModified: "2026-07-16",
     title: "Lava Lamp",
+    category: "visual",
     blurb: "A simulated lava lamp.",
     accent: "from-amber-200/80 via-orange-300/70 to-red-500/70",
     metadata: {
@@ -243,8 +288,11 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/lofi-pixel-study",
     lastModified: "2026-07-28",
     title: "Lofi Pixel Study",
+    category: "audio",
     blurb: "Music and pixels.",
     accent: "from-cyan-200/80 via-blue-300/70 to-indigo-500/70",
+    homeLink: "bottom-left",
+    homeLinkMobile: "top-right",
     metadata: {
       title: "Lofi Pixel Study",
       description:
@@ -255,6 +303,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/magic-8-ball",
     lastModified: "2026-07-15",
     title: "Magic 8 Ball",
+    category: "games",
     blurb: "Ask a question.",
     accent: "from-slate-200/80 via-slate-400/70 to-indigo-500/70",
     metadata: {
@@ -267,8 +316,10 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/mandala-maker",
     lastModified: "2026-07-16",
     title: "Mandala Maker",
+    category: "visual",
     blurb: "Symmetrical drawing.",
     accent: "from-teal-200/80 via-cyan-300/70 to-emerald-500/70",
+    homeLinkMobile: "bottom-left",
     metadata: {
       title: "Mandala Maker - Symmetrical Drawing Tool",
       description:
@@ -279,8 +330,11 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/matrix-rain",
     lastModified: "2026-07-15",
     title: "Matrix Rain",
+    category: "visual",
     blurb: "Falling code.",
     accent: "from-green-200/80 via-lime-400/70 to-emerald-600/70",
+    homeLink: "bottom-left",
+    homeLinkMobile: "top-left",
     metadata: {
       title: "Matrix Rain - Hacker Terminal",
       description:
@@ -291,6 +345,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/maze-generator",
     lastModified: "2026-09-30",
     title: "Maze Generator",
+    category: "simulations",
     blurb: "Draft a maze, then escape it.",
     accent: "from-sky-300/80 via-blue-500/70 to-amber-300/70",
     metadata: {
@@ -303,6 +358,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/mindful-breathe",
     lastModified: "2026-07-15",
     title: "Mindful Breathe",
+    category: "utilities",
     blurb: "A breathing guide.",
     accent: "from-blue-200/80 via-sky-300/70 to-cyan-500/70",
     metadata: {
@@ -315,6 +371,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/morse-code",
     lastModified: "2026-07-15",
     title: "Morse Code",
+    category: "utilities",
     blurb: "Translate taps.",
     accent: "from-amber-200/80 via-yellow-300/70 to-orange-500/70",
     metadata: {
@@ -327,6 +384,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/olo-terminal",
     lastModified: "2026-07-15",
     title: "Olo Terminal",
+    category: "utilities",
     blurb: "A command line interface.",
     accent: "from-zinc-200/80 via-slate-400/70 to-teal-500/70",
     metadata: {
@@ -339,6 +397,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/pad-synth",
     lastModified: "2026-07-16",
     title: "Pad Synth",
+    category: "audio",
     blurb: "An atmospheric synthesizer.",
     accent: "from-indigo-200/80 via-violet-300/70 to-fuchsia-500/70",
     metadata: {
@@ -351,8 +410,11 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/particle-collider",
     lastModified: "2026-07-15",
     title: "Particle Collider",
+    category: "simulations",
     blurb: "Simulating collisions.",
     accent: "from-orange-200/80 via-amber-300/70 to-pink-500/70",
+    homeLink: "bottom-left",
+    homeLinkMobile: "top-right",
     metadata: {
       title: "Particle Collider - Attract & Repel Particles",
       description:
@@ -363,6 +425,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/party-mode",
     lastModified: "2026-07-15",
     title: "Party Mode",
+    category: "visual",
     blurb: "Flashing lights and colors.",
     accent: "from-pink-200/80 via-fuchsia-400/70 to-yellow-400/70",
     metadata: {
@@ -375,8 +438,10 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/pixel-art",
     lastModified: "2026-07-29",
     title: "Pixel Art",
+    category: "visual",
     blurb: "A small canvas.",
     accent: "from-rose-200/80 via-orange-300/70 to-amber-500/70",
+    homeLinkMobile: "top-right",
     metadata: {
       title: "Pixel Art - Simple Sprite Maker",
       description:
@@ -387,8 +452,10 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/polyrhythm-visualizer",
     lastModified: "2026-07-29",
     title: "Polyrhythm Visualizer",
+    category: "audio",
     blurb: "Overlapping time signatures.",
     accent: "from-purple-200/80 via-indigo-300/70 to-cyan-500/70",
+    homeLinkMobile: "bottom-left",
     metadata: {
       title: "Polyrhythm Visualizer - Layered Rhythms",
       description:
@@ -399,8 +466,10 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/repo-visualizer",
     lastModified: "2026-07-16",
     title: "Repo Visualizer",
+    category: "utilities",
     blurb: "Visualize repository structure.",
     accent: "from-zinc-300/80 via-slate-400/70 to-neutral-500/70",
+    homeLink: "bottom-right",
     metadata: {
       title: "Repo Visualizer - GitHub History Visualizer",
       description:
@@ -411,6 +480,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/send-to-void",
     lastModified: "2026-09-25",
     title: "Send to the Void",
+    category: "visual",
     blurb: "Throw text away.",
     accent: "from-slate-300/80 via-zinc-500/70 to-black/70",
     metadata: {
@@ -423,8 +493,10 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/shatter",
     lastModified: "2026-10-03",
     title: "Shatter",
+    category: "simulations",
     blurb: "Break it. Watch it rebuild.",
     accent: "from-sky-300/80 via-fuchsia-400/70 to-rose-500/70",
+    homeLink: "bottom-left",
     metadata: {
       title: "Shatter - Interactive Cube Physics",
       description:
@@ -435,8 +507,11 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/solar-system",
     lastModified: "2026-07-16",
     title: "Solar System",
+    category: "simulations",
     blurb: "Orbital mechanics.",
     accent: "from-sky-200/80 via-indigo-300/70 to-violet-500/70",
+    homeLink: "top-right",
+    homeLinkMobile: "bottom-left",
     metadata: {
       title: "Solar System - Custom Planet Sandbox",
       description:
@@ -447,6 +522,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/sticky-notes",
     lastModified: "2026-07-15",
     title: "Sticky Notes",
+    category: "utilities",
     blurb: "Pin your thoughts.",
     accent: "from-yellow-100/90 via-amber-200/80 to-orange-300/80",
     metadata: {
@@ -459,6 +535,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/style-pet",
     lastModified: "2026-07-16",
     title: "Style Pet",
+    category: "games",
     blurb: "Dress a digital pet.",
     accent: "from-pink-200/80 via-rose-300/70 to-purple-400/70",
     metadata: {
@@ -471,6 +548,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/text-converter",
     lastModified: "2026-07-15",
     title: "Text Converter",
+    category: "utilities",
     blurb: "Convert text formats.",
     accent: "from-teal-200/80 via-emerald-300/70 to-cyan-500/70",
     metadata: {
@@ -483,6 +561,7 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/typing-racer",
     lastModified: "2026-07-15",
     title: "Typing Racer",
+    category: "games",
     blurb: "A typing speed test.",
     accent: "from-orange-200/80 via-red-300/70 to-pink-500/70",
     metadata: {
@@ -495,8 +574,10 @@ export const WEBSITES: WebsiteEntry[] = [
     path: "/zen-garden",
     lastModified: "2026-07-28",
     title: "Zen Garden",
+    category: "visual",
     blurb: "Grow your garden.",
     accent: "from-stone-100/90 via-emerald-200/80 to-teal-400/70",
+    homeLink: "bottom-left",
     metadata: {
       title: "Zen Garden - Landscape Sandbox",
       description:

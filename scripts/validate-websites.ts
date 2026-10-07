@@ -3,12 +3,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createWebsiteMetadata } from "../src/lib/websiteMetadata.ts";
-import { WEBSITES } from "../src/lib/websites.ts";
+import { WEBSITE_CATEGORIES, WEBSITES } from "../src/lib/websites.ts";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(scriptDirectory, "..");
 const appDirectory = path.join(repositoryRoot, "src", "app");
 const reservedPageRoutes = new Set(["dev", "privacy"]);
+const categoryIds = new Set<string>(
+  WEBSITE_CATEGORIES.map((category) => category.id),
+);
 const routePattern = /^\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -35,6 +38,12 @@ function main() {
 
     if (!website.title.trim() || !website.blurb.trim()) {
       errors.push(`Website display copy is incomplete for '${website.path}'.`);
+    }
+
+    if (!categoryIds.has(website.category)) {
+      errors.push(
+        `Unknown category for '${website.path}': '${website.category}'.`,
+      );
     }
 
     if (
@@ -64,6 +73,12 @@ function main() {
       if (!layoutSource.includes(expectedCall)) {
         errors.push(
           `Website layout does not use its registered metadata: ${layoutPath}`,
+        );
+      }
+
+      if (!layoutSource.includes(`<WebsiteFrame path="${website.path}">`)) {
+        errors.push(
+          `Website layout does not render its WebsiteFrame: ${layoutPath}`,
         );
       }
     }

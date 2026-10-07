@@ -1,0 +1,111 @@
+.badge {
+  --badge-inset: 0.75rem;
+  position: fixed;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(10, 10, 12, 0.62);
+  padding: 0.3rem 0.7rem 0.3rem 0.55rem;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.5625rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #fff;
+  opacity: 0.55;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  transition:
+    opacity 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.badge:hover,
+.badge:focus-visible {
+  border-color: rgba(255, 255, 255, 0.5);
+  opacity: 1;
+}
+
+.badge:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.icon {
+  height: 0.75rem;
+  width: 0.75rem;
+  flex-shrink: 0;
+}
+
+.badge[data-corner^="top"] {
+  top: calc(var(--badge-inset) + env(safe-area-inset-top, 0px));
+}
+
+.badge[data-corner^="bottom"] {
+  bottom: calc(var(--badge-inset) + env(safe-area-inset-bottom, 0px));
+}
+
+.badge[data-corner$="left"] {
+  left: calc(var(--badge-inset) + env(safe-area-inset-left, 0px));
+}
+
+.badge[data-corner$="right"] {
+  right: calc(var(--badge-inset) + env(safe-area-inset-right, 0px));
+}
+
+/* Show icon only on small screens. */
+@media (max-width: 639px) {
+  .badge[data-corner-mobile] {
+    --badge-inset: 0.5rem;
+    inset: auto;
+    height: 1.75rem;
+    width: 1.75rem;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .label {
+    position: absolute;
+    height: 1px;
+    width: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .badge[data-corner-mobile^="top"] {
+    top: calc(var(--badge-inset) + env(safe-area-inset-top, 0px));
+  }
+
+  .badge[data-corner-mobile^="bottom"] {
+    bottom: calc(var(--badge-inset) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .badge[data-corner-mobile$="left"] {
+    left: calc(var(--badge-inset) + env(safe-area-inset-left, 0px));
+  }
+
+  .badge[data-corner-mobile$="right"] {
+    right: calc(var(--badge-inset) + env(safe-area-inset-right, 0px));
+  }
+
+  .badge[data-corner-mobile="hidden"] {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge {
+    transition: none;
+  }
+}
+
+@media print {
+  .badge {
+    display: none;
+  }
+}

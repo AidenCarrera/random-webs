@@ -16,7 +16,7 @@ export function readRevealedWebsites() {
     try {
       window.localStorage.removeItem(REVEALED_WEBSITES_KEY);
     } catch {
-      // Storage is unavailable; start with nothing revealed.
+      // Storage unavailable.
     }
     return [];
   }
@@ -26,6 +26,14 @@ export function saveRevealedWebsites(paths: string[]) {
   try {
     window.localStorage.setItem(REVEALED_WEBSITES_KEY, JSON.stringify(paths));
   } catch {
-    // Navigation still works when browser storage is unavailable.
+    // Storage unavailable.
+  }
+}
+
+export function markWebsiteRevealed(path: string) {
+  const revealedWebsites = readRevealedWebsites();
+
+  if (!revealedWebsites.includes(path)) {
+    saveRevealedWebsites([...revealedWebsites, path]);
   }
 }

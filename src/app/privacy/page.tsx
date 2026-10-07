@@ -72,10 +72,6 @@ function Section({ title, children }: SectionProps) {
 export default function PrivacyPolicy() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#050506] text-white">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-112 bg-[radial-gradient(60rem_22rem_at_50%_-6rem,rgba(167,139,250,0.14),transparent_70%)]"
-      />
       <div className="relative mx-auto max-w-6xl px-6 py-16 sm:px-8 sm:py-24 lg:grid lg:grid-cols-[14rem_1fr] lg:gap-16">
         <aside className="lg:sticky lg:top-16 lg:self-start">
           <Link
@@ -115,8 +111,7 @@ export default function PrivacyPolicy() {
             Privacy Policy
           </h1>
 
-          <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/8 px-3 py-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-white/45">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
+          <p className="mt-5 inline-block rounded-full border border-white/8 px-3 py-1 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-white/45">
             Last updated {LAST_UPDATED}
           </p>
 

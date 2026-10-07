@@ -28,15 +28,27 @@ export function WebsiteCard({ website, index, isRevealed }: WebsiteCardProps) {
   } as React.CSSProperties;
 
   if (!isRevealed) {
+    // Masked via CSS data attributes so placeholder text is excluded from crawlers.
     return (
-      <div className={`${styles.card} ${styles.cardLocked}`} style={style}>
-        <div className={styles.cardInner}>
-          <div className={styles.cardMeta} aria-hidden="true">
-            <span>{number}</span>
+      <div
+        role="img"
+        aria-label={`Website ${number}, not discovered yet`}
+        className={`${styles.card} ${styles.cardLocked}`}
+        style={style}
+      >
+        <div className={styles.cardInner} aria-hidden="true">
+          <div className={styles.cardMeta}>
+            <span className={styles.cardMask} data-mask={number} />
             <LockKeyhole className="h-3.5 w-3.5" strokeWidth={2.25} />
           </div>
-          <h2 className={styles.cardTitleLocked}>{maskText(website.title)}</h2>
-          <p className={styles.cardBlurbLocked}>{maskText(website.blurb)}</p>
+          <div
+            className={`${styles.cardTitleLocked} ${styles.cardMask}`}
+            data-mask={maskText(website.title)}
+          />
+          <div
+            className={`${styles.cardBlurbLocked} ${styles.cardMask}`}
+            data-mask={maskText(website.blurb)}
+          />
         </div>
       </div>
     );
