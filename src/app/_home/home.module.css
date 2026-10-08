@@ -132,14 +132,6 @@
 
 /* ───────────────────────── Collection ───────────────────────── */
 
-.intro {
-  max-width: 36rem;
-  padding: 0 0.75rem 1.5rem;
-  font-size: 0.8125rem;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.55);
-}
-
 .progressBar {
   display: flex;
   align-items: center;
@@ -499,10 +491,6 @@
 }
 
 @media (min-width: 640px) {
-  .intro {
-    font-size: 0.9375rem;
-  }
-
   .index {
     border-radius: 1.6rem;
   }

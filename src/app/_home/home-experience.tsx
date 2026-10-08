@@ -121,12 +121,6 @@ export function HomeExperience({ children }: { children: React.ReactNode }) {
         className="relative mx-auto flex min-h-screen max-w-7xl scroll-mt-6 flex-col items-stretch px-3 pb-10 sm:px-8 lg:px-12"
       >
         <div className="relative w-full pt-8">
-          <p className={styles.intro}>
-            {WEBSITES.length} small interactive websites: games, simulations,
-            audio tools, visual experiments and utilities. Each one stays locked
-            until you find it.
-          </p>
-
           <div className={styles.progressBar}>
             <p className="font-mono text-[0.65rem] font-medium uppercase tracking-[0.24em] text-white/45">
               Discovered
