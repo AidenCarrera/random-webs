@@ -5,7 +5,7 @@ import {
   useMotionValue,
   useReducedMotion,
   useSpring,
-} from "framer-motion";
+} from "motion/react";
 import { Shuffle } from "lucide-react";
 import type { PointerEvent } from "react";
 

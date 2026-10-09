@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { SKIN_COLORS } from "../data/options";
 import type { AccessoryStyle, HatStyle, PetStatus, SkinColor } from "../types";
 

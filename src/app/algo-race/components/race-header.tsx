@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Flag, Pause, Play, RotateCcw, SkipForward } from "lucide-react";
 
 import { SIZE_OPTIONS } from "../config";

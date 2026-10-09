@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Maximize2, Minimize2, Pause, Play, RefreshCw } from "lucide-react";
 
 import { PRESETS, PRESET_IDS } from "../data/presets";

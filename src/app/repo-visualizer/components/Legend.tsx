@@ -1,5 +1,5 @@
 import { type MutableRefObject, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { FILE_COLORS, STATUS_COLORS } from "../constants";
 import { GraphNode } from "../types";
 

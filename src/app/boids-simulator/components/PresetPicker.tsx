@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 
 import { BOIDS_PRESETS, BOIDS_PRESET_DESCRIPTIONS } from "../data/presets";
 import styles from "../styles.module.css";

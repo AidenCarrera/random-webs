@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Trophy } from "lucide-react";
 
 import { COLORS } from "../lib/algorithms";
@@ -66,7 +66,12 @@ export function RaceResults({ arraySize, stats }: RaceResultsProps) {
             <motion.span
               initial={{ rotate: -25, scale: 0.5 }}
               animate={{ rotate: 0, scale: 1 }}
-              transition={{ type: "spring", stiffness: 420, damping: 14, delay: 0.15 }}
+              transition={{
+                type: "spring",
+                stiffness: 420,
+                damping: 14,
+                delay: 0.15,
+              }}
               className="flex h-5 w-5 items-center justify-center rounded-full bg-linear-to-b from-amber-200 to-amber-400 shadow-sm"
             >
               <Trophy className="h-3 w-3 text-amber-900" />
@@ -97,7 +102,11 @@ export function RaceResults({ arraySize, stats }: RaceResultsProps) {
                 key={entry.name}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, delay: 0.08 + index * 0.05, ease: EASE }}
+                transition={{
+                  duration: 0.45,
+                  delay: 0.08 + index * 0.05,
+                  ease: EASE,
+                }}
                 className="relative flex flex-col justify-between gap-1.5 overflow-hidden rounded-xl border px-2.5 py-2"
                 style={{
                   background: tint(color, index === 0 ? 16 : 8),
@@ -107,7 +116,8 @@ export function RaceResults({ arraySize, stats }: RaceResultsProps) {
                 <div className="flex items-center justify-between gap-2">
                   <span
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-[10px] font-black shadow-sm ${
-                      PLACE_STYLES[index + 1] ?? "bg-white text-slate-600 ring-1 ring-slate-200"
+                      PLACE_STYLES[index + 1] ??
+                      "bg-white text-slate-600 ring-1 ring-slate-200"
                     }`}
                   >
                     {index + 1}
@@ -115,7 +125,9 @@ export function RaceResults({ arraySize, stats }: RaceResultsProps) {
                   <div className="min-w-0 text-right">
                     <div
                       className="truncate text-[11px] font-bold"
-                      style={{ color: `color-mix(in srgb, ${color} 75%, black)` }}
+                      style={{
+                        color: `color-mix(in srgb, ${color} 75%, black)`,
+                      }}
                     >
                       {entry.name.replace(" Sort", "")}
                     </div>
@@ -139,8 +151,16 @@ export function RaceResults({ arraySize, stats }: RaceResultsProps) {
                     <motion.div
                       aria-hidden="true"
                       initial={{ scaleX: 0 }}
-                      animate={{ scaleX: slowestTime ? entry.executionMs / slowestTime : 0 }}
-                      transition={{ duration: 0.9, delay: 0.2 + index * 0.05, ease: EASE }}
+                      animate={{
+                        scaleX: slowestTime
+                          ? entry.executionMs / slowestTime
+                          : 0,
+                      }}
+                      transition={{
+                        duration: 0.9,
+                        delay: 0.2 + index * 0.05,
+                        ease: EASE,
+                      }}
                       className="h-full origin-left rounded-full"
                       style={{ background: color }}
                     />

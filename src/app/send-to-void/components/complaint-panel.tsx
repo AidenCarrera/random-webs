@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type RefObject } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { Trash2 } from "lucide-react";
 
 import { MAX_COMPLAINT_LENGTH } from "../config";

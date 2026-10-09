@@ -31,7 +31,7 @@ export type WebsiteEntry = {
 export const WEBSITES: WebsiteEntry[] = [
   {
     path: "/2048",
-    lastModified: "2026-09-30",
+    lastModified: "2026-10-07",
     title: "2048",
     category: "games",
     blurb: "Slide and merge tiles.",
@@ -44,7 +44,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/algo-race",
-    lastModified: "2026-07-28",
+    lastModified: "2026-10-09",
     title: "Algo Race",
     category: "simulations",
     blurb: "Algorithms race to the finish.",
@@ -59,7 +59,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/arcana-tarot",
-    lastModified: "2026-07-14",
+    lastModified: "2026-10-09",
     title: "Arcana Tarot",
     category: "games",
     blurb: "Draw the cards.",
@@ -72,7 +72,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/ascii-vision",
-    lastModified: "2026-07-28",
+    lastModified: "2026-10-07",
     title: "ASCII Vision",
     category: "visual",
     blurb: "Video in text.",
@@ -85,7 +85,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/beat-maker",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-07",
     title: "Beat Maker",
     category: "audio",
     blurb: "A rhythm sequencer.",
@@ -98,7 +98,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/blackout",
-    lastModified: "2026-09-27",
+    lastModified: "2026-10-07",
     title: "Blackout",
     category: "games",
     blurb: "Scan the dark.",
@@ -113,7 +113,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/boids-simulator",
-    lastModified: "2026-07-29",
+    lastModified: "2026-10-09",
     title: "Boids Simulator",
     category: "simulations",
     blurb: "Emergent boid movement.",
@@ -126,7 +126,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/click-speed-test",
-    lastModified: "2026-07-29",
+    lastModified: "2026-10-09",
     title: "Click Speed Test",
     category: "games",
     blurb: "A clicks per second test.",
@@ -139,7 +139,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/conway-multiverse",
-    lastModified: "2026-10-01",
+    lastModified: "2026-10-07",
     title: "Conway Multiverse",
     category: "simulations",
     blurb: "2,116 universes of life at once.",
@@ -154,7 +154,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/dont-click-me",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-07",
     title: "Don't Click Me",
     category: "games",
     blurb: "Do not click.",
@@ -167,7 +167,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/emoji-rain",
-    lastModified: "2026-07-28",
+    lastModified: "2026-10-09",
     title: "Emoji Rain",
     category: "visual",
     blurb: "Falling icons.",
@@ -180,7 +180,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/encoded-message",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-09",
     title: "Encoded Message",
     category: "visual",
     blurb: "Decode the message.",
@@ -193,7 +193,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/falling-sand",
-    lastModified: "2026-07-29",
+    lastModified: "2026-10-09",
     title: "Falling Sand",
     category: "simulations",
     blurb: "A reactive particle sandbox.",
@@ -207,7 +207,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/focus-timer",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-07",
     title: "Focus Timer",
     category: "utilities",
     blurb: "A countdown for deep work.",
@@ -220,7 +220,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/fluid-simulation",
-    lastModified: "2026-07-28",
+    lastModified: "2026-10-07",
     title: "Fluid Simulation",
     category: "simulations",
     blurb: "Stir a field of glowing particles.",
@@ -233,7 +233,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/fractal-explorer",
-    lastModified: "2026-07-28",
+    lastModified: "2026-10-09",
     title: "Fractal Explorer",
     category: "visual",
     blurb: "Infinite geometric patterns.",
@@ -246,7 +246,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/gravity-box",
-    lastModified: "2026-07-16",
+    lastModified: "2026-10-07",
     title: "Gravity Box",
     category: "simulations",
     blurb: "A physics sandbox.",
@@ -260,7 +260,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/hypno-spiral",
-    lastModified: "2026-07-16",
+    lastModified: "2026-10-07",
     title: "Hypno Spiral",
     category: "visual",
     blurb: "An optical illusion.",
@@ -273,7 +273,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/lava-lamp",
-    lastModified: "2026-07-16",
+    lastModified: "2026-10-09",
     title: "Lava Lamp",
     category: "visual",
     blurb: "A simulated lava lamp.",
@@ -286,7 +286,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/lofi-pixel-study",
-    lastModified: "2026-07-28",
+    lastModified: "2026-10-09",
     title: "Lofi Pixel Study",
     category: "audio",
     blurb: "Music and pixels.",
@@ -301,7 +301,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/magic-8-ball",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-07",
     title: "Magic 8 Ball",
     category: "games",
     blurb: "Ask a question.",
@@ -314,7 +314,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/mandala-maker",
-    lastModified: "2026-07-16",
+    lastModified: "2026-10-07",
     title: "Mandala Maker",
     category: "visual",
     blurb: "Symmetrical drawing.",
@@ -328,7 +328,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/matrix-rain",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-07",
     title: "Matrix Rain",
     category: "visual",
     blurb: "Falling code.",
@@ -343,7 +343,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/maze-generator",
-    lastModified: "2026-09-30",
+    lastModified: "2026-10-07",
     title: "Maze Generator",
     category: "simulations",
     blurb: "Draft a maze, then escape it.",
@@ -356,7 +356,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/mindful-breathe",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-09",
     title: "Mindful Breathe",
     category: "utilities",
     blurb: "A breathing guide.",
@@ -369,7 +369,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/morse-code",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-09",
     title: "Morse Code",
     category: "utilities",
     blurb: "Translate taps.",
@@ -382,7 +382,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/olo-terminal",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-07",
     title: "Olo Terminal",
     category: "utilities",
     blurb: "A command line interface.",
@@ -395,7 +395,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/pad-synth",
-    lastModified: "2026-07-16",
+    lastModified: "2026-10-07",
     title: "Pad Synth",
     category: "audio",
     blurb: "An atmospheric synthesizer.",
@@ -408,7 +408,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/particle-collider",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-09",
     title: "Particle Collider",
     category: "simulations",
     blurb: "Simulating collisions.",
@@ -423,7 +423,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/party-mode",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-07",
     title: "Party Mode",
     category: "visual",
     blurb: "Flashing lights and colors.",
@@ -436,7 +436,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/pixel-art",
-    lastModified: "2026-07-29",
+    lastModified: "2026-10-07",
     title: "Pixel Art",
     category: "visual",
     blurb: "A small canvas.",
@@ -450,7 +450,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/polyrhythm-visualizer",
-    lastModified: "2026-07-29",
+    lastModified: "2026-10-09",
     title: "Polyrhythm Visualizer",
     category: "audio",
     blurb: "Overlapping time signatures.",
@@ -464,7 +464,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/repo-visualizer",
-    lastModified: "2026-07-16",
+    lastModified: "2026-10-09",
     title: "Repo Visualizer",
     category: "utilities",
     blurb: "Visualize repository structure.",
@@ -478,7 +478,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/send-to-void",
-    lastModified: "2026-09-25",
+    lastModified: "2026-10-09",
     title: "Send to the Void",
     category: "visual",
     blurb: "Throw text away.",
@@ -491,7 +491,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/shatter",
-    lastModified: "2026-10-03",
+    lastModified: "2026-10-07",
     title: "Shatter",
     category: "simulations",
     blurb: "Break it. Watch it rebuild.",
@@ -505,7 +505,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/solar-system",
-    lastModified: "2026-07-16",
+    lastModified: "2026-10-07",
     title: "Solar System",
     category: "simulations",
     blurb: "Orbital mechanics.",
@@ -520,7 +520,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/sticky-notes",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-09",
     title: "Sticky Notes",
     category: "utilities",
     blurb: "Pin your thoughts.",
@@ -533,7 +533,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/style-pet",
-    lastModified: "2026-07-16",
+    lastModified: "2026-10-09",
     title: "Style Pet",
     category: "games",
     blurb: "Dress a digital pet.",
@@ -546,7 +546,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/text-converter",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-07",
     title: "Text Converter",
     category: "utilities",
     blurb: "Convert text formats.",
@@ -559,7 +559,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/typing-racer",
-    lastModified: "2026-07-15",
+    lastModified: "2026-10-07",
     title: "Typing Racer",
     category: "games",
     blurb: "A typing speed test.",
@@ -572,7 +572,7 @@ export const WEBSITES: WebsiteEntry[] = [
   },
   {
     path: "/zen-garden",
-    lastModified: "2026-07-28",
+    lastModified: "2026-10-09",
     title: "Zen Garden",
     category: "visual",
     blurb: "Grow your garden.",
@@ -597,4 +597,4 @@ export function pickRandomWebsitePath(visitedPaths: Iterable<string> = []) {
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-export const SITE_LAST_MODIFIED = "2026-07-26";
+export const SITE_LAST_MODIFIED = "2026-10-07";

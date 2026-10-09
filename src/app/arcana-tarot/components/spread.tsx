@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "motion/react";
 
 import type { TarotCard as TarotCardData } from "../data/cards";
 import type { DrawnCard } from "../types";

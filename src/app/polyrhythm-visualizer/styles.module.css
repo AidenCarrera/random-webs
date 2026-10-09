@@ -153,7 +153,9 @@
     flex: 1;
     min-height: 0;
     align-content: center;
-    grid-template-rows: repeat(4,
-        minmax(2.25rem, calc((var(--sidebar) - 3rem) * 0.24)));
+    grid-template-rows: repeat(
+      4,
+      minmax(2.25rem, calc((var(--sidebar) - 3rem) * 0.24))
+    );
   }
 }

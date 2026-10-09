@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useDragControls } from "framer-motion";
+import { motion, useDragControls } from "motion/react";
 import {
   Download,
   GripHorizontal,

@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 
 import type { ViewMode, VisualizerProps } from "../types";
 import { ViewModeTabs } from "./view-mode-tabs";

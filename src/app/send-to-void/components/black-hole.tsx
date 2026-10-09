@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, type RefObject } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "motion/react";
 
 import {
   VOID_CENTER,

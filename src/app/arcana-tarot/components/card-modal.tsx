@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useEffect, useId, useRef } from "react";
 import { TAROT_CARDS, type TarotCard } from "../data/cards";
 import { CARD_INTERPRETATIONS } from "../data/interpretations";

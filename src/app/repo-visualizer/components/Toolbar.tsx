@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { SkipBack, SkipForward, Play, Pause, RotateCcw } from "lucide-react";
 import { Dataset } from "../types";
 import { formatDate } from "../utils/common";

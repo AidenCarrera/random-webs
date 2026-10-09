@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 type Palette = {
@@ -201,9 +201,7 @@ export default function MindfulBreathePage() {
                 aria-pressed={musicEnabled}
                 aria-label="Ambient Music"
                 className={`group flex items-center gap-2 rounded-full py-1 pl-1 pr-3 text-[10px] tracking-[0.25em] uppercase transition-colors duration-300 ${
-                  musicEnabled
-                    ? palette.toggle
-                    : "bg-white/60 text-slate-500"
+                  musicEnabled ? palette.toggle : "bg-white/60 text-slate-500"
                 }`}
               >
                 <span

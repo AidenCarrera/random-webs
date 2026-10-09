@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "motion/react";
 import { Zap } from "lucide-react";
 import localFont from "next/font/local";
 import { useTelegraph } from "./hooks/useTelegraph";

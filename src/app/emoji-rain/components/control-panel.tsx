@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChevronDown, CloudRain, Umbrella, Wind } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -65,9 +65,7 @@ export function ControlPanel({
             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
               Emoji Rain
             </p>
-            <p className="text-sm font-semibold text-slate-700">
-              Controls
-            </p>
+            <p className="text-sm font-semibold text-slate-700">Controls</p>
           </div>
         </div>
         <button

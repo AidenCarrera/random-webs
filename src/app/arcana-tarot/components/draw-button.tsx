@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { RefreshCw } from "lucide-react";
 
 interface DrawAgainButtonProps {

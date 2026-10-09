@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { Volume2 } from "lucide-react";
 import type { FractalExplorerController } from "../hooks/useFractalExplorer";
 

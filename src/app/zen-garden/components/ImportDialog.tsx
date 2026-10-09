@@ -1,4 +1,4 @@
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "motion/react";
 import { Upload } from "lucide-react";
 import type { ZenGardenController } from "../hooks/useZenGarden";
 

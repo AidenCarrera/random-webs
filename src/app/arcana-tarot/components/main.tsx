@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 
 import { cinzel } from "../font";
 import { useTarotReading } from "../hooks/use-reading";

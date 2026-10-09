@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { MousePointer2, Circle } from "lucide-react";
 
 import styles from "./styles.module.css";

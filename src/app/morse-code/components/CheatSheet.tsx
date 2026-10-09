@@ -1,7 +1,7 @@
 // src/components/CheatSheet.tsx
 "use client";
 
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { MORSE_CODE } from "../lib/morse";
 import localFont from "next/font/local";
 

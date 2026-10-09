@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Award } from "lucide-react";
 import { LEVEL_REWARDS, SKIN_LABELS } from "../data/options";
 import type { PetController } from "../hooks/use-pet";

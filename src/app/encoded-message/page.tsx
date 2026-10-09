@@ -182,9 +182,7 @@ export default function EncodedMessage() {
       />
 
       <div className="relative flex shrink-0 flex-col gap-0 text-center">
-        <p className="mb-8 font-mono text-sm text-gray-500">
-          HOVER TO DECRYPT
-        </p>
+        <p className="mb-8 font-mono text-sm text-gray-500">HOVER TO DECRYPT</p>
         <ScrambleText
           text="ACCESS_GRANTED"
           className="text-4xl font-bold tracking-tighter text-white sm:text-6xl md:text-8xl"

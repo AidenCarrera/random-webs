@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Shuffle } from "lucide-react";
 import { EMOJI_CATEGORIES } from "../constants";
 import type { ZenGardenController } from "../hooks/useZenGarden";

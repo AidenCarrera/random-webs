@@ -9,14 +9,14 @@ The home page sends you to a random site and keeps track of the ones you've alre
 - Next.js 16 and React 19
 - TypeScript 6
 - Tailwind CSS 4 and CSS Modules
-- Tone.js and Framer Motion
+- Tone.js and Motion
 - Three.js and Matter.js
 - Playwright
 
 ## Requirements
 
 - Node.js 24.x (`.node-version` contains `24`)
-- pnpm 11.x (the project pins pnpm 11.12.0)
+- pnpm 12.x (the project pins pnpm 12.10.1)
 - FFmpeg on `PATH` if you plan to normalize audio
 
 ## Setup

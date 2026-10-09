@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { useReducedMotion } from "framer-motion";
+import { useReducedMotion } from "motion/react";
 
 import { SHRED_FPS, SHRED_TIMINGS } from "../config";
 import type { Particle } from "../types";

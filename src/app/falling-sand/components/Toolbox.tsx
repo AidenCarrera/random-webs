@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { motion, useDragControls } from "framer-motion";
+import { motion, useDragControls } from "motion/react";
 import { GripHorizontal, Maximize2, Minimize2 } from "lucide-react";
 
 import styles from "../styles.module.css";

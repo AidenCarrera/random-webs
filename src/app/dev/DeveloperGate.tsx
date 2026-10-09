@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "motion/react";
 import { ArrowUpRight, KeyRound } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import type { WebsiteEntry } from "@/lib/websites";
